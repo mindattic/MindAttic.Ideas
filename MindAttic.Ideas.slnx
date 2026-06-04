@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MindAttic.Ideas.Abstractions/MindAttic.Ideas.Abstractions.csproj" />
+    <Project Path="src/MindAttic.Ideas.Core/MindAttic.Ideas.Core.csproj" />
+    <Project Path="src/MindAttic.Ideas.Web/MindAttic.Ideas.Web.csproj" />
+  </Folder>
+</Solution>

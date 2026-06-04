@@ -1,0 +1,26 @@
+@* Emits CSS in the FROZEN cascade order: GLOBAL -> THEME. Page-level CSS (tier 3) is emitted by the
+   page body in <body>, and inline style="" is tier 4 by DOM nature — so document order yields the
+   locked Global -> Theme -> Page -> inline cascade. This order lives in exactly ONE place. *@
+@if (!string.IsNullOrWhiteSpace(GlobalCss))
+{
+    <style>@((MarkupString)GlobalCss!)</style>
+}
+@foreach (var url in ThemeGlobalCss)
+{
+    <link rel="stylesheet" href="@url" />
+}
+@foreach (var url in ThemeCss)
+{
+    <link rel="stylesheet" href="@url" />
+}
+@foreach (var url in ThemeScripts)
+{
+    <script src="@url"></script>
+}
+
+@code {
+    [Parameter] public string? GlobalCss { get; set; }
+    [Parameter] public IReadOnlyList<string> ThemeGlobalCss { get; set; } = Array.Empty<string>();
+    [Parameter] public IReadOnlyList<string> ThemeCss { get; set; } = Array.Empty<string>();
+    [Parameter] public IReadOnlyList<string> ThemeScripts { get; set; } = Array.Empty<string>();
+}

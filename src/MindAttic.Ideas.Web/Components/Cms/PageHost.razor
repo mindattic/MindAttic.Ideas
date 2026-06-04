@@ -1,0 +1,147 @@
+@page "/{*Slug}"
+@using Microsoft.AspNetCore.Components
+@using Microsoft.EntityFrameworkCore
+@using MindAttic.Ideas.Core.Data
+@using MindAttic.Ideas.Core.Entities
+@inject IDbContextFactory<CmsDbContext> DbFactory
+@inject IContentCatalog Catalog
+@inject IServiceProvider Services
+
+@* The single, permanent render entry point for free-form pages. No zones. Resolution is by
+   (SiteId, Slug) data lookup, never per-page routing — so a runtime-loaded type renders unchanged. *@
+
+@if (_status == Status.NotFound)
+{
+    <PageTitle>Not found</PageTitle>
+    <p class="ma-404">Page not found.</p>
+}
+else if (_context is not null)
+{
+    <PageTitle>@_context.Page.Title</PageTitle>
+    <HeadContent>
+        <CmsHead GlobalCss="@_globalCss"
+                 ThemeGlobalCss="@_themeGlobalCss"
+                 ThemeCss="@_themeCss"
+                 ThemeScripts="@_themeScripts" />
+    </HeadContent>
+
+    <CascadingValue Value="_context" IsFixed="true">
+        @if (_themeType is not null)
+        {
+            <DynamicComponent Type="_themeType" Parameters="_themeParams" />
+        }
+        else
+        {
+            <DynamicComponent Type="_bodyType" />
+        }
+    </CascadingValue>
+}
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+
+    private enum Status { Pending, Ok, NotFound }
+    private Status _status = Status.Pending;
+
+    private IRenderContext? _context;
+    private Type? _themeType;
+    private Type _bodyType = typeof(FreeFormPage);
+    private IDictionary<string, object>? _themeParams;
+    private string? _globalCss;
+    private IReadOnlyList<string> _themeGlobalCss = Array.Empty<string>();
+    private IReadOnlyList<string> _themeCss = Array.Empty<string>();
+    private IReadOnlyList<string> _themeScripts = Array.Empty<string>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var slug = (Slug ?? "").Trim('/');
+
+        // Reserved prefixes never resolve to a content page (defense in depth; /admin & /_* are also
+        // handled by endpoint routing).
+        if (slug.StartsWith("admin", StringComparison.OrdinalIgnoreCase) || slug.StartsWith('_'))
+        {
+            _status = Status.NotFound;
+            return;
+        }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var site = await db.Sites.FirstOrDefaultAsync(s => s.IsDefault) ?? await db.Sites.FirstOrDefaultAsync();
+        var siteId = site?.Id;
+        var page = await db.Pages.FirstOrDefaultAsync(p =>
+            p.SiteId == siteId && p.Slug == slug && p.IsPublished && p.Enabled);
+
+        if (page is null)
+        {
+            _status = Status.NotFound;
+            return;
+        }
+
+        var inline = new CmsInlineMarkup
+        {
+            Html = page.BodyHtml,
+            Css = page.PageCss,
+            Js = page.PageJs,
+            Trusted = page.BodyTrust == ContentTrust.Author,
+        };
+        var pageCtx = new CmsPageContext
+        {
+            PageId = page.Uid, Slug = page.Slug, Title = page.Title,
+            ThemeKey = page.ThemeKey, ThemeVersion = page.ThemeVersion, Inline = inline,
+        };
+        var siteCtx = new CmsSiteContext
+        {
+            SiteId = site?.Uid ?? Guid.Empty, Key = site?.Key ?? "default", Host = "",
+            DefaultThemeKey = site?.DefaultThemeKey ?? "",
+        };
+        _context = new CmsRenderContext
+        {
+            InstanceId = Guid.NewGuid(), Mode = ContentMode.View, RenderMode = CmsRenderMode.InteractiveServer,
+            Page = pageCtx, Site = siteCtx, Services = Services, RawSettingsJson = page.SettingsJson,
+        };
+
+        // Body type: Data -> FreeFormPage; Code -> resolved type; unresolved -> placeholder.
+        if (page.Kind == PageKind.Code && page.ComponentTypeName is not null)
+        {
+            var desc = new ContentDescriptor
+            {
+                Kind = ContentKind.Page, Key = page.Slug, Version = 1, DisplayName = page.Title,
+                Strategy = RenderStrategy.ClrType, ClrTypeName = page.ComponentTypeName,
+                AssemblyName = page.AssemblyName ?? "",
+            };
+            _bodyType = Catalog.ResolveType(desc) ?? typeof(MissingPageHost);
+        }
+        else
+        {
+            _bodyType = typeof(FreeFormPage);
+        }
+
+        // Theme: page override -> site default -> bootstrap fallback.
+        var themeKey = page.ThemeKey ?? site?.DefaultThemeKey;
+        var themeVersion = page.ThemeVersion ?? site?.DefaultThemeVersion ?? 1;
+        if (!string.IsNullOrWhiteSpace(themeKey))
+        {
+            var themeDesc = Catalog.Find(ContentKind.Theme, themeKey!, themeVersion)
+                            ?? Catalog.FindLatest(ContentKind.Theme, themeKey!)
+                            ?? Catalog.FindLatest(ContentKind.Theme, "bootstrap");
+            _themeType = themeDesc is null ? null : Catalog.ResolveType(themeDesc);
+        }
+
+        if (_themeType is not null && Activator.CreateInstance(_themeType) is ThemeBase meta)
+        {
+            _themeGlobalCss = meta.GlobalCssUrls;
+            _themeCss = meta.ThemeCssUrls;
+            _themeScripts = meta.ScriptUrls;
+        }
+
+        var globalSetting = await db.Settings.FirstOrDefaultAsync(s => s.Scope == "Host" && s.Key == "css.global");
+        _globalCss = globalSetting?.Value;
+
+        var bodyType = _bodyType;
+        _themeParams = new Dictionary<string, object>
+        {
+            ["Body"] = (RenderFragment)(b => { b.OpenComponent(0, bodyType); b.CloseComponent(); }),
+        };
+
+        _status = Status.Ok;
+    }
+}
