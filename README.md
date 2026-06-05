@@ -299,8 +299,11 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 - ✅ `PageAssetCollector` (pure, Core) + `<CmsHead>` binding: a page's package-citizen css/scripts are
   cascade-ordered, deduped, and hoisted into `<head>` (band: Global → Theme → **Component** → Page →
   inline), fed by a no-schema manifest→`ContentDescriptor.Extra` data path at catalog reload
-- 📋 `/_ideas` asset file provider; compiled-citizen asset harvest (`Activator` on `ComponentBase`,
-  replacing its per-instance inline emission) — additive via the same collector delegate, attended
+- ✅ `/_ideas/{category}/{key}/{version}/…` asset route serves a package's extracted `wwwroot/`
+  (category-qualified to disambiguate kinds; path-traversal guarded). Install extracts `wwwroot/` too, and
+  `PackageAssetsOf` prefixes the collected `<head>` URLs with the citizen's `AssetMount`
+- 📋 Compiled-citizen asset harvest (`Activator` on `ComponentBase`, replacing its per-instance inline
+  emission) — additive via the same collector delegate, attended
 - 📋 Move official content into MindAttic.UiUx (canonical source); then collapse `MindAttic.Frontpage`
   and `MindAttic.Legion.Frontend` into Pages
 

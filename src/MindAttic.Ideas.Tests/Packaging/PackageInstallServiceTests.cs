@@ -64,7 +64,7 @@ public class PackageInstallServiceTests
             Assert.That(def.Origin, Is.EqualTo(ContentOrigin.Package));
             Assert.That(def.Priority, Is.EqualTo(50));
             Assert.That(def.Kind, Is.EqualTo(ContentKind.Component));
-            Assert.That(def.AssetMount, Is.EqualTo("/_ideas/ui.tooltip/1"));
+            Assert.That(def.AssetMount, Is.EqualTo("/_ideas/Component/ui.tooltip/1"));
         });
     }
 

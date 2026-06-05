@@ -120,8 +120,18 @@ app.UseMindAtticAuthentication();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
-// Reserved runtime-asset route (Phase 5 fills the runtime arm via a PhysicalFileProvider).
-app.MapGet("/_ideas/{*path}", () => Results.NotFound());
+// Runtime package assets: /_ideas/{category}/{key}/{version}/{**path} -> the package's extracted wwwroot
+// (category-qualified so a Page and a Component can share a key). ResolveAsset guards path traversal.
+var assetContentTypes = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+app.MapGet("/_ideas/{category}/{key}/{version:int}/{**path}",
+    IResult (string category, string key, int version, string path, IPackageExtractor extractor) =>
+    {
+        var file = extractor.ResolveAsset(category, key, version, path);
+        if (file is null) return Results.NotFound();
+        var contentType = assetContentTypes.TryGetContentType(file, out var ct) ? ct : "application/octet-stream";
+        return Results.File(File.OpenRead(file), contentType);
+    });
+app.MapGet("/_ideas/{*path}", () => Results.NotFound());   // anything else under /_ideas
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 // MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.

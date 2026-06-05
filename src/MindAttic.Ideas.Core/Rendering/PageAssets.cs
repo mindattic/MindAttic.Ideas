@@ -46,11 +46,27 @@ public static class ManifestAssetPacker
 public static class PageAssets
 {
     /// <summary>
-    /// The production adapter for THIS slot: package citizens expose the assets surfaced into Extra at
-    /// reload; compiled citizens return none here (their assets live on the instantiated component and
-    /// require <c>Activator</c> — the attended host TODO). Pure and additive: extending it to also harvest
-    /// compiled citizens later changes no caller.
+    /// The production adapter for THIS slot: a package citizen's manifest css/scripts (surfaced into Extra
+    /// at reload) prefixed with the citizen's <see cref="ContentDescriptor.AssetMount"/> so the emitted
+    /// &lt;head&gt; URLs resolve under the <c>/_ideas</c> route. Compiled citizens return none here (their
+    /// assets live on the instantiated component and require <c>Activator</c> — the attended host TODO).
+    /// Pure and additive: extending it to also harvest compiled citizens later changes no caller.
     /// </summary>
-    public static CitizenAssets PackageAssetsOf(ContentDescriptor d) =>
-        d.Origin == ContentOrigin.Package ? ManifestAssetPacker.FromExtra(d.Extra) : new([], []);
+    public static CitizenAssets PackageAssetsOf(ContentDescriptor d)
+    {
+        if (d.Origin != ContentOrigin.Package) return new([], []);
+        var raw = ManifestAssetPacker.FromExtra(d.Extra);
+        var mount = (d.AssetMount ?? "").TrimEnd('/');
+        return new(Mount(raw.Css, mount), Mount(raw.Scripts, mount));
+    }
+
+    // Prefix a relative asset path with the package's mount; leave already-absolute (or unmounted) paths as-is.
+    private static IReadOnlyList<string> Mount(IReadOnlyList<string> rels, string mount)
+    {
+        if (mount.Length == 0) return rels;
+        var outp = new List<string>(rels.Count);
+        foreach (var r in rels)
+            outp.Add(r.StartsWith('/') ? r : $"{mount}/{r}");
+        return outp;
+    }
 }

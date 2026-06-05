@@ -95,4 +95,21 @@ public class ManifestAssetPackerTests
             Assert.That(assets.Scripts, Is.EqualTo(new[] { "x.js" }));
         });
     }
+
+    [Test]
+    public void PackageAssetsOf_PrefixesRelativePathsWithAssetMount()
+    {
+        var d = new ContentDescriptor
+        {
+            Kind = ContentKind.Component, Key = "ui.tooltip", Version = 1, DisplayName = "Tooltip",
+            Origin = ContentOrigin.Package, AssetMount = "/_ideas/Component/ui.tooltip/1",
+            Extra = ManifestAssetPacker.PackExtra(Manifest(["css/x.css", "/abs/already.css"], ["js/x.js"])),
+        };
+        var assets = PageAssets.PackageAssetsOf(d);
+        Assert.Multiple(() =>
+        {
+            Assert.That(assets.Css, Is.EqualTo(new[] { "/_ideas/Component/ui.tooltip/1/css/x.css", "/abs/already.css" }));
+            Assert.That(assets.Scripts, Is.EqualTo(new[] { "/_ideas/Component/ui.tooltip/1/js/x.js" }));
+        });
+    }
 }

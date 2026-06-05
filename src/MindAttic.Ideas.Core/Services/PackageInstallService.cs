@@ -126,7 +126,7 @@ public sealed class PackageInstallService(
         def.Scope = ParseScope(manifest.Scope);
         def.ClrTypeName = manifest.EntryType;             // resolves only once the ALC loader (B) lands
         def.AssemblyName = manifest.AssemblyName;
-        def.AssetMount = $"/_ideas/{manifest.Key}/{manifest.Version}";   // the asset-source seam absorbs this in C
+        def.AssetMount = $"/_ideas/{manifest.Category}/{manifest.Key}/{manifest.Version}";   // served by the /_ideas route
         def.Priority = 50;                                // Package < Compiled(100)
         def.IsActive = true;
         def.Enabled = true;
