@@ -44,6 +44,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IContentLifecycleService, ContentLifecycleService>();
         services.AddScoped<IPageAdminService, PageAdminService>();
 
+        // Phase-5: .idea package install (validate + register rows; no ALC load yet).
+        services.AddScoped<IPackageInstallService, PackageInstallService>();
+
         return services;
     }
 }

@@ -282,11 +282,18 @@ only — never Interactive WebAssembly (a hard .NET boundary).
   content-definition enable/disable/guarded-delete; Admin Inbox triage — all under `MaPolicies.Admin`
 - ✅ Login / sign-out / SecurityStamp via the **MindAttic.Authentication** package (A16) — not Ideas-owned
 - 📋 Theme/component/control assignment UI, file manager, roles
-- 📋 `ma-idea` CLI: pack / install / list / upgrade / disable
+- ✅ `ma-idea` CLI: pack / inspect / list / install (offline validate) / upgrade (plan preview)
 
 ### Packages & migration (Phase 5/6)
-- 📋 `PackageContentSource` (runtime `.idea` via collectible ALC) + installer + asset file provider
-- 📋 SDK packer (`dotnet ma-idea pack`); per-page Component-asset de-duplication into `<head>`
+- ✅ `.idea` format frozen as a wire contract: `MindAttic.Ideas.Packaging` (manifest kernel + lossless
+  forward-compat, reflection-only packer, zip-slip-guarded reader, validator incl. the host-assembly
+  bin/ audit, SHA-256, whole-number version/collision resolver) — pure, NUnit-tested
+- ✅ Host-side install: `PackageInstallService` validates a `.idea` and registers the `InstalledPackage`
+  registry row + a mirrored `Origin=Package` catalog row, idempotent, prior versions retained on upgrade,
+  soft-disable — then reloads the live catalog. **No assembly is loaded yet** (see below)
+- 📋 `PackageContentSource` runtime `.idea` load via collectible ALC (resolves the registered package
+  descriptors to live types) — deferred as the high-risk, attended step
+- 📋 `/_ideas` asset file provider + per-page Component-asset de-duplication into `<head>`
 - 📋 Move official content into MindAttic.UiUx (canonical source); then collapse `MindAttic.Frontpage`
   and `MindAttic.Legion.Frontend` into Pages
 
