@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The .idea packer. Turns a built Page/Theme/Component/Control RCL into a `.idea` package
+       (a zip: idea.json manifest + lib/ + wwwroot/). Distributed as a dotnet tool: `ma-idea`.
+       Identity (Kind, Key, Version) is read by CONVENTION from the entry type's
+       namespace/class-name, with optional [Idea]/[IdeaSdkVersion] overrides — via reflection-only
+       MetadataLoadContext, so the packer never executes the target assembly. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>MindAttic.Ideas.Sdk</RootNamespace>
+    <AssemblyName>MindAttic.Ideas.Sdk</AssemblyName>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>ma-idea</ToolCommandName>
+    <PackageId>MindAttic.Ideas.Sdk</PackageId>
+    <Version>1.0.0</Version>
+    <Description>The .idea packer (ma-idea) for the MindAttic.Ideas CMS. Packs a Page/Theme/Component/Control RCL into a .idea package.</Description>
+    <Company>MindAttic</Company>
+    <Authors>MindAttic</Authors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -22,8 +22,12 @@ var connectionString =
     ?? Environment.GetEnvironmentVariable("ConnectionStrings__Ideas")
     ?? "Server=(localdb)\\MSSQLLocalDB;Database=MindAtticIdeas;Trusted_Connection=True;TrustServerCertificate=True";
 
-// --- CMS Core: EF, discovery over this assembly's citizens, catalog, gate, auth/seed. ---
-builder.Services.AddIdeasCore(connectionString, typeof(Program).Assembly);
+// --- CMS Core: EF, discovery over this assembly's citizens + referenced Idea RCLs, catalog, gate,
+//     auth/seed. The MindAttic front page ships as a compiled Page Idea (an RCL NuGet). ---
+builder.Services.AddIdeasCore(
+    connectionString,
+    typeof(Program).Assembly,
+    typeof(MindAttic.Ideas.Page.MindAtticFrontpage.V1).Assembly);
 
 // --- MindAttic.Legion: LLM + voting (A7). Zero-config; keys resolve via Vault when used. ---
 builder.Services.AddLegionClient();

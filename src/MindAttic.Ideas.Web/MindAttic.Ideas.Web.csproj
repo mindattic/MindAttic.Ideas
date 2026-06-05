@@ -8,6 +8,9 @@
     <!-- Ecosystem citizens (local feed): credentials + LLM/voting. -->
     <PackageReference Include="MindAttic.Vault" Version="0.3.1" />
     <PackageReference Include="MindAttic.Legion" Version="2.6.0" />
+    <!-- A compiled Page Idea (the MindAttic front page), consumed as an RCL NuGet. Its static web
+         assets serve at _content/MindAttic.Ideas.Page.MindAtticFrontpage/; Abstractions is host-provided. -->
+    <PackageReference Include="MindAttic.Ideas.Page.MindAtticFrontpage" Version="1.0.0" />
   </ItemGroup>
 
   <PropertyGroup>
