@@ -1,7 +1,10 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Entities;
+using MindAttic.Ideas.Core.Rendering;
+using MindAttic.Ideas.Packaging;
 
 namespace MindAttic.Ideas.Core.Discovery;
 
@@ -81,15 +84,31 @@ public sealed class DiscoveryService(
         }
         await db.SaveChangesAsync(ct);
 
-        catalog.Load(all.Where(x => !x.IsShadowed && x.Enabled).Select(ToDescriptor));
+        // No-schema asset data path: a package's ordered css[]/scripts[] live in its verbatim manifest;
+        // surface them onto the in-memory descriptor's Extra bag so PageAssetCollector can hoist them into
+        // <head>. One corrupt manifest degrades only that citizen's head assets to empty — never aborts the
+        // reload. (Compiled citizens carry no manifest; their Extra stays null exactly as before.)
+        var manifestByIdentity = new Dictionary<(string Category, string Key, int Version), IdeaManifest>();
+        foreach (var pkg in await db.InstalledPackages.Where(p => p.Enabled).ToListAsync(ct))
+        {
+            try { manifestByIdentity[(pkg.Category, pkg.Key, pkg.Version)] = ManifestReader.Read(pkg.ManifestJson); }
+            catch (JsonException) { /* leave this identity unmapped -> Extra null -> empty head assets */ }
+        }
+
+        catalog.Load(all.Where(x => !x.IsShadowed && x.Enabled).Select(x => ToDescriptor(x, LookupManifest(x, manifestByIdentity))));
         catalog.LoadDisabled(all.Where(x => !x.IsShadowed && !x.Enabled).Select(x => (x.Kind, x.Key, x.Version)));
     }
 
-    private static ContentDescriptor ToDescriptor(CmsContentDefinition x) => new()
+    private static IdeaManifest? LookupManifest(
+        CmsContentDefinition x, IReadOnlyDictionary<(string, string, int), IdeaManifest> map) =>
+        x.Origin == ContentOrigin.Package && map.TryGetValue((x.Category, x.Key, x.Version), out var m) ? m : null;
+
+    private static ContentDescriptor ToDescriptor(CmsContentDefinition x, IdeaManifest? manifest) => new()
     {
         Kind = x.Kind, Key = x.Key, Version = x.Version, DisplayName = x.DisplayName,
         Category = x.Category, Origin = x.Origin, Priority = x.Priority, Strategy = x.Strategy,
         RenderMode = x.RenderMode, Scope = x.Scope, ClrTypeName = x.ClrTypeName,
         AssemblyName = x.AssemblyName, AssetMount = x.AssetMount, AllowOverride = x.AllowOverride,
+        Extra = x.Origin == ContentOrigin.Package && manifest is not null ? ManifestAssetPacker.PackExtra(manifest) : null,
     };
 }

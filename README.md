@@ -293,7 +293,10 @@ only — never Interactive WebAssembly (a hard .NET boundary).
   soft-disable — then reloads the live catalog. **No assembly is loaded yet** (see below)
 - 📋 `PackageContentSource` runtime `.idea` load via collectible ALC (resolves the registered package
   descriptors to live types) — deferred as the high-risk, attended step
-- 📋 `/_ideas` asset file provider + per-page Component-asset de-duplication into `<head>`
+- ✅ `PageAssetCollector` (pure, Core): cascade-orders + dedupes a page's package-citizen css/scripts for
+  `<head>` hoisting, fed by a no-schema manifest→`ContentDescriptor.Extra` data path at catalog reload
+- 📋 `/_ideas` asset file provider; `<CmsHead>` component-asset binding + compiled-citizen asset harvest
+  (the remaining Razor/`Activator` wiring — attended)
 - 📋 Move official content into MindAttic.UiUx (canonical source); then collapse `MindAttic.Frontpage`
   and `MindAttic.Legion.Frontend` into Pages
 

@@ -156,6 +156,13 @@ else if (_context is not null)
             _themeScripts = meta.ScriptUrls;
         }
 
+        // ATTENDED TODO (Phase-5 Increment C wiring — needs a human to eyeball rendered <head>):
+        //   var head = PageAssetCollector.Collect(<the page body html>, Catalog, PageAssets.PackageAssetsOf);
+        // then pass head.Css / head.Scripts to <CmsHead ComponentCss=.. ComponentScripts=..> (params not yet
+        // added — see CmsHead.razor). The collector + the no-schema manifest→Extra data path are built and
+        // NUnit-tested in Core; only this Razor binding and the compiled-citizen asset harvest (Activator on
+        // ComponentBase, replacing per-instance inline emission) remain — deliberately NOT done unattended.
+
         var globalSetting = await db.Settings.FirstOrDefaultAsync(s => s.Scope == "Host" && s.Key == "css.global");
         _globalCss = globalSetting?.Value;
 

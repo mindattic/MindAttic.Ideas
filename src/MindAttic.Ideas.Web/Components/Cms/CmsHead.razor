@@ -17,6 +17,10 @@
 {
     <script src="@url"></script>
 }
+@* ATTENDED TODO (Phase-5 Increment C): add `[Parameter] ComponentCss` (emit as <link> here, AFTER ThemeCss
+   and BEFORE ThemeScripts) and `[Parameter] ComponentScripts` (emit as <script> after ThemeScripts), keeping
+   the frozen band Global -> ThemeGlobal -> Theme -> [collector css] -> ThemeScripts -> [collector scripts].
+   The values come from PageAssetCollector.Collect in PageHost (see its TODO). Not wired unattended. *@
 
 @code {
     [Parameter] public string? GlobalCss { get; set; }
