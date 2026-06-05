@@ -1,11 +1,15 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using MindAttic.Authentication;
+using MindAttic.Authentication.Web;
 using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.DependencyInjection;
 using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Entities;
 using MindAttic.Ideas.Core.Services;
 using MindAttic.Ideas.Web.Components;
+using MindAttic.Ideas.Web.Services;
 using MindAttic.Legion;
 using MindAttic.Vault.Configuration;
 using MindAttic.Vault.DependencyInjection;
@@ -13,7 +17,15 @@ using MindAttic.Vault.DependencyInjection;
 var builder = WebApplication.CreateBuilder(args);
 
 // --- MindAttic.Vault: all credentials/config flow through the Vault chain (A6). No User Secrets. ---
-builder.Configuration.AddMindAtticVaultFiles().AddEnvironmentVariables();
+// "Security" is the MindAttic.Authentication trust domain (pepper, bootstrap-token, reset-token-key);
+// it is NOT in the default bucket list, so it must be named explicitly or the auth secrets at
+// %APPDATA%\MindAttic\Security\providers.json never bind and AuthBootstrapper fail-closes.
+builder.Configuration
+    .AddMindAtticVaultFiles(o => o.Buckets = new[]
+    {
+        "LLM", "Brokers", "Tokens", "Subtitles", "Notifications", "AudioStore", "Security",
+    })
+    .AddEnvironmentVariables();
 builder.Services.AddMindAtticVault(builder.Configuration);
 
 // Connection string resolves through config/env (Vault-compatible); LocalDB fallback for dev.
@@ -23,7 +35,7 @@ var connectionString =
     ?? "Server=(localdb)\\MSSQLLocalDB;Database=MindAtticIdeas;Trusted_Connection=True;TrustServerCertificate=True";
 
 // --- CMS Core: EF, discovery over this assembly's citizens + referenced Idea RCLs, catalog, gate,
-//     auth/seed. The MindAttic front page ships as a compiled Page Idea (an RCL NuGet). ---
+//     seed. The MindAttic front page ships as a compiled Page Idea (an RCL NuGet). ---
 builder.Services.AddIdeasCore(
     connectionString,
     typeof(Program).Assembly,
@@ -32,41 +44,58 @@ builder.Services.AddIdeasCore(
 // --- MindAttic.Legion: LLM + voting (A7). Zero-config; keys resolve via Vault when used. ---
 builder.Services.AddLegionClient();
 
-// --- Blazor (global InteractiveServer). ---
+// --- Blazor (global InteractiveServer available; auth pages stay static SSR). ---
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
-builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
 
-// --- Auth: cookie (ported from MindAttic.Frontpage). Login endpoint + SecurityStamp revalidation
-//     arrive with the Phase-2 admin UI; the scheme + policies are wired now so they never change. ---
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(o =>
-    {
-        o.Cookie.Name = "Ideas.Auth";
-        o.LoginPath = "/admin/login";
-        o.Cookie.HttpOnly = true;
-        o.Cookie.SameSite = SameSiteMode.Strict;
-        o.ExpireTimeSpan = TimeSpan.FromDays(30);
-        o.SlidingExpiration = true;
-    });
-builder.Services.AddAuthorization(o =>
+// --- Auth: the unified, Vault-backed MindAttic.Authentication engine (FOUNDATION_AMENDMENTS A16),
+//     replacing the interim cookie/AuthService stack. It registers the cookie schemes, MaPolicies.Admin,
+//     Data Protection, cascading auth state + a revalidating provider, and all auth services over
+//     CmsDbContext (the IAuthDataContext). MFA is off for now ⇒ MaPolicies.Admin is role-only. ---
+builder.Services.AddMindAtticAuthentication<CmsDbContext>(builder.Configuration, o =>
 {
-    o.AddPolicy("Admin", p => p.RequireRole(UserRoles.Admin));
-    o.AddPolicy("AuthorRawMarkup", p => p.RequireClaim(CmsClaims.AuthorRawMarkup));
+    o.AppName = "Ideas";                                   // per-app Data Protection trust boundary (no cross-app SSO)
+    o.IsProduction = !builder.Environment.IsDevelopment();
+    // Keep the Ideas-owned policies working on the library's principal. Neither name is the canonical
+    // ma:admin, so this composes with the library's own MaPolicies.Admin registration.
+    o.ConfigureAdditionalPolicies = authz =>
+    {
+        authz.AddPolicy("Admin", p => p.RequireRole(MaRoles.Admin));
+        authz.AddPolicy("AuthorRawMarkup", p => p.RequireClaim(CmsClaims.AuthorRawMarkup));
+    };
+    if (o.IsProduction)
+    {
+        // PROD: persist + protect the Data Protection key ring (the library fail-closes if absent in prod).
+        o.ConfigureDataProtection = dp =>
+        {
+            var cred = new Azure.Identity.DefaultAzureCredential();
+            var blobUri = builder.Configuration["DataProtection:BlobUri"]
+                ?? throw new InvalidOperationException("DataProtection:BlobUri is required in production.");
+            var kvKeyId = builder.Configuration["DataProtection:KeyVaultKeyId"]
+                ?? throw new InvalidOperationException("DataProtection:KeyVaultKeyId is required in production.");
+            dp.PersistKeysToAzureBlobStorage(new Uri(blobUri), cred)
+              .ProtectKeysWithAzureKeyVault(new Uri(kvKeyId), cred);
+        };
+    }
+    // DEV: the library persists the key ring to %APPDATA%\MindAttic\DataProtection\Ideas.
 });
+
+// Re-emit the Ideas Cms.AuthorRawMarkup claim at sign-in for trusted authors (Admins).
+builder.Services.AddScoped<IMaClaimsAugmentor, IdeasClaimsAugmentor>();
 
 var app = builder.Build();
 
-// --- Startup: migrate -> discover citizens -> idempotent seed. ---
+// --- Startup: migrate -> discover citizens -> seed CMS content -> bootstrap admin. ---
+// MigrateAsync is dev-only (prod runs DDL in the CI migrate job under db_ddladmin). AuthBootstrapper
+// seeds 'admin' from the Vault Security:bootstrap-token (MustChangePassword) and no-ops once a user exists.
 using (var scope = app.Services.CreateScope())
 {
     var sp = scope.ServiceProvider;
-    await using (var db = await sp.GetRequiredService<IDbContextFactory<CmsDbContext>>().CreateDbContextAsync())
-        await db.Database.MigrateAsync();
+    if (app.Environment.IsDevelopment())
+        await sp.GetRequiredService<CmsDbContext>().Database.MigrateAsync();
     await sp.GetRequiredService<DiscoveryService>().RunAsync();
-    var adminUser = builder.Configuration["Ideas:AdminUsername"] ?? "admin";
-    var adminPass = builder.Configuration["Ideas:AdminPassword"] ?? "ChangeMe!2026";
-    await sp.GetRequiredService<SeedService>().SeedAsync(adminUser, adminPass);
+    await sp.GetRequiredService<SeedService>().SeedAsync();
+    await sp.GetRequiredService<MindAttic.Authentication.Services.AuthBootstrapper>().SeedAdminAsync();
 }
 
 if (!app.Environment.IsDevelopment())
@@ -76,13 +105,26 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
+
+// Honor the reverse proxy's forwarded scheme/IP (secure cookie + real client IP) before auth.
+var forwardedHeaders = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+};
+forwardedHeaders.KnownIPNetworks.Clear();
+forwardedHeaders.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeaders);
+
+// authn + authz + forced-step (MustChangePassword → /account/change-password) + scoped CSP on the auth surface.
+app.UseMindAtticAuthentication();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
 // Reserved runtime-asset route (Phase 5 fills the runtime arm via a PhysicalFileProvider).
 app.MapGet("/_ideas/{*path}", () => Results.NotFound());
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+
+// MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
+app.MapMindAtticAuthEndpoints();
 
 app.Run();

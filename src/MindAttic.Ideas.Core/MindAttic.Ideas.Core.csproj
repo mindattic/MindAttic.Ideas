@@ -19,6 +19,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <!-- The unified, Vault-backed auth engine. CmsDbContext implements its IAuthDataContext seam. -->
+    <PackageReference Include="MindAttic.Authentication" Version="1.0.0" />
     <!-- Rendering-time dependencies the ADR mandates: HTML sanitizer + HTML tokenizer.
          AngleSharp pinned to the exact version HtmlSanitizer requires (no version clash). -->
     <PackageReference Include="HtmlSanitizer" Version="9.0.892" />

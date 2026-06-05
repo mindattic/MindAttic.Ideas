@@ -5,9 +5,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Ecosystem citizens (local feed): credentials + LLM/voting. -->
-    <PackageReference Include="MindAttic.Vault" Version="0.3.1" />
+    <!-- Ecosystem citizens (local feed): credentials + LLM/voting + auth. -->
+    <PackageReference Include="MindAttic.Vault" Version="1.0.0" />
     <PackageReference Include="MindAttic.Legion" Version="2.6.0" />
+    <PackageReference Include="MindAttic.Authentication" Version="1.0.0" />
+    <!-- PROD Data Protection key-ring persistence + at-rest protection (DefaultAzureCredential ->
+         Blob + Key Vault). Only the production code path uses these; dev persists to the file system. -->
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.3" />
+    <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.3" />
     <!-- A compiled Page Idea (the MindAttic front page), consumed as an RCL NuGet. Its static web
          assets serve at _content/MindAttic.Ideas.Page.MindAtticFrontpage/; Abstractions is host-provided. -->
     <PackageReference Include="MindAttic.Ideas.Page.MindAtticFrontpage" Version="1.0.0" />

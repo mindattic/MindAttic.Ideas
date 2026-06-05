@@ -19,6 +19,10 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services, string connectionString, params Assembly[] citizenAssemblies)
     {
         services.AddDbContextFactory<CmsDbContext>(o => o.UseSqlServer(connectionString));
+        // The MindAttic.Authentication seam resolves AddScoped<IAuthDataContext>(sp => GetRequiredService<CmsDbContext>()),
+        // and AuthBootstrapper/IUserStore are scoped — so CmsDbContext needs a SCOPED registration too (the
+        // factory alone doesn't provide one). Both share the same connection string.
+        services.AddDbContext<CmsDbContext>(o => o.UseSqlServer(connectionString));
 
         // Discovery + catalog (singletons: one shared catalog snapshot for the app).
         services.AddSingleton<ITypeResolver, DefaultTypeResolver>();
@@ -31,8 +35,7 @@ public static class ServiceCollectionExtensions
         // Rendering.
         services.AddSingleton<IRawContentGate, RawContentGate>();
 
-        // Auth + seed.
-        services.AddScoped<AuthService>();
+        // Seed (CMS content). Auth seeding is the library's AuthBootstrapper, wired in the Web host.
         services.AddScoped<SeedService>();
 
         return services;

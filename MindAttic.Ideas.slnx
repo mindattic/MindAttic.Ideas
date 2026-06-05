@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/MindAttic.Ideas.Abstractions/MindAttic.Ideas.Abstractions.csproj" />
     <Project Path="src/MindAttic.Ideas.Core/MindAttic.Ideas.Core.csproj" />
+    <Project Path="src/MindAttic.Ideas.Tests/MindAttic.Ideas.Tests.csproj" />
     <Project Path="src/MindAttic.Ideas.Web/MindAttic.Ideas.Web.csproj" />
     <Project Path="src/MindAttic.Ideas.Sdk/MindAttic.Ideas.Sdk.csproj" />
   </Folder>

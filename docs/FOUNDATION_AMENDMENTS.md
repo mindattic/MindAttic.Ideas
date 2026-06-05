@@ -165,3 +165,58 @@ as ONE canonical core distributed as MANY wrappers/exports: raw js/css/html → 
 (MindAttic.Ideas) → later React, Angular, etc. The CMS↔UiUx tie stays thin (load raw assets by pinned-tag
 URL; never reimplement). Phase-1 content lives inline in the Web project as a render proof; its permanent
 home is UiUx.
+
+## A15 — Deployment: Windows App Service, StreetSamurai-style (supersedes IMPLEMENTATION_PLAN §10 "Linux")
+
+MindAttic.Ideas deploys the SAME way StreetSamurai does — **NOT Linux**. The plan doc's "App Service
+(Linux)" is wrong. Target: a GitHub Actions pipeline on `windows-latest`, **build → migrate → deploy** to
+an **Azure App Service (Windows)** + **Azure SQL**:
+- **build** — `dotnet publish` the Web host as an artifact; private packages (Vault, Legion, Authentication,
+  Psst) restored from a local-packages folder via `NuGet.config` alongside nuget.org.
+- **migrate** — apply EF migrations and enable SQL `SYSTEM_VERSIONING` for the temporal `Pages` table,
+  authenticated via an **OIDC service principal** with `db_ddladmin` (the App Service managed identity is
+  read/write only and cannot run DDL).
+- **deploy** — push the artifact to the App Service slot.
+
+Windows hosting means `net10.0-windows` packages (e.g. **MindAttic.Psst**) are fine to depend on. The
+auth email channel still uses an `IAuthEmailSender` abstraction (clean packaging/testability + lets Tutor,
+if non-Windows, swap the transport), with a Psst-backed implementation for Windows hosts.
+
+## A16 — Authentication is MindAttic.Authentication, not Ideas-owned (supersedes the ported BCrypt auth)
+
+The canonical auth engine for MindAttic.Ideas is the **[MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication)**
+Razor Class Library — the same hardened engine StreetSamurai and Tutor adopt, so the three authenticate
+**identically** instead of each rolling its own. It supersedes the **ported, interim** BCrypt auth now in
+Core (`Services/AuthService.cs` + `Entities/AuthEntities.cs`) — the very implementation that package's own
+audit flags as "🟡 minimal: BCrypt ✓ but SecurityStamp revalidation unwired, no lockout/MFA." Ideas does
+**not** grow its own auth further; new auth capability lands in the package.
+
+**What the package owns** (Argon2id+pepper over a Vault pepper, persistent DB-backed lockout, TOTP +
+recovery codes, 8h-absolute/30m-idle `__Host-` cookie, SecurityStamp revalidated ≤60 s, DP key-ring via
+Vault, HIBP, audited reset) — built to OWASP ASVS L2/L3 · NIST SP 800-63B AAL2. Its **only** hard
+dependency is **MindAttic.Vault** (A6), and its email notices flow through the `IAuthEmailSender` channel
+of A15 (Psst-backed on Windows).
+
+**Adoption contract (target shape — the wiring Ideas commits to):**
+- `Program.cs`: `builder.Services.AddMindAtticAuthentication(builder.Configuration, o => { o.AppName = "Ideas"; … });`
+  then `app.UseMindAtticAuthentication();` (forwarded-headers → authn → authz → antiforgery, order asserted
+  by the library's fail-closed `IStartupFilter`) and `app.MapMindAtticAuthEndpoints();` (`/_ma-auth/login`,
+  `/logout`, `/change-password`, `/mfa-challenge` — **endpoints own sign-in, never components**).
+- `o.AppName = "Ideas"` is the **per-app trust boundary**: per-app `SetApplicationName` + isolated Data
+  Protection ⇒ a cookie stolen from StreetSamurai/Tutor cannot authenticate to Ideas. **No cross-app SSO in v1.**
+- The CMS DbContext applies the package's schema (`b.ApplyMindAtticAuthConfiguration()`), which owns an
+  isolated **`auth`** schema; Ideas keeps its own connection and runs `dotnet ef migrations add`. The host
+  checks the package's **migration fingerprint** at startup. The interim `Users` table is dropped on adoption.
+- Login UI is the package's presentation-only static-SSR `<MaLogin/>` (antiforgery on every POST), branded
+  via constrained `AuthUiOptions` (text + allow-listed logo/CSS — never raw markup).
+
+**Mapping onto the existing Ideas trust model:** the `Cms.AuthorRawMarkup` claim and the Admin role
+(README "Trust & security" / A-ratification "author demotion") ride on the package's principal — the raw-markup
+gate (`IRawContentGate`) keys off that claim exactly as today; only the *issuer* of the principal changes.
+The `AuthorTrustVersion` epoch-bump demotion path is unaffected.
+
+**Timing (foundation-optional, like A6/A7):** the package is mid-build (crypto core + canonical EF model
+done; DI/middleware/endpoints/components/`MaLogin` not yet shipped) and is **not** in the local feed. Per
+its locked order, Ideas adopts **after** the library completes **and after** StreetSamurai — at which point
+the ported `AuthService`/`User` are deleted and the Phase-2 Admin login wires to the package. Until then the
+interim BCrypt auth stands unchanged. This is a ratified direction, not a Phase-0/1 render dependency.

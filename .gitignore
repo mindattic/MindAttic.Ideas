@@ -23,3 +23,8 @@ packages/
 *.log
 Thumbs.db
 .DS_Store
+
+# Secrets never live in the repo — auth/dev secrets are in %APPDATA%\MindAttic\ (Vault).
+# Defensive: a stray .env must never be stageable. (The auth design uses NO .env.)
+.env
+*.env

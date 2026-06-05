@@ -1,24 +1,9 @@
 namespace MindAttic.Ideas.Core.Entities;
 
-/// <summary>
-/// Admin account. Ported from MindAttic.Frontpage: string Id, BCrypt PasswordHash, SecurityStamp
-/// revalidated on every request, MustChangePassword bootstrap, soft-disable via IsActive.
-/// </summary>
-public sealed class User
-{
-    public string Id { get; set; } = Guid.NewGuid().ToString("N");
-    public string Username { get; set; } = "";
-    public string DisplayName { get; set; } = "";
-    public string? Email { get; set; }
-    public string PasswordHash { get; set; } = "";
-    public string Role { get; set; } = UserRoles.Admin;
-    /// <summary>Rotated on password/role change; mismatch on validate forces logout.</summary>
-    public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
-    public bool MustChangePassword { get; set; }
-    public DateTime? LastLoginUtc { get; set; }
-    public bool IsActive { get; set; } = true;
-    public DateTime CreatedUtc { get; set; }
-}
+// The interim BCrypt `User` entity was retired on adoption of MindAttic.Authentication
+// (FOUNDATION_AMENDMENTS A16). Identity now lives in the library's `auth`-schema AuthUser
+// table (CmsDbContext implements IAuthDataContext). UserRoles + CmsClaims stay — they're
+// the Ideas-owned trust vocabulary the raw-content gate and claims augmentor key off of.
 
 /// <summary>Role constants. Admin holds the <c>Cms.AuthorRawMarkup</c> claim (trusted inline JS/HTML).</summary>
 public static class UserRoles

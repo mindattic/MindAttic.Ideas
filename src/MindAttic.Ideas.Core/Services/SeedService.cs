@@ -10,9 +10,9 @@ namespace MindAttic.Ideas.Core.Services;
 /// clobber admin-edited content. Seeds the default Site, global CSS, an admin user, and a home Data
 /// page that composes the Cyberspace theme + a component include — the zero-deploy render proof.
 /// </summary>
-public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory, AuthService auth)
+public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
 {
-    public async Task SeedAsync(string adminUser, string adminPassword, CancellationToken ct = default)
+    public async Task SeedAsync(CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         var now = DateTime.UtcNow;
@@ -51,7 +51,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory, AuthS
                 BodyHtml = HomeBodyHtml,
                 PageCss = ".ma-home{padding:2rem;font-family:system-ui}",
                 BodyTrust = ContentTrust.Author,
-                AuthoredByUserId = adminUser,
+                AuthoredByUserId = "system-seed",
                 IsPublished = true, Enabled = true,
                 CreatedUtc = now, ModifiedUtc = now,
             });
@@ -74,8 +74,6 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory, AuthS
             });
             await db.SaveChangesAsync(ct);
         }
-
-        await auth.SeedUserAsync(adminUser, "Administrator", adminPassword, ct);
     }
 
     // Proves the full path: free-form HTML rendered through the Cyberspace theme, a Module that

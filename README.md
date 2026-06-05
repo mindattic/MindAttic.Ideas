@@ -177,7 +177,12 @@ A per-page tweak is either **inline CSS** in the Page definition, or an uploaded
 
 ---
 
-## Trust & security ✅
+## Trust & security ✅ *(raw-content gate)* / 📋 *(auth via MindAttic.Authentication)*
+
+Sign-in is **not** Ideas-owned: it comes from the **[MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication)**
+package (Argon2id+pepper, Vault-backed, lockout, TOTP/MFA, hardened sessions) — the same engine
+StreetSamurai and Tutor use. The BCrypt `AuthService`/`User` in Core today is an **interim port**, replaced
+on adoption (FOUNDATION_AMENDMENTS **A16**). What stays Ideas-owned is the *raw-content* trust gate below.
 
 You intentionally author **inline JavaScript** in trusted pages — that's a feature, not a leak. The trust
 boundary is **author identity at write time**:
@@ -203,6 +208,13 @@ MindAttic.Ideas reuses the ecosystem's shared infrastructure:
 - **[MindAttic.Legion](https://github.com/mindattic/MindAttic.Legion)** — LLM calls + multi-model
   *voting / consensus / scoring*. In-proc library: `services.AddLegionClient()` / `AddLLMVoting(...)`;
   call `LegionClient.CallAsync(...)`, `LlmVotingService.VoteAsync/DecideAsync/ScoreAsync`. Keys via Vault.
+- **[MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication)** 📋 — the canonical
+  auth engine for all three apps (Argon2id+pepper over a Vault pepper, persistent lockout, TOTP/MFA,
+  `__Host-` cookies, SecurityStamp ≤60 s, HIBP). Target wiring: `services.AddMindAtticAuthentication(cfg, o
+  => o.AppName = "Ideas")` + `app.UseMindAtticAuthentication()` + `MapMindAtticAuthEndpoints()`; the CMS
+  DbContext applies its isolated `auth` schema (`b.ApplyMindAtticAuthConfiguration()`). `AppName = "Ideas"`
+  is a hard per-app trust boundary (no cross-app SSO). **Supersedes** the interim BCrypt auth in Core; the
+  `Cms.AuthorRawMarkup` claim rides on its principal. Adopted once the package ships (FOUNDATION_AMENDMENTS **A16**).
 - **[MindAttic.UiUx](https://github.com/mindattic/MindAttic.UiUx)** — the **single canonical source** for
   all official Components, Themes, and Controls. UiUx has **no build**: one source distributed as **many
   wrappers/exports**:
@@ -264,7 +276,8 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 - 📋 Admin Inbox + disabled-dependency render guard wiring
 
 ### Admin & CLI (Phase 2)
-- 📋 Admin: page CRUD, theme/component/control assignment, file manager, roles, login + SecurityStamp
+- 📋 Admin: page CRUD, theme/component/control assignment, file manager, roles; login/SecurityStamp via
+  the **MindAttic.Authentication** package (A16) — not Ideas-owned
 - 📋 `ma-idea` CLI: pack / install / list / upgrade / disable
 
 ### Packages & migration (Phase 5/6)

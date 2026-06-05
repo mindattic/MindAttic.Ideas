@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using MindAttic.Authentication.Data;
+using MindAttic.Authentication.Entities;
 using MindAttic.Ideas.Core.Entities;
 
 namespace MindAttic.Ideas.Core.Data;
@@ -6,8 +8,10 @@ namespace MindAttic.Ideas.Core.Data;
 /// <summary>
 /// The CMS database. One append-only initial migration; all later migrations are additive.
 /// <see cref="Page"/> is system-versioned (temporal) for wiki-like history.
+/// Also the MindAttic.Authentication data seam (<see cref="IAuthDataContext"/>): the library's
+/// identity tables live here in their isolated <c>auth</c> schema (FOUNDATION_AMENDMENTS A16).
 /// </summary>
-public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbContext(options)
+public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbContext(options), IAuthDataContext
 {
     public DbSet<Site> Sites => Set<Site>();
     public DbSet<Page> Pages => Set<Page>();
@@ -16,7 +20,16 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<SettingEntry> Settings => Set<SettingEntry>();
     public DbSet<AdminInboxMessage> AdminInbox => Set<AdminInboxMessage>();
-    public DbSet<User> Users => Set<User>();
+
+    // MindAttic.Authentication identity tables (auth schema) — IAuthDataContext.
+    public DbSet<AuthUser> AuthUsers => Set<AuthUser>();
+    public DbSet<AuthUserMfa> AuthUserMfa => Set<AuthUserMfa>();
+    public DbSet<AuthRecoveryCode> AuthRecoveryCodes => Set<AuthRecoveryCode>();
+    public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
+    public DbSet<AuthLoginThrottle> AuthLoginThrottles => Set<AuthLoginThrottle>();
+    public DbSet<AuthAuditLog> AuthAuditLog => Set<AuthAuditLog>();
+    public DbSet<AuthPasswordHistory> AuthPasswordHistory => Set<AuthPasswordHistory>();
+    public DbSet<AuthPasswordResetToken> AuthPasswordResetTokens => Set<AuthPasswordResetToken>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -125,17 +138,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.Property(x => x.Status).HasMaxLength(16);
         });
 
-        b.Entity<User>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => x.Username).IsUnique();
-            e.Property(x => x.Id).HasMaxLength(64);
-            e.Property(x => x.Username).HasMaxLength(50).IsRequired();
-            e.Property(x => x.DisplayName).HasMaxLength(120);
-            e.Property(x => x.Email).HasMaxLength(256);
-            e.Property(x => x.PasswordHash).HasMaxLength(200);
-            e.Property(x => x.Role).HasMaxLength(40);
-            e.Property(x => x.SecurityStamp).HasMaxLength(64);
-        });
+        // MindAttic.Authentication identity tables — all 8 in the isolated 'auth' schema.
+        b.ApplyMindAtticAuthConfiguration();
     }
 }
