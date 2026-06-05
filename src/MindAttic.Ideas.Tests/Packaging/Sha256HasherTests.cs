@@ -9,8 +9,9 @@ public class Sha256HasherTests
     [Test]
     public void Deterministic_AcrossTwoReadsOfIdenticalBytes()
     {
-        var bytes = Encoding.UTF8.GetBytes("the quick brown fox");
-        Assert.That(Sha256Hasher.OfBytes(bytes), Is.EqualTo(Sha256Hasher.OfBytes(bytes)));
+        var first = Sha256Hasher.OfBytes(Encoding.UTF8.GetBytes("the quick brown fox"));
+        var second = Sha256Hasher.OfBytes(Encoding.UTF8.GetBytes("the quick brown fox"));
+        Assert.That(first, Is.EqualTo(second));
     }
 
     [Test]

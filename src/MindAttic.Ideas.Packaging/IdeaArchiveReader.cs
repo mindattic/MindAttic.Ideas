@@ -95,6 +95,36 @@ public sealed class IdeaArchiveReader : IDisposable
         return !segs.Contains("..");                                            // no parent-dir escape
     }
 
+    /// <summary>
+    /// Extract every entry under <paramref name="prefix"/> to <paramref name="destDir"/>, preserving the
+    /// relative path below the prefix. Each entry is screened by <see cref="IsSafeEntryPath"/> AND the
+    /// resolved target is re-checked to sit under <paramref name="destDir"/> (double zip-slip guard);
+    /// unsafe entries are skipped. Returns the relative paths actually written.
+    /// </summary>
+    public IReadOnlyList<string> ExtractTo(string destDir, string prefix = "bin/")
+    {
+        var destFull = Path.GetFullPath(destDir);
+        var destWithSep = destFull.EndsWith(Path.DirectorySeparatorChar) ? destFull : destFull + Path.DirectorySeparatorChar;
+        var written = new List<string>();
+
+        foreach (var e in _zip.Entries)
+        {
+            if (!e.FullName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                || e.FullName.Length <= prefix.Length || e.FullName.EndsWith('/')) continue;
+
+            var rel = e.FullName[prefix.Length..];
+            if (!IsSafeEntryPath(rel)) continue;
+
+            var target = Path.GetFullPath(Path.Combine(destFull, rel.Replace('/', Path.DirectorySeparatorChar)));
+            if (!target.StartsWith(destWithSep, StringComparison.OrdinalIgnoreCase)) continue;   // escapes dest -> skip
+
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            e.ExtractToFile(target, overwrite: true);
+            written.Add(rel);
+        }
+        return written;
+    }
+
     public void Dispose()
     {
         _zip.Dispose();

@@ -34,7 +34,8 @@ public interface IPackageInstallService
 public sealed class PackageInstallService(
     IDbContextFactory<CmsDbContext> dbFactory,
     DiscoveryService discovery,
-    IPackageBlobStore blobStore) : IPackageInstallService
+    IPackageBlobStore blobStore,
+    IPackageExtractor extractor) : IPackageInstallService
 {
     public async Task<InstallPlan> InstallAsync(Stream ideaBytes, bool allowOverride, CancellationToken ct = default)
     {
@@ -81,9 +82,11 @@ public sealed class PackageInstallService(
 
         var now = DateTime.UtcNow;
 
-        // Persist the verbatim bytes (the source of truth the deferred ALC loader will extract). Done only
-        // once the install is going to proceed, so a rejected/no-op package writes nothing.
+        // Persist the verbatim bytes (the source of truth) and, for a code package, extract bin/ to disk so
+        // the ALC-aware resolver can load it. Done only once the install is going to proceed.
         var blobPath = await blobStore.SaveAsync(manifest.Category, manifest.Key, manifest.Version, bytes, ct);
+        if (string.Equals(manifest.Kind, "code", StringComparison.Ordinal))
+            extractor.Extract(archive, manifest.Category, manifest.Key, manifest.Version);
 
         // ---- Registry row (idempotent upsert by the unique (Category,Key,Version)). ----
         var pkg = installedRows.FirstOrDefault(p => p.Version == manifest.Version)

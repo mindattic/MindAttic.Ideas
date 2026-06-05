@@ -35,7 +35,7 @@ public class PackageInstallServiceTests
         var catalog = new ContentCatalog(new NullResolver());
         var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
         var blobs = new InMemoryPackageBlobStore();
-        return (new PackageInstallService(factory, discovery, blobs), factory, catalog, blobs);
+        return (new PackageInstallService(factory, discovery, blobs, new NullPackageExtractor()), factory, catalog, blobs);
     }
 
     [Test]
@@ -66,6 +66,26 @@ public class PackageInstallServiceTests
             Assert.That(def.Kind, Is.EqualTo(ContentKind.Component));
             Assert.That(def.AssetMount, Is.EqualTo("/_ideas/ui.tooltip/1"));
         });
+    }
+
+    [Test]
+    public async Task Install_CodePackage_ExtractsBinForTheResolver()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "ma-inst-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var factory = new InMemoryFactory("pkg_" + Guid.NewGuid().ToString("N"));
+            var catalog = new ContentCatalog(new NullResolver());
+            var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
+            var extractor = new PackageExtractor(root);
+            var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), extractor);
+
+            await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Component"), allowOverride: false);
+
+            // CodePackage ships bin/Demo.dll with manifest AssemblyName "Demo".
+            Assert.That(extractor.IsExtracted("Component", "ui.tooltip", 1, "Demo"), Is.True);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
     }
 
     [Test]

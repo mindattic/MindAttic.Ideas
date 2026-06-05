@@ -24,8 +24,13 @@ public static class ServiceCollectionExtensions
         // factory alone doesn't provide one). Both share the same connection string.
         services.AddDbContext<CmsDbContext>(o => o.UseSqlServer(connectionString));
 
-        // Discovery + catalog (singletons: one shared catalog snapshot for the app).
-        services.AddSingleton<ITypeResolver, DefaultTypeResolver>();
+        // Discovery + catalog (singletons: one shared catalog snapshot for the app). The ALC-aware resolver
+        // loads PACKAGE citizens through a per-package collectible context and delegates every other
+        // descriptor to the default resolver — so compiled content is unchanged and package types resolve
+        // once their bytes are extracted (otherwise a placeholder).
+        services.AddSingleton<DefaultTypeResolver>();
+        services.AddSingleton<ITypeResolver>(sp => new AlcAwareTypeResolver(
+            sp.GetRequiredService<DefaultTypeResolver>(), sp.GetRequiredService<IPackageExtractor>()));
         services.AddSingleton<ContentCatalog>();
         services.AddSingleton<IContentCatalog>(sp => sp.GetRequiredService<ContentCatalog>());
         var assemblies = citizenAssemblies.Length > 0 ? citizenAssemblies : new[] { Assembly.GetEntryAssembly()! };
@@ -44,9 +49,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IContentLifecycleService, ContentLifecycleService>();
         services.AddScoped<IPageAdminService, PageAdminService>();
 
-        // Phase-5: .idea package install (validate + persist bytes + register rows; no ALC load yet).
-        // Local file store by default; the ADR's Azure Blob backing slots in behind IPackageBlobStore.
+        // Phase-5: .idea package install (validate + persist bytes + extract + register rows + ALC resolve).
+        // Local file store/extractor by default; the ADR's Azure Blob backing slots in behind IPackageBlobStore.
         services.AddSingleton<IPackageBlobStore>(_ => new LocalFilePackageBlobStore());
+        services.AddSingleton<IPackageExtractor>(_ => new PackageExtractor());
         services.AddScoped<IPackageInstallService, PackageInstallService>();
 
         return services;

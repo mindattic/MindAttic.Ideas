@@ -291,8 +291,11 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 - ✅ Host-side install: `PackageInstallService` validates a `.idea` and registers the `InstalledPackage`
   registry row + a mirrored `Origin=Package` catalog row, idempotent, prior versions retained on upgrade,
   soft-disable — then reloads the live catalog. **No assembly is loaded yet** (see below)
-- 📋 `PackageContentSource` runtime `.idea` load via collectible ALC (resolves the registered package
-  descriptors to live types) — deferred as the high-risk, attended step
+- ✅ Runtime `.idea` load via collectible ALC: install extracts `bin/`, and `AlcAwareTypeResolver` loads
+  package citizens through a per-package `CmsPackageLoadContext` (host types unify by reference identity;
+  others delegate to the default resolver). `Unload` is never called (soft, effective-on-restart). The
+  load + unification mechanics are NUnit-verified; ⚠️ **end-to-end render of a real packed `.idea` through
+  the running host is not yet verified** (needs an attended run)
 - ✅ `PageAssetCollector` (pure, Core) + `<CmsHead>` binding: a page's package-citizen css/scripts are
   cascade-ordered, deduped, and hoisted into `<head>` (band: Global → Theme → **Component** → Page →
   inline), fed by a no-schema manifest→`ContentDescriptor.Extra` data path at catalog reload
