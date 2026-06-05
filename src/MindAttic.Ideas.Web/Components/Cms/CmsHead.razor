@@ -1,6 +1,8 @@
-@* Emits CSS in the FROZEN cascade order: GLOBAL -> THEME. Page-level CSS (tier 3) is emitted by the
-   page body in <body>, and inline style="" is tier 4 by DOM nature — so document order yields the
-   locked Global -> Theme -> Page -> inline cascade. This order lives in exactly ONE place. *@
+@* Emits CSS in the FROZEN cascade order: GLOBAL -> THEME -> COMPONENT. Page-level CSS (tier 3) is emitted
+   by the page body in <body>, and inline style="" is tier 4 by DOM nature — so document order yields the
+   locked Global -> Theme -> Component -> Page -> inline cascade. ComponentCss/ComponentScripts are the
+   deduped package-citizen head assets hoisted by PageAssetCollector (empty unless a package citizen with
+   assets is on the page, so existing pages render byte-identically). This order lives in exactly ONE place. *@
 @if (!string.IsNullOrWhiteSpace(GlobalCss))
 {
     <style>@((MarkupString)GlobalCss!)</style>
@@ -13,18 +15,26 @@
 {
     <link rel="stylesheet" href="@url" />
 }
+@foreach (var url in ComponentCss)
+{
+    <link rel="stylesheet" href="@url" />
+}
 @foreach (var url in ThemeScripts)
 {
     <script src="@url"></script>
 }
-@* ATTENDED TODO (Phase-5 Increment C): add `[Parameter] ComponentCss` (emit as <link> here, AFTER ThemeCss
-   and BEFORE ThemeScripts) and `[Parameter] ComponentScripts` (emit as <script> after ThemeScripts), keeping
-   the frozen band Global -> ThemeGlobal -> Theme -> [collector css] -> ThemeScripts -> [collector scripts].
-   The values come from PageAssetCollector.Collect in PageHost (see its TODO). Not wired unattended. *@
+@foreach (var url in ComponentScripts)
+{
+    <script src="@url"></script>
+}
 
 @code {
     [Parameter] public string? GlobalCss { get; set; }
     [Parameter] public IReadOnlyList<string> ThemeGlobalCss { get; set; } = Array.Empty<string>();
     [Parameter] public IReadOnlyList<string> ThemeCss { get; set; } = Array.Empty<string>();
     [Parameter] public IReadOnlyList<string> ThemeScripts { get; set; } = Array.Empty<string>();
+    /// <summary>Deduped package-citizen stylesheets, hoisted into &lt;head&gt; after the theme CSS.</summary>
+    [Parameter] public IReadOnlyList<string> ComponentCss { get; set; } = Array.Empty<string>();
+    /// <summary>Deduped package-citizen scripts, hoisted after the theme scripts.</summary>
+    [Parameter] public IReadOnlyList<string> ComponentScripts { get; set; } = Array.Empty<string>();
 }

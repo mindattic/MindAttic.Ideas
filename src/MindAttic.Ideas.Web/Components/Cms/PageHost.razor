@@ -23,7 +23,9 @@ else if (_context is not null)
         <CmsHead GlobalCss="@_globalCss"
                  ThemeGlobalCss="@_themeGlobalCss"
                  ThemeCss="@_themeCss"
-                 ThemeScripts="@_themeScripts" />
+                 ThemeScripts="@_themeScripts"
+                 ComponentCss="@_componentCss"
+                 ComponentScripts="@_componentScripts" />
     </HeadContent>
 
     <CascadingValue Value="_context" IsFixed="true">
@@ -52,6 +54,8 @@ else if (_context is not null)
     private IReadOnlyList<string> _themeGlobalCss = Array.Empty<string>();
     private IReadOnlyList<string> _themeCss = Array.Empty<string>();
     private IReadOnlyList<string> _themeScripts = Array.Empty<string>();
+    private IReadOnlyList<string> _componentCss = Array.Empty<string>();
+    private IReadOnlyList<string> _componentScripts = Array.Empty<string>();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -156,12 +160,14 @@ else if (_context is not null)
             _themeScripts = meta.ScriptUrls;
         }
 
-        // ATTENDED TODO (Phase-5 Increment C wiring — needs a human to eyeball rendered <head>):
-        //   var head = PageAssetCollector.Collect(<the page body html>, Catalog, PageAssets.PackageAssetsOf);
-        // then pass head.Css / head.Scripts to <CmsHead ComponentCss=.. ComponentScripts=..> (params not yet
-        // added — see CmsHead.razor). The collector + the no-schema manifest→Extra data path are built and
-        // NUnit-tested in Core; only this Razor binding and the compiled-citizen asset harvest (Activator on
-        // ComponentBase, replacing per-instance inline emission) remain — deliberately NOT done unattended.
+        // Hoist + dedupe the head assets of the PACKAGE citizens this page includes (the no-schema
+        // manifest->Extra data path feeds PageAssets.PackageAssetsOf; the collector + path are NUnit-tested
+        // in Core). Empty unless a package citizen with assets is on the page, so existing pages are
+        // unchanged. STILL ATTENDED: compiled-citizen asset harvest (Activator on ComponentBase, replacing
+        // its per-instance inline emission) is additive via the same delegate — left for an attended slot.
+        var head = PageAssetCollector.Collect(page.BodyHtml, Catalog, PageAssets.PackageAssetsOf);
+        _componentCss = head.Css;
+        _componentScripts = head.Scripts;
 
         var globalSetting = await db.Settings.FirstOrDefaultAsync(s => s.Scope == "Host" && s.Key == "css.global");
         _globalCss = globalSetting?.Value;
