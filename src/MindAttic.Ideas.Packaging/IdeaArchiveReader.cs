@@ -1,0 +1,103 @@
+using System.IO.Compression;
+
+namespace MindAttic.Ideas.Packaging;
+
+/// <summary>
+/// Read-only inspection of a <c>.idea</c> archive WITHOUT extracting it. Lists entries and reads the
+/// manifest in memory so the host can validate a package before any file ever touches disk (and before
+/// any assembly is ever loaded — that is Phase 5/B). Every entry path is screened by
+/// <see cref="IsSafeEntryPath"/> so a malicious archive can't smuggle a zip-slip path into a later
+/// extraction step.
+/// </summary>
+public sealed class IdeaArchiveReader : IDisposable
+{
+    private readonly ZipArchive _zip;
+    private readonly bool _ownsStream;
+    private readonly Stream? _stream;
+
+    private IdeaArchiveReader(ZipArchive zip, Stream? stream, bool ownsStream)
+    {
+        _zip = zip;
+        _stream = stream;
+        _ownsStream = ownsStream;
+    }
+
+    /// <summary>Open a <c>.idea</c> from a stream. The reader does NOT take ownership of the stream.</summary>
+    public static IdeaArchiveReader Open(Stream stream) =>
+        new(new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true), null, ownsStream: false);
+
+    /// <summary>Open a <c>.idea</c> from a file path. The reader owns the underlying file handle.</summary>
+    public static IdeaArchiveReader Open(string path)
+    {
+        var fs = File.OpenRead(path);
+        return new IdeaArchiveReader(new ZipArchive(fs, ZipArchiveMode.Read, leaveOpen: false), fs, ownsStream: true);
+    }
+
+    /// <summary>The raw <c>idea.json</c> text, or null if the archive has no manifest entry.</summary>
+    public string? ReadManifestJson()
+    {
+        var entry = _zip.GetEntry("idea.json");
+        if (entry is null) return null;
+        using var r = new StreamReader(entry.Open());
+        return r.ReadToEnd();
+    }
+
+    /// <summary>
+    /// Read and parse the manifest. Returns false (with an <paramref name="error"/>) if the manifest is
+    /// missing or malformed — never throws for a bad package.
+    /// </summary>
+    public bool TryReadManifest(out IdeaManifest? manifest, out string? error)
+    {
+        manifest = null;
+        error = null;
+        var json = ReadManifestJson();
+        if (json is null)
+        {
+            error = "package has no idea.json manifest at its root.";
+            return false;
+        }
+        try
+        {
+            manifest = ManifestReader.Read(json);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = "idea.json is malformed: " + ex.Message;
+            return false;
+        }
+    }
+
+    /// <summary>Entry paths under <c>bin/</c> (the bundled assemblies), relative to that prefix.</summary>
+    public IReadOnlyList<string> BinEntries() => EntriesUnder("bin/");
+
+    /// <summary>Entry paths under <c>wwwroot/</c> (the static assets), relative to that prefix.</summary>
+    public IReadOnlyList<string> WwwrootEntries() => EntriesUnder("wwwroot/");
+
+    private IReadOnlyList<string> EntriesUnder(string prefix) =>
+        _zip.Entries
+            .Where(e => e.FullName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                        && e.FullName.Length > prefix.Length
+                        && !e.FullName.EndsWith('/'))
+            .Select(e => e.FullName[prefix.Length..])
+            .ToList();
+
+    /// <summary>
+    /// True only for an archive entry path that is safe to extract: a forward-slash relative path with
+    /// no rooted/drive prefix and no <c>..</c> segment (zip-slip guard).
+    /// </summary>
+    public static bool IsSafeEntryPath(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        if (name.StartsWith('/') || name.StartsWith('\\')) return false;        // rooted
+        if (name.Length >= 2 && name[1] == ':') return false;                   // drive-qualified (C:/...)
+        var segs = name.Replace('\\', '/').Split('/');
+        return !segs.Contains("..");                                            // no parent-dir escape
+    }
+
+    public void Dispose()
+    {
+        _zip.Dispose();
+        if (_ownsStream) _stream?.Dispose();
+    }
+}

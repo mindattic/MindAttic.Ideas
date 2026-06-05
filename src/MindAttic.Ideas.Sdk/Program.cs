@@ -1,63 +1,75 @@
-using MindAttic.Ideas.Sdk;
+using MindAttic.Ideas.Packaging;
 
-// ma-idea — the .idea packer. Single verb today: `pack`.
+// ma-idea — the .idea CLI.
 //
-//   ma-idea pack --assembly <built.dll> --wwwroot <dir> --out <dir> [--icon <file>] [--version <n>]
+//   ma-idea pack    --assembly <built.dll> --wwwroot <dir> --out <dir> [--icon <file>] [--version <n>] [--refs <a;b>]
+//   ma-idea inspect <file.idea>
+//   ma-idea list    <dir>
+//   ma-idea install <file.idea> [--allow-override]      (OFFLINE validate-only; the host applies installs)
+//   ma-idea upgrade <file.idea>                          (validate + plan against the .idea files beside it)
 //
-// Reads the entry type's identity (Kind, Key, Version) by CONVENTION from its namespace and
-// Vn class name (reflection-only; never executes the assembly), emits idea.json, collects the
-// non-host lib/ assemblies, bundles wwwroot/, and zips everything to
-// <entryTypeFullName>.idea — e.g. MindAttic.Ideas.Page.MindAtticFrontpage.V1.idea.
+// pack reads the entry type's identity (Kind, Key, Version) by CONVENTION from its namespace and Vn class
+// name (reflection-only; never executes the assembly). The read verbs (inspect/list/install/upgrade) are
+// pure and offline — they never touch a database. Installing a package into a running site is a host
+// operation (PackageInstallService); disabling likewise. All logic lives in MindAttic.Ideas.Packaging.
 
 if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
 {
-    Console.WriteLine("""
-        ma-idea — MindAttic.Ideas .idea packer
-
-        Usage:
-          ma-idea pack --assembly <path> --wwwroot <dir> --out <dir> [--icon <file>] [--version <n>]
-
-        Options:
-          --assembly  Path to the built RCL assembly (e.g. bin/Release/net10.0/MyIdea.dll). Required.
-          --wwwroot   Path to the RCL's wwwroot static-asset directory. Optional.
-          --out       Output directory for the .idea package. Required.
-          --icon      Optional icon (png) bundled at the package root.
-          --version   Override the convention/attribute version (whole number).
-        """);
+    PrintHelp();
     return 0;
 }
 
-if (!string.Equals(args[0], "pack", StringComparison.OrdinalIgnoreCase))
-{
-    Console.Error.WriteLine($"ma-idea: unknown command '{args[0]}'. Try 'ma-idea --help'.");
-    return 2;
-}
-
-var opts = ArgParser.Parse(args.AsSpan(1));
-
-string? assembly = opts.GetValueOrDefault("assembly");
-string? outDir = opts.GetValueOrDefault("out");
-string? wwwroot = opts.GetValueOrDefault("wwwroot");
-string? icon = opts.GetValueOrDefault("icon");
-int? versionOverride = opts.TryGetValue("version", out var v) && int.TryParse(v, out var vn) ? vn : null;
-var refs = (opts.GetValueOrDefault("refs") ?? "")
-    .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    .ToList();
-
-if (string.IsNullOrWhiteSpace(assembly) || string.IsNullOrWhiteSpace(outDir))
-{
-    Console.Error.WriteLine("ma-idea pack: --assembly and --out are required. Try 'ma-idea --help'.");
-    return 2;
-}
-
-if (!File.Exists(assembly))
-{
-    Console.Error.WriteLine($"ma-idea pack: assembly not found: {assembly}");
-    return 2;
-}
+var verb = args[0].ToLowerInvariant();
+var rest = args.AsSpan(1);
 
 try
 {
+    return verb switch
+    {
+        "pack" => RunPack(rest),
+        "inspect" => RunInspect(rest),
+        "list" => RunList(rest),
+        "install" => RunInstall(rest),
+        "upgrade" => RunUpgrade(rest),
+        "disable" => RunDisable(),
+        _ => Unknown(verb),
+    };
+}
+catch (PackException ex)
+{
+    Console.Error.WriteLine($"ma-idea {verb}: {ex.Message}");
+    return 1;
+}
+
+static int Unknown(string verb)
+{
+    Console.Error.WriteLine($"ma-idea: unknown command '{verb}'. Try 'ma-idea --help'.");
+    return 2;
+}
+
+static int RunPack(ReadOnlySpan<string> rest)
+{
+    var opts = ArgParser.Parse(rest);
+    string? assembly = opts.GetValueOrDefault("assembly");
+    string? outDir = opts.GetValueOrDefault("out");
+    string? wwwroot = opts.GetValueOrDefault("wwwroot");
+    string? icon = opts.GetValueOrDefault("icon");
+    int? versionOverride = opts.TryGetValue("version", out var v) && int.TryParse(v, out var vn) ? vn : null;
+    var refs = (opts.GetValueOrDefault("refs") ?? "")
+        .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .ToList();
+
+    if (string.IsNullOrWhiteSpace(assembly) || string.IsNullOrWhiteSpace(outDir))
+    {
+        Console.Error.WriteLine("ma-idea pack: --assembly and --out are required. Try 'ma-idea --help'.");
+        return 2;
+    }
+    if (!File.Exists(assembly))
+    {
+        Console.Error.WriteLine($"ma-idea pack: assembly not found: {assembly}");
+        return 2;
+    }
+
     var path = Packer.Pack(new PackRequest
     {
         AssemblyPath = Path.GetFullPath(assembly),
@@ -70,8 +82,131 @@ try
     Console.WriteLine($"ma-idea: packed {Path.GetFileName(path)}");
     return 0;
 }
-catch (PackException ex)
+
+static int RunInspect(ReadOnlySpan<string> rest)
 {
-    Console.Error.WriteLine($"ma-idea pack: {ex.Message}");
-    return 1;
+    if (!TryFile(rest, "inspect", out var file)) return 2;
+    using var reader = IdeaArchiveReader.Open(file);
+    if (!reader.TryReadManifest(out var m, out var err)) { Console.Error.WriteLine($"ma-idea inspect: {err}"); return 1; }
+    Console.WriteLine($"key          {m!.Key}");
+    Console.WriteLine($"category     {m.Category}");
+    Console.WriteLine($"kind         {m.Kind}");
+    Console.WriteLine($"version      {m.Version}");
+    Console.WriteLine($"displayName  {m.DisplayName}");
+    if (m.EntryType is not null) Console.WriteLine($"entryType    {m.EntryType}");
+    Console.WriteLine($"bin/         {reader.BinEntries().Count} file(s)");
+    Console.WriteLine($"wwwroot/     {reader.WwwrootEntries().Count} file(s)");
+    return 0;
 }
+
+static int RunList(ReadOnlySpan<string> rest)
+{
+    if (!TryDir(rest, "list", out var dir)) return 2;
+    var files = Directory.EnumerateFiles(dir, "*.idea").OrderBy(f => f, StringComparer.Ordinal).ToList();
+    if (files.Count == 0) { Console.WriteLine("(no .idea packages found)"); return 0; }
+    foreach (var f in files)
+    {
+        using var reader = IdeaArchiveReader.Open(f);
+        if (reader.TryReadManifest(out var m, out _))
+            Console.WriteLine($"{m!.Key,-28} v{m.Version,-4} {m.Category,-10} {m.Kind,-5} {m.DisplayName}");
+        else
+            Console.WriteLine($"{Path.GetFileName(f),-28} (unreadable manifest)");
+    }
+    return 0;
+}
+
+static int RunInstall(ReadOnlySpan<string> rest)
+{
+    var (file, allowOverride) = ParseFileAndFlags(rest, "install");
+    if (file is null) return 2;
+    using var reader = IdeaArchiveReader.Open(file);
+    if (!reader.TryReadManifest(out var m, out var err)) { Console.Error.WriteLine($"ma-idea install: {err}"); return 1; }
+
+    var result = ManifestValidator.Validate(m!, reader.BinEntries());
+    foreach (var e in result.Errors)
+        Console.Error.WriteLine($"  {(e.IsWarning ? "warning" : "error")} {e.Code}: {e.Message}");
+    if (!result.IsValid) { Console.Error.WriteLine("ma-idea install: package is invalid (validate-only; nothing was installed)."); return 1; }
+
+    Console.WriteLine($"ma-idea install: '{m!.Key}' v{m.Version} ({m.Kind}) is valid; would install"
+        + (allowOverride ? " (override requested)." : "."));
+    Console.WriteLine("(offline validate only — applying the install is a host operation: PackageInstallService.)");
+    return 0;
+}
+
+static int RunUpgrade(ReadOnlySpan<string> rest)
+{
+    var (file, _) = ParseFileAndFlags(rest, "upgrade");
+    if (file is null) return 2;
+    using var reader = IdeaArchiveReader.Open(file);
+    if (!reader.TryReadManifest(out var m, out var err)) { Console.Error.WriteLine($"ma-idea upgrade: {err}"); return 1; }
+    var result = ManifestValidator.Validate(m!, reader.BinEntries());
+    if (!result.IsValid) { Console.Error.WriteLine($"ma-idea upgrade: {result.Summary}"); return 1; }
+
+    // Plan against the other .idea files in the same directory (offline preview of the host's decision).
+    var dir = Path.GetDirectoryName(Path.GetFullPath(file))!;
+    var installed = new List<InstalledRef>();
+    foreach (var other in Directory.EnumerateFiles(dir, "*.idea"))
+    {
+        if (string.Equals(Path.GetFullPath(other), Path.GetFullPath(file), StringComparison.OrdinalIgnoreCase)) continue;
+        using var r = IdeaArchiveReader.Open(other);
+        if (r.TryReadManifest(out var om, out _) && om is not null)
+            installed.Add(new InstalledRef(om.Category, om.Key, om.Version, Enabled: true, IsActiveVersion: true));
+    }
+
+    var plan = PackageVersionResolver.Plan(m!, installed, compiledKeyExists: false, allowOverride: false);
+    Console.WriteLine($"ma-idea upgrade: {m!.Key} v{m.Version} -> {plan.Action}{(plan.Reason is null ? "" : " (" + plan.Reason + ")")}");
+    return plan.Action is InstallAction.RejectDowngrade or InstallAction.Blocked ? 1 : 0;
+}
+
+static int RunDisable()
+{
+    Console.Error.WriteLine(
+        "ma-idea disable: disabling an installed package is a host database operation (soft-disable, " +
+        "Enabled=false; bytes are retained). Use the admin UI / PackageInstallService.DisableAsync — " +
+        "the offline CLI cannot reach the site database.");
+    return 2;
+}
+
+// ---- small CLI helpers ----
+
+static bool TryFile(ReadOnlySpan<string> rest, string verb, out string file)
+{
+    file = "";
+    if (rest.Length == 0 || rest[0].StartsWith("--", StringComparison.Ordinal))
+    { Console.Error.WriteLine($"ma-idea {verb}: a <file.idea> path is required."); return false; }
+    file = rest[0];
+    if (!File.Exists(file)) { Console.Error.WriteLine($"ma-idea {verb}: file not found: {file}"); return false; }
+    return true;
+}
+
+static bool TryDir(ReadOnlySpan<string> rest, string verb, out string dir)
+{
+    dir = rest.Length > 0 && !rest[0].StartsWith("--", StringComparison.Ordinal) ? rest[0] : ".";
+    if (!Directory.Exists(dir)) { Console.Error.WriteLine($"ma-idea {verb}: directory not found: {dir}"); return false; }
+    return true;
+}
+
+static (string? File, bool AllowOverride) ParseFileAndFlags(ReadOnlySpan<string> rest, string verb)
+{
+    if (!TryFile(rest, verb, out var file)) return (null, false);
+    var allowOverride = false;
+    foreach (var a in rest) if (string.Equals(a, "--allow-override", StringComparison.OrdinalIgnoreCase)) allowOverride = true;
+    return (file, allowOverride);
+}
+
+static void PrintHelp() => Console.WriteLine("""
+    ma-idea — MindAttic.Ideas .idea CLI
+
+    Usage:
+      ma-idea pack    --assembly <path> --out <dir> [--wwwroot <dir>] [--icon <file>] [--version <n>] [--refs <a;b>]
+      ma-idea inspect <file.idea>
+      ma-idea list    [dir]
+      ma-idea install <file.idea> [--allow-override]
+      ma-idea upgrade <file.idea>
+
+    pack    Pack a built Page/Theme/Component/Control RCL into a .idea (reflection-only).
+    inspect Print a package's manifest + bin/ + wwwroot/ counts.
+    list    List the .idea packages in a directory (key, version, category, kind).
+    install Validate a package offline (does NOT install — that is a host operation).
+    upgrade Validate + preview the install action against the .idea files beside it.
+    """);

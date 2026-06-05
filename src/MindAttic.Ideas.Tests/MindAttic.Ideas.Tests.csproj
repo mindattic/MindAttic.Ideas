@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MindAttic.Ideas.Core\MindAttic.Ideas.Core.csproj" />
     <ProjectReference Include="..\MindAttic.Ideas.Web\MindAttic.Ideas.Web.csproj" />
+    <ProjectReference Include="..\MindAttic.Ideas.Packaging\MindAttic.Ideas.Packaging.csproj" />
   </ItemGroup>
 
 </Project>

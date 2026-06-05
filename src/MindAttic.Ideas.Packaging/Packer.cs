@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace MindAttic.Ideas.Sdk;
+namespace MindAttic.Ideas.Packaging;
 
 public sealed class PackException(string message) : Exception(message);
 
@@ -25,25 +25,12 @@ public sealed class PackRequest
 /// <summary>
 /// Turns a built RCL assembly into a <c>.idea</c> package. Reflection-only (MetadataLoadContext) —
 /// the target assembly is never executed, only inspected for its convention-named entry type and
-/// optional <c>[Idea]</c>/<c>[IdeaSdkVersion]</c> attributes.
+/// optional <c>[Idea]</c>/<c>[IdeaSdkVersion]</c> attributes. This packer always produces a
+/// <c>kind=code</c> package (it packs a compiled citizen); <c>kind=data</c> packages are author content
+/// authored in the CMS, not produced here.
 /// </summary>
 public static partial class Packer
 {
-    // Mirror of MindAttic.Ideas.Abstractions.SharedContracts.DeferToDefaultPrefixes — host-provided /
-    // framework assemblies are NEVER shipped in lib/ (the package's base types must unify with the host).
-    private static readonly string[] HostPrefixes =
-    [
-        "MindAttic.Ideas.Abstractions",
-        "MindAttic.Ideas.Core",
-        "Microsoft.AspNetCore.",
-        "Microsoft.Extensions.",
-        "Microsoft.EntityFrameworkCore.",
-        "Microsoft.JSInterop.",
-        "System.",
-        "netstandard",
-        "mscorlib",
-    ];
-
     [GeneratedRegex(@"^V(\d+)$")] private static partial Regex VersionClass();
 
     public static string Pack(PackRequest req)
@@ -54,12 +41,14 @@ public static partial class Packer
 
         var identity = ResolveIdentity(asm, req.VersionOverride);
 
-        // ---- lib/: this assembly + every non-host dependency that sits beside it in the output. ----
-        var libFiles = Directory.EnumerateFiles(asmDir, "*.dll")
+        // ---- bin/: this assembly + every non-host dependency that sits beside it in the output. ----
+        // Host-provided / framework assemblies are NEVER shipped (the package's base types must unify by
+        // reference identity with the host's — the SharedContracts.DeferToDefaultPrefixes linchpin).
+        var binFiles = Directory.EnumerateFiles(asmDir, "*.dll")
             .Where(f => !IsHostAssembly(Path.GetFileNameWithoutExtension(f)))
             .ToList();
-        if (!libFiles.Any(f => string.Equals(Path.GetFullPath(f), req.AssemblyPath, StringComparison.OrdinalIgnoreCase)))
-            libFiles.Add(req.AssemblyPath);
+        if (!binFiles.Any(f => string.Equals(Path.GetFullPath(f), req.AssemblyPath, StringComparison.OrdinalIgnoreCase)))
+            binFiles.Add(req.AssemblyPath);
 
         // ---- wwwroot/: every static asset, relative paths preserved. ----
         var assets = new List<string>();
@@ -72,18 +61,19 @@ public static partial class Packer
 
         var manifest = new IdeaManifest
         {
+            ManifestVersion = 1,
+            Category = identity.Kind,         // the ContentKind name (Page | Component | Theme | Control)
+            Kind = "code",                    // this packer packs a compiled citizen
             Key = identity.Key,
-            DisplayName = identity.DisplayName,
-            Kind = identity.Kind,
-            Category = identity.Category,
             Version = identity.Version,
+            DisplayName = identity.DisplayName,
             Sdk = identity.SdkVersion,
             EntryType = identity.EntryType,
             AssemblyName = asm.GetName().Name ?? "",
             RenderMode = identity.RenderMode,
             Scope = identity.Scope,
             Assets = assets,
-            Dependencies = libFiles
+            DependsOn = binFiles
                 .Select(f => Path.GetFileNameWithoutExtension(f))
                 .Where(n => !string.Equals(n, asm.GetName().Name, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(n => n, StringComparer.Ordinal)
@@ -96,11 +86,11 @@ public static partial class Packer
 
         using (var zip = ZipFile.Open(outPath, ZipArchiveMode.Create))
         {
-            var json = JsonSerializer.Serialize(manifest, ManifestJson);
+            var json = JsonSerializer.Serialize(manifest, IdeaManifest.ManifestJson);
             WriteEntry(zip, "idea.json", json);
 
-            foreach (var lib in libFiles.Distinct(StringComparer.OrdinalIgnoreCase))
-                zip.CreateEntryFromFile(lib, "lib/" + Path.GetFileName(lib));
+            foreach (var lib in binFiles.Distinct(StringComparer.OrdinalIgnoreCase))
+                zip.CreateEntryFromFile(lib, "bin/" + Path.GetFileName(lib));
 
             if (req.WwwrootDir is not null)
                 foreach (var rel in assets)
@@ -183,8 +173,11 @@ public static partial class Packer
         catch { return null; }
     }
 
-    private static bool IsHostAssembly(string name) =>
-        HostPrefixes.Any(p => name.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+    /// <summary>
+    /// A name the package must NOT ship — it is host-provided/framework and must unify by reference
+    /// identity with the host. Single source of truth: Abstractions' <see cref="SharedContracts"/>.
+    /// </summary>
+    public static bool IsHostAssembly(string name) => ManifestValidator.IsHostAssemblyName(name);
 
     private static MetadataLoadContext CreateLoadContext(string asmDir, IReadOnlyList<string> referenceInputs)
     {
@@ -254,9 +247,4 @@ public static partial class Packer
         using var s = new StreamWriter(entry.Open());
         s.Write(content);
     }
-
-    private static readonly JsonSerializerOptions ManifestJson = new()
-    {
-        WriteIndented = true,
-    };
 }

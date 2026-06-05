@@ -1,7 +1,7 @@
-namespace MindAttic.Ideas.Sdk;
+namespace MindAttic.Ideas.Packaging;
 
 /// <summary>Minimal <c>--key value</c> argument parser (no external dependency).</summary>
-internal static class ArgParser
+public static class ArgParser
 {
     public static Dictionary<string, string> Parse(ReadOnlySpan<string> args)
     {

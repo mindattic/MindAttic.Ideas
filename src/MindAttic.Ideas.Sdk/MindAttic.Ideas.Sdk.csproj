@@ -24,7 +24,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="9.0.0" />
+    <!-- The packer + manifest contract + install rules live in the shared Packaging library so the host
+         (Core) and this CLI read exactly one implementation. -->
+    <ProjectReference Include="..\MindAttic.Ideas.Packaging\MindAttic.Ideas.Packaging.csproj" />
   </ItemGroup>
 
 </Project>

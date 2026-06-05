@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MindAttic.Ideas.Abstractions\MindAttic.Ideas.Abstractions.csproj" />
+    <!-- The .idea manifest contract + read-only install rules (PackageInstallService reuses them). -->
+    <ProjectReference Include="..\MindAttic.Ideas.Packaging\MindAttic.Ideas.Packaging.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -5,5 +5,6 @@
     <Project Path="src/MindAttic.Ideas.Tests/MindAttic.Ideas.Tests.csproj" />
     <Project Path="src/MindAttic.Ideas.Web/MindAttic.Ideas.Web.csproj" />
     <Project Path="src/MindAttic.Ideas.Sdk/MindAttic.Ideas.Sdk.csproj" />
+    <Project Path="src/MindAttic.Ideas.Packaging/MindAttic.Ideas.Packaging.csproj" />
   </Folder>
 </Solution>
