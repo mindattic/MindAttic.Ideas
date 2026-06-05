@@ -1,7 +1,7 @@
 namespace MindAttic.Ideas.Core.Entities;
 
 /// <summary>
-/// Admin account. Ported from MindAttic.Frontend: string Id, BCrypt PasswordHash, SecurityStamp
+/// Admin account. Ported from MindAttic.Frontpage: string Id, BCrypt PasswordHash, SecurityStamp
 /// revalidated on every request, MustChangePassword bootstrap, soft-disable via IsActive.
 /// </summary>
 public sealed class User

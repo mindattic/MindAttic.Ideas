@@ -37,7 +37,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
 
-// --- Auth: cookie (ported from MindAttic.Frontend). Login endpoint + SecurityStamp revalidation
+// --- Auth: cookie (ported from MindAttic.Frontpage). Login endpoint + SecurityStamp revalidation
 //     arrive with the Phase-2 admin UI; the scheme + policies are wired now so they never change. ---
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>

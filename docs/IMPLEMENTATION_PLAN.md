@@ -2,13 +2,13 @@
 
 A DotNetNuke-inspired, **single-deployment** Blazor CMS for the MindAttic ecosystem.
 One Azure App Service, one app pool, one database. Every project frontend
-(`MindAttic.Frontend`, `MindAttic.Legion.Frontend`, future ones) becomes an **Idea**
+(`MindAttic.Frontpage`, `MindAttic.Legion.Frontend`, future ones) becomes an **Idea**
 (or a Page composed of Ideas) installed into this CMS instead of a separately
 deployed web app.
 
 > **Stack:** .NET 10, Blazor Web App (global `InteractiveServer`), EF Core, Azure SQL,
 > Azure Blob Storage. Reuse what already works across MindAttic: cookie auth + roles
-> (from `MindAttic.Frontend`), and **`MindAttic.UiUx`** for themes/components
+> (from `MindAttic.Frontpage`), and **`MindAttic.UiUx`** for themes/components
 > (the Cyberspace look, delivered via jsDelivr). *(Note: the shared UI library is
 > `MindAttic.UiUx` — not "MindAttic.Content".)*
 >
@@ -61,7 +61,7 @@ MindAttic.Ideas.sln
 │  ├─ MindAttic.Ideas.Themes.Default    // default theme RCL (layout + scoped css; pulls Cyberspace from UiUx)
 │  └─ MindAttic.Ideas.Sdk               // MSBuild targets + `dotnet ma-idea pack` (builds .idea packages)
 ├─ modules/                             // project frontends, refactored into Idea RCLs
-│  ├─ MindAttic.Ideas.Ideas.ProjectHub  // ← MindAttic.Frontend's accordion nav, lifted in
+│  ├─ MindAttic.Ideas.Ideas.ProjectHub  // ← MindAttic.Frontpage's accordion nav, lifted in
 │  └─ MindAttic.Ideas.Ideas.Legion
 ├─ docs/
 └─ tests/
@@ -345,7 +345,7 @@ User/Role/PagePermission/IdeaPermission                       // lift Frontend's
 - **Settings as JSON columns** keeps Ideas schema-free; index into JSON where you query it.
 - **Zones aren't stored per page** — they come from the theme; `IdeaInstance.ZoneName` is
   validated against the theme's `ZoneNames` (fallback for unknown zones, §5).
-- `MindAttic.Frontend` already has ~80% of Page/Media(→Asset)/User-Role/Setting + idempotent
+- `MindAttic.Frontpage` already has ~80% of Page/Media(→Asset)/User-Role/Setting + idempotent
   seeding + admin scaffolding — **port it, don't reinvent it.**
 
 ---
@@ -379,7 +379,7 @@ Build the designer on the **same `DynamicComponent` path** in `Mode = Edit` (chr
 - Blazor Server circuits are **stateful**: enable **ARR affinity**; if you scale past one
   instance, add **Azure SignalR Service** as the backplane.
 - Watch **circuit memory** (Server holds per-user state); add health checks. CI/CD: GitHub
-  Actions → build → migrate → deploy slot → swap (mirror `MindAttic.Frontend/azure-deploy.yml`).
+  Actions → build → migrate → deploy slot → swap (mirror `MindAttic.Frontpage/azure-deploy.yml`).
 
 ---
 
@@ -395,7 +395,7 @@ Build the designer on the **same `DynamicComponent` path** in `Mode = Edit` (chr
 - **P4 Security + multi-site** — roles/permission grid + Site resolution by host/path.
 - **P5 `.idea` packages (headline)** — `PackageIdeaSource` (collectible ALC) + Idea Manager +
   `MindAttic.Ideas.Sdk` packer + custom static-asset serving.
-- **P6 Migrate** — `MindAttic.Frontend` → `ProjectHub` + `Markdown` Ideas (do the smaller frontend
+- **P6 Migrate** — `MindAttic.Frontpage` → `ProjectHub` + `Markdown` Ideas (do the smaller frontend
   first to validate the contract), then `Legion`. Heavy standalone apps (Unity GridGame2026, MAUI
   ThinkTank, StreetSamurai, Cursory) stay external, surfaced as Pages with a `LinkOut` Idea.
 
@@ -419,7 +419,7 @@ Open a Claude Code window rooted in this repo and paste:
 
 ```
 Read docs/IMPLEMENTATION_PLAN.md. Before writing files, list the solution + any .csproj,
-and confirm conventions against the sibling repos D:/Projects/MindAttic/MindAttic.Frontend
+and confirm conventions against the sibling repos D:/Projects/MindAttic/MindAttic.Frontpage
 (EF/seed/auth patterns to port) and D:/Projects/MindAttic/MindAttic.UiUx (Cyberspace theme,
 jsDelivr). Report what exists before generating.
 

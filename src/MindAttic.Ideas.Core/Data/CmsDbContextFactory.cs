@@ -5,7 +5,7 @@ namespace MindAttic.Ideas.Core.Data;
 
 /// <summary>
 /// Design-time factory for <c>dotnet ef</c> (migrations). Uses a placeholder connection string;
-/// the runtime connection is supplied via DI/Vault. Mirrors the MindAttic.Frontend pattern.
+/// the runtime connection is supplied via DI/Vault. Mirrors the MindAttic.Frontpage pattern.
 /// </summary>
 public sealed class CmsDbContextFactory : IDesignTimeDbContextFactory<CmsDbContext>
 {

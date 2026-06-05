@@ -1,7 +1,7 @@
 # MindAttic.Ideas
 
 A single-deployment Blazor CMS for the MindAttic ecosystem. **One** Azure App Service, **one** app
-pool, **one** database hosts *many* pages — so a project like `MindAttic.Frontend` or
+pool, **one** database hosts *many* pages — so a project like `MindAttic.Frontpage` or
 `MindAttic.Legion.Frontend` no longer needs a whole web app just to serve essentially one page.
 
 You ship capability by **uploading or CLI'ing a `.idea` file** (a plain zip). The CMS reads whether
@@ -270,7 +270,7 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 ### Packages & migration (Phase 5/6)
 - 📋 `PackageContentSource` (runtime `.idea` via collectible ALC) + installer + asset file provider
 - 📋 SDK packer (`dotnet ma-idea pack`); per-page Component-asset de-duplication into `<head>`
-- 📋 Move official content into MindAttic.UiUx (canonical source); then collapse `MindAttic.Frontend`
+- 📋 Move official content into MindAttic.UiUx (canonical source); then collapse `MindAttic.Frontpage`
   and `MindAttic.Legion.Frontend` into Pages
 
 ---
@@ -278,4 +278,4 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 ## Stack
 
 .NET 10 · Blazor Web App (global `InteractiveServer`) · EF Core + SQL Server (temporal tables) ·
-Azure Blob · `IDbContextFactory`. Auth/seed/concurrency ported from `MindAttic.Frontend`.
+Azure Blob · `IDbContextFactory`. Auth/seed/concurrency ported from `MindAttic.Frontpage`.

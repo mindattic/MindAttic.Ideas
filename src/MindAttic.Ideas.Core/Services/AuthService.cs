@@ -5,7 +5,7 @@ using MindAttic.Ideas.Core.Entities;
 namespace MindAttic.Ideas.Core.Services;
 
 /// <summary>
-/// Authentication essentials ported from MindAttic.Frontend: BCrypt hashing (work factor 12),
+/// Authentication essentials ported from MindAttic.Frontpage: BCrypt hashing (work factor 12),
 /// SecurityStamp rotation, idempotent admin bootstrap. Lockout/rate-limiting is added in the Web host.
 /// </summary>
 public sealed class AuthService(IDbContextFactory<CmsDbContext> dbFactory)

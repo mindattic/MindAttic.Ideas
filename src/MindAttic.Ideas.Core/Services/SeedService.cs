@@ -6,7 +6,7 @@ using MindAttic.Ideas.Core.Entities;
 namespace MindAttic.Ideas.Core.Services;
 
 /// <summary>
-/// Idempotent startup seed (ported pattern from MindAttic.Frontend): upsert by natural key, never
+/// Idempotent startup seed (ported pattern from MindAttic.Frontpage): upsert by natural key, never
 /// clobber admin-edited content. Seeds the default Site, global CSS, an admin user, and a home Data
 /// page that composes the Cyberspace theme + a component include — the zero-deploy render proof.
 /// </summary>

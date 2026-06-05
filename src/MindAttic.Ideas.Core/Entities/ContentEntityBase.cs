@@ -23,6 +23,6 @@ public abstract class ContentEntityBase
     /// <summary>Reserved JSON extensibility bag for additive fields that don't yet warrant a column.</summary>
     public string? Extra { get; set; }
 
-    /// <summary>Optimistic-concurrency token (ported pattern from MindAttic.Frontend).</summary>
+    /// <summary>Optimistic-concurrency token (ported pattern from MindAttic.Frontpage).</summary>
     public byte[]? RowVersion { get; set; }
 }
