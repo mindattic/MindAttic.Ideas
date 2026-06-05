@@ -86,6 +86,44 @@ public interface IContentCatalog
     /// <summary>Find the highest enabled version of a key (when a tag doesn't pin one).</summary>
     ContentDescriptor? FindLatest(ContentKind kind, string key);
     Type? ResolveType(ContentDescriptor descriptor);
+
+    /// <summary>
+    /// Resolve an include tag to a render outcome (APPEND-ONLY default method — frozen-interface safe).
+    /// The default can only report Resolved/Missing (it sees enabled winners only); a concrete catalog
+    /// that tracks a disabled-identity snapshot OVERRIDES this to also report <see cref="ContentResolution.Disabled"/>,
+    /// so the render guard can distinguish "turned off" from "never existed".
+    /// </summary>
+    ResolvedContent ResolveTag(ContentKind kind, string key, int? version)
+    {
+        var desc = version is int v ? (Find(kind, key, v) ?? FindLatest(kind, key)) : FindLatest(kind, key);
+        if (desc is null) return new ResolvedContent(ContentResolution.Missing, null, null);
+        var type = ResolveType(desc);
+        return type is null
+            ? new ResolvedContent(ContentResolution.Missing, null, desc)
+            : new ResolvedContent(ContentResolution.Resolved, type, desc);
+    }
+}
+
+/// <summary>The outcome of resolving an include tag. APPEND-ONLY.</summary>
+public enum ContentResolution
+{
+    Resolved = 0,
+    Missing = 1,
+    Disabled = 2,
+}
+
+/// <summary>The result of <see cref="IContentCatalog.ResolveTag"/>.</summary>
+public readonly record struct ResolvedContent(ContentResolution Outcome, Type? Type, ContentDescriptor? Descriptor);
+
+/// <summary>
+/// Render-time alert seam: a page that resolves a missing or disabled dependency raises an admin alert
+/// (so "a page must never be invalid" surfaces to the Admin Inbox instead of silently degrading). The
+/// host implementation MUST be fire-and-forget and exception-swallowing — never block or crash a render.
+/// </summary>
+public interface IRenderAlertSink
+{
+    void RaiseMissing(ContentKind kind, string key, int? version, Guid pageId, string slug);
+    void RaiseDisabled(ContentKind kind, string key, int? version, Guid pageId, string slug);
 }
 
 /// <summary>

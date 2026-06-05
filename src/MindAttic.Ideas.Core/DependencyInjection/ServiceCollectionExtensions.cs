@@ -38,6 +38,12 @@ public static class ServiceCollectionExtensions
         // Seed (CMS content). Auth seeding is the library's AuthBootstrapper, wired in the Web host.
         services.AddScoped<SeedService>();
 
+        // Phase-2: admin inbox + lifecycle + page authoring + the render-alert sink.
+        services.AddScoped<IAdminInboxService, AdminInboxService>();
+        services.AddSingleton<IRenderAlertSink, RenderAlertSink>();
+        services.AddScoped<IContentLifecycleService, ContentLifecycleService>();
+        services.AddScoped<IPageAdminService, PageAdminService>();
+
         return services;
     }
 }

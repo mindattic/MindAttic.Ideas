@@ -6,6 +6,7 @@
 @inject IDbContextFactory<CmsDbContext> DbFactory
 @inject IContentCatalog Catalog
 @inject IServiceProvider Services
+@inject IRenderAlertSink Alerts
 
 @* The single, permanent render entry point for free-form pages. No zones. Resolution is by
    (SiteId, Slug) data lookup, never per-page routing — so a runtime-loaded type renders unchanged. *@
@@ -108,7 +109,13 @@ else if (_context is not null)
                 Strategy = RenderStrategy.ClrType, ClrTypeName = page.ComponentTypeName,
                 AssemblyName = page.AssemblyName ?? "",
             };
-            _bodyType = Catalog.ResolveType(desc) ?? typeof(MissingPageHost);
+            var resolvedBody = Catalog.ResolveType(desc);
+            _bodyType = resolvedBody ?? typeof(MissingPageHost);
+            if (resolvedBody is null)
+            {
+                // A Code page whose compiled type is missing/renamed -> placeholder + alert (never a crash).
+                try { Alerts.RaiseMissing(ContentKind.Page, page.Slug, null, page.Uid, page.Slug); } catch { }
+            }
         }
         else
         {
@@ -120,10 +127,26 @@ else if (_context is not null)
         var themeVersion = page.ThemeVersion ?? site?.DefaultThemeVersion ?? 1;
         if (!string.IsNullOrWhiteSpace(themeKey))
         {
-            var themeDesc = Catalog.Find(ContentKind.Theme, themeKey!, themeVersion)
-                            ?? Catalog.FindLatest(ContentKind.Theme, themeKey!)
-                            ?? Catalog.FindLatest(ContentKind.Theme, "bootstrap");
-            _themeType = themeDesc is null ? null : Catalog.ResolveType(themeDesc);
+            var themeRes = Catalog.ResolveTag(ContentKind.Theme, themeKey!, page.ThemeVersion);
+            if (themeRes.Outcome == ContentResolution.Resolved)
+            {
+                _themeType = themeRes.Type;
+            }
+            else
+            {
+                // Requested theme missing/disabled -> fall back to bootstrap, and surface an Admin Inbox
+                // alert so the broken reference is never silent (the page still renders).
+                var fallback = Catalog.FindLatest(ContentKind.Theme, "bootstrap");
+                _themeType = fallback is null ? null : Catalog.ResolveType(fallback);
+                try
+                {
+                    if (themeRes.Outcome == ContentResolution.Disabled)
+                        Alerts.RaiseDisabled(ContentKind.Theme, themeKey!, page.ThemeVersion, page.Uid, page.Slug);
+                    else
+                        Alerts.RaiseMissing(ContentKind.Theme, themeKey!, page.ThemeVersion, page.Uid, page.Slug);
+                }
+                catch { /* alerting never breaks a render */ }
+            }
         }
 
         if (_themeType is not null && Activator.CreateInstance(_themeType) is ThemeBase meta)

@@ -58,6 +58,18 @@ public sealed class DiscoveryService(
 
         await db.SaveChangesAsync(ct);
 
+        await ReloadCatalogAsync(ct);
+    }
+
+    /// <summary>
+    /// The cheap live-apply tail: recompute shadowing and reload the in-memory catalog (enabled winners
+    /// + the disabled-identity snapshot) WITHOUT re-running any source.Discover(). Called at the end of
+    /// <see cref="RunAsync"/> and after an admin enable/disable so the live catalog reflects the change.
+    /// </summary>
+    public async Task ReloadCatalogAsync(CancellationToken ct = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
+
         // Collision resolution: within a (Kind,Key,Version) the highest Priority active row wins; the
         // rest are shadowed (a Package may only win over Compiled when AllowOverride was confirmed).
         var all = await db.ContentDefinitions.Where(x => x.IsActive).ToListAsync(ct);
@@ -69,8 +81,8 @@ public sealed class DiscoveryService(
         }
         await db.SaveChangesAsync(ct);
 
-        var winners = all.Where(x => !x.IsShadowed && x.Enabled).Select(ToDescriptor);
-        catalog.Load(winners);
+        catalog.Load(all.Where(x => !x.IsShadowed && x.Enabled).Select(ToDescriptor));
+        catalog.LoadDisabled(all.Where(x => !x.IsShadowed && !x.Enabled).Select(x => (x.Kind, x.Key, x.Version)));
     }
 
     private static ContentDescriptor ToDescriptor(CmsContentDefinition x) => new()
