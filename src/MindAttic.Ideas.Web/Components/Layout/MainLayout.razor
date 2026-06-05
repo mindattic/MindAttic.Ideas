@@ -7,6 +7,9 @@
    auto-logout only when authenticated. *@
 <div style="position:fixed;top:.75rem;right:.75rem;z-index:1100;display:flex;align-items:center;gap:.75rem;">
     <AuthorizeView Policy="@MaPolicies.Admin">
+        <a href="/admin/pages" style="color:#9aa3af;font-size:.85rem;text-decoration:none;">Pages</a>
+        <a href="/admin/content" style="color:#9aa3af;font-size:.85rem;text-decoration:none;">Content</a>
+        <a href="/admin/inbox" style="color:#9aa3af;font-size:.85rem;text-decoration:none;">Inbox</a>
         <a href="/users" style="color:#9aa3af;font-size:.85rem;text-decoration:none;">Users</a>
     </AuthorizeView>
     <UserCircle />

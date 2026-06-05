@@ -272,12 +272,16 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 ### Versioning, lifecycle & history
 - ✅ Whole-number versions; optional / `.Latest` / pinned `.V{n}` resolution
 - ✅ Temporal (system-versioned) `Pages` table (history substrate)
-- 📋 Disable/enable + version-specific delete-guard enforcement (with Phase-2 admin)
-- 📋 Admin Inbox + disabled-dependency render guard wiring
+- ✅ Disable/enable + version-specific delete-guard enforcement (compiled content degrades to disable;
+  pinned/sole-float references block deletion) — Core-tested
+- ✅ Admin Inbox (dedup by key, reopen-on-recurrence) + disabled/missing-dependency render guard wiring
+  (render thread fire-and-forget, never throws)
 
 ### Admin & CLI (Phase 2)
-- 📋 Admin: page CRUD, theme/component/control assignment, file manager, roles; login/SecurityStamp via
-  the **MindAttic.Authentication** package (A16) — not Ideas-owned
+- ✅ Admin: page CRUD + soft-delete + publish/enable, trust stamping on save (raw-markup claim);
+  content-definition enable/disable/guarded-delete; Admin Inbox triage — all under `MaPolicies.Admin`
+- ✅ Login / sign-out / SecurityStamp via the **MindAttic.Authentication** package (A16) — not Ideas-owned
+- 📋 Theme/component/control assignment UI, file manager, roles
 - 📋 `ma-idea` CLI: pack / install / list / upgrade / disable
 
 ### Packages & migration (Phase 5/6)

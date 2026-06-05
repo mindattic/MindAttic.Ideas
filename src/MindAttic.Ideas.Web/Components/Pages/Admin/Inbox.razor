@@ -1,0 +1,70 @@
+@page "/admin/inbox"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@inject IAdminInboxService InboxSvc
+
+<PageTitle>Admin Inbox</PageTitle>
+<h1 class="admin-title">Admin Inbox</h1>
+
+<div class="admin-filters">
+    @foreach (var f in Filters)
+    {
+        <button class="admin-chip @(filter == f.Value ? "on" : "")" @onclick="() => SetFilter(f.Value)">@f.Label</button>
+    }
+    <button class="admin-chip" @onclick="Load">Refresh</button>
+</div>
+
+@if (items is null)
+{
+    <p>Loading…</p>
+}
+else if (items.Count == 0)
+{
+    <p class="admin-empty">No messages.</p>
+}
+else
+{
+    <table class="admin-table">
+        <thead><tr><th>Severity</th><th>Category</th><th>Subject</th><th>When</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var m in items)
+            {
+                <tr class="sev-@m.Severity.ToLowerInvariant()">
+                    <td>@m.Severity</td>
+                    <td>@m.Category</td>
+                    <td><div>@m.Subject</div><div class="admin-sub">@m.Body</div></td>
+                    <td>@m.CreatedUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@m.Status</td>
+                    <td>
+                        @if (m.Status == "New")
+                        {
+                            <button class="admin-link" @onclick="() => MarkRead(m.Id)">Mark read</button>
+                        }
+                        @if (m.Status != "Resolved")
+                        {
+                            <button class="admin-link" @onclick="() => Resolve(m.Id)">Resolve</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private record Filter(string Label, string Value);
+    private static readonly Filter[] Filters =
+    [
+        new("All", ""), new("New", "New"), new("Read", "Read"), new("Resolved", "Resolved"),
+    ];
+
+    private IReadOnlyList<AdminInboxMessage>? items;
+    private string filter = "New";
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load() => items = await InboxSvc.ListAsync(string.IsNullOrEmpty(filter) ? null : filter);
+    private async Task SetFilter(string f) { filter = f; await Load(); }
+    private async Task MarkRead(int id) { await InboxSvc.MarkReadAsync(id); await Load(); }
+    private async Task Resolve(int id) { await InboxSvc.ResolveAsync(id); await Load(); }
+}

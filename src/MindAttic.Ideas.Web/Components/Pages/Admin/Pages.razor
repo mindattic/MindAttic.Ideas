@@ -1,0 +1,123 @@
+@page "/admin/pages"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@inject IPageAdminService PagesSvc
+
+<PageTitle>Pages</PageTitle>
+<h1 class="admin-title">Pages</h1>
+
+<div class="admin-two-pane">
+    <div class="admin-list">
+        <button class="admin-new" @onclick="StartNew">+ New Page</button>
+        @if (pages is not null)
+        {
+            @foreach (var p in pages)
+            {
+                <div class="admin-item @(editing is not null && editing.Id == p.Id ? "active" : "")" @onclick="() => Edit(p.Id)">
+                    <div class="admin-item-name">@(p.Slug.Length == 0 ? "(home)" : "/" + p.Slug)</div>
+                    <div class="admin-sub">
+                        @p.Title — @p.Kind
+                        @if (!p.IsPublished) { <span class="admin-badge">draft</span> }
+                        @if (!p.Enabled) { <span class="admin-badge">disabled</span> }
+                        @if (p.BodyTrust == ContentTrust.Author) { <span class="admin-badge ok">author</span> }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="admin-editor">
+        @if (editing is null)
+        {
+            <p class="admin-empty">Select a page or create a new one.</p>
+        }
+        else
+        {
+            <div class="admin-editor-head">
+                <h2>@(isNew ? "New Page" : "/" + editing.Slug)</h2>
+                <button class="admin-save" @onclick="Save">Save</button>
+                @if (!isNew)
+                {
+                    <button class="admin-link danger" @onclick="() => SoftDelete(editing.Id)">Delete</button>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(status))
+            {
+                <div class="admin-status @(statusBad ? "err" : "ok")">@status</div>
+            }
+
+            <div class="admin-grid">
+                <label>Slug<input @bind="editing.Slug" placeholder="(blank = home)" /></label>
+                <label>Title<input @bind="editing.Title" /></label>
+                <label>Kind<select @bind="editing.Kind"><option value="Data">Data</option><option value="Code">Code</option></select></label>
+                <label>Theme key<input @bind="editing.ThemeKey" placeholder="(site default)" /></label>
+                <label>Theme version<input type="number" @bind="editing.ThemeVersion" /></label>
+            </div>
+
+            @if (editing.Kind == PageKind.Data)
+            {
+                <label class="admin-area">Body HTML<textarea rows="10" @bind="editing.BodyHtml"></textarea></label>
+                <label class="admin-area">Page CSS<textarea rows="5" @bind="editing.PageCss"></textarea></label>
+                <label class="admin-area">Page JS (only runs when saved as Author)<textarea rows="5" @bind="editing.PageJs"></textarea></label>
+            }
+
+            <div class="admin-flags">
+                <label><input type="checkbox" @bind="editing.IsPublished" /> Published</label>
+                <label><input type="checkbox" @bind="editing.Enabled" /> Enabled</label>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private IReadOnlyList<PageSummary>? pages;
+    private PageEditModel? editing;
+    private bool isNew;
+    private string status = "";
+    private bool statusBad;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load() => pages = await PagesSvc.ListAsync();
+
+    private void StartNew()
+    {
+        editing = new PageEditModel { Kind = PageKind.Data, Enabled = true };
+        isNew = true; status = "";
+    }
+
+    private async Task Edit(int id)
+    {
+        editing = await PagesSvc.GetAsync(id);
+        isNew = false; status = "";
+    }
+
+    private async Task Save()
+    {
+        if (editing is null) return;
+        var principal = AuthState is null ? new ClaimsPrincipal() : (await AuthState).User;
+        var result = await PagesSvc.SaveAsync(editing, principal);
+        if (!result.Ok)
+        {
+            status = result.Error ?? "Save failed."; statusBad = true;
+            return;
+        }
+        statusBad = false;
+        status = result.StampedTrust == ContentTrust.Author
+            ? "Saved as Author — your raw HTML/JS is honored."
+            : "Saved as Untrusted — inline scripts will be sanitized.";
+        isNew = false;
+        editing.Id = result.Id;
+        await Load();
+    }
+
+    private async Task SoftDelete(int id)
+    {
+        await PagesSvc.SoftDeleteAsync(id);
+        editing = null; status = "";
+        await Load();
+    }
+}

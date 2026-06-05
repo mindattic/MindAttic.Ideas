@@ -1,0 +1,82 @@
+@page "/admin/content"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@inject IContentLifecycleService Lifecycle
+
+<PageTitle>Content</PageTitle>
+<h1 class="admin-title">Themes, Components &amp; Controls</h1>
+
+@if (defs is null)
+{
+    <p>Loading…</p>
+}
+else
+{
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="admin-status @(messageBad ? "err" : "ok")">@message</div>
+    }
+    <table class="admin-table">
+        <thead><tr><th>Kind</th><th>Key</th><th>Ver</th><th>Origin</th><th>State</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var d in defs)
+            {
+                <tr class="@(d.Enabled ? "" : "row-off")">
+                    <td>@d.Kind</td>
+                    <td>@d.Key</td>
+                    <td>V@d.Version</td>
+                    <td>@d.Origin</td>
+                    <td>
+                        @(d.Enabled ? "Enabled" : "Disabled")
+                        @if (d.IsShadowed) { <span class="admin-badge">shadowed</span> }
+                        @if (!d.IsActive) { <span class="admin-badge">inactive</span> }
+                    </td>
+                    <td>
+                        @if (d.Enabled)
+                        {
+                            <button class="admin-link" @onclick="() => SetEnabled(d.Id, false)">Disable</button>
+                        }
+                        else
+                        {
+                            <button class="admin-link" @onclick="() => SetEnabled(d.Id, true)">Enable</button>
+                        }
+                        <button class="admin-link danger" @onclick="() => Delete(d)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<CmsContentDefinition>? defs;
+    private string message = "";
+    private bool messageBad;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load() => defs = await Lifecycle.ListAsync();
+
+    private async Task SetEnabled(int id, bool enabled)
+    {
+        var r = await Lifecycle.SetEnabledAsync(id, enabled);
+        Set(r.Ok ? $"{(enabled ? "Enabled" : "Disabled")}." : r.Error ?? "Failed.", !r.Ok);
+        await Load();
+    }
+
+    private async Task Delete(CmsContentDefinition d)
+    {
+        var r = await Lifecycle.DeleteAsync(d.Kind, d.Key, d.Version);
+        if (r.Blocked)
+            Set($"Can't delete {d.Kind} '{d.Key}' V{d.Version} — still used by: {string.Join(", ", r.PinnedBy)}.", true);
+        else if (r.DisabledInstead)
+            Set(r.Message ?? "Disabled instead of deleted.", false);
+        else if (r.Deleted)
+            Set($"Deleted {d.Kind} '{d.Key}' V{d.Version}.", false);
+        else
+            Set(r.Message ?? "No change.", true);
+        await Load();
+    }
+
+    private void Set(string m, bool bad) { message = m; messageBad = bad; }
+}
