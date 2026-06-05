@@ -33,7 +33,8 @@ public interface IPackageInstallService
 /// </summary>
 public sealed class PackageInstallService(
     IDbContextFactory<CmsDbContext> dbFactory,
-    DiscoveryService discovery) : IPackageInstallService
+    DiscoveryService discovery,
+    IPackageBlobStore blobStore) : IPackageInstallService
 {
     public async Task<InstallPlan> InstallAsync(Stream ideaBytes, bool allowOverride, CancellationToken ct = default)
     {
@@ -80,6 +81,10 @@ public sealed class PackageInstallService(
 
         var now = DateTime.UtcNow;
 
+        // Persist the verbatim bytes (the source of truth the deferred ALC loader will extract). Done only
+        // once the install is going to proceed, so a rejected/no-op package writes nothing.
+        var blobPath = await blobStore.SaveAsync(manifest.Category, manifest.Key, manifest.Version, bytes, ct);
+
         // ---- Registry row (idempotent upsert by the unique (Category,Key,Version)). ----
         var pkg = installedRows.FirstOrDefault(p => p.Version == manifest.Version)
                   ?? AddNew(db, new InstalledPackage());
@@ -91,7 +96,7 @@ public sealed class PackageInstallService(
         pkg.ManifestJson = rawJson;                       // verbatim — preserves any forward-compat fields
         pkg.ManifestVersion = manifest.ManifestVersion;
         pkg.Sha256 = sha;
-        pkg.BlobPath = $"packages/{manifest.Category}/{manifest.Key}/{manifest.Version}";   // convention; real blob is Phase-5/B
+        pkg.BlobPath = blobPath;                          // points at the persisted .idea bytes
         pkg.Enabled = true;
         pkg.IsActiveVersion = plan.MakeActiveVersion;
         pkg.InstalledUtc = now;

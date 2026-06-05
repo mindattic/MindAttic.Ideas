@@ -29,18 +29,19 @@ public class PackageInstallServiceTests
         public Type? Resolve(ContentDescriptor descriptor) => null;
     }
 
-    private static (PackageInstallService Svc, InMemoryFactory Factory, ContentCatalog Catalog) NewService()
+    private static (PackageInstallService Svc, InMemoryFactory Factory, ContentCatalog Catalog, InMemoryPackageBlobStore Blobs) NewService()
     {
         var factory = new InMemoryFactory("pkg_" + Guid.NewGuid().ToString("N"));
         var catalog = new ContentCatalog(new NullResolver());
         var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
-        return (new PackageInstallService(factory, discovery), factory, catalog);
+        var blobs = new InMemoryPackageBlobStore();
+        return (new PackageInstallService(factory, discovery, blobs), factory, catalog, blobs);
     }
 
     [Test]
     public async Task Install_UpsertsRegistryAndMirroredCatalogRow()
     {
-        var (svc, factory, _) = NewService();
+        var (svc, factory, _, blobs) = NewService();
         var plan = await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Component"), allowOverride: false);
 
         Assert.That(plan.Action, Is.EqualTo(InstallAction.Install));
@@ -53,6 +54,8 @@ public class PackageInstallServiceTests
             Assert.That(pkg.IsActiveVersion, Is.True);
             Assert.That(pkg.Sha256, Has.Length.EqualTo(64));
             Assert.That(pkg.ManifestJson, Does.Contain("ui.tooltip"));   // verbatim manifest stored
+            Assert.That(pkg.BlobPath, Is.EqualTo("Component/ui.tooltip/1.idea"));
+            Assert.That(blobs.Saved.ContainsKey(pkg.BlobPath), Is.True, "the .idea bytes are persisted to the store");
         });
 
         var def = await db.ContentDefinitions.SingleAsync();
@@ -68,7 +71,7 @@ public class PackageInstallServiceTests
     [Test]
     public async Task Install_IsIdempotent_NoDuplicateRow()
     {
-        var (svc, factory, _) = NewService();
+        var (svc, factory, _, _) = NewService();
         await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1), allowOverride: false);
         var second = await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1), allowOverride: false);
 
@@ -80,7 +83,7 @@ public class PackageInstallServiceTests
     [Test]
     public async Task HigherVersion_RetainsPriorVersion_FlipsItInactive()
     {
-        var (svc, factory, _) = NewService();
+        var (svc, factory, _, _) = NewService();
         await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1), allowOverride: false);
         await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 2), allowOverride: false);
 
@@ -100,7 +103,7 @@ public class PackageInstallServiceTests
     [Test]
     public async Task Disable_FlipsBothRowsEnabledFalse_BytesRemain_CatalogReportsDisabled()
     {
-        var (svc, factory, catalog) = NewService();
+        var (svc, factory, catalog, _) = NewService();
         await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Component"), allowOverride: false);
 
         await svc.DisableAsync("Component", "ui.tooltip", 1);
@@ -119,7 +122,7 @@ public class PackageInstallServiceTests
     [Test]
     public async Task InvalidPackage_ForbiddenBinAssembly_Throws_NoRowsWritten()
     {
-        var (svc, factory, _) = NewService();
+        var (svc, factory, _, blobs) = NewService();
         var bad = IdeaTestArchive.Build(new Dictionary<string, string>
         {
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
@@ -137,13 +140,14 @@ public class PackageInstallServiceTests
         {
             Assert.That(db.InstalledPackages.Count(), Is.EqualTo(0));
             Assert.That(db.ContentDefinitions.Count(), Is.EqualTo(0));
+            Assert.That(blobs.Saved, Is.Empty, "an invalid package persists no bytes (validation precedes save)");
         });
     }
 
     [Test]
     public async Task AfterInstall_CatalogRegistersPackageDescriptor_TypeUnresolvedUntilLoader()
     {
-        var (svc, _, catalog) = NewService();
+        var (svc, _, catalog, _) = NewService();
         await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Component"), allowOverride: false);
 
         Assert.That(catalog.All.Any(d => d.Origin == ContentOrigin.Package && d.Key == "ui.tooltip"), Is.True);

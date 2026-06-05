@@ -44,7 +44,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IContentLifecycleService, ContentLifecycleService>();
         services.AddScoped<IPageAdminService, PageAdminService>();
 
-        // Phase-5: .idea package install (validate + register rows; no ALC load yet).
+        // Phase-5: .idea package install (validate + persist bytes + register rows; no ALC load yet).
+        // Local file store by default; the ADR's Azure Blob backing slots in behind IPackageBlobStore.
+        services.AddSingleton<IPackageBlobStore>(_ => new LocalFilePackageBlobStore());
         services.AddScoped<IPackageInstallService, PackageInstallService>();
 
         return services;
