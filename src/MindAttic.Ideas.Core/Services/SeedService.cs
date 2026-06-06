@@ -58,7 +58,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             await db.SaveChangesAsync(ct);
         }
 
-        // Front page — a compiled Code page rendering the MindAttic.Ideas.Page.MindAtticFrontpage.V1
+        // Front page — a compiled Code page rendering the MindAttic.Ideas.Page.Frontpage.V1
         // Idea (the whole-site accordion) through the Cyberspace theme. Upsert by (SiteId, Slug).
         if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "frontpage", ct))
         {
@@ -67,8 +67,8 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
                 SiteId = site.Id, Slug = "frontpage", Title = "MindAttic",
                 ThemeKey = "cyberspace", ThemeVersion = 1,
                 Kind = PageKind.Code,
-                ComponentTypeName = "MindAttic.Ideas.Page.MindAtticFrontpage.V1",
-                AssemblyName = "MindAttic.Ideas.Page.MindAtticFrontpage",
+                ComponentTypeName = "MindAttic.Ideas.Page.Frontpage.V1",
+                AssemblyName = "MindAttic.Ideas.Page.Frontpage",
                 IsPublished = true, Enabled = true,
                 CreatedUtc = now, ModifiedUtc = now,
             });

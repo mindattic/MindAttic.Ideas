@@ -131,20 +131,20 @@ public static partial class Packer
         if (candidates.Count == 0)
             throw new PackException(
                 "no entry type found. Expected a public class named V<n> in a " +
-                "'MindAttic.Ideas.<Kind>.<Key>' namespace (e.g. MindAttic.Ideas.Page.MindAtticFrontpage.V1).");
+                "'MindAttic.Ideas.<Kind>.<Key>' namespace (e.g. MindAttic.Ideas.Page.Frontpage.V1).");
         if (candidates.Count > 1)
             throw new PackException(
                 "multiple entry types found (" + string.Join(", ", candidates.Select(c => c.FullName)) +
                 "). One .idea = one citizen; split them into separate projects.");
 
         var type = candidates[0];
-        var ns = type.Namespace!;                       // MindAttic.Ideas.Page.MindAtticFrontpage
-        var segs = ns.Split('.');                       // [MindAttic, Ideas, Page, MindAtticFrontpage, ...]
+        var ns = type.Namespace!;                       // MindAttic.Ideas.Page.Frontpage
+        var segs = ns.Split('.');                       // [MindAttic, Ideas, Page, Frontpage, ...]
         if (segs.Length < 4)
             throw new PackException($"namespace '{ns}' is too shallow; expected MindAttic.Ideas.<Kind>.<Key>.");
 
         var kind = segs[2];                             // Page | Theme | Plugin | Control
-        var key = string.Join('.', segs.Skip(3)).ToLowerInvariant();   // mindatticfrontpage
+        var key = string.Join('.', segs.Skip(3)).ToLowerInvariant();   // frontpage
         var convVersion = int.Parse(VersionClass().Match(type.Name).Groups[1].Value);
 
         // [Idea] / [IdeaSdkVersion] overrides (read as attribute data — no execution). An attribute

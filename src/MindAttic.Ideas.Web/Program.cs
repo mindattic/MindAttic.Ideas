@@ -39,7 +39,7 @@ var connectionString =
 builder.Services.AddIdeasCore(
     connectionString,
     typeof(Program).Assembly,
-    typeof(MindAttic.Ideas.Page.MindAtticFrontpage.V1).Assembly);
+    typeof(MindAttic.Ideas.Page.Frontpage.V1).Assembly);
 
 // --- MindAttic.Legion: LLM + voting (A7). Zero-config; keys resolve via Vault when used. ---
 builder.Services.AddLegionClient();

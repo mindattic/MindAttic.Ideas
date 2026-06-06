@@ -18,8 +18,8 @@
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.3" />
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.3" />
     <!-- A compiled Page Idea (the MindAttic front page), consumed as an RCL NuGet. Its static web
-         assets serve at _content/MindAttic.Ideas.Page.MindAtticFrontpage/; Abstractions is host-provided. -->
-    <PackageReference Include="MindAttic.Ideas.Page.MindAtticFrontpage" Version="1.0.0" />
+         assets serve at _content/MindAttic.Ideas.Page.Frontpage/; Abstractions is host-provided. -->
+    <PackageReference Include="MindAttic.Ideas.Page.Frontpage" Version="1.0.0" />
   </ItemGroup>
 
   <PropertyGroup>
