@@ -79,6 +79,25 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             });
             await db.SaveChangesAsync(ct);
         }
+
+        // One-time data upgrade: rewrite any data page still using the retired <MindAttic.Ideas.…/> include
+        // tags to the {{ … }} token grammar. Idempotent — the filter excludes already-converted bodies, so
+        // this is a no-op once the cutover is done. (SQL has no regex, so the rewrite is done here in code.)
+        var legacy = await db.Pages
+            .Where(p => p.BodyHtml != null && p.BodyHtml.Contains("<MindAttic.Ideas."))
+            .ToListAsync(ct);
+        var upgraded = 0;
+        foreach (var p in legacy)
+        {
+            var converted = Rendering.IncludeReferenceParser.UpgradeLegacyTags(p.BodyHtml);
+            if (!string.Equals(converted, p.BodyHtml, StringComparison.Ordinal))
+            {
+                p.BodyHtml = converted;
+                p.ModifiedUtc = now;
+                upgraded++;
+            }
+        }
+        if (upgraded > 0) await db.SaveChangesAsync(ct);
     }
 
     // Proves the full path: free-form HTML rendered through the Cyberspace theme, a Module that

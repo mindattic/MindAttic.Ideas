@@ -51,6 +51,30 @@ public static class IncludeReferenceParser
         }
     }
 
+    // One-time upgrade of the RETIRED custom-element include form to the {{…}} token form. Self-closing
+    // <MindAttic.Ideas.X.Y.Z .../> and empty paired <…></…> both become {{ X.Y.Z … }}; attributes
+    // (including quoted values) are preserved verbatim. Idempotent — content already on {{…}} is untouched.
+    private static readonly Regex LegacyEmptyPair =
+        new(@"<(MindAttic\.Ideas\.[A-Za-z0-9_.]+)((?:\s[^<>]*?)?)\s*>\s*</\1>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex LegacySelfClosing =
+        new(@"<(MindAttic\.Ideas\.[A-Za-z0-9_.]+)((?:\s[^<>]*?)?)\s*/>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>Rewrite legacy <c>&lt;MindAttic.Ideas.…/&gt;</c> include tags in author HTML to <c>{{ … }}</c> tokens.</summary>
+    public static string? UpgradeLegacyTags(string? html)
+    {
+        if (string.IsNullOrEmpty(html) || !html.Contains("<MindAttic.Ideas.", StringComparison.OrdinalIgnoreCase))
+            return html;
+
+        static string ToToken(Match m)
+        {
+            var attrs = m.Groups[2].Value.Trim();   // drop the separator/edge whitespace the pattern captured
+            return attrs.Length == 0 ? "{{" + m.Groups[1].Value + "}}" : "{{" + m.Groups[1].Value + " " + attrs + "}}";
+        }
+
+        var s = LegacyEmptyPair.Replace(html, ToToken);
+        return LegacySelfClosing.Replace(s, ToToken);
+    }
+
     /// <summary>Parse "mindattic.ideas.{kind}.{key...}[.v{n}|.latest]". Version null = float to latest.</summary>
     public static bool TryParseTag(string localName, out ContentKind kind, out string key, out int? version)
     {

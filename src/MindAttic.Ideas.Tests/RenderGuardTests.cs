@@ -45,6 +45,19 @@ public class RenderGuardTests
     }
 
     [Test]
+    public void UpgradeLegacyTags_RewritesOldElementFormToTokens_AndIsIdempotent()
+    {
+        var html = "<p>x</p><MindAttic.Ideas.Plugin.Tooltip /><MindAttic.Ideas.Control.Textbox placeholder=\"Type\" />";
+        var up = IncludeReferenceParser.UpgradeLegacyTags(html)!;
+        Assert.That(up, Does.Contain("{{MindAttic.Ideas.Plugin.Tooltip}}"));
+        Assert.That(up, Does.Contain("{{MindAttic.Ideas.Control.Textbox placeholder=\"Type\"}}"));
+        Assert.That(up, Does.Not.Contain("<MindAttic.Ideas."));
+        // Already-token content is left untouched (idempotent on a second pass / on new content).
+        Assert.That(IncludeReferenceParser.UpgradeLegacyTags("{{MindAttic.Ideas.Plugin.Tooltip}}"),
+            Is.EqualTo("{{MindAttic.Ideas.Plugin.Tooltip}}"));
+    }
+
+    [Test]
     public void Parse_IgnoresPlainHtmlAndMalformed()
     {
         Assert.That(IncludeReferenceParser.Parse("<div><p>hello</p></div>"), Is.Empty);
