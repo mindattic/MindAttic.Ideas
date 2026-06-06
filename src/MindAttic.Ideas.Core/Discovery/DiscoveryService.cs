@@ -55,8 +55,13 @@ public sealed class DiscoveryService(
             }
         }
 
-        // Disappeared rows -> inactive (kept for history + stable placeholders), never deleted.
-        foreach (var row in existing.Where(e => !seen.Contains((e.Kind, e.Key, e.Version, e.Origin))))
+        // Disappeared rows -> inactive (kept for history + stable placeholders), never deleted. SCOPED to
+        // the origins THESE sources own (Compiled): Package rows are managed by PackageInstallService, so
+        // discovery must never deactivate an installed package — otherwise every restart (which runs only the
+        // compiled sources) would flip installed .idea packages inactive and drop them from the catalog.
+        var ownedOrigins = sources.Select(s => s.Origin).ToHashSet();
+        foreach (var row in existing.Where(e => ownedOrigins.Contains(e.Origin)
+                     && !seen.Contains((e.Kind, e.Key, e.Version, e.Origin))))
             row.IsActive = false;
 
         await db.SaveChangesAsync(ct);

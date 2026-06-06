@@ -108,12 +108,19 @@ else if (_context is not null)
         // Body type: Data -> FreeFormPage; Code -> resolved type; unresolved -> placeholder.
         if (page.Kind == PageKind.Code && page.ComponentTypeName is not null)
         {
-            var desc = new ContentDescriptor
-            {
-                Kind = ContentKind.Page, Key = page.Slug, Version = 1, DisplayName = page.Title,
-                Strategy = RenderStrategy.ClrType, ClrTypeName = page.ComponentTypeName,
-                AssemblyName = page.AssemblyName ?? "",
-            };
+            // Prefer the CATALOG's descriptor for this compiled type: it carries the correct Origin
+            // (Package vs Compiled), Category, Key, Version and AssetMount — so a PACKAGE page is loaded
+            // through the collectible ALC. A bare inline descriptor defaults to Origin=Compiled (and an
+            // empty Category), which the AlcAwareTypeResolver routes to the default resolver, so a package
+            // page's type would never load and the page would degrade to the missing-page placeholder.
+            var desc = Catalog.All.FirstOrDefault(d => d.Kind == ContentKind.Page
+                          && string.Equals(d.ClrTypeName, page.ComponentTypeName, StringComparison.Ordinal))
+                       ?? new ContentDescriptor
+                          {
+                              Kind = ContentKind.Page, Key = page.Slug, Version = 1, DisplayName = page.Title,
+                              Strategy = RenderStrategy.ClrType, ClrTypeName = page.ComponentTypeName,
+                              AssemblyName = page.AssemblyName ?? "",
+                          };
             var resolvedBody = Catalog.ResolveType(desc);
             _bodyType = resolvedBody ?? typeof(MissingPageHost);
             if (resolvedBody is null)

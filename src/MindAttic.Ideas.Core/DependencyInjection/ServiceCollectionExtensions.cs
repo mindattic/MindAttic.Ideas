@@ -21,8 +21,12 @@ public static class ServiceCollectionExtensions
         services.AddDbContextFactory<CmsDbContext>(o => o.UseSqlServer(connectionString));
         // The MindAttic.Authentication seam resolves AddScoped<IAuthDataContext>(sp => GetRequiredService<CmsDbContext>()),
         // and AuthBootstrapper/IUserStore are scoped — so CmsDbContext needs a SCOPED registration too (the
-        // factory alone doesn't provide one). Both share the same connection string.
-        services.AddDbContext<CmsDbContext>(o => o.UseSqlServer(connectionString));
+        // factory alone doesn't provide one). Both share the same connection string. optionsLifetime:Singleton
+        // is REQUIRED here: the singleton factory builds its options from the same IDbContextOptionsConfiguration
+        // set, so leaving it scoped (the AddDbContext default) makes the factory resolve a scoped service from
+        // the root provider -> the app fails DI validation on startup.
+        services.AddDbContext<CmsDbContext>(o => o.UseSqlServer(connectionString),
+            optionsLifetime: ServiceLifetime.Singleton);
 
         // Discovery + catalog (singletons: one shared catalog snapshot for the app). The ALC-aware resolver
         // loads PACKAGE citizens through a per-package collectible context and delegates every other

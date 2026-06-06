@@ -96,6 +96,26 @@ using (var scope = app.Services.CreateScope())
     await sp.GetRequiredService<DiscoveryService>().RunAsync();
     await sp.GetRequiredService<SeedService>().SeedAsync();
     await sp.GetRequiredService<MindAttic.Authentication.Services.AuthBootstrapper>().SeedAdminAsync();
+
+    // DEV convenience: auto-install every .idea dropped in the IDEAS_DROPBOX folder through the REAL
+    // install path (IPackageInstallService = the admin-upload code path), idempotent + allowOverride.
+    // Lets you stage a folder of packages and see them compose on a live page with no manual upload.
+    if (app.Environment.IsDevelopment()
+        && Environment.GetEnvironmentVariable("IDEAS_DROPBOX") is { Length: > 0 } dropbox
+        && Directory.Exists(dropbox))
+    {
+        var installer = sp.GetRequiredService<MindAttic.Ideas.Core.Services.IPackageInstallService>();
+        foreach (var file in Directory.EnumerateFiles(dropbox, "*.idea").OrderBy(f => f, StringComparer.Ordinal))
+        {
+            try
+            {
+                await using var bytes = File.OpenRead(file);
+                var plan = await installer.InstallAsync(bytes, allowOverride: true);
+                Console.WriteLine($"[dropbox] {Path.GetFileName(file)} -> {plan.Action}");
+            }
+            catch (Exception ex) { Console.Error.WriteLine($"[dropbox] {Path.GetFileName(file)} FAILED: {ex.Message}"); }
+        }
+    }
 }
 
 if (!app.Environment.IsDevelopment())
@@ -132,7 +152,13 @@ app.MapGet("/_ideas/{category}/{key}/{version:int}/{**path}",
         return Results.File(File.OpenRead(file), contentType);
     });
 app.MapGet("/_ideas/{*path}", () => Results.NotFound());   // anything else under /_ideas
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>()
+   .AddInteractiveServerRenderMode()
+   // PageHost (the catch-all "/{*Slug}" content route) lives in the MindAttic.Ideas.Rendering RCL.
+   // .NET 8+ endpoint-based routing only discovers routable components from App's assembly unless the
+   // RCL is registered here — the <Router AdditionalAssemblies> alone does NOT register server endpoints,
+   // so without this every content page 404s.
+   .AddAdditionalAssemblies(typeof(MindAttic.Ideas.Rendering.PageHost).Assembly);
 
 // MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
 app.MapMindAtticAuthEndpoints();
