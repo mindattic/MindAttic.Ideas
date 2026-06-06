@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components;
+
 namespace MindAttic.Ideas.Abstractions;
 
 // ============================================================================================
@@ -72,4 +74,20 @@ public interface IInlineMarkup
     string? Js { get; }
     /// <summary>True =&gt; host emits raw (intentional admin JS); false =&gt; sanitized.</summary>
     bool Trusted { get; }
+}
+
+/// <summary>
+/// Host-provided render seam (resolved via <see cref="IRenderContext.TryGetFeature{T}"/>): turns a
+/// string-id include reference — e.g. <c>"MindAttic.Ideas.Plugin.Tooltip.V1"</c> (omit the version or
+/// use <c>.Latest</c> to float) — into a render fragment, using the SAME catalog resolution, Missing/
+/// Disabled degradation, and Admin-Inbox alerting as a data page's <c>&lt;MindAttic.Ideas.…/&gt;</c>
+/// include tag. This is what lets a COMPILED Page/Theme compose other citizens BY STRING ID with no
+/// compile-time package reference — the <see cref="CmsInclude"/> primitive delegates to it. The host impl
+/// MUST never throw into a render (degrade to a placeholder). APPEND-ONLY interface (default methods only).
+/// </summary>
+public interface IIncludeRenderer
+{
+    RenderFragment Render(
+        IRenderContext context, string reference,
+        IReadOnlyDictionary<string, object?>? attributes = null, RenderFragment? childContent = null);
 }

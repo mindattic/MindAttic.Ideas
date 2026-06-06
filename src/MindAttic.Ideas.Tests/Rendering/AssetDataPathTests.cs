@@ -36,14 +36,14 @@ public class AssetDataPathTests
         var factory = new InMemoryFactory("assets_" + Guid.NewGuid().ToString("N"));
         var catalog = new ContentCatalog(new NullResolver());
         var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
-        var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), new NullPackageExtractor());
+        var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), new NullPackageExtractor(), new NullRenderAlertSink());
 
         var idea = IdeaTestArchive.Build(new Dictionary<string, string>
         {
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
             {
-                ManifestVersion = 1, Category = "Component", Kind = "code", Key = "ui.tooltip", Version = 1,
-                DisplayName = "Tooltip", Sdk = 1, EntryType = "MindAttic.Ideas.Component.Tooltip.V1",
+                ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = "ui.tooltip", Version = 1,
+                DisplayName = "Tooltip", Sdk = 1, EntryType = "MindAttic.Ideas.Plugin.Tooltip.V1",
                 AssemblyName = "Tooltip", Css = ["tip.css", "tip-theme.css"], Scripts = ["tip.js"],
             }),
             ["bin/Tooltip.dll"] = "MZ",
@@ -51,7 +51,7 @@ public class AssetDataPathTests
 
         await svc.InstallAsync(idea, allowOverride: false);
 
-        var desc = catalog.Find(ContentKind.Component, "ui.tooltip", 1);
+        var desc = catalog.Find(ContentKind.Plugin, "ui.tooltip", 1);
         Assert.That(desc, Is.Not.Null, "the package descriptor should be in the reloaded catalog");
         var assets = ManifestAssetPacker.FromExtra(desc!.Extra);
         Assert.Multiple(() =>
@@ -69,14 +69,14 @@ public class AssetDataPathTests
         {
             db.InstalledPackages.Add(new InstalledPackage
             {
-                Category = "Component", Kind = "code", Key = "broken", Version = 1, DisplayName = "Broken",
+                Category = "Plugin", Kind = "code", Key = "broken", Version = 1, DisplayName = "Broken",
                 ManifestJson = "{ this is not valid json", Enabled = true, IsActiveVersion = true,
                 InstalledUtc = DateTime.UtcNow,
             });
             db.ContentDefinitions.Add(new CmsContentDefinition
             {
-                Kind = ContentKind.Component, Key = "broken", Version = 1, Origin = ContentOrigin.Package,
-                DisplayName = "Broken", Category = "Component", Priority = 50, IsActive = true, Enabled = true,
+                Kind = ContentKind.Plugin, Key = "broken", Version = 1, Origin = ContentOrigin.Package,
+                DisplayName = "Broken", Category = "Plugin", Priority = 50, IsActive = true, Enabled = true,
                 DiscoveredUtc = DateTime.UtcNow,
             });
             await db.SaveChangesAsync();
@@ -87,7 +87,7 @@ public class AssetDataPathTests
 
         Assert.DoesNotThrowAsync(async () => await discovery.ReloadCatalogAsync());
 
-        var desc = catalog.Find(ContentKind.Component, "broken", 1);
+        var desc = catalog.Find(ContentKind.Plugin, "broken", 1);
         Assert.That(desc, Is.Not.Null, "the citizen is still registered despite the corrupt manifest");
         Assert.That(desc!.Extra, Is.Null, "its head assets degrade to none, not a crash");
     }

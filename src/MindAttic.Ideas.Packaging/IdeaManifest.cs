@@ -17,7 +17,7 @@ public sealed record IdeaManifest
     /// <summary>Schema version of <c>idea.json</c>. The host refuses a manifest newer than it understands.</summary>
     [JsonPropertyName("manifestVersion")] public int ManifestVersion { get; init; } = 1;
 
-    /// <summary>The <see cref="MindAttic.Ideas.Abstractions.ContentKind"/> name: Page | Component | Theme | Control.</summary>
+    /// <summary>The <see cref="MindAttic.Ideas.Abstractions.ContentKind"/> name: Page | Plugin | Theme | Control.</summary>
     [JsonPropertyName("category")] public string Category { get; init; } = "";
 
     /// <summary><c>data</c> (free-form author content, no assembly) or <c>code</c> (a compiled citizen in bin/).</summary>
@@ -52,6 +52,15 @@ public sealed record IdeaManifest
     [JsonPropertyName("assets")] public IReadOnlyList<string> Assets { get; init; } = [];
     /// <summary>The non-host assembly simple-names bundled in bin/ (informational; the loader audits bin/ itself).</summary>
     [JsonPropertyName("dependsOn")] public IReadOnlyList<string> DependsOn { get; init; } = [];
+
+    /// <summary>
+    /// Citizens this COMPILED page/theme references BY STRING ID at runtime (via <c>CmsInclude</c>) but
+    /// does NOT bundle — entries are <c>"&lt;Kind&gt;.&lt;key&gt;[@&lt;version&gt;]"</c>, e.g.
+    /// <c>"Plugin.tooltip"</c>, <c>"Control.textbox@1"</c>. The packer derives these from
+    /// <c>[Uses]</c>. The host hoists their css/js into <c>&lt;head&gt;</c>, warns if one is not installed,
+    /// and reference-guards them against deletion. Omitted version = float to latest.
+    /// </summary>
+    [JsonPropertyName("uses")] public IReadOnlyList<string> Uses { get; init; } = [];
 
     /// <summary>A package may shadow a compiled key only with this set true PLUS admin confirmation.</summary>
     [JsonPropertyName("allowOverride")] public bool AllowOverride { get; init; }

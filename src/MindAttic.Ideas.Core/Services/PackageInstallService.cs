@@ -3,6 +3,7 @@ using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Entities;
+using MindAttic.Ideas.Core.Rendering;
 using MindAttic.Ideas.Packaging;
 
 namespace MindAttic.Ideas.Core.Services;
@@ -35,7 +36,8 @@ public sealed class PackageInstallService(
     IDbContextFactory<CmsDbContext> dbFactory,
     DiscoveryService discovery,
     IPackageBlobStore blobStore,
-    IPackageExtractor extractor) : IPackageInstallService
+    IPackageExtractor extractor,
+    IRenderAlertSink alerts) : IPackageInstallService
 {
     public async Task<InstallPlan> InstallAsync(Stream ideaBytes, bool allowOverride, CancellationToken ct = default)
     {
@@ -133,9 +135,95 @@ public sealed class PackageInstallService(
         def.AllowOverride = allowOverride;
         def.DiscoveredUtc = now;
 
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);   // pkg.Id is now generated, so the seed can stamp SourcePackageId.
+
+        // ---- Seed-on-install: a Page (code) package may carry data/page.json to make itself routable on
+        // upload (idempotent by (SiteId, Slug); never clobbers a row another package or an admin owns). ----
+        if (kind == ContentKind.Page && string.Equals(manifest.Kind, "code", StringComparison.Ordinal)
+            && archive.ReadPageSeed() is { Slug.Length: > 0 } seed)
+        {
+            await ApplyPageSeedAsync(db, pkg, manifest, seed, now, ct);
+            await db.SaveChangesAsync(ct);
+        }
+
+        // ---- Declared-dependency advisory (NON-blocking): a uses[] id with no installed+enabled definition.
+        // String-id references are late-bound (the theme/component may be installed afterward), so this is a
+        // warning to the operator (Admin Inbox), never a hard reject. ----
+        foreach (var (depKind, depKey, depVer) in IncludeReferenceParser.ParseUses(manifest.Uses))
+        {
+            var present = await db.ContentDefinitions.AnyAsync(
+                c => c.Kind == depKind && c.Key == depKey && c.Enabled && c.IsActive
+                     && (depVer == null || c.Version == depVer), ct);
+            if (!present)
+                try { alerts.RaiseMissing(depKind, depKey, depVer, Guid.Empty, $"install:{manifest.Key}@{manifest.Version}"); }
+                catch { /* an advisory never breaks an install */ }
+        }
+
         await discovery.ReloadCatalogAsync(ct);
         return plan;
+    }
+
+    /// <summary>
+    /// Idempotent Page upsert by (SiteId, Slug), stamping <see cref="Page.SourcePackageId"/> for provenance.
+    /// A compiled package page carries NO author raw markup, so it is stamped <see cref="ContentTrust.Untrusted"/>
+    /// (the trust gate governs only the inline-HTML path a code page never enters). Only PACKAGE-owned fields
+    /// are updated on re-install/upgrade (re-pointing <see cref="Page.ComponentTypeName"/> V1→V2 is the upgrade);
+    /// admin-owned fields (Enabled, Slug, SortOrder, IsPublished) are preserved, and a row owned by a DIFFERENT
+    /// package is never clobbered.
+    /// </summary>
+    private static async Task ApplyPageSeedAsync(
+        CmsDbContext db, InstalledPackage pkg, IdeaManifest manifest, PageSeed seed, DateTime now, CancellationToken ct)
+    {
+        var site = seed.SiteKey is { Length: > 0 } sk
+            ? await db.Sites.FirstOrDefaultAsync(s => s.Key == sk, ct)
+            : await db.Sites.FirstOrDefaultAsync(s => s.IsDefault, ct) ?? await db.Sites.FirstOrDefaultAsync(ct);
+        if (site is null) return;   // nothing to attach to yet — skip rather than invent a site
+        var siteId = site.Id;
+        var slug = seed.Slug.Trim('/');
+
+        var existing = await db.Pages.FirstOrDefaultAsync(p => p.SiteId == siteId && p.Slug == slug, ct);
+        if (existing is null)
+        {
+            db.Pages.Add(new Page
+            {
+                SiteId = siteId, Slug = slug,
+                Title = string.IsNullOrWhiteSpace(seed.Title) ? manifest.DisplayName : seed.Title,
+                ThemeKey = seed.ThemeKey, ThemeVersion = seed.ThemeVersion,
+                Kind = PageKind.Code,
+                ComponentTypeName = manifest.EntryType,
+                AssemblyName = manifest.AssemblyName,
+                BodyHtml = null, BodyTrust = ContentTrust.Untrusted, AuthoredByUserId = "system-package",
+                IsPublished = seed.Published, Enabled = true,
+                SourcePackageId = pkg.Id,
+                CreatedUtc = now, ModifiedUtc = now,
+            });
+            return;
+        }
+
+        // Does THIS logical package own the row? Ownership is by (Category, Key), NOT the version row id —
+        // each version is a distinct InstalledPackage row, so a V1→V2 upgrade must still be recognized as
+        // the same owner. An unowned (admin-created) row is adopted on first install.
+        var owned = existing.SourcePackageId is null || existing.SourcePackageId == pkg.Id;
+        if (!owned && existing.SourcePackageId is int ownerId)
+        {
+            var owner = await db.InstalledPackages.FirstOrDefaultAsync(p => p.Id == ownerId, ct);
+            owned = owner is not null
+                && string.Equals(owner.Category, manifest.Category, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(owner.Key, manifest.Key, StringComparison.Ordinal);
+        }
+
+        // Update only package-owned fields; admin-owned (Enabled, Slug, SortOrder, IsPublished) are preserved.
+        if (owned)
+        {
+            existing.Kind = PageKind.Code;
+            existing.ComponentTypeName = manifest.EntryType;     // V1 → V2 re-point = the upgrade path
+            existing.AssemblyName = manifest.AssemblyName;
+            existing.ThemeKey = seed.ThemeKey ?? existing.ThemeKey;
+            existing.ThemeVersion = seed.ThemeVersion ?? existing.ThemeVersion;
+            existing.SourcePackageId = pkg.Id;
+            existing.ModifiedUtc = now;
+        }
+        // else: a DIFFERENT package (or an admin) owns this slug — leave it untouched (no clobber).
     }
 
     public async Task DisableAsync(string category, string key, int version, CancellationToken ct = default)

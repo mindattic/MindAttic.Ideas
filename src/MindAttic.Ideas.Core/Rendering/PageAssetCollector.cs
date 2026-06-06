@@ -13,8 +13,17 @@ namespace MindAttic.Ideas.Core.Rendering;
 public static class PageAssetCollector
 {
     public static HeadAssets Collect(string? pageBodyHtml, IContentCatalog catalog, Func<ContentDescriptor, CitizenAssets> assetsOf)
+        => Collect(IncludeReferenceParser.Parse(pageBodyHtml), catalog, assetsOf);
+
+    /// <summary>
+    /// Collect from an explicit reference list — the seam a COMPILED page uses: its references come from the
+    /// manifest <c>uses[]</c> (it has no BodyHtml to scan), parsed to the same (Kind,Key,Version) tuples this
+    /// method already consumes. Same resolution + dedup + cascade order as the data-page path.
+    /// </summary>
+    public static HeadAssets Collect(
+        IReadOnlyList<(ContentKind Kind, string Key, int? Version)> refs,
+        IContentCatalog catalog, Func<ContentDescriptor, CitizenAssets> assetsOf)
     {
-        var refs = IncludeReferenceParser.Parse(pageBodyHtml);
         if (refs.Count == 0) return HeadAssets.Empty;
 
         var css = new List<string>();

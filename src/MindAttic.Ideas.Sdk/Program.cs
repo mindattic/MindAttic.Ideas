@@ -53,6 +53,7 @@ static int RunPack(ReadOnlySpan<string> rest)
     string? assembly = opts.GetValueOrDefault("assembly");
     string? outDir = opts.GetValueOrDefault("out");
     string? wwwroot = opts.GetValueOrDefault("wwwroot");
+    string? data = opts.GetValueOrDefault("data");
     string? icon = opts.GetValueOrDefault("icon");
     int? versionOverride = opts.TryGetValue("version", out var v) && int.TryParse(v, out var vn) ? vn : null;
     var refs = (opts.GetValueOrDefault("refs") ?? "")
@@ -74,6 +75,7 @@ static int RunPack(ReadOnlySpan<string> rest)
     {
         AssemblyPath = Path.GetFullPath(assembly),
         WwwrootDir = string.IsNullOrWhiteSpace(wwwroot) ? null : Path.GetFullPath(wwwroot),
+        DataDir = string.IsNullOrWhiteSpace(data) ? null : Path.GetFullPath(data),
         OutputDir = Path.GetFullPath(outDir),
         IconPath = string.IsNullOrWhiteSpace(icon) ? null : Path.GetFullPath(icon),
         VersionOverride = versionOverride,
@@ -94,8 +96,10 @@ static int RunInspect(ReadOnlySpan<string> rest)
     Console.WriteLine($"version      {m.Version}");
     Console.WriteLine($"displayName  {m.DisplayName}");
     if (m.EntryType is not null) Console.WriteLine($"entryType    {m.EntryType}");
+    if (m.Uses.Count > 0) Console.WriteLine($"uses         {string.Join(", ", m.Uses)}");
     Console.WriteLine($"bin/         {reader.BinEntries().Count} file(s)");
     Console.WriteLine($"wwwroot/     {reader.WwwrootEntries().Count} file(s)");
+    Console.WriteLine($"data/        {reader.DataEntries().Count} file(s)");
     return 0;
 }
 
@@ -198,7 +202,7 @@ static void PrintHelp() => Console.WriteLine("""
     ma-idea — MindAttic.Ideas .idea CLI
 
     Usage:
-      ma-idea pack    --assembly <path> --out <dir> [--wwwroot <dir>] [--icon <file>] [--version <n>] [--refs <a;b>]
+      ma-idea pack    --assembly <path> --out <dir> [--wwwroot <dir>] [--data <dir>] [--icon <file>] [--version <n>] [--refs <a;b>]
       ma-idea inspect <file.idea>
       ma-idea list    [dir]
       ma-idea install <file.idea> [--allow-override]

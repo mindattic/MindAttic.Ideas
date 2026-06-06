@@ -39,6 +39,10 @@ public static class ServiceCollectionExtensions
 
         // Rendering.
         services.AddSingleton<IRawContentGate, RawContentGate>();
+        // The CmsInclude SDK primitive resolves this feature via IRenderContext.TryGetFeature, so a COMPILED
+        // page can drop a Component/Control by string id at runtime (the compiled-page analog of a data
+        // page's <MindAttic.Ideas.…/> include tag). Singleton: depends only on the catalog + alert sink.
+        services.AddSingleton<IIncludeRenderer, IncludeRenderer>();
 
         // Seed (CMS content). Auth seeding is the library's AuthBootstrapper, wired in the Web host.
         services.AddScoped<SeedService>();

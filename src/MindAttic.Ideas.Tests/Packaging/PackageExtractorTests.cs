@@ -23,8 +23,8 @@ public class PackageExtractorTests
         {
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
             {
-                ManifestVersion = 1, Category = "Component", Kind = "code", Key = "ui.tooltip", Version = 2,
-                DisplayName = "Tooltip", Sdk = 1, EntryType = "MindAttic.Ideas.Component.Tooltip.V2", AssemblyName = "Tooltip",
+                ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = "ui.tooltip", Version = 2,
+                DisplayName = "Tooltip", Sdk = 1, EntryType = "MindAttic.Ideas.Plugin.Tooltip.V2", AssemblyName = "Tooltip",
             }),
             ["bin/Tooltip.dll"] = "fake-assembly-bytes",
             ["bin/Dep.dll"] = "dep",
@@ -32,11 +32,11 @@ public class PackageExtractorTests
         });
         using var reader = IdeaArchiveReader.Open(idea);
 
-        var dir = extractor.Extract(reader, "Component", "ui.tooltip", 2);
+        var dir = extractor.Extract(reader, "Plugin", "ui.tooltip", 2);
 
         Assert.Multiple(() =>
         {
-            Assert.That(extractor.IsExtracted("Component", "ui.tooltip", 2, "Tooltip"), Is.True);
+            Assert.That(extractor.IsExtracted("Plugin", "ui.tooltip", 2, "Tooltip"), Is.True);
             Assert.That(File.Exists(Path.Combine(dir, "Tooltip.dll")), Is.True);
             Assert.That(File.Exists(Path.Combine(dir, "Dep.dll")), Is.True);
             Assert.That(File.ReadAllText(Path.Combine(dir, "Tooltip.dll")), Is.EqualTo("fake-assembly-bytes"));
@@ -52,20 +52,20 @@ public class PackageExtractorTests
         {
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
             {
-                ManifestVersion = 1, Category = "Component", Kind = "code", Key = "ui.tooltip", Version = 1,
+                ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = "ui.tooltip", Version = 1,
                 DisplayName = "Tooltip", Sdk = 1, EntryType = "X", AssemblyName = "Tooltip",
             }),
             ["bin/Tooltip.dll"] = "asm",
             ["wwwroot/css/tip.css"] = ".tip{}",
         });
         using var reader = IdeaArchiveReader.Open(idea);
-        extractor.Extract(reader, "Component", "ui.tooltip", 1);
+        extractor.Extract(reader, "Plugin", "ui.tooltip", 1);
 
         Assert.Multiple(() =>
         {
-            Assert.That(extractor.ResolveAsset("Component", "ui.tooltip", 1, "css/tip.css"), Is.Not.Null);
-            Assert.That(extractor.ResolveAsset("Component", "ui.tooltip", 1, "css/missing.css"), Is.Null);
-            Assert.That(extractor.ResolveAsset("Component", "ui.tooltip", 1, "../../../secrets.txt"), Is.Null,
+            Assert.That(extractor.ResolveAsset("Plugin", "ui.tooltip", 1, "css/tip.css"), Is.Not.Null);
+            Assert.That(extractor.ResolveAsset("Plugin", "ui.tooltip", 1, "css/missing.css"), Is.Null);
+            Assert.That(extractor.ResolveAsset("Plugin", "ui.tooltip", 1, "../../../secrets.txt"), Is.Null,
                 "a traversal path must not escape the package wwwroot");
         });
     }
@@ -74,14 +74,14 @@ public class PackageExtractorTests
     public void EntryDllPath_FollowsTheConvention()
     {
         var extractor = new PackageExtractor(_root);
-        var path = extractor.EntryDllPath("Component", "ui.tooltip", 3, "Tooltip");
-        Assert.That(path, Is.EqualTo(Path.Combine(_root, "Component", "ui.tooltip", "3", "Tooltip.dll")));
+        var path = extractor.EntryDllPath("Plugin", "ui.tooltip", 3, "Tooltip");
+        Assert.That(path, Is.EqualTo(Path.Combine(_root, "Plugin", "ui.tooltip", "3", "Tooltip.dll")));
     }
 
     [Test]
     public void IsExtracted_FalseBeforeExtraction()
     {
         var extractor = new PackageExtractor(_root);
-        Assert.That(extractor.IsExtracted("Component", "ui.tooltip", 1, "Tooltip"), Is.False);
+        Assert.That(extractor.IsExtracted("Plugin", "ui.tooltip", 1, "Tooltip"), Is.False);
     }
 }

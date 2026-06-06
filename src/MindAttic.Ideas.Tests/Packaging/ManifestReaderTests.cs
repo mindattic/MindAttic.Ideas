@@ -10,7 +10,7 @@ public class ManifestReaderTests
     public void MinimalKernel_ParsesWithDocumentedDefaults()
     {
         const string json = """
-            { "manifestVersion": 1, "category": "Component", "kind": "code",
+            { "manifestVersion": 1, "category": "Plugin", "kind": "code",
               "key": "ui.tooltip", "version": 2, "displayName": "Tooltip" }
             """;
         var m = ManifestReader.Read(json);
@@ -18,7 +18,7 @@ public class ManifestReaderTests
         {
             Assert.That(m.Key, Is.EqualTo("ui.tooltip"));
             Assert.That(m.Version, Is.EqualTo(2));
-            Assert.That(m.Category, Is.EqualTo("Component"));
+            Assert.That(m.Category, Is.EqualTo("Plugin"));
             Assert.That(m.Kind, Is.EqualTo("code"));
             Assert.That(m.DisplayName, Is.EqualTo("Tooltip"));
             Assert.That(m.RenderMode, Is.EqualTo("InteractiveServer"));   // documented default

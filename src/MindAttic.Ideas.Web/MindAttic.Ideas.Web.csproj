@@ -2,6 +2,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MindAttic.Ideas.Core\MindAttic.Ideas.Core.csproj" />
+    <!-- The shared render pipeline (PageHost catch-all + CmsHead). Lives in an RCL so the
+         `ma-idea preview` dev-host can render through the exact same components. -->
+    <ProjectReference Include="..\MindAttic.Ideas.Rendering\MindAttic.Ideas.Rendering.csproj" />
   </ItemGroup>
 
   <ItemGroup>

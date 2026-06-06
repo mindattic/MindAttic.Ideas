@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text.Json;
 
 namespace MindAttic.Ideas.Packaging;
 
@@ -68,11 +69,33 @@ public sealed class IdeaArchiveReader : IDisposable
         }
     }
 
+    /// <summary>
+    /// The optional <c>data/page.json</c> seed (a Page package's routing recipe), or null if absent or
+    /// malformed — never throws, so a bad seed degrades to "no seed applied" rather than failing the install.
+    /// </summary>
+    public PageSeed? ReadPageSeed()
+    {
+        var entry = _zip.GetEntry("data/page.json");
+        if (entry is null) return null;
+        try
+        {
+            using var r = new StreamReader(entry.Open());
+            return JsonSerializer.Deserialize<PageSeed>(r.ReadToEnd(), IdeaManifest.ManifestJson);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     /// <summary>Entry paths under <c>bin/</c> (the bundled assemblies), relative to that prefix.</summary>
     public IReadOnlyList<string> BinEntries() => EntriesUnder("bin/");
 
     /// <summary>Entry paths under <c>wwwroot/</c> (the static assets), relative to that prefix.</summary>
     public IReadOnlyList<string> WwwrootEntries() => EntriesUnder("wwwroot/");
+
+    /// <summary>Entry paths under <c>data/</c> (the optional install seed), relative to that prefix.</summary>
+    public IReadOnlyList<string> DataEntries() => EntriesUnder("data/");
 
     private IReadOnlyList<string> EntriesUnder(string prefix) =>
         _zip.Entries

@@ -20,7 +20,7 @@ public class PageAssetCollectorTests
 
     private static ContentDescriptor Comp(string key, int version = 1) => new()
     {
-        Kind = ContentKind.Component, Key = key, Version = version, DisplayName = key, Origin = ContentOrigin.Package,
+        Kind = ContentKind.Plugin, Key = key, Version = version, DisplayName = key, Origin = ContentOrigin.Package,
     };
 
     private static CitizenAssets Css(params string[] urls) => new(urls, []);
@@ -32,7 +32,7 @@ public class PageAssetCollectorTests
         var assets = new Dictionary<string, CitizenAssets> { ["a"] = Css("a.css"), ["b"] = Css("b.css") };
 
         var head = PageAssetCollector.Collect(
-            "<MindAttic.Ideas.Component.a /><MindAttic.Ideas.Component.b />", catalog, d => assets[d.Key]);
+            "<MindAttic.Ideas.Plugin.a /><MindAttic.Ideas.Plugin.b />", catalog, d => assets[d.Key]);
 
         Assert.That(head.Css, Is.EqualTo(new[] { "a.css", "b.css" }));
     }
@@ -44,7 +44,7 @@ public class PageAssetCollectorTests
         var assets = new Dictionary<string, CitizenAssets> { ["a"] = Css("x.css", "a.css"), ["b"] = Css("x.css", "b.css") };
 
         var head = PageAssetCollector.Collect(
-            "<MindAttic.Ideas.Component.a /><MindAttic.Ideas.Component.b />", catalog, d => assets[d.Key]);
+            "<MindAttic.Ideas.Plugin.a /><MindAttic.Ideas.Plugin.b />", catalog, d => assets[d.Key]);
 
         Assert.That(head.Css, Is.EqualTo(new[] { "x.css", "a.css", "b.css" }));   // x.css once, at first sight
     }
@@ -55,7 +55,7 @@ public class PageAssetCollectorTests
         var catalog = new FakeCatalog([Comp("a")]);
         var assets = new Dictionary<string, CitizenAssets> { ["a"] = new(["shared"], ["shared"]) };
 
-        var head = PageAssetCollector.Collect("<MindAttic.Ideas.Component.a />", catalog, d => assets[d.Key]);
+        var head = PageAssetCollector.Collect("<MindAttic.Ideas.Plugin.a />", catalog, d => assets[d.Key]);
 
         Assert.Multiple(() =>
         {
@@ -71,7 +71,7 @@ public class PageAssetCollectorTests
         var assets = new Dictionary<string, CitizenAssets> { ["a"] = Css("A.css"), ["b"] = Css("a.css") };
 
         var head = PageAssetCollector.Collect(
-            "<MindAttic.Ideas.Component.a /><MindAttic.Ideas.Component.b />", catalog, d => assets[d.Key]);
+            "<MindAttic.Ideas.Plugin.a /><MindAttic.Ideas.Plugin.b />", catalog, d => assets[d.Key]);
 
         Assert.That(head.Css, Is.EqualTo(new[] { "A.css", "a.css" }));   // distinct
     }
@@ -82,9 +82,9 @@ public class PageAssetCollectorTests
         var catalog = new FakeCatalog([Comp("tip", 1), Comp("tip", 2)]);
         CitizenAssets AssetsFor(ContentDescriptor d) => Css($"tip.v{d.Version}.css");
 
-        var pinned = PageAssetCollector.Collect("<MindAttic.Ideas.Component.tip.V1 />", catalog, AssetsFor);
-        var floating = PageAssetCollector.Collect("<MindAttic.Ideas.Component.tip />", catalog, AssetsFor);
-        var latest = PageAssetCollector.Collect("<MindAttic.Ideas.Component.tip.Latest />", catalog, AssetsFor);
+        var pinned = PageAssetCollector.Collect("<MindAttic.Ideas.Plugin.tip.V1 />", catalog, AssetsFor);
+        var floating = PageAssetCollector.Collect("<MindAttic.Ideas.Plugin.tip />", catalog, AssetsFor);
+        var latest = PageAssetCollector.Collect("<MindAttic.Ideas.Plugin.tip.Latest />", catalog, AssetsFor);
 
         Assert.Multiple(() =>
         {
@@ -99,7 +99,7 @@ public class PageAssetCollectorTests
     {
         var catalog = new FakeCatalog([Comp("tip", 1), Comp("tip", 2)]);
         var head = PageAssetCollector.Collect(
-            "<MindAttic.Ideas.Component.tip.V1 /><MindAttic.Ideas.Component.tip.V2 />",
+            "<MindAttic.Ideas.Plugin.tip.V1 /><MindAttic.Ideas.Plugin.tip.V2 />",
             catalog, d => Css($"tip.v{d.Version}.css"));
 
         Assert.That(head.Css, Is.EqualTo(new[] { "tip.v1.css", "tip.v2.css" }));
@@ -109,7 +109,7 @@ public class PageAssetCollectorTests
     public void MissingOrDisabledRef_IsSkipped_NoThrow()
     {
         var catalog = new FakeCatalog([]);   // nothing resolves
-        var head = PageAssetCollector.Collect("<MindAttic.Ideas.Component.gone />", catalog, _ => Css("never.css"));
+        var head = PageAssetCollector.Collect("<MindAttic.Ideas.Plugin.gone />", catalog, _ => Css("never.css"));
 
         Assert.Multiple(() =>
         {
@@ -124,7 +124,7 @@ public class PageAssetCollectorTests
         var catalog = new FakeCatalog([Comp("a")]);
         Assert.Multiple(() =>
         {
-            Assert.That(PageAssetCollector.Collect(null, catalog, _ => Css("x")).Css, Is.Empty);
+            Assert.That(PageAssetCollector.Collect((string?)null, catalog, _ => Css("x")).Css, Is.Empty);
             Assert.That(PageAssetCollector.Collect("   ", catalog, _ => Css("x")).Scripts, Is.Empty);
         });
     }

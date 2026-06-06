@@ -11,6 +11,8 @@ public sealed class PackRequest
 {
     public required string AssemblyPath { get; init; }
     public string? WwwrootDir { get; init; }
+    /// <summary>Optional <c>data/</c> folder (e.g. a Page package's <c>page.json</c> seed) packed verbatim under <c>data/</c>.</summary>
+    public string? DataDir { get; init; }
     public required string OutputDir { get; init; }
     public string? IconPath { get; init; }
     public int? VersionOverride { get; init; }
@@ -62,7 +64,7 @@ public static partial class Packer
         var manifest = new IdeaManifest
         {
             ManifestVersion = 1,
-            Category = identity.Kind,         // the ContentKind name (Page | Component | Theme | Control)
+            Category = identity.Kind,         // the ContentKind name (Page | Plugin | Theme | Control)
             Kind = "code",                    // this packer packs a compiled citizen
             Key = identity.Key,
             Version = identity.Version,
@@ -72,6 +74,7 @@ public static partial class Packer
             AssemblyName = asm.GetName().Name ?? "",
             RenderMode = identity.RenderMode,
             Scope = identity.Scope,
+            Uses = identity.Uses,
             Assets = assets,
             DependsOn = binFiles
                 .Select(f => Path.GetFileNameWithoutExtension(f))
@@ -96,6 +99,11 @@ public static partial class Packer
                 foreach (var rel in assets)
                     zip.CreateEntryFromFile(Path.Combine(req.WwwrootDir, rel), "wwwroot/" + rel);
 
+            // data/: optional idempotent seed (e.g. a Page package's page.json that makes it routable on install).
+            if (req.DataDir is not null && Directory.Exists(req.DataDir))
+                foreach (var f in Directory.EnumerateFiles(req.DataDir, "*", SearchOption.AllDirectories))
+                    zip.CreateEntryFromFile(f, "data/" + Path.GetRelativePath(req.DataDir, f).Replace('\\', '/'));
+
             if (req.IconPath is not null && File.Exists(req.IconPath))
                 zip.CreateEntryFromFile(req.IconPath, Path.GetFileName(req.IconPath));
         }
@@ -105,7 +113,10 @@ public static partial class Packer
 
     private record Identity(
         string Key, string DisplayName, string Kind, string Category, int Version,
-        int SdkVersion, string EntryType, string RenderMode, string Scope);
+        int SdkVersion, string EntryType, string RenderMode, string Scope, IReadOnlyList<string> Uses);
+
+    // ContentKind ordinal -> name (frozen, append-only enum: Page=0, Plugin=1, Theme=2, Control=3).
+    private static readonly string[] KindNames = { "Page", "Plugin", "Theme", "Control" };
 
     private static Identity ResolveIdentity(Assembly asm, int? versionOverride)
     {
@@ -132,7 +143,7 @@ public static partial class Packer
         if (segs.Length < 4)
             throw new PackException($"namespace '{ns}' is too shallow; expected MindAttic.Ideas.<Kind>.<Key>.");
 
-        var kind = segs[2];                             // Page | Theme | Component | Control
+        var kind = segs[2];                             // Page | Theme | Plugin | Control
         var key = string.Join('.', segs.Skip(3)).ToLowerInvariant();   // mindatticfrontpage
         var convVersion = int.Parse(VersionClass().Match(type.Name).Groups[1].Value);
 
@@ -164,7 +175,30 @@ public static partial class Packer
             SdkVersion: sdkVersion,
             EntryType: type.FullName!,
             RenderMode: renderMode ?? "InteractiveServer",
-            Scope: scope ?? "Placeable");
+            Scope: scope ?? "Placeable",
+            Uses: ResolveUses(type));
+    }
+
+    /// <summary>
+    /// Read every <c>[Uses(kind, key, version)]</c> off the entry type (reflection-only, no execution) and
+    /// render each as a <c>"&lt;Kind&gt;.&lt;key&gt;[@&lt;version&gt;]"</c> manifest entry. The enum ctor arg
+    /// surfaces as its underlying ordinal, mapped back to the kind name via <see cref="KindNames"/>.
+    /// </summary>
+    private static IReadOnlyList<string> ResolveUses(Type type)
+    {
+        var uses = new List<string>();
+        foreach (var a in type.GetCustomAttributesData())
+        {
+            if (SafeAttrName(a) != "UsesAttribute") continue;
+            var args = a.ConstructorArguments;
+            if (args.Count < 2 || args[1].Value is not string key || string.IsNullOrWhiteSpace(key)) continue;
+
+            var ordinal = Convert.ToInt32(args[0].Value);
+            var kindName = ordinal >= 0 && ordinal < KindNames.Length ? KindNames[ordinal] : ordinal.ToString();
+            var version = args.Count >= 3 ? Convert.ToInt32(args[2].Value) : 0;
+            uses.Add(version > 0 ? $"{kindName}.{key.ToLowerInvariant()}@{version}" : $"{kindName}.{key.ToLowerInvariant()}");
+        }
+        return uses;
     }
 
     private static string? SafeAttrName(CustomAttributeData a)

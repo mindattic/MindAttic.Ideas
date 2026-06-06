@@ -2,14 +2,11 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using MindAttic.Ideas.Abstractions;
 
-// This placeholder is a plain framework component, so it uses Blazor's base via the alias —
-// the bare "ComponentBase" is MindAttic.Ideas.Abstractions.ComponentBase.
-using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;
-
 namespace MindAttic.Ideas.Core.Rendering;
 
-/// <summary>Visible placeholder for an unresolved/stale include (never a crash).</summary>
-public sealed class MissingContent : BlazorComponentBase
+/// <summary>Visible placeholder for an unresolved/stale include (never a crash). A plain Blazor
+/// component — MindAttic's content bases are the four <see cref="IdeaBase"/> kinds, not this.</summary>
+public sealed class MissingContent : ComponentBase
 {
     [Parameter] public string Key { get; set; } = "";
 

@@ -87,7 +87,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
 
           <p>A <strong>Component</strong> switches on a capability (it loads the tooltip engine), so any
              element with <code>data-tooltip</code> works. No version = latest:</p>
-          <MindAttic.Ideas.Component.Tooltip />
+          <MindAttic.Ideas.Plugin.Tooltip />
           <p><button type="button" data-tooltip="Composed from MindAttic.UiUx — latest version.">Hover me</button></p>
 
           <p>A <strong>Control</strong> is an atomic element placed by tag:</p>

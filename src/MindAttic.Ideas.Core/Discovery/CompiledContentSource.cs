@@ -63,7 +63,7 @@ public sealed class CompiledContentSource(IEnumerable<Assembly> assemblies) : IC
     private static ContentKind? KindOf(Type t) =>
         typeof(PageBase).IsAssignableFrom(t) ? ContentKind.Page
         : typeof(ThemeBase).IsAssignableFrom(t) ? ContentKind.Theme
-        : typeof(ComponentBase).IsAssignableFrom(t) ? ContentKind.Component
+        : typeof(PluginBase).IsAssignableFrom(t) ? ContentKind.Plugin
         : typeof(ControlBase).IsAssignableFrom(t) ? ContentKind.Control
         : null;
 

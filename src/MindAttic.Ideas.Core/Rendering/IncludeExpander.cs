@@ -24,7 +24,7 @@ public static class IncludeExpander
 
     private static readonly HtmlParser Parser = new();
 
-    // A custom element like <MindAttic.Ideas.Component.Tooltip /> is NOT self-closing in HTML — the
+    // A custom element like <MindAttic.Ideas.Plugin.Tooltip /> is NOT self-closing in HTML — the
     // parser would treat it as an open tag and swallow following siblings as children. Normalize the
     // known include tags to explicit paired tags first so they parse as empty elements.
     private static readonly Regex SelfClosingInclude =
@@ -87,40 +87,65 @@ public static class IncludeExpander
         // missing dependency, so no inbox alert (we can't categorize it).
         if (!IncludeReferenceParser.TryParseTag(el.LocalName, out var kind, out var key, out var version))
         {
-            RenderMissing(b, c, el.LocalName);
+            EmitMissing(b, ref c.Next, el.LocalName);
             return;
         }
 
-        var resolved = ctx.Catalog.ResolveTag(kind, key, version);
+        var attrs = new List<KeyValuePair<string, object?>>(el.Attributes.Length);
+        foreach (var attr in el.Attributes) attrs.Add(new(attr.Name, attr.Value));
+
+        // Inner content is only built when there ARE child nodes; the HasChildContent gate is applied in
+        // EmitInclude so the same rule governs both the data-page and the CmsInclude (code-page) path.
+        RenderFragment? child = null;
+        if (el.ChildNodes.Length > 0)
+        {
+            var children = el.ChildNodes;
+            child = inner =>
+            {
+                var ic = new Counter();
+                RenderNodes(inner, ic, children, ctx);
+            };
+        }
+
+        EmitInclude(b, ref c.Next, kind, key, version, el.LocalName, ctx.Catalog,
+            attrs, child, ctx.Alerts, ctx.PageId, ctx.Slug);
+    }
+
+    /// <summary>
+    /// The ONE resolve-and-render routine, shared by the data-page expander (above) and the compiled-page
+    /// <see cref="IncludeRenderer"/>/<c>CmsInclude</c> seam — so both produce byte-identical render trees
+    /// (attribute flow, ChildContent, Disabled-vs-Missing placeholder, Admin-Inbox alert). Never throws.
+    /// </summary>
+    internal static void EmitInclude(
+        RenderTreeBuilder b, ref int seq,
+        ContentKind kind, string key, int? version, string displayTag,
+        IContentCatalog catalog,
+        IReadOnlyList<KeyValuePair<string, object?>> attributes,
+        RenderFragment? childContent,
+        IRenderAlertSink? alerts, Guid pageId, string slug)
+    {
+        var resolved = catalog.ResolveTag(kind, key, version);
         switch (resolved.Outcome)
         {
             case ContentResolution.Resolved:
                 var type = resolved.Type!;
-                b.OpenComponent(c.Next++, type);
-                foreach (var attr in el.Attributes)
-                    b.AddAttribute(c.Next++, attr.Name, attr.Value);
+                b.OpenComponent(seq++, type);
+                foreach (var attr in attributes)
+                    b.AddAttribute(seq++, attr.Key, attr.Value);
                 // Pass inner content as ChildContent only if the resolved type actually declares it.
-                if (el.ChildNodes.Length > 0 && HasChildContent(type))
-                {
-                    var children = el.ChildNodes;
-                    RenderFragment child = inner =>
-                    {
-                        var ic = new Counter();
-                        RenderNodes(inner, ic, children, ctx);
-                    };
-                    b.AddAttribute(c.Next++, "ChildContent", child);
-                }
+                if (childContent is not null && HasChildContent(type))
+                    b.AddAttribute(seq++, "ChildContent", childContent);
                 b.CloseComponent();
                 break;
 
             case ContentResolution.Disabled:
-                RenderMissing(b, c, el.LocalName);
-                ctx.Alerts?.RaiseDisabled(kind, key, version, ctx.PageId, ctx.Slug);
+                EmitMissing(b, ref seq, displayTag);
+                alerts?.RaiseDisabled(kind, key, version, pageId, slug);
                 break;
 
             default: // Missing
-                RenderMissing(b, c, el.LocalName);
-                ctx.Alerts?.RaiseMissing(kind, key, version, ctx.PageId, ctx.Slug);
+                EmitMissing(b, ref seq, displayTag);
+                alerts?.RaiseMissing(kind, key, version, pageId, slug);
                 break;
         }
     }
@@ -133,10 +158,10 @@ public static class IncludeExpander
             && p.GetCustomAttribute<ParameterAttribute>() is not null;
     }
 
-    private static void RenderMissing(RenderTreeBuilder b, Counter c, string tag)
+    internal static void EmitMissing(RenderTreeBuilder b, ref int seq, string tag)
     {
-        b.OpenComponent<MissingContent>(c.Next++);
-        b.AddComponentParameter(c.Next++, nameof(MissingContent.Key), tag);
+        b.OpenComponent<MissingContent>(seq++);
+        b.AddComponentParameter(seq++, nameof(MissingContent.Key), tag);
         b.CloseComponent();
     }
 }

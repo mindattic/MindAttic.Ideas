@@ -76,4 +76,46 @@ public static class IncludeReferenceParser
     /// <summary>True if author HTML references this key with NO version pin (floats to latest).</summary>
     public static bool BodyFloatsKey(string? html, ContentKind kind, string key) =>
         Parse(html).Any(r => r.Kind == kind && string.Equals(r.Key, key, StringComparison.OrdinalIgnoreCase) && r.Version is null);
+
+    // ---- uses[] manifest grammar: "<Kind>.<key>[@<version>]" (the declarative dependency form a
+    //      COMPILED page emits via [Uses], parallel to the data-page include tag). ----
+
+    /// <summary>Parse one manifest <c>uses[]</c> entry, e.g. "Component.tooltip" or "Theme.cyberspace@1".</summary>
+    public static bool TryParseUse(string? entry, out ContentKind kind, out string key, out int? version)
+    {
+        kind = default; key = ""; version = null;
+        if (string.IsNullOrWhiteSpace(entry)) return false;
+        var s = entry.Trim();
+
+        var at = s.IndexOf('@');
+        if (at >= 0)
+        {
+            if (int.TryParse(s.AsSpan(at + 1), out var v)) version = v;
+            s = s[..at];
+        }
+
+        var dot = s.IndexOf('.');
+        if (dot <= 0 || dot >= s.Length - 1) return false;
+        if (!Enum.TryParse(s[..dot], ignoreCase: true, out kind)) return false;
+        key = s[(dot + 1)..].Trim().ToLowerInvariant();
+        return key.Length > 0;
+    }
+
+    /// <summary>Every parseable <c>uses[]</c> reference, in declared order. Empty for null/blank entries.</summary>
+    public static IReadOnlyList<(ContentKind Kind, string Key, int? Version)> ParseUses(IEnumerable<string>? uses)
+    {
+        var result = new List<(ContentKind, string, int?)>();
+        if (uses is null) return result;
+        foreach (var u in uses)
+            if (TryParseUse(u, out var k, out var key, out var v)) result.Add((k, key, v));
+        return result;
+    }
+
+    /// <summary>True if a <c>uses[]</c> list pins this exact (kind,key,version).</summary>
+    public static bool UsesPinsVersion(IEnumerable<string>? uses, ContentKind kind, string key, int version) =>
+        ParseUses(uses).Any(r => r.Kind == kind && string.Equals(r.Key, key, StringComparison.OrdinalIgnoreCase) && r.Version == version);
+
+    /// <summary>True if a <c>uses[]</c> list references this key with NO version pin (floats to latest).</summary>
+    public static bool UsesFloatsKey(IEnumerable<string>? uses, ContentKind kind, string key) =>
+        ParseUses(uses).Any(r => r.Kind == kind && string.Equals(r.Key, key, StringComparison.OrdinalIgnoreCase) && r.Version is null);
 }

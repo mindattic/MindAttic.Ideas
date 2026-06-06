@@ -1,4 +1,5 @@
 @page "/{*Slug}"
+@namespace MindAttic.Ideas.Rendering
 @using Microsoft.AspNetCore.Components
 @using Microsoft.EntityFrameworkCore
 @using MindAttic.Ideas.Core.Data
@@ -162,10 +163,19 @@ else if (_context is not null)
 
         // Hoist + dedupe the head assets of the PACKAGE citizens this page includes (the no-schema
         // manifest->Extra data path feeds PageAssets.PackageAssetsOf; the collector + path are NUnit-tested
-        // in Core). Empty unless a package citizen with assets is on the page, so existing pages are
-        // unchanged. STILL ATTENDED: compiled-citizen asset harvest (Activator on ComponentBase, replacing
-        // its per-instance inline emission) is additive via the same delegate — left for an attended slot.
-        var head = PageAssetCollector.Collect(page.BodyHtml, Catalog, PageAssets.PackageAssetsOf);
+        // in Core). A DATA page's references come from its BodyHtml include tags; a CODE page has no BodyHtml,
+        // so its references come from the manifest uses[] declared via [Uses] (surfaced onto the page
+        // descriptor's Extra at reload). Both feed the SAME collector, so the head never disagrees with the
+        // body about which citizen/version is on the page. Empty unless a citizen with assets is referenced.
+        var refs = new List<(ContentKind, string, int?)>(IncludeReferenceParser.Parse(page.BodyHtml));
+        if (page.Kind == PageKind.Code && page.ComponentTypeName is not null)
+        {
+            var pageDesc = Catalog.All.FirstOrDefault(d => d.Kind == ContentKind.Page
+                && string.Equals(d.ClrTypeName, page.ComponentTypeName, StringComparison.Ordinal));
+            if (pageDesc is not null)
+                refs.AddRange(IncludeReferenceParser.ParseUses(ManifestAssetPacker.UsesFromExtra(pageDesc.Extra)));
+        }
+        var head = PageAssetCollector.Collect(refs, Catalog, PageAssets.PackageAssetsOf);
         _componentCss = head.Css;
         _componentScripts = head.Scripts;
 

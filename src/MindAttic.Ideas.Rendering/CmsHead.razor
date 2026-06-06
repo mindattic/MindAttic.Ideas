@@ -1,3 +1,4 @@
+@namespace MindAttic.Ideas.Rendering
 @* Emits CSS in the FROZEN cascade order: GLOBAL -> THEME -> COMPONENT. Page-level CSS (tier 3) is emitted
    by the page body in <body>, and inline style="" is tier 4 by DOM nature — so document order yields the
    locked Global -> Theme -> Component -> Page -> inline cascade. ComponentCss/ComponentScripts are the

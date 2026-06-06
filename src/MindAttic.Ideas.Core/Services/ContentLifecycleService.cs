@@ -1,9 +1,11 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Entities;
 using MindAttic.Ideas.Core.Rendering;
+using MindAttic.Ideas.Packaging;
 
 namespace MindAttic.Ideas.Core.Services;
 
@@ -16,8 +18,13 @@ public readonly record struct LifecycleResult(bool Ok, string? Error)
 /// <summary>Outcome of a delete attempt. Blocked => reference-guarded; DisabledInstead => compiled-origin soft path.</summary>
 public sealed record DeleteGuardResult(bool Deleted, bool Blocked, bool DisabledInstead, IReadOnlyList<string> PinnedBy, string? Message);
 
-/// <summary>A page reference used by the (pure, DB-free) delete-guard scan.</summary>
-public readonly record struct PageRef(string Slug, string? BodyHtml, string? ThemeKey, int? ThemeVersion, bool Enabled, bool IsPublished);
+/// <summary>
+/// A page reference used by the (pure, DB-free) delete-guard scan. <see cref="Uses"/> carries a COMPILED
+/// page's declared <c>uses[]</c> string ids (it has no BodyHtml to scan); null for data pages.
+/// </summary>
+public readonly record struct PageRef(
+    string Slug, string? BodyHtml, string? ThemeKey, int? ThemeVersion, bool Enabled, bool IsPublished,
+    IReadOnlyList<string>? Uses = null);
 
 /// <summary>
 /// Admin lifecycle for content definitions: list, enable/disable (with live catalog reload), and
@@ -68,9 +75,28 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
         if (def is null)
             return new DeleteGuardResult(false, false, false, Array.Empty<string>(), "Content definition not found.");
 
-        var pages = await db.Pages
-            .Select(p => new PageRef(p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished))
+        var pageRows = await db.Pages
+            .Select(p => new { p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished, p.Kind, p.ComponentTypeName })
             .ToListAsync(ct);
+
+        // A COMPILED (Code) page references Components/Controls through its package manifest uses[], NOT its
+        // BodyHtml — so the guard must see those too, or a referenced citizen could be deleted out from under
+        // it. Map entryType -> uses[] from enabled Page packages.
+        var usesByType = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var pkg in await db.InstalledPackages.Where(p => p.Enabled && p.Category == "Page").ToListAsync(ct))
+        {
+            try
+            {
+                var m = ManifestReader.Read(pkg.ManifestJson);
+                if (!string.IsNullOrEmpty(m.EntryType)) usesByType[m.EntryType!] = m.Uses;
+            }
+            catch (JsonException) { /* one corrupt manifest only drops that page's uses[] from the guard */ }
+        }
+
+        var pages = pageRows.Select(p => new PageRef(
+            p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished,
+            p.Kind == PageKind.Code && p.ComponentTypeName is not null
+                && usesByType.TryGetValue(p.ComponentTypeName, out var u) ? u : null)).ToList();
 
         // Versions of this key that would REMAIN enabled+live after deleting `version`.
         var otherEnabled = await db.ContentDefinitions
@@ -135,10 +161,13 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
                 var floating = keyMatch && p.ThemeVersion is null && floatingOrphans;
                 blocks = pinned || floating;
             }
-            else // Component / Control: scan the author body via the shared grammar
+            else // Component / Control: scan the author body AND a compiled page's declared uses[]
             {
-                var pinned = IncludeReferenceParser.BodyPinsVersion(p.BodyHtml, kind, key, version);
-                var floating = floatingOrphans && IncludeReferenceParser.BodyFloatsKey(p.BodyHtml, kind, key);
+                var pinned = IncludeReferenceParser.BodyPinsVersion(p.BodyHtml, kind, key, version)
+                             || IncludeReferenceParser.UsesPinsVersion(p.Uses, kind, key, version);
+                var floating = floatingOrphans
+                               && (IncludeReferenceParser.BodyFloatsKey(p.BodyHtml, kind, key)
+                                   || IncludeReferenceParser.UsesFloatsKey(p.Uses, kind, key));
                 blocks = pinned || floating;
             }
 

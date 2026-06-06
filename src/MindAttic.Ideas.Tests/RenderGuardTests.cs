@@ -19,9 +19,9 @@ public class RenderGuardTests
     [Test]
     public void Parse_PinnedVersion()
     {
-        var refs = IncludeReferenceParser.Parse("<MindAttic.Ideas.Component.Tooltip.V11 />");
+        var refs = IncludeReferenceParser.Parse("<MindAttic.Ideas.Plugin.Tooltip.V11 />");
         Assert.That(refs, Has.Count.EqualTo(1));
-        Assert.That(refs[0], Is.EqualTo((ContentKind.Component, "tooltip", (int?)11)));
+        Assert.That(refs[0], Is.EqualTo((ContentKind.Plugin, "tooltip", (int?)11)));
     }
 
     [Test]
@@ -44,9 +44,9 @@ public class RenderGuardTests
     [Test]
     public void BodyPinsVersion_And_BodyReferencesKey()
     {
-        const string html = "<MindAttic.Ideas.Component.Tooltip.V11 /><MindAttic.Ideas.Theme.Cyberspace />";
-        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Component, "tooltip", 11), Is.True);
-        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Component, "tooltip", 12), Is.False);
+        const string html = "<MindAttic.Ideas.Plugin.Tooltip.V11 /><MindAttic.Ideas.Theme.Cyberspace />";
+        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Plugin, "tooltip", 11), Is.True);
+        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Plugin, "tooltip", 12), Is.False);
         Assert.That(IncludeReferenceParser.BodyReferencesKey(html, ContentKind.Theme, "cyberspace"), Is.True);
         Assert.That(IncludeReferenceParser.BodyFloatsKey(html, ContentKind.Theme, "cyberspace"), Is.True);
     }
@@ -87,7 +87,7 @@ public class RenderGuardTests
         var builder = new RenderTreeBuilder();
         builder.OpenElement(0, "div");
         var seq = 1;
-        IncludeExpander.Expand(builder, ref seq, "<MindAttic.Ideas.Component.Tooltip.V11 />",
+        IncludeExpander.Expand(builder, ref seq, "<MindAttic.Ideas.Plugin.Tooltip.V11 />",
             catalog, new PassGate(), ContentTrust.Author, sink, Guid.NewGuid(), "demo");
         builder.CloseElement();
 

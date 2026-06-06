@@ -23,11 +23,13 @@ public static class ManifestAssetPacker
 {
     private const string CssKey = "css";
     private const string ScriptsKey = "scripts";
+    private const string UsesKey = "uses";
 
     public static IReadOnlyDictionary<string, string> PackExtra(IdeaManifest m) => new Dictionary<string, string>
     {
         [CssKey] = string.Join('\n', m.Css),
         [ScriptsKey] = string.Join('\n', m.Scripts),
+        [UsesKey] = string.Join('\n', m.Uses),
     };
 
     public static CitizenAssets FromExtra(IReadOnlyDictionary<string, string>? extra)
@@ -35,6 +37,10 @@ public static class ManifestAssetPacker
         if (extra is null) return new([], []);
         return new(Split(extra.GetValueOrDefault(CssKey)), Split(extra.GetValueOrDefault(ScriptsKey)));
     }
+
+    /// <summary>The declared <c>uses[]</c> string ids a (compiled) citizen carries, surfaced from Extra.</summary>
+    public static IReadOnlyList<string> UsesFromExtra(IReadOnlyDictionary<string, string>? extra) =>
+        extra is null ? [] : Split(extra.GetValueOrDefault(UsesKey));
 
     private static IReadOnlyList<string> Split(string? joined) =>
         string.IsNullOrEmpty(joined)

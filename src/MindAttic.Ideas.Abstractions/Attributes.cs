@@ -29,6 +29,24 @@ public sealed class IdeaAttribute : Attribute
 }
 
 /// <summary>
+/// Declares a citizen this COMPILED Page/Theme references BY STRING ID at runtime (via
+/// <see cref="CmsInclude"/>) but does NOT compile against. Repeatable. The reflection-only packer emits
+/// each one into the manifest's <c>uses[]</c>, so the host can (1) hoist the referenced citizen's css/js
+/// into <c>&lt;head&gt;</c> for this compiled page, (2) warn at install when a declared dependency is not
+/// installed, and (3) reference-guard it against deletion. This is the declarative dependency model
+/// (Orchard-style): a page never compile-references another package, it names what it uses.
+/// <paramref name="version"/> 0 = float to the latest enabled version.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
+public sealed class UsesAttribute(ContentKind kind, string key, int version = 0) : Attribute
+{
+    public ContentKind Kind { get; } = kind;
+    public string Key { get; } = key;
+    /// <summary>Pinned whole-number version; 0 = float to latest.</summary>
+    public int Version { get; } = version;
+}
+
+/// <summary>
 /// Stamped on a content assembly by the SDK packer; the host reads it to gate package loads against
 /// <see cref="Sdk.Version"/>. Whole-number SDK version (no SemVer).
 /// </summary>

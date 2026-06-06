@@ -1,10 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 
-// The bare name "ComponentBase" belongs to MindAttic.Ideas (below). Blazor's framework base is
-// referenced here via this alias — Blazor "makes room" for our Component base.
-using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;
-
 namespace MindAttic.Ideas.Abstractions;
 
 // ============================================================================================
@@ -15,7 +11,7 @@ namespace MindAttic.Ideas.Abstractions;
 // ============================================================================================
 
 /// <summary>The shared root. Everything an .idea contains derives (transitively) from this.</summary>
-public abstract class IdeaBase : BlazorComponentBase
+public abstract class IdeaBase : ComponentBase
 {
     /// <summary>The render context for this placement (provided by the host via a cascade).</summary>
     [CascadingParameter] protected IRenderContext Context { get; set; } = default!;
@@ -58,18 +54,17 @@ public abstract class ThemeBase : IdeaBase
     public virtual string? BodyPreludeHtml => null;
 }
 
-// ---- Component (a capability you add to a page) ----
+// ---- Plugin (a capability you add to a page) ----
 
 /// <summary>
-/// Base for a Component: a piece of CODE you add to a page to switch ON a capability — it loads its
-/// assets so a behavior works page-wide. e.g. dropping <c>MindAttic.Ideas.Component.Tooltip.V11</c>
+/// Base for a Plugin: a piece of CODE you add to a page to switch ON a capability — it loads its
+/// assets so a behavior works page-wide. e.g. dropping <c>MindAttic.Ideas.Plugin.Tooltip.V11</c>
 /// loads tooltip css/js so ANY element with <c>data-tooltip</c>/<c>data-tt</c> shows a tooltip on hover.
 /// By default it renders no widget of its own — it emits its <see cref="StylesheetUrls"/> as
 /// &lt;link&gt; and <see cref="ScriptUrls"/> as &lt;script&gt;. Such activators are normally code-only
 /// classes (no markup) so they inherit this asset-emitting render; override only to add markup.
-/// NOTE: this is MindAttic.Ideas.Abstractions.ComponentBase — distinct from Blazor's ComponentBase.
 /// </summary>
-public abstract class ComponentBase : IdeaBase
+public abstract class PluginBase : IdeaBase
 {
     /// <summary>Stylesheets this capability needs (jsDelivr or host-relative). Emitted once.</summary>
     public virtual IReadOnlyList<string> StylesheetUrls => Array.Empty<string>();

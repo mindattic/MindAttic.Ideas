@@ -29,7 +29,7 @@ tag pins the version explicitly (`<…Cyberspace.V1/>` / `<ma-component key="cyb
   Page pinned to `V1`.
 - There is **no implicit "track latest."** Upgrading a Page to `V2` is a deliberate edit.
 - The `<ma-component>` include grammar gains a required-when-ambiguous `v` attribute (whole number). The
-  friendly namespaced tag form (`<MindAttic.Ideas.Components.SacredGeometry.V1/>`) is the authoring sugar;
+  friendly namespaced tag form (`<MindAttic.Ideas.Plugins.SacredGeometry.V1/>`) is the authoring sugar;
   it resolves to `(Component, "ui.sacredgeometry", 1)`.
 
 ## A3 — Disable / delete integrity (adds to ADR §4 data model)
@@ -107,7 +107,7 @@ duplication**, UiUx stays build-free source-of-truth.
 
 These were settled during the Phase-0/1 build and are now the implemented truth. **The ADR's vocabulary
 (`Idea` as content noun, `CmsPageBase`/`CmsComponentBase`/`CmsThemeBase`, zone language, `<ma-component>`,
-`ContentKind.Component` meaning a generic widget) is superseded by the below.**
+`ContentKind.Plugin` meaning a generic widget) is superseded by the below.**
 
 ## A9 — Four content kinds under one shared base `IdeaBase`
 
@@ -220,3 +220,27 @@ done; DI/middleware/endpoints/components/`MaLogin` not yet shipped) and is **not
 its locked order, Ideas adopts **after** the library completes **and after** StreetSamurai — at which point
 the ported `AuthService`/`User` are deleted and the Phase-2 Admin login wires to the package. Until then the
 interim BCrypt auth stands unchanged. This is a ratified direction, not a Phase-0/1 render dependency.
+
+## A17 — Content kind **Component renamed to Plugin** (supersedes A9's "Component" + all of A10)
+
+The capability-activator kind is **Plugin**, not Component. A Plugin is "a Tooltip Plugin" — code you add
+to a page to switch a behavior on. This is a hard rename across the codebase (pre-1.0 foundation, no
+back-compat shims):
+
+- Enum member **`ContentKind.Component` → `ContentKind.Plugin`** (ordinal **1** is preserved — the enum is
+  append-only on *ordinals*, and this changes only the *name* at the frozen ordinal). `KindNames[1]` and the
+  manifest `category` string become **`"Plugin"`**; the include tag/namespace segment is
+  **`MindAttic.Ideas.Plugin.{Key}`**; `uses[]` entries read **`Plugin.{key}[@n]`**; the asset mount is
+  **`/_ideas/Plugin/{key}/{version}`**.
+- Base class **`ComponentBase` → `PluginBase`** (`MindAttic.Ideas.Abstractions`). Library folder
+  `Web/Components/Library/Component` → `…/Plugin`.
+- **A10 is fully superseded and retired.** With no MindAttic type named `ComponentBase`, the bare name
+  `ComponentBase` unambiguously means Blazor's, so the `BlazorComponentBase` alias and the
+  `_Imports.razor` `@using ComponentBase = …` alias are **deleted** (`IdeaBase : ComponentBase` now refers to
+  Blazor's directly). The [[naming-conflict-aliasing]] standing rule still holds for *future* clashes; this
+  particular clash simply no longer exists.
+
+The four kinds are now **Page · Plugin · Theme · Control** under `IdeaBase` (bases
+`PageBase` / `PluginBase` / `ThemeBase` / `ControlBase`). All 155 NUnit tests green after the rename.
+The frozen `FOUNDATION_ADR.md` still records the original "Component" naming as historical decision text —
+this amendment overrides it.
