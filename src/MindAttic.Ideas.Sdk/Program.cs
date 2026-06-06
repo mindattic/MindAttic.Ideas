@@ -29,6 +29,7 @@ try
         "pack" => RunPack(rest),
         "inspect" => RunInspect(rest),
         "list" => RunList(rest),
+        "verify" => RunVerify(rest),
         "install" => RunInstall(rest),
         "upgrade" => RunUpgrade(rest),
         "disable" => RunDisable(),
@@ -119,6 +120,68 @@ static int RunList(ReadOnlySpan<string> rest)
     return 0;
 }
 
+static int RunVerify(ReadOnlySpan<string> rest)
+{
+    if (!TryDir(rest, "verify", out var dir)) return 2;
+    var files = Directory.EnumerateFiles(dir, "*.idea").OrderBy(f => f, StringComparer.Ordinal).ToList();
+    if (files.Count == 0) { Console.WriteLine("(no .idea packages found)"); return 0; }
+
+    // Build the set of citizens this folder provides: (kind,key) -> versions present.
+    var available = new Dictionary<(string Kind, string Key), SortedSet<int>>();
+    var manifests = new List<IdeaManifest>();
+    foreach (var f in files)
+    {
+        using var r = IdeaArchiveReader.Open(f);
+        if (!r.TryReadManifest(out var m, out var err) || m is null)
+        { Console.Error.WriteLine($"  unreadable: {Path.GetFileName(f)} ({err})"); continue; }
+        manifests.Add(m);
+        var id = (m.Category.ToLowerInvariant(), m.Key.ToLowerInvariant());
+        if (!available.TryGetValue(id, out var set)) available[id] = set = new();
+        set.Add(m.Version);
+    }
+
+    Console.WriteLine($"verify: {manifests.Count} package(s) in {dir}");
+    var unresolved = 0;
+    foreach (var m in manifests.OrderBy(x => x.Category).ThenBy(x => x.Key))
+    {
+        if (m.Uses.Count == 0) continue;
+        Console.WriteLine($"  {m.Category}.{m.Key}@{m.Version}");
+        foreach (var use in m.Uses)
+        {
+            // "<Kind>.<key>[@<version>]"  e.g. Plugin.tooltip  |  Plugin.tooltip@1
+            var spec = use.Trim();
+            int? wantVersion = null;
+            var at = spec.IndexOf('@');
+            if (at >= 0) { if (int.TryParse(spec[(at + 1)..], out var v)) wantVersion = v; spec = spec[..at]; }
+            var dot = spec.IndexOf('.');
+            if (dot <= 0 || dot >= spec.Length - 1) { Console.WriteLine($"      ?? {use}  (unparseable)"); unresolved++; continue; }
+            var id = (spec[..dot].ToLowerInvariant(), spec[(dot + 1)..].ToLowerInvariant());
+
+            bool ok = available.TryGetValue(id, out var have)
+                      && (wantVersion is null ? have!.Count > 0 : have!.Contains(wantVersion.Value));
+            if (ok)
+            {
+                var resolved = wantVersion ?? available[id].Max;
+                Console.WriteLine($"      ok {use}  -> {spec}.V{resolved}");
+            }
+            else
+            {
+                Console.WriteLine($"      MISSING {use}  (no {spec}" + (wantVersion is null ? "" : $"@{wantVersion}") + " in this folder)");
+                unresolved++;
+            }
+        }
+    }
+
+    Console.WriteLine();
+    if (unresolved == 0)
+    {
+        Console.WriteLine("verify: OK — every declared dependency resolves; the packages compose cleanly.");
+        return 0;
+    }
+    Console.Error.WriteLine($"verify: {unresolved} unresolved dependency(ies). Add the missing .idea(s) to this folder.");
+    return 1;
+}
+
 static int RunInstall(ReadOnlySpan<string> rest)
 {
     var (file, allowOverride) = ParseFileAndFlags(rest, "install");
@@ -205,12 +268,14 @@ static void PrintHelp() => Console.WriteLine("""
       ma-idea pack    --assembly <path> --out <dir> [--wwwroot <dir>] [--data <dir>] [--icon <file>] [--version <n>] [--refs <a;b>]
       ma-idea inspect <file.idea>
       ma-idea list    [dir]
+      ma-idea verify  [dir]
       ma-idea install <file.idea> [--allow-override]
       ma-idea upgrade <file.idea>
 
     pack    Pack a built Page/Theme/Component/Control RCL into a .idea (reflection-only).
     inspect Print a package's manifest + bin/ + wwwroot/ counts.
     list    List the .idea packages in a directory (key, version, category, kind).
+    verify  Check every package's uses[] resolves against the .idea files in a directory (compose-graph check).
     install Validate a package offline (does NOT install — that is a host operation).
     upgrade Validate + preview the install action against the .idea files beside it.
     """);

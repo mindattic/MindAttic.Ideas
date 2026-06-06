@@ -63,9 +63,24 @@ public abstract class ThemeBase : IdeaBase
 /// By default it renders no widget of its own — it emits its <see cref="StylesheetUrls"/> as
 /// &lt;link&gt; and <see cref="ScriptUrls"/> as &lt;script&gt;. Such activators are normally code-only
 /// classes (no markup) so they inherit this asset-emitting render; override only to add markup.
+///
+/// CONFIGURABLE LIKE PROPS: a Plugin is a real Blazor component, so it can declare typed
+/// <c>[Parameter]</c> properties (the React-prop / Angular-@Input analog) that include-tag attributes
+/// bind to — e.g. <c>&lt;MindAttic.Ideas.Plugin.Foo variant="dark" delay="200"/&gt;</c>. Any attribute
+/// that doesn't match a declared parameter lands in <see cref="Attributes"/> instead of erroring, so a
+/// placement can spread arbitrary config to tune look/feel/behavior.
 /// </summary>
 public abstract class PluginBase : IdeaBase
 {
+    /// <summary>
+    /// Config attributes from the include tag that don't match a typed <c>[Parameter]</c> property — the
+    /// per-placement "props" bag. Lets a Plugin be configured for a specific look/feel/behavior without
+    /// declaring every knob up front (declare the important ones as typed <c>[Parameter]</c>s; the rest
+    /// land here). Never throws on an unknown attribute.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IDictionary<string, object>? Attributes { get; set; }
+
     /// <summary>Stylesheets this capability needs (jsDelivr or host-relative). Emitted once.</summary>
     public virtual IReadOnlyList<string> StylesheetUrls => Array.Empty<string>();
 

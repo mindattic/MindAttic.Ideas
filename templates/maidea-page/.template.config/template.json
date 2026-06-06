@@ -4,7 +4,7 @@
   "classifications": [ "MindAttic", "Ideas", "CMS", "Blazor", "Page" ],
   "identity": "MindAttic.Ideas.Page.Template",
   "name": "MindAttic.Ideas modular Page (.idea)",
-  "description": "A standalone Razor Class Library that ships as a .idea page: composes a theme + components BY STRING ID, with nothing bundled.",
+  "description": "A standalone Razor Class Library that ships as a .idea page: composes a theme + plugins/controls BY STRING ID, with nothing bundled.",
   "shortName": "maidea-page",
   "tags": { "language": "C#", "type": "project" },
   "sourceName": "HelloWorld",

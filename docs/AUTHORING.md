@@ -161,7 +161,7 @@ dotnet run --project ../../src/MindAttic.Ideas.Sdk -- install ./dist/MindAttic.I
 ## 6. Preview before you upload — the Test Harness
 
 The harness renders your in-development page through the **real** host pipeline (PageHost → theme wrap →
-CmsInclude → CmsHead → PageAssetCollector), resolving its theme + components **by string id from a local
+CmsInclude → CmsHead → PageAssetCollector), resolving its theme + plugins/controls **by string id from a local
 folder of dependency `.idea` files** — no database, no Vault/auth. What you see in preview is what
 production renders; only the data source differs (an in-memory catalog + page row), never the renderer.
 
@@ -185,7 +185,7 @@ same install path, validated by `ma-idea install` first.
 
 Upload the `.idea` in the CMS admin. The host validates it (same gate as `ma-idea install`), registers the
 type, applies the `data/page.json` seed, and the page is live at its slug — wearing its theme, with its
-components resolved from their **separately installed** packages. Install `V2` later and the same page row
+plugins and controls resolved from their **separately installed** packages. Install `V2` later and the same page row
 re-points to it; the old version coexists until nothing references it.
 
 ---

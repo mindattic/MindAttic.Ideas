@@ -4,7 +4,7 @@
        The DEFINITIVE reference for authoring a modular page as a .idea package.
 
        It is a Razor Class Library that compiles against ONLY MindAttic.Ideas.Abstractions (the frozen
-       SDK) and references its Theme + Components/Controls BY STRING ID at runtime: nothing else is a
+       SDK) and references its Theme + Plugins/Controls BY STRING ID at runtime: nothing else is a
        project/package reference, nothing else is bundled. It is intentionally NOT part of the host
        solution (.slnx); a third party would build it exactly like this and ship the .idea.
 
