@@ -6,26 +6,30 @@ using MindAttic.Ideas.Abstractions;
 namespace MindAttic.Ideas.Core.Rendering;
 
 /// <summary>
-/// The ONE grammar for the locked include tag <c>&lt;MindAttic.Ideas.{Kind}.{Name}[.V{n}|.Latest]/&gt;</c>,
+/// The ONE grammar for the include token <c>{{ MindAttic.Ideas.{Kind}.{Name}[.V{n}|.Latest] [attrs] }}</c>,
 /// extracted so the renderer (<see cref="IncludeExpander"/>) and the delete-guard
-/// (ContentLifecycleService) parse references identically — no divergent duplicate. Uses AngleSharp
-/// tokenization (never regex matching of the body), so tags in text/comments are handled correctly.
+/// (ContentLifecycleService) parse references identically — no divergent duplicate. We use DOUBLE BRACES
+/// (not a custom HTML element) because <c>&lt;MindAttic.Ideas.…/&gt;</c> is non-conforming HTML: the parser
+/// ignores its self-close so it swallows following siblings, and a sanitizer strips the unknown element.
+/// A <c>{{…}}</c> token is inert text — it survives HTML parsing, sanitization, and WYSIWYG editing — and is
+/// resolved here. Tokens are matched only inside TEXT nodes (AngleSharp), so a token in an HTML comment is
+/// ignored. The kind segment is REQUIRED (the catalog/guard/hoist key on kind+key). Attributes after the
+/// reference are parsed by the renderer, not here (they don't affect reference identity).
 /// </summary>
 public static class IncludeReferenceParser
 {
     private static readonly HtmlParser Parser = new();
 
-    // Custom <MindAttic.Ideas.X /> isn't self-closing in HTML; normalize to paired tags first.
-    private static readonly Regex SelfClosingInclude =
-        new(@"<(MindAttic\.Ideas\.[\w.]+)((?:\s[^<>]*?)?)\s*/>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    /// <summary>The include-token grammar: group 1 = the dotted reference, group 2 = the raw attribute tail.</summary>
+    public static readonly Regex BraceInclude =
+        new(@"\{\{\s*(MindAttic\.Ideas\.[A-Za-z0-9_.]+)([^}]*?)\}\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>Every include reference in author HTML, in document order. Empty for null/blank.</summary>
     public static IReadOnlyList<(ContentKind Kind, string Key, int? Version)> Parse(string? html)
     {
         var result = new List<(ContentKind, string, int?)>();
         if (string.IsNullOrWhiteSpace(html)) return result;
-        var normalized = SelfClosingInclude.Replace(html, "<$1$2></$1>");
-        using var doc = Parser.ParseDocument("<!DOCTYPE html><html><head></head><body>" + normalized + "</body></html>");
+        using var doc = Parser.ParseDocument("<!DOCTYPE html><html><head></head><body>" + html + "</body></html>");
         Walk(doc.Body!.ChildNodes, result);
         return result;
     }
@@ -34,13 +38,16 @@ public static class IncludeReferenceParser
     {
         foreach (var node in nodes)
         {
-            if (node is not IElement el) continue;
-            if (el.LocalName.StartsWith(IncludeExpander.TagPrefix, StringComparison.OrdinalIgnoreCase)
-                && TryParseTag(el.LocalName, out var kind, out var key, out var version))
+            if (node is IText t)
             {
-                acc.Add((kind, key, version));
+                foreach (Match m in BraceInclude.Matches(t.Text))
+                    if (TryParseTag(m.Groups[1].Value.ToLowerInvariant(), out var kind, out var key, out var version))
+                        acc.Add((kind, key, version));
             }
-            Walk(el.ChildNodes, acc);
+            else if (node is IElement el)
+            {
+                Walk(el.ChildNodes, acc);   // tokens live in text, but recurse so nested text is scanned
+            }
         }
     }
 

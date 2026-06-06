@@ -75,7 +75,10 @@ theme in `data/page.json` (below). At render, `ThemeKey` → the global catalog 
 ### Plugins / Controls — by `<CmsInclude>` (the SDK primitive)
 `<CmsInclude Ref="…" />` is the MindAttic analog of Orchard's `@Display`/`<zone>`. It resolves the string
 id through the global catalog at runtime and renders the result — the *same* resolution a data page's
-`<MindAttic.Ideas.…/>` include tag uses:
+`{{ MindAttic.Ideas.… }}` include token uses (a data page composes pieces with double-brace tokens —
+e.g. `{{ MindAttic.Ideas.Plugin.Tooltip }}` or `{{ MindAttic.Ideas.Control.Textbox placeholder="…" }}` —
+because a custom `<…/>` element is non-conforming HTML the parser/sanitizer/editor would mangle, whereas a
+`{{…}}` token is inert text; a missing reference degrades to a visible placeholder box):
 
 ```razor
 @namespace MindAttic.Ideas.Page.HelloWorld

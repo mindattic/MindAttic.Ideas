@@ -19,17 +19,28 @@ public class RenderGuardTests
     [Test]
     public void Parse_PinnedVersion()
     {
-        var refs = IncludeReferenceParser.Parse("<MindAttic.Ideas.Plugin.Tooltip.V11 />");
+        var refs = IncludeReferenceParser.Parse("{{MindAttic.Ideas.Plugin.Tooltip.V11}}");
         Assert.That(refs, Has.Count.EqualTo(1));
         Assert.That(refs[0], Is.EqualTo((ContentKind.Plugin, "tooltip", (int?)11)));
     }
 
     [Test]
+    public void Parse_BraceToken_WithAttributes_ResolvesReferenceIgnoringAttrs()
+    {
+        // Tokens carry attributes (e.g. fontSize=0.5rem); they don't affect the (kind,key,version) identity,
+        // and surrounding text is ignored. Only the reference is parsed here.
+        var refs = IncludeReferenceParser.Parse(
+            "before {{ MindAttic.Ideas.Plugin.TableOfContents fontSize=0.5rem class=\"x y\" }} after");
+        Assert.That(refs, Has.Count.EqualTo(1));
+        Assert.That(refs[0], Is.EqualTo((ContentKind.Plugin, "tableofcontents", (int?)null)));
+    }
+
+    [Test]
     public void Parse_FloatingAndLatest_HaveNullVersion()
     {
-        Assert.That(IncludeReferenceParser.Parse("<MindAttic.Ideas.Theme.Cyberspace />")[0],
+        Assert.That(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Theme.Cyberspace}}")[0],
             Is.EqualTo((ContentKind.Theme, "cyberspace", (int?)null)));
-        Assert.That(IncludeReferenceParser.Parse("<MindAttic.Ideas.Control.Textbox.Latest />")[0],
+        Assert.That(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Control.Textbox.Latest}}")[0],
             Is.EqualTo((ContentKind.Control, "textbox", (int?)null)));
     }
 
@@ -37,14 +48,14 @@ public class RenderGuardTests
     public void Parse_IgnoresPlainHtmlAndMalformed()
     {
         Assert.That(IncludeReferenceParser.Parse("<div><p>hello</p></div>"), Is.Empty);
-        Assert.That(IncludeReferenceParser.Parse("<MindAttic.Ideas.Bogus.Thing />"), Is.Empty); // kind not a ContentKind
+        Assert.That(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Bogus.Thing}}"), Is.Empty); // kind not a ContentKind
         Assert.That(IncludeReferenceParser.Parse(null), Is.Empty);
     }
 
     [Test]
     public void BodyPinsVersion_And_BodyReferencesKey()
     {
-        const string html = "<MindAttic.Ideas.Plugin.Tooltip.V11 /><MindAttic.Ideas.Theme.Cyberspace />";
+        const string html = "{{MindAttic.Ideas.Plugin.Tooltip.V11}}{{MindAttic.Ideas.Theme.Cyberspace}}";
         Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Plugin, "tooltip", 11), Is.True);
         Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Plugin, "tooltip", 12), Is.False);
         Assert.That(IncludeReferenceParser.BodyReferencesKey(html, ContentKind.Theme, "cyberspace"), Is.True);
@@ -87,7 +98,7 @@ public class RenderGuardTests
         var builder = new RenderTreeBuilder();
         builder.OpenElement(0, "div");
         var seq = 1;
-        IncludeExpander.Expand(builder, ref seq, "<MindAttic.Ideas.Plugin.Tooltip.V11 />",
+        IncludeExpander.Expand(builder, ref seq, "{{MindAttic.Ideas.Plugin.Tooltip.V11}}",
             catalog, new PassGate(), ContentTrust.Author, sink, Guid.NewGuid(), "demo");
         builder.CloseElement();
 

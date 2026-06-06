@@ -30,13 +30,18 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             await db.SaveChangesAsync(ct);
         }
 
-        if (!await db.Settings.AnyAsync(s => s.Scope == "Host" && s.Key == "css.global", ct))
+        // Global CSS = cascade tier 0 (CmsHead emits it before any theme/plugin/page CSS): a modern reset
+        // so every page starts from a clean slate with no browser-default "ghost" styling. Insert on a fresh
+        // DB; migrate the old stock default in place; never clobber an admin-customized value.
+        var globalCss = await db.Settings.FirstOrDefaultAsync(s => s.Scope == "Host" && s.Key == "css.global", ct);
+        if (globalCss is null)
         {
-            db.Settings.Add(new SettingEntry
-            {
-                Scope = "Host", Key = "css.global",
-                Value = ":root{--ma-ideas-accent:#ff8c00}body{margin:0}",
-            });
+            db.Settings.Add(new SettingEntry { Scope = "Host", Key = "css.global", Value = GlobalCssReset });
+            await db.SaveChangesAsync(ct);
+        }
+        else if (globalCss.Value == LegacyGlobalCss)
+        {
+            globalCss.Value = GlobalCssReset;
             await db.SaveChangesAsync(ct);
         }
 
@@ -85,13 +90,74 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
           <h1>MindAttic.Ideas</h1>
           <p>This page is data — free-form HTML rendered through the Cyberspace theme.</p>
 
-          <p>A <strong>Component</strong> switches on a capability (it loads the tooltip engine), so any
+          <p>A <strong>Plugin</strong> switches on a capability (it loads the tooltip engine), so any
              element with <code>data-tooltip</code> works. No version = latest:</p>
-          <MindAttic.Ideas.Plugin.Tooltip />
+          {{ MindAttic.Ideas.Plugin.Tooltip }}
           <p><button type="button" data-tooltip="Composed from MindAttic.UiUx — latest version.">Hover me</button></p>
 
-          <p>A <strong>Control</strong> is an atomic element placed by tag:</p>
-          <p><MindAttic.Ideas.Control.Textbox placeholder="Type here…" /></p>
+          <p>A <strong>Control</strong> is an atomic element placed by token (attributes flow through):</p>
+          <p>{{ MindAttic.Ideas.Control.Textbox placeholder="Type here…" }}</p>
         </div>
         """;
+
+    // A modern CSS reset (Josh Comeau's custom reset) emitted as cascade tier 0 — everything is reset before
+    // any theme/plugin/page CSS, so there are no browser-default "ghost" styles to fight. The --ma-ideas-accent
+    // token rides along. Adjust in the admin global-CSS setting; this is just the seeded default.
+    private const string GlobalCssReset =
+        """
+        /*
+          Josh's Custom CSS Reset
+          https://www.joshwcomeau.com/css/custom-css-reset/
+        */
+
+        *, *::before, *::after {
+          box-sizing: border-box;
+        }
+
+        *:not(dialog) {
+          margin: 0;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+          html {
+            interpolate-size: allow-keywords;
+          }
+        }
+
+        body {
+          line-height: 1.5;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        img, picture, video, canvas, svg {
+          display: block;
+          max-width: 100%;
+        }
+
+        input, button, textarea, select {
+          font: inherit;
+        }
+
+        p, h1, h2, h3, h4, h5, h6 {
+          overflow-wrap: break-word;
+        }
+
+        p {
+          text-wrap: pretty;
+        }
+        h1, h2, h3, h4, h5, h6 {
+          text-wrap: balance;
+        }
+
+        #root, #__next {
+          isolation: isolate;
+        }
+
+        /* MindAttic theme token (kept across the reset). */
+        :root { --ma-ideas-accent: #ff8c00; }
+        """;
+
+    // The previous stock default — recognized so a fresh-install DB migrates to the reset above, while a
+    // value an admin has since edited is left untouched.
+    private const string LegacyGlobalCss = ":root{--ma-ideas-accent:#ff8c00}body{margin:0}";
 }

@@ -24,12 +24,6 @@ public static class IncludeExpander
 
     private static readonly HtmlParser Parser = new();
 
-    // A custom element like <MindAttic.Ideas.Plugin.Tooltip /> is NOT self-closing in HTML — the
-    // parser would treat it as an open tag and swallow following siblings as children. Normalize the
-    // known include tags to explicit paired tags first so they parse as empty elements.
-    private static readonly Regex SelfClosingInclude =
-        new(@"<(MindAttic\.Ideas\.[\w.]+)((?:\s[^<>]*?)?)\s*/>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
     private sealed class Counter { public int Next; }
 
     private sealed record ExpandCtx(
@@ -42,7 +36,6 @@ public static class IncludeExpander
         IRenderAlertSink? alerts = null, Guid pageId = default, string slug = "")
     {
         if (string.IsNullOrWhiteSpace(html)) return;
-        html = SelfClosingInclude.Replace(html, "<$1$2></$1>");
         using var doc = Parser.ParseDocument("<!DOCTYPE html><html><head></head><body>" + html + "</body></html>");
         var counter = new Counter { Next = seq };
         RenderNodes(builder, counter, doc.Body!.ChildNodes, new ExpandCtx(catalog, gate, trust, alerts, pageId, slug));
@@ -55,10 +48,6 @@ public static class IncludeExpander
         {
             switch (node)
             {
-                case IElement el when el.LocalName.StartsWith(TagPrefix, StringComparison.OrdinalIgnoreCase):
-                    RenderInclude(b, c, el, ctx);
-                    break;
-
                 // Script/style inner content must be emitted raw; untrusted content drops it entirely.
                 case IElement el when el.LocalName is "script" or "style":
                     b.OpenElement(c.Next++, el.LocalName);
@@ -75,40 +64,48 @@ public static class IncludeExpander
                     break;
 
                 case IText t:
-                    b.AddContent(c.Next++, t.Text);
+                    EmitText(b, c, t.Text, ctx);
                     break;
             }
         }
     }
 
-    private static void RenderInclude(RenderTreeBuilder b, Counter c, IElement el, ExpandCtx ctx)
+    // Author text, with every {{ MindAttic.Ideas.… [attrs] }} token swapped for the live citizen it names.
+    // Text around tokens is emitted verbatim (AddContent HTML-encodes it). A parseable-but-unresolved
+    // reference degrades to the placeholder (EmitInclude); an unparseable token is left as literal text.
+    private static void EmitText(RenderTreeBuilder b, Counter c, string text, ExpandCtx ctx)
     {
-        // Malformed include tag (no kind / no key) — placeholder only; it's an author typo, not a
-        // missing dependency, so no inbox alert (we can't categorize it).
-        if (!IncludeReferenceParser.TryParseTag(el.LocalName, out var kind, out var key, out var version))
+        var last = 0;
+        foreach (Match m in IncludeReferenceParser.BraceInclude.Matches(text))
         {
-            EmitMissing(b, ref c.Next, el.LocalName);
-            return;
+            if (m.Index > last) b.AddContent(c.Next++, text[last..m.Index]);
+            if (IncludeReferenceParser.TryParseTag(m.Groups[1].Value.ToLowerInvariant(), out var kind, out var key, out var version))
+                EmitInclude(b, ref c.Next, kind, key, version, m.Value, ctx.Catalog,
+                    ParseAttributes(m.Groups[2].Value), childContent: null, ctx.Alerts, ctx.PageId, ctx.Slug);
+            else
+                b.AddContent(c.Next++, m.Value);   // not a valid reference -> leave the literal token
+            last = m.Index + m.Length;
         }
+        if (last < text.Length) b.AddContent(c.Next++, text[last..]);
+    }
 
-        var attrs = new List<KeyValuePair<string, object?>>(el.Attributes.Length);
-        foreach (var attr in el.Attributes) attrs.Add(new(attr.Name, attr.Value));
+    // One token attribute: name | name=bareValue | name="quoted" | name='quoted'. A bare name => true.
+    private static readonly Regex AttrPair =
+        new(@"([A-Za-z_:][\w:.\-]*)\s*(?:=\s*(?:""([^""]*)""|'([^']*)'|([^\s}]+)))?", RegexOptions.Compiled);
 
-        // Inner content is only built when there ARE child nodes; the HasChildContent gate is applied in
-        // EmitInclude so the same rule governs both the data-page and the CmsInclude (code-page) path.
-        RenderFragment? child = null;
-        if (el.ChildNodes.Length > 0)
+    private static IReadOnlyList<KeyValuePair<string, object?>> ParseAttributes(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return Array.Empty<KeyValuePair<string, object?>>();
+        var list = new List<KeyValuePair<string, object?>>();
+        foreach (Match m in AttrPair.Matches(raw))
         {
-            var children = el.ChildNodes;
-            child = inner =>
-            {
-                var ic = new Counter();
-                RenderNodes(inner, ic, children, ctx);
-            };
+            object? value = m.Groups[2].Success ? m.Groups[2].Value
+                          : m.Groups[3].Success ? m.Groups[3].Value
+                          : m.Groups[4].Success ? m.Groups[4].Value
+                          : true;   // bare attribute (e.g. required)
+            list.Add(new KeyValuePair<string, object?>(m.Groups[1].Value, value));
         }
-
-        EmitInclude(b, ref c.Next, kind, key, version, el.LocalName, ctx.Catalog,
-            attrs, child, ctx.Alerts, ctx.PageId, ctx.Slug);
+        return list;
     }
 
     /// <summary>

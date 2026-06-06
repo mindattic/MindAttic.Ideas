@@ -85,7 +85,7 @@ public class CmsIncludeParityTests
         var sink = new RecordingSink();
         var b = new RenderTreeBuilder();
         var seq = 0;
-        IncludeExpander.Expand(b, ref seq, "<MindAttic.Ideas.Plugin.Tooltip.V11 />",
+        IncludeExpander.Expand(b, ref seq, "{{MindAttic.Ideas.Plugin.Tooltip.V11}}",
             new FakeCatalog { Outcome = outcome }, new PassGate(), ContentTrust.Author, sink,
             new FakePage().PageId, "demo");
         return Frames(b, sink);
