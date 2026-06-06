@@ -91,3 +91,18 @@ public interface IIncludeRenderer
         IRenderContext context, string reference,
         IReadOnlyDictionary<string, object?>? attributes = null, RenderFragment? childContent = null);
 }
+
+/// <summary>One child page in the site tree (for nav / the TableOfContents plugin).</summary>
+public sealed record ChildPage(string Slug, string Title);
+
+/// <summary>
+/// Host-provided render seam (resolved via <see cref="IRenderContext.TryGetFeature{T}"/>): the published,
+/// enabled child pages of a page, ordered by sort order. Lets a Plugin (e.g. TableOfContents) render the
+/// CURRENT page's children with NO compile-time host reference — it asks the context for this feature and,
+/// if present, lists <see cref="ChildPage"/>s; a Plugin renders nothing when a page has no children. The
+/// host impl MUST never throw into a render. APPEND-ONLY interface (default methods only).
+/// </summary>
+public interface IPageTree
+{
+    Task<IReadOnlyList<ChildPage>> ChildrenOfAsync(Guid pageId, CancellationToken ct = default);
+}
