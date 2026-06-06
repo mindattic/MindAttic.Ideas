@@ -1,0 +1,78 @@
+@page "/admin/upload"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@using MindAttic.Ideas.Packaging
+@inject IPackageInstallService Installer
+
+<PageTitle>Upload</PageTitle>
+<h1 class="admin-title">Upload .idea packages</h1>
+
+<div class="admin-upload">
+    <p class="admin-sub">
+        Drop in Page / Theme / Plugin / Control <code>.idea</code> packages — each is validated and added to
+        the general collection of usable pieces. A package that re-declares a key already owned by a compiled
+        citizen needs <strong>Allow override</strong>. See the installed collection under
+        <a href="/admin/content">Content</a>.
+    </p>
+
+    <label class="admin-flags">
+        <input type="checkbox" @bind="allowOverride" /> Allow override (let a package shadow a compiled key)
+    </label>
+
+    <label class="admin-dropzone">
+        <InputFile OnChange="OnFiles" multiple accept=".idea" />
+        <span>Choose one or more <code>.idea</code> files…</span>
+    </label>
+
+    @if (busy)
+    {
+        <div class="admin-status">Installing…</div>
+    }
+
+    @if (results.Count > 0)
+    {
+        <ul class="admin-results">
+            @foreach (var r in results)
+            {
+                <li class="@(r.Ok ? "ok" : "err")"><span class="admin-result-name">@r.Name</span> — @r.Message</li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    private bool allowOverride;
+    private bool busy;
+    private readonly List<Result> results = new();
+
+    private sealed record Result(string Name, bool Ok, string Message);
+
+    // 64 MB ceiling per package — comfortably covers a Page/Theme bundling images + a JS engine.
+    private const long MaxBytes = 64L * 1024 * 1024;
+
+    private async Task OnFiles(InputFileChangeEventArgs e)
+    {
+        busy = true;
+        results.Clear();
+        foreach (var file in e.GetMultipleFiles(maximumFileCount: 100))
+        {
+            try
+            {
+                using var buffer = new MemoryStream();
+                await using (var rs = file.OpenReadStream(MaxBytes))
+                    await rs.CopyToAsync(buffer);
+                buffer.Position = 0;
+
+                var plan = await Installer.InstallAsync(buffer, allowOverride);
+                var ok = plan.Action is InstallAction.Install or InstallAction.NoOpAlreadyInstalled;
+                var detail = plan.Reason is { Length: > 0 } reason ? $"{plan.Action} ({reason})" : plan.Action.ToString();
+                results.Add(new Result(file.Name, ok, detail));
+            }
+            catch (Exception ex)
+            {
+                results.Add(new Result(file.Name, false, ex.Message));
+            }
+        }
+        busy = false;
+    }
+}

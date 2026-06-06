@@ -6,7 +6,9 @@ using MindAttic.Ideas.Core.Entities;
 
 namespace MindAttic.Ideas.Core.Services;
 
-public sealed record PageSummary(int Id, string Slug, string Title, PageKind Kind, bool IsPublished, bool Enabled, ContentTrust BodyTrust);
+public sealed record PageSummary(
+    int Id, string Slug, string Title, PageKind Kind, bool IsPublished, bool Enabled, ContentTrust BodyTrust,
+    int? ParentId, int SortOrder);
 
 public sealed class PageEditModel
 {
@@ -21,6 +23,9 @@ public sealed class PageEditModel
     public string? PageJs { get; set; }
     public bool IsPublished { get; set; }
     public bool Enabled { get; set; } = true;
+    /// <summary>Parent page in the nav tree; null = top level.</summary>
+    public int? ParentId { get; set; }
+    public int SortOrder { get; set; }
 }
 
 public sealed record PageSaveResult(bool Ok, int Id, ContentTrust StampedTrust, string? Error);
@@ -40,6 +45,12 @@ public interface IPageAdminService
     Task<bool> SetPublishedAsync(int id, bool published, CancellationToken ct = default);
     Task<bool> SetEnabledAsync(int id, bool enabled, CancellationToken ct = default);
     Task<bool> SoftDeleteAsync(int id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Re-home a page in the nav tree: set its parent (null = top level) and sort order. Rejects a move
+    /// that would make a page its own ancestor (cycle guard), so the tree can never become malformed.
+    /// </summary>
+    Task<bool> MoveAsync(int id, int? parentId, int sortOrder, CancellationToken ct = default);
 }
 
 public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) : IPageAdminService
@@ -48,8 +59,10 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         return await db.Pages.AsNoTracking()
-            .OrderBy(p => p.Slug)
-            .Select(p => new PageSummary(p.Id, p.Slug, p.Title, p.Kind, p.IsPublished, p.Enabled, p.BodyTrust))
+            .Where(p => !p.IsDeleted)
+            .OrderBy(p => p.SortOrder).ThenBy(p => p.Slug)
+            .Select(p => new PageSummary(p.Id, p.Slug, p.Title, p.Kind, p.IsPublished, p.Enabled, p.BodyTrust,
+                p.ParentId, p.SortOrder))
             .ToListAsync(ct);
     }
 
@@ -61,7 +74,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         {
             Id = p.Id, Slug = p.Slug, Title = p.Title, ThemeKey = p.ThemeKey, ThemeVersion = p.ThemeVersion,
             Kind = p.Kind, BodyHtml = p.BodyHtml, PageCss = p.PageCss, PageJs = p.PageJs,
-            IsPublished = p.IsPublished, Enabled = p.Enabled,
+            IsPublished = p.IsPublished, Enabled = p.Enabled, ParentId = p.ParentId, SortOrder = p.SortOrder,
         };
     }
 
@@ -103,6 +116,8 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.PageJs = model.PageJs;
         page.IsPublished = model.IsPublished;
         page.Enabled = model.Enabled;
+        page.ParentId = model.ParentId == model.Id ? null : model.ParentId;   // never self-parent
+        page.SortOrder = model.SortOrder;
         page.BodyTrust = trust;                 // write-time trust stamp
         page.AuthoredByUserId = authoredBy;
         page.AuthorTrustVersion += 1;           // epoch bump
@@ -124,6 +139,29 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
 
     public async Task<bool> SoftDeleteAsync(int id, CancellationToken ct = default) =>
         await FlagAsync(id, ct, p => { p.IsDeleted = true; p.DeletedUtc = DateTime.UtcNow; });
+
+    public async Task<bool> MoveAsync(int id, int? parentId, int sortOrder, CancellationToken ct = default)
+    {
+        if (parentId == id) return false;   // a page cannot be its own parent
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
+        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id, ct);
+        if (page is null) return false;
+
+        // Cycle guard: walk up from the proposed parent — if we reach `id`, the move would make the page
+        // its own ancestor. (Bounded walk so a pre-existing bad row can never spin forever.)
+        var cursorId = parentId;
+        for (var hops = 0; cursorId is int cid && hops < 256; hops++)
+        {
+            if (cid == id) return false;
+            cursorId = await db.Pages.Where(p => p.Id == cid).Select(p => p.ParentId).FirstOrDefaultAsync(ct);
+        }
+
+        page.ParentId = parentId;
+        page.SortOrder = sortOrder;
+        page.ModifiedUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
 
     private async Task<bool> FlagAsync(int id, CancellationToken ct, Action<Page> mutate)
     {

@@ -100,4 +100,29 @@ public class PageAdminServiceTests
         Assert.That(await svc.SoftDeleteAsync(r.Id), Is.True);
         Assert.That((await svc.ListAsync()).Any(p => p.Id == r.Id), Is.False);   // filtered by !IsDeleted
     }
+
+    [Test]
+    public async Task Move_NestsPageUnderParent()
+    {
+        var svc = await NewServiceAsync();
+        var parent = await svc.SaveAsync(new PageEditModel { Slug = "docs", Title = "Docs" }, Author(true));
+        var child = await svc.SaveAsync(new PageEditModel { Slug = "docs/intro", Title = "Intro" }, Author(true));
+
+        Assert.That(await svc.MoveAsync(child.Id, parent.Id, sortOrder: 0), Is.True);
+        var summary = (await svc.ListAsync()).Single(p => p.Id == child.Id);
+        Assert.That(summary.ParentId, Is.EqualTo(parent.Id));
+    }
+
+    [Test]
+    public async Task Move_RejectsCycle_AndSelfParent()
+    {
+        var svc = await NewServiceAsync();
+        var a = await svc.SaveAsync(new PageEditModel { Slug = "a", Title = "A" }, Author(true));
+        var b = await svc.SaveAsync(new PageEditModel { Slug = "b", Title = "B" }, Author(true));
+        await svc.MoveAsync(b.Id, a.Id, 0);                    // b under a
+
+        Assert.That(await svc.MoveAsync(a.Id, b.Id, 0), Is.False, "moving a under its own descendant b is a cycle");
+        Assert.That(await svc.MoveAsync(a.Id, a.Id, 0), Is.False, "a page cannot be its own parent");
+        Assert.That((await svc.ListAsync()).Single(p => p.Id == a.Id).ParentId, Is.Null, "a stays at top level");
+    }
 }

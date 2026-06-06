@@ -9,20 +9,43 @@
 <div class="admin-two-pane">
     <div class="admin-list">
         <button class="admin-new" @onclick="StartNew">+ New Page</button>
+
         @if (pages is not null)
         {
-            @foreach (var p in pages)
+            @* Drop here to pull a page out to the top level. *@
+            <div class="admin-droproot @(dragId is not null ? "armed" : "")"
+                 @ondragover:preventDefault="true" @ondrop="MoveToTop">
+                ⤴ Top level
+            </div>
+
+            @foreach (var (node, depth) in Tree())
             {
-                <div class="admin-item @(editing is not null && editing.Id == p.Id ? "active" : "")" @onclick="() => Edit(p.Id)">
-                    <div class="admin-item-name">@(p.Slug.Length == 0 ? "(home)" : "/" + p.Slug)</div>
-                    <div class="admin-sub">
-                        @p.Title — @p.Kind
-                        @if (!p.IsPublished) { <span class="admin-badge">draft</span> }
-                        @if (!p.Enabled) { <span class="admin-badge">disabled</span> }
-                        @if (p.BodyTrust == ContentTrust.Author) { <span class="admin-badge ok">author</span> }
-                    </div>
+                <div class="admin-item @(editing is not null && editing.Id == node.Id ? "active" : "") @(dragOverId == node.Id ? "dropinto" : "")"
+                     style="margin-left:@(depth * 1.1)rem"
+                     draggable="true"
+                     @ondragstart="() => dragId = node.Id"
+                     @ondragend="() => { dragId = null; dragOverId = null; }"
+                     @ondragover:preventDefault="true"
+                     @ondragenter="() => dragOverId = node.Id"
+                     @ondrop="() => NestUnder(node)"
+                     @onclick="() => Edit(node.Id)">
+                    <span class="admin-grip" title="Drag to nest">⠿</span>
+                    <span class="admin-reorder">
+                        <button class="admin-mini" title="Move up" @onclick:stopPropagation="true" @onclick="() => Nudge(node, -1)">▲</button>
+                        <button class="admin-mini" title="Move down" @onclick:stopPropagation="true" @onclick="() => Nudge(node, 1)">▼</button>
+                    </span>
+                    <span class="admin-item-body">
+                        <span class="admin-item-name">@(node.Slug.Length == 0 ? "(home)" : "/" + node.Slug)</span>
+                        <span class="admin-sub">
+                            @node.Title — @node.Kind
+                            @if (!node.IsPublished) { <span class="admin-badge">draft</span> }
+                            @if (!node.Enabled) { <span class="admin-badge">disabled</span> }
+                            @if (node.BodyTrust == ContentTrust.Author) { <span class="admin-badge ok">author</span> }
+                        </span>
+                    </span>
                 </div>
             }
+            <p class="admin-hint">Drag a page onto another to nest it; drop on “Top level” to un-nest; ▲▼ reorders siblings.</p>
         }
     </div>
 
@@ -51,6 +74,18 @@
                 <label>Slug<input @bind="editing.Slug" placeholder="(blank = home)" /></label>
                 <label>Title<input @bind="editing.Title" /></label>
                 <label>Kind<select @bind="editing.Kind"><option value="Data">Data</option><option value="Code">Code</option></select></label>
+                <label>Parent
+                    <select @bind="editing.ParentId">
+                        <option value="">(top level)</option>
+                        @if (pages is not null)
+                        {
+                            @foreach (var p in pages.Where(p => p.Id != editing.Id))
+                            {
+                                <option value="@p.Id">@(p.Slug.Length == 0 ? "(home)" : "/" + p.Slug)</option>
+                            }
+                        }
+                    </select>
+                </label>
                 <label>Theme key<input @bind="editing.ThemeKey" placeholder="(site default)" /></label>
                 <label>Theme version<input type="number" @bind="editing.ThemeVersion" /></label>
             </div>
@@ -79,9 +114,68 @@
     private string status = "";
     private bool statusBad;
 
+    // Drag state (the dragged page + the row currently hovered as a drop target).
+    private int? dragId;
+    private int? dragOverId;
+
     protected override async Task OnInitializedAsync() => await Load();
 
     private async Task Load() => pages = await PagesSvc.ListAsync();
+
+    // Pre-order tree (depth-tagged). A page whose parent is missing/deleted is treated as a root.
+    private IEnumerable<(PageSummary Node, int Depth)> Tree()
+    {
+        var list = pages ?? Array.Empty<PageSummary>();
+        var present = list.Select(p => p.Id).ToHashSet();
+        bool IsRoot(PageSummary p) => p.ParentId is not int pid || !present.Contains(pid);
+        var children = list.Where(p => !IsRoot(p))
+            .GroupBy(p => p.ParentId!.Value)
+            .ToDictionary(g => g.Key, g => g.OrderBy(p => p.SortOrder).ThenBy(p => p.Slug).ToList());
+
+        var result = new List<(PageSummary, int)>();
+        void Walk(PageSummary n, int depth)
+        {
+            result.Add((n, depth));
+            if (children.TryGetValue(n.Id, out var kids))
+                foreach (var k in kids) Walk(k, depth + 1);
+        }
+        foreach (var root in list.Where(IsRoot).OrderBy(p => p.SortOrder).ThenBy(p => p.Slug)) Walk(root, 0);
+        return result;
+    }
+
+    private int NextSortFor(int? parentId) =>
+        (pages ?? Array.Empty<PageSummary>()).Where(p => p.ParentId == parentId)
+            .Select(p => p.SortOrder).DefaultIfEmpty(-1).Max() + 1;
+
+    private async Task NestUnder(PageSummary target)
+    {
+        dragOverId = null;
+        if (dragId is not int id || id == target.Id) { dragId = null; return; }
+        await PagesSvc.MoveAsync(id, target.Id, NextSortFor(target.Id));   // MoveAsync rejects cycles
+        dragId = null;
+        await Load();
+    }
+
+    private async Task MoveToTop()
+    {
+        if (dragId is int id) { await PagesSvc.MoveAsync(id, null, NextSortFor(null)); dragId = null; await Load(); }
+    }
+
+    // Reorder within siblings: normalise sibling order to indices, swapping the node with its neighbour.
+    private async Task Nudge(PageSummary node, int dir)
+    {
+        var sibs = (pages ?? Array.Empty<PageSummary>())
+            .Where(p => p.ParentId == node.ParentId).OrderBy(p => p.SortOrder).ThenBy(p => p.Slug).ToList();
+        var i = sibs.FindIndex(p => p.Id == node.Id);
+        var j = i + dir;
+        if (i < 0 || j < 0 || j >= sibs.Count) return;
+        for (var k = 0; k < sibs.Count; k++)
+        {
+            var target = k == i ? j : k == j ? i : k;
+            await PagesSvc.MoveAsync(sibs[k].Id, sibs[k].ParentId, target);
+        }
+        await Load();
+    }
 
     private void StartNew()
     {
