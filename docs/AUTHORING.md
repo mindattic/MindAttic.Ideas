@@ -2,7 +2,7 @@
 
 Two things make up a site, and they are **different kinds of thing**:
 
-| | **Page** | **Widget** (Theme / Plugin / Control) |
+| | **Page** | **Widget** (Theme / Widget / Control) |
 |---|---|---|
 | What it is | content | a reusable capability |
 | Where it lives | a **row in the CMS database**, in the page hierarchy | a compiled **`.idea`** package |
@@ -34,7 +34,7 @@ A page body composes widgets by token:
 {{ Theme.Cyberspace }}                         <!-- the page's chrome -->
 
 <h1>Contact</h1>
-{{ Plugin.Tooltip }}                           <!-- switch on a capability -->
+{{ Widget.Tooltip }}                           <!-- switch on a capability -->
 <button data-tooltip="Resolved at runtime">Hover me</button>
 
 {{ Control.Textbox label="Email" }}            <!-- place a control; attrs flow through -->
@@ -51,7 +51,7 @@ A page body composes widgets by token:
 ## Part B — Authoring a **Widget** (a `.idea` capability)
 
 Widgets live in the sibling repo **[`MindAttic.Ideas.Library`](../../MindAttic.Ideas.Library)** — one home
-for every first-party Theme / Plugin / Control, organized `Themes/` `Plugins/` `Controls/`. The CMS ships the
+for every first-party Theme / Widget / Control, organized `Themes/` `Widgets/` `Controls/`. The CMS ships the
 packed `dist/*.idea` and seeds them on startup (optional content). Copy an existing component to start a new one.
 
 ### The shape
@@ -71,8 +71,8 @@ A component is a tiny RCL. Common props + the Abstractions reference come from t
 
 | Part | From | Example |
 |---|---|---|
-| Kind | which base you inherit (`ThemeBase` / `PluginBase` / `ControlBase`) | `PluginBase` → Plugin |
-| Key | the namespace tail after `MindAttic.Ideas.<Kind>.` (lowercased) | `…Plugin.Tooltip` → `tooltip` |
+| Kind | which base you inherit (`ThemeBase` / `WidgetBase` / `ControlBase`) | `WidgetBase` → Widget |
+| Key | the namespace tail after `MindAttic.Ideas.<Kind>.` (lowercased) | `…Widget.Tooltip` → `tooltip` |
 | Version | the `V{n}` class name | `V1` → version 1 |
 
 Ship `V2` **alongside** `V1`; never mutate a shipped version.
@@ -87,12 +87,12 @@ static-web-asset collision). That same bundle serves all three consumers — no 
 - **the CMS** uploads the `.idea`, whose `wwwroot/` *is* that `assets/` folder, served at
   `/_ideas/{Kind}/{key}/{version}/…`.
 
-A code-only Plugin points its asset URLs at that mount:
+A code-only Widget points its asset URLs at that mount:
 
 ```csharp
-public sealed class V1 : PluginBase
+public sealed class V1 : WidgetBase
 {
-    private const string Mount = "/_ideas/Plugin/tooltip/1";
+    private const string Mount = "/_ideas/Widget/tooltip/1";
     public override IReadOnlyList<string> StylesheetUrls { get; } = new[] { Mount + "/tooltip.css" };
     public override IReadOnlyList<string> ScriptUrls     { get; } = new[] { Mount + "/tooltip.js" };
 }
@@ -104,8 +104,8 @@ A widget composes other widgets two ways — pick per piece:
 
 - **Compile-in (private):** a sub-component inside the widget's own assembly (e.g. `PersonaCard` inside
   `LegionPersonas`). Not separately deployed. Use when the piece is only ever used here.
-- **Reference-by-id (separately deployed):** `<CmsInclude Ref="MindAttic.Ideas.Plugin.SacredGeometry.V1" />`
-  in markup **plus** `@attribute [Uses(ContentKind.Plugin, "sacredgeometry", 1)]`. The child ships as its own
+- **Reference-by-id (separately deployed):** `<CmsInclude Ref="MindAttic.Ideas.Widget.SacredGeometry.V1" />`
+  in markup **plus** `@attribute [Uses(ContentKind.Widget, "sacredgeometry", 1)]`. The child ships as its own
   `.idea` and rides along via `uses[]`. Use when the piece is reused or versioned independently.
 
 `[Uses]` → the manifest `uses[]`, which drives: `<head>` asset hoisting, an install-time "missing dependency"
@@ -122,13 +122,13 @@ is arbitrary-depth; the page drops only the **top** widget's tag.
 From the `MindAttic.Ideas.Library` repo (the CMS SDK CLI is in the sibling repo):
 
 ```pwsh
-dotnet build -c Release Plugins/Tooltip
+dotnet build -c Release Widgets/Tooltip
 dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- pack `
-  --assembly Plugins/Tooltip/bin/Release/net10.0/MindAttic.Ideas.Plugin.Tooltip.dll `
-  --out ./dist --wwwroot Plugins/Tooltip/assets `
+  --assembly Widgets/Tooltip/bin/Release/net10.0/MindAttic.Ideas.Widget.Tooltip.dll `
+  --out ./dist --wwwroot Widgets/Tooltip/assets `
   --refs ../MindAttic.Ideas/src/MindAttic.Ideas.Abstractions/bin/Debug/net10.0
 
-dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- inspect ./dist/MindAttic.Ideas.Plugin.Tooltip.V1.idea
+dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- inspect ./dist/MindAttic.Ideas.Widget.Tooltip.V1.idea
 dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- verify ./dist   # whole-library compose-graph
 ```
 
@@ -148,7 +148,7 @@ Install `V2` later and pinned pages keep `V1` until nothing references it.
 | You want to… | Do this |
 |---|---|
 | Make a page | admin /admin/pages → add → fill Body HTML/CSS/JS + `{{tags}}` |
-| Add a capability to a page | `{{ Plugin.<Key> }}` in the body |
+| Add a capability to a page | `{{ Widget.<Key> }}` in the body |
 | Place a control | `{{ Control.<Key> attr="…" }}` |
 | Pick a theme | `{{ Theme.<Key> }}` in the body |
 | Nest a widget inside a widget | `<CmsInclude Ref="…"/>` + `[Uses(...)]` (or a private sub-component) |

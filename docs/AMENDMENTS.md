@@ -1,16 +1,27 @@
-<!-- CODEX MIGRATION (2026-06-07): the canonical L1 amendments log now lives at
-     docs/AMENDMENTS.md (Codex front-matter + stable {#MAI-An} anchors). This file is preserved
-     verbatim for existing links; A1..A18 are mirrored there. Edit AMENDMENTS.md, not this file. -->
+---
+codex: 1
+project: MindAttic.Ideas
+code: MAI
+layer: amendments
+status: living
+updated: 2026-06-07
+---
 
-# MindAttic.Ideas — Foundation Amendments
+# MindAttic.Ideas — Amendments (append-only; amendment wins over the bible)
 
 These directives were finalized **after** the Legion deliberation produced
-[`FOUNDATION_ADR.md`](FOUNDATION_ADR.md). Where an amendment conflicts with the ADR, **the amendment
-wins** and the ADR is to be read as patched here. All are part of the ratifiable foundation.
+[`FOUNDATION_ADR.md`](FOUNDATION_ADR.md). Where an amendment conflicts with the ADR or with
+[`BIBLE.md`](BIBLE.md), **the amendment wins** and the bible/ADR are to be read as patched here. All
+are part of the ratifiable foundation. IDs `A1..A18` are stable; never rewrite an amendment, only
+supersede it with a new one.
+
+> **Migration note (2026-06-07):** this file is the Codex L1 home of the former
+> `FOUNDATION_AMENDMENTS.md`. Content is preserved verbatim; stable `{#MAI-An}` anchors were added so
+> the bible and stories can cite each amendment by ID.
 
 ---
 
-## A1 — Versioning is whole-number, not SemVer (overrides ADR §3 / §2)
+## MAI-A1 — Versioning is whole-number, not SemVer (overrides ADR §3 / §2) {#MAI-A1}
 
 Every Page, Theme, and Component version is a **single whole number** (`1`, `2`, `3`). No
 dotted/minor/patch versions anywhere.
@@ -24,7 +35,7 @@ dotted/minor/patch versions anywhere.
 **Rationale:** the owner's explicit instruction — "whole numbers only, no 1.5.11; make it trivially
 obvious which version is which." Coexisting integer versions are the never-break mechanism.
 
-## A2 — Version is part of identity; Pages pin a version (refines ADR §2 identity lock)
+## MAI-A2 — Version is part of identity; Pages pin a version (refines ADR §2 identity lock) {#MAI-A2}
 
 A citizen's identity becomes the triple **`(ContentKind Kind, string Key, int Version)`**. The composition
 tag pins the version explicitly (`<…Cyberspace.V1/>` / `<ma-component key="cyberspace" v="1" …/>`).
@@ -36,7 +47,7 @@ tag pins the version explicitly (`<…Cyberspace.V1/>` / `<ma-component key="cyb
   friendly namespaced tag form (`<MindAttic.Ideas.Widgets.SacredGeometry.V1/>`) is the authoring sugar;
   it resolves to `(Component, "ui.sacredgeometry", 1)`.
 
-## A3 — Disable / delete integrity (adds to ADR §4 data model)
+## MAI-A3 — Disable / delete integrity (adds to ADR §4 data model) {#MAI-A3}
 
 - Every Page/Theme/Component version has an **`Enabled`** flag. **Disabled = exists but cannot be used
   until re-enabled.**
@@ -45,7 +56,7 @@ tag pins the version explicitly (`<…Cyberspace.V1/>` / `<ma-component key="cyb
   layer over a `PageReference` projection (derived from parsing `BodyHtml` `<ma-component>` tags + Code
   page references), with a confirming DB check.
 
-## A4 — Temporal history (adds to ADR §4)
+## MAI-A4 — Temporal history (adds to ADR §4) {#MAI-A4}
 
 Pages (and their Theme/Component pin set) use **SQL Server system-versioned temporal tables** — mirror
 StreetSamurai's pattern: `SysStart`/`SysEnd` `GENERATED ALWAYS`, an idempotent
@@ -53,7 +64,7 @@ StreetSamurai's pattern: `SysStart`/`SysEnd` `GENERATED ALWAYS`, an idempotent
 A Page version's row records the `(Kind,Key,Version)` set it rendered with, so history is fully
 reconstructable and rollback is a row restore.
 
-## A5 — Disabled-dependency render guard + Admin Inbox (adds to ADR §6)
+## MAI-A5 — Disabled-dependency render guard + Admin Inbox (adds to ADR §6) {#MAI-A5}
 
 If a Page resolves a Theme/Component reference that is **Disabled** (or missing), the render **halts**
 (shows a clear block to the user instead of partial output) **and** immediately writes an **Admin Inbox**
@@ -64,22 +75,24 @@ message. The inbox is DB-backed and patterned on StreetSamurai's `FindingRow` + 
 This refines the ADR's `CmsMissingContent` "never crash" placeholder: a *missing/stale* type still
 degrades to a placeholder, but a *deliberately Disabled* dependency is a halt-and-notify event.
 
-## A6 — MindAttic.Vault for all credentials (adds to ADR §“Stack”)
+## MAI-A6 — MindAttic.Vault for all credentials (adds to ADR "Stack") {#MAI-A6}
 
 No secrets in `appsettings`/User Secrets. Wire in `Program.cs`:
 `builder.Configuration.AddMindAtticVaultFiles().AddEnvironmentVariables();` then
 `builder.Services.AddMindAtticVault(builder.Configuration);`. DB connection string resolves through
 `IConfiguration`/env (`ConnectionStrings__Ideas`); LLM/API keys via `LlmCredentialResolver.GetKey(...)`.
 Package: `MindAttic.Vault` (local feed `C:\LocalNuGet`, net10.0). **Never** add `<UserSecretsId>`.
+(Org-wide form: [HOUSE-LAW-3](../../MindAttic.HouseRules.md#HOUSE-LAW-3).)
 
-## A7 — MindAttic.Legion for LLM + voting (new optional Core service)
+## MAI-A7 — MindAttic.Legion for LLM + voting (new optional Core service) {#MAI-A7}
 
 Register `services.AddLLMVoting(new VotingConfiguration())` (zero-config; keys via Vault) and/or
 `AddLegionClient()`. Expose `LegionClient` (direct LLM: `CallAsync`) and `LlmVotingService`
 (`VoteAsync`/`DecideAsync`/`ScoreAsync`) to Core services. In-proc project/package reference (net10.0);
 depends transitively on Vault. Foundation-optional — wired but not load-bearing for Phase 0/1 render.
+(Org-wide form: [HOUSE-LAW-4](../../MindAttic.HouseRules.md#HOUSE-LAW-4).)
 
-## A8 — UiUx three-layer wrapper chain (confirms ADR §7)
+## MAI-A8 — UiUx three-layer wrapper chain (confirms ADR §7) {#MAI-A8}
 
 Official Components/Themes are sourced from MindAttic.UiUx as: **raw js/css/html → thin UiUx Blazor
 wrapper (`.razor`) → CMS citizen (`CmsComponentBase`/`CmsThemeBase`)**. The CMS citizen wraps the UiUx
@@ -113,7 +126,7 @@ These were settled during the Phase-0/1 build and are now the implemented truth.
 (`Idea` as content noun, `CmsPageBase`/`CmsComponentBase`/`CmsThemeBase`, zone language, `<ma-component>`,
 `ContentKind.Widget` meaning a generic widget) is superseded by the below.**
 
-## A9 — Four content kinds under one shared base `IdeaBase`
+## MAI-A9 — Four content kinds under one shared base `IdeaBase` {#MAI-A9}
 
 The kinds are **Page · Component · Theme · Control** (`ContentKind { Page=0, Component=1, Theme=2,
 Control=3 }`, append-only — new kinds may be added later for free). All derive from a shared root
@@ -128,7 +141,10 @@ a kind.
   through to the rendered element.
 - **Theme** = layout chrome + one `@Body` hole + CSS bundle. **Page** = the page (Data or Code).
 
-## A10 — `ComponentBase` clash resolved by aliasing Blazor's (per [[naming-conflict-aliasing]])
+> *Superseded:* the kind name "Component" was later renamed to "Plugin" ([A17](#MAI-A17)) and then to
+> "Widget" ([A18](#MAI-A18)). The four-kinds-under-`IdeaBase` structure stands.
+
+## MAI-A10 — `ComponentBase` clash resolved by aliasing Blazor's (per [[naming-conflict-aliasing]]) {#MAI-A10}
 
 MindAttic's `ComponentBase` owns the bare name. Blazor's framework base is referenced via
 `using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;` (so `IdeaBase :
@@ -137,7 +153,10 @@ BlazorComponentBase`), and Razor `_Imports.razor` aliases the bare name to ours
 resolves to MindAttic's. Standing rule: on any future framework name clash, surface it and ask before
 aliasing — alias the *framework* side so MindAttic's namespace wins the bare name.
 
-## A11 — Locked tag convention `<MindAttic.Ideas.{ContentKind}.{Name}.{Version} />`
+> *Superseded:* fully retired by [A17](#MAI-A17) — with no MindAttic type named `ComponentBase`, the
+> aliases are deleted. The standing rule for *future* clashes still holds.
+
+## MAI-A11 — Locked tag convention `<MindAttic.Ideas.{ContentKind}.{Name}.{Version} />` {#MAI-A11}
 
 Identity by **convention**: Kind from the base, Name (key, lowercased) from the namespace tail after
 `MindAttic.Ideas.{Kind}.`, Version from the `V{n}` class name. Optional `[Idea(key:…, version:…,
@@ -146,7 +165,7 @@ case-insensitively, replacing the earlier `<ma-component>` form) and **code page
 Razor forbids lowercase component class names, so the **version token is uppercase `V{n}`** to match the
 class exactly.
 
-## A12 — Version is OPTIONAL; defaults to latest
+## MAI-A12 — Version is OPTIONAL; defaults to latest {#MAI-A12}
 
 A tag may omit the version (or use `.Latest`) to resolve the **highest enabled version** from the tables,
 or pin exactly with `.V3`. This refines A2's "pin everything": pin when you care, float when you don't, so
@@ -154,14 +173,14 @@ composing many co-versioned pieces (e.g. `TabControl` + `TabButton` + `TabPage`)
 Integrity (A3) is preserved: a version-specific delete is blocked while anything pins it; a floating
 reference is valid as long as some enabled version remains.
 
-## A13 — Self-closing include tags are normalized before parsing
+## MAI-A13 — Self-closing include tags are normalized before parsing {#MAI-A13}
 
 `<MindAttic.Ideas.… />` is not truly self-closing in HTML (the parser would swallow following siblings as
 children). The expander normalizes the known `MindAttic.Ideas.*` self-closing tags to explicit paired
 tags before AngleSharp parsing, and only passes inner content as `ChildContent` when the resolved type
 declares it. A malformed/unresolved/disabled include degrades to a visible placeholder — never a crash.
 
-## A14 — Vocabulary: no umbrella noun; UiUx is the multi-target source
+## MAI-A14 — Vocabulary: no umbrella noun; UiUx is the multi-target source {#MAI-A14}
 
 There is **no umbrella noun** for the four kinds in prose — spell out Page/Component/Theme/Control (the
 word "citizen" used during the build is dropped). All official content ultimately lives in **MindAttic.UiUx**
@@ -170,7 +189,9 @@ as ONE canonical core distributed as MANY wrappers/exports: raw js/css/html → 
 URL; never reimplement). Phase-1 content lives inline in the Web project as a render proof; its permanent
 home is UiUx.
 
-## A15 — Deployment: Windows App Service, StreetSamurai-style (supersedes IMPLEMENTATION_PLAN §10 "Linux")
+> *Updated by [A18](#MAI-A18):* "Widget" is now adopted as the umbrella term for the composable-UI kind.
+
+## MAI-A15 — Deployment: Windows App Service, StreetSamurai-style (supersedes IMPLEMENTATION_PLAN §10 "Linux") {#MAI-A15}
 
 MindAttic.Ideas deploys the SAME way StreetSamurai does — **NOT Linux**. The plan doc's "App Service
 (Linux)" is wrong. Target: a GitHub Actions pipeline on `windows-latest`, **build → migrate → deploy** to
@@ -186,7 +207,7 @@ Windows hosting means `net10.0-windows` packages (e.g. **MindAttic.Psst**) are f
 auth email channel still uses an `IAuthEmailSender` abstraction (clean packaging/testability + lets Tutor,
 if non-Windows, swap the transport), with a Psst-backed implementation for Windows hosts.
 
-## A16 — Authentication is MindAttic.Authentication, not Ideas-owned (supersedes the ported BCrypt auth)
+## MAI-A16 — Authentication is MindAttic.Authentication, not Ideas-owned (supersedes the ported BCrypt auth) {#MAI-A16}
 
 The canonical auth engine for MindAttic.Ideas is the **[MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication)**
 Razor Class Library — the same hardened engine StreetSamurai and Tutor adopt, so the three authenticate
@@ -224,8 +245,9 @@ done; DI/middleware/endpoints/components/`MaLogin` not yet shipped) and is **not
 its locked order, Ideas adopts **after** the library completes **and after** StreetSamurai — at which point
 the ported `AuthService`/`User` are deleted and the Phase-2 Admin login wires to the package. Until then the
 interim BCrypt auth stands unchanged. This is a ratified direction, not a Phase-0/1 render dependency.
+(Org-wide form: [HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7).)
 
-## A17 — Content kind **Component renamed to Plugin** (supersedes A9's "Component" + all of A10)
+## MAI-A17 — Content kind **Component renamed to Plugin** (supersedes A9's "Component" + all of A10) {#MAI-A17}
 
 The capability-activator kind is **Plugin**, not Component. A Plugin is "a Tooltip Plugin" — code you add
 to a page to switch a behavior on. This is a hard rename across the codebase (pre-1.0 foundation, no
@@ -249,7 +271,9 @@ The four kinds are now **Page · Plugin · Theme · Control** under `IdeaBase` (
 The frozen `FOUNDATION_ADR.md` still records the original "Component" naming as historical decision text —
 this amendment overrides it.
 
-## A18 — Content kind **Plugin renamed to Widget** (supersedes A17)
+> *Superseded by [A18](#MAI-A18):* "Plugin" was renamed to "Widget".
+
+## MAI-A18 — Content kind **Plugin renamed to Widget** (supersedes A17) {#MAI-A18}
 
 The composable-UI kind is now **Widget**, not Plugin. A Widget spans the full range — from an asset-only
 capability activator (Tooltip) up to a complete interactive UI (Frontpage) that **nests other widgets
@@ -269,3 +293,4 @@ across **both** repos (pre-1.0 foundation, no back-compat shims):
 
 The four kinds are now **Page · Widget · Theme · Control** under `IdeaBase` (bases
 `PageBase` / `WidgetBase` / `ThemeBase` / `ControlBase`). All 166 NUnit tests green after the rename.
+This is the **current vocabulary**.

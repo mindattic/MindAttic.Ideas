@@ -1,4 +1,7 @@
-﻿> ⚠️ **VOCABULARY SUPERSEDED.** This is the Legion deliberation that produced the foundation. Its
+﻿<!-- CODEX MIGRATION (2026-06-07): reformatted into the Codex L0 bible at docs/BIBLE.md. This frozen
+     ADR is preserved as the historical deliberation; current truth = docs/BIBLE.md + docs/AMENDMENTS.md. -->
+
+> ⚠️ **VOCABULARY SUPERSEDED.** This is the Legion deliberation that produced the foundation. Its
 > *structure and reasoning* stand, but its *vocabulary* has been superseded by the implemented model in
 > [`FOUNDATION_AMENDMENTS.md`](FOUNDATION_AMENDMENTS.md) (see "Taxonomy finalization A9–A14") and
 > [`../README.md`](../README.md). In particular: there are **four kinds** (Page · Component · Theme ·
