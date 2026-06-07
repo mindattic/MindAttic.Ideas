@@ -18,7 +18,7 @@ public enum ContentKind
     Page = 0,
     Widget = 1,      // a composable UI widget (e.g. Tooltip, Frontpage) — can nest other widgets recursively
     Theme = 2,
-    Control = 3,     // one atomic UI unit (e.g. Textbox, Button)
+    Control = 3,     // RESERVED (deprecated) — author atomic UI as a Widget; kept for installed packages, never removed (frozen). See MAI-A19.
 }
 
 /// <summary>How a Page renders. A Page row carries exactly one of these.</summary>

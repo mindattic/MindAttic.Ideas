@@ -115,7 +115,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
           <p><button type="button" data-tooltip="Composed from MindAttic.UiUx — latest version.">Hover me</button></p>
 
           <p>A <strong>Control</strong> is an atomic element placed by token (attributes flow through):</p>
-          <p>{{ MindAttic.Ideas.Control.Textbox placeholder="Type here…" }}</p>
+          <p>{{ MindAttic.Ideas.Widget.Textbox placeholder="Type here…" }}</p>
         </div>
         """;
 

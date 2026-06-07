@@ -257,7 +257,7 @@ Definition of done (a feature is `✅` only when *verified*, never merely assert
   activator (Tooltip) up to a full interactive UI that nests other widgets via `CmsInclude`. Formerly
   "Component" (A9) then "Plugin" (A17).
 - **Theme** — layout chrome + one `@Body` hole + a CSS bundle.
-- **Control** — one atomic placed UI element (e.g. Textbox → an `<input>`).
+- **Control** — *deprecated ([A19](AMENDMENTS.md#MAI-A19)): author atomic UI as a Widget.* Was one atomic placed UI element (e.g. Textbox → an `<input>`); `ContentKind.Control=3` stays reserved/frozen so installed Control packages still resolve.
 - **ContentKind** — `Page=0 · Widget=1 · Theme=2 · Control=3` (append-only ordinals).
 - **Data page / Code page** — free-form DB body (zero deploy) vs a compiled `PageBase` subclass.
 - **Catalog (`CmsContentDefinition`)** — the one persisted registry of all citizens.

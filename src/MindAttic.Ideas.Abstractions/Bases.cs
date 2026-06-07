@@ -107,20 +107,25 @@ public abstract class WidgetBase : IdeaBase
     }
 }
 
-// ---- Control (one atomic placed UI element) ----
+// ---- Control (DEPRECATED — fold atomic UI into a Widget; see amendment MAI-A19) ----
 
 /// <summary>
-/// Base for a Control: a single atomic UI element you place and that renders visibly at that spot
-/// (e.g. <c>MindAttic.Ideas.Control.Textbox.V21</c> -&gt; an &lt;input&gt;). Unmatched include-tag
-/// attributes flow straight through to the rendered element.
+/// DEPRECATED — author atomic UI as a <see cref="WidgetBase"/> Widget instead. A Control was "a single
+/// atomic placed UI element" (e.g. a Textbox -&gt; an &lt;input&gt;), but it has no behavior a Widget
+/// lacks: <see cref="WidgetBase"/> exposes the same unmatched-attribute passthrough, resolves through the
+/// identical include path, and can render a single visible element just as well. The
+/// <see cref="ContentKind.Control"/> ordinal stays RESERVED/frozen so already-installed Control packages
+/// keep discovering and resolving — no new Controls should be authored. (Amendment MAI-A19.)
 /// </summary>
+[Obsolete("Author atomic UI as a Widget (WidgetBase). ContentKind.Control is reserved/frozen for installed packages but no longer authored — see amendment MAI-A19.")]
 public abstract class ControlBase : IdeaBase
 {
     [Parameter(CaptureUnmatchedValues = true)]
     public IDictionary<string, object>? Attributes { get; set; }
 }
 
-/// <summary>Base for a Control with strongly-typed settings.</summary>
+/// <summary>DEPRECATED — see <see cref="ControlBase"/>. Author atomic UI as a Widget.</summary>
+[Obsolete("Author atomic UI as a Widget (WidgetBase). ContentKind.Control is reserved/frozen but no longer authored — see amendment MAI-A19.")]
 public abstract class ControlBase<TSettings> : ControlBase where TSettings : class, new()
 {
     protected TSettings Settings { get; private set; } = new();

@@ -294,3 +294,23 @@ across **both** repos (pre-1.0 foundation, no back-compat shims):
 The four kinds are now **Page · Widget · Theme · Control** under `IdeaBase` (bases
 `PageBase` / `WidgetBase` / `ThemeBase` / `ControlBase`). All 166 NUnit tests green after the rename.
 This is the **current vocabulary**.
+
+## MAI-A19 — Control folded into Widget (deprecated; ordinal reserved) (refines A9) {#MAI-A19}
+
+A `Control` has no behavior a `Widget` lacks: `WidgetBase` exposes the same unmatched-attribute
+passthrough (`CaptureUnmatchedValues`), resolves through the identical include path, and can render a
+single visible element. So **atomic UI is now authored as a Widget**; `Control` is deprecated.
+
+- `ControlBase` / `ControlBase<TSettings>` are `[Obsolete]` (kept, not deleted).
+- **`ContentKind.Control = 3` stays RESERVED/frozen** — never removed (append-only enum). Already-installed
+  Control packages keep discovering (`CompiledContentSource.KindOf` still maps `ControlBase → Control`,
+  under `#pragma warning disable CS0618`) and resolving; the `{{…Control.…}}` tag grammar still parses
+  (proven by the retained `RenderGuardTests` cases).
+- **Library:** `Controls/Textbox` → **`Widgets/Textbox`** (`MindAttic.Ideas.Widget.Textbox`,
+  `@inherits WidgetBase`, mount `/_ideas/Widget/textbox/1`); re-packed. The host's bundled seed `.idea`
+  and the seeded demo tag now use `{{ MindAttic.Ideas.Widget.Textbox }}`.
+- **No DB migration** — no kind removed; existing `Control` rows/packages remain valid.
+
+Theme stays a first-class kind (its `@Body` page-wrapper is structural). True removal of the `Control`
+ordinal is deferred to a future SDK v2. 169 NUnit tests green. **The authored kinds are now
+Page · Widget · Theme; Control is reserved-legacy.**

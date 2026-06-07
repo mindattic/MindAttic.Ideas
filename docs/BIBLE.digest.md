@@ -94,7 +94,7 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
   activator (Tooltip) up to a full interactive UI that nests other widgets via `CmsInclude`. Formerly
   "Component" (A9) then "Plugin" (A17).
 - **Theme** — layout chrome + one `@Body` hole + a CSS bundle.
-- **Control** — one atomic placed UI element (e.g. Textbox → an `<input>`).
+- **Control** — *deprecated ([A19](AMENDMENTS.md#MAI-A19)): author atomic UI as a Widget.* Was one atomic placed UI element (e.g. Textbox → an `<input>`); `ContentKind.Control=3` stays reserved/frozen so installed Control packages still resolve.
 - **ContentKind** — `Page=0 · Widget=1 · Theme=2 · Control=3` (append-only ordinals).
 - **Data page / Code page** — free-form DB body (zero deploy) vs a compiled `PageBase` subclass.
 - **Catalog (`CmsContentDefinition`)** — the one persisted registry of all citizens.
@@ -109,5 +109,5 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - done: 23  |  partial: 2  |  planned: 6  |  cut: 0
 
 ## Latest amendment
-- MAI-A18 — Content kind **Plugin renamed to Widget** (supersedes A17)
+- MAI-A19 — Control folded into Widget (deprecated; ordinal reserved) (refines A9)
 

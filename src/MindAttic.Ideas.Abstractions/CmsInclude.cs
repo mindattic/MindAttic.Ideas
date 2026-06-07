@@ -12,7 +12,7 @@ namespace MindAttic.Ideas.Abstractions;
 //
 //  Authoring (in a .razor that compiles against ONLY this SDK):
 //      <CmsInclude Ref="MindAttic.Ideas.Widget.Tooltip.V1" />
-//      <CmsInclude Ref="MindAttic.Ideas.Control.Textbox.V1" placeholder="Name" />
+//      <CmsInclude Ref="MindAttic.Ideas.Widget.Textbox.V1" placeholder="Name" />
 //      <CmsInclude Ref="MindAttic.Ideas.Widget.Tooltip" />   @* no version = float to latest *@
 //
 //  Themes are NOT placed with CmsInclude — a page selects its theme by ThemeKey metadata and the host

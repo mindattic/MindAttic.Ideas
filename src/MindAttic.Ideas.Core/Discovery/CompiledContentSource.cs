@@ -5,7 +5,7 @@ namespace MindAttic.Ideas.Core.Discovery;
 
 /// <summary>
 /// Phase-1 source: reflects referenced assemblies for types deriving from a kind base
-/// (PageBase/ThemeBase/ModuleBase/ControlBase) and emits a <see cref="ContentDescriptor"/> per type
+/// (PageBase/ThemeBase/WidgetBase/ControlBase) and emits a <see cref="ContentDescriptor"/> per type
 /// by CONVENTION — identity follows the locked tag form <c>MindAttic.Ideas.{Kind}.{Name}.V{n}</c>:
 /// Kind from the base, Key from the namespace tail after <c>MindAttic.Ideas.{Kind}.</c>, Version from
 /// the <c>Vn</c> class name. An optional <see cref="IdeaAttribute"/> overrides any of these. A type
@@ -60,12 +60,14 @@ public sealed class CompiledContentSource(IEnumerable<Assembly> assemblies) : IC
         }
     }
 
+#pragma warning disable CS0618 // ControlBase is deprecated (MAI-A19) but still recognized so already-installed Control packages keep discovering.
     private static ContentKind? KindOf(Type t) =>
         typeof(PageBase).IsAssignableFrom(t) ? ContentKind.Page
         : typeof(ThemeBase).IsAssignableFrom(t) ? ContentKind.Theme
         : typeof(WidgetBase).IsAssignableFrom(t) ? ContentKind.Widget
         : typeof(ControlBase).IsAssignableFrom(t) ? ContentKind.Control
         : null;
+#pragma warning restore CS0618
 
     // Namespace must be MindAttic.Ideas.{Kind}.{KeyPath}; key = KeyPath lowercased (dots preserved).
     private static string? KeyFromNamespace(Type t, ContentKind kind)
