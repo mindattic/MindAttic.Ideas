@@ -1,0 +1,79 @@
+@page "/admin"
+@page "/admin/{Tab}"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@inject NavigationManager Nav
+
+@* ============================================================================================
+   The ONE admin screen: a TabControl whose tab pages are each a separate responsibility
+   (Page Management / Idea Library / Upload Idea / Settings / Attributions). It is the single
+   interactive root for the admin — each panel below is a plain child component, not its own
+   route, so they share this circuit.
+
+   ISOLATION: the whole shell is wrapped in <div class="ma-admin">. The admin deliberately lives
+   OUTSIDE the Theme/Widget (.idea) world — no installed package CSS/JS (nor the host css.global
+   setting) is ever linked on /admin (PageHost, the only thing that hoists .idea assets, refuses
+   /admin slugs), and .ma-admin re-establishes an explicit baseline so nothing can bleed in. A
+   broken/hostile .idea therefore can never make the admin unusable. (See Admin -> Attributions
+   for the Eric-Meyer reset that backs this.) The legacy /admin/{tab} paths still resolve here so
+   existing deep links keep working.
+   ============================================================================================ *@
+
+<PageTitle>Admin — @Active.Title</PageTitle>
+
+<div class="ma-admin">
+    <nav class="ma-admin-bar" role="tablist" aria-label="Admin sections">
+        @foreach (var t in Tabs)
+        {
+            <button type="button" role="tab"
+                    class="ma-admin-tab @(t.Slug == Active.Slug ? "on" : "")"
+                    aria-selected="@(t.Slug == Active.Slug)"
+                    @onclick="() => Go(t.Slug)">
+                @t.Title
+            </button>
+        }
+    </nav>
+
+    <h1 class="ma-admin-h">@Active.Title</h1>
+
+    @switch (Active.Slug)
+    {
+        case "content":
+            <ContentDefinitions />
+            break;
+        case "upload":
+            <Upload />
+            break;
+        case "settings":
+            <SettingsPanel />
+            break;
+        case "attributions":
+            <AttributionsPanel />
+            break;
+        default:   // "pages"
+            <Pages />
+            break;
+    }
+</div>
+
+@code {
+    /// <summary>Route segment: pages | content | upload | settings | attributions (null = pages).</summary>
+    [Parameter] public string? Tab { get; set; }
+
+    private sealed record TabDef(string Slug, string Title);
+
+    // Each tab = one responsibility. Slugs keep the historical /admin/{pages,content,upload} deep links alive.
+    private static readonly TabDef[] Tabs =
+    [
+        new("pages",        "Page Management"),
+        new("content",      "Idea Library"),
+        new("upload",       "Upload Idea"),
+        new("settings",     "Settings"),
+        new("attributions", "Attributions"),
+    ];
+
+    private TabDef Active =>
+        Tabs.FirstOrDefault(t => string.Equals(t.Slug, Tab, StringComparison.OrdinalIgnoreCase)) ?? Tabs[0];
+
+    private void Go(string slug) => Nav.NavigateTo(slug == "pages" ? "/admin" : $"/admin/{slug}");
+}

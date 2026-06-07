@@ -1,18 +1,15 @@
-@page "/admin/upload"
-@rendermode InteractiveServer
 @attribute [Authorize(Policy = MaPolicies.Admin)]
 @using MindAttic.Ideas.Packaging
 @inject IPackageInstallService Installer
 
-<PageTitle>Upload</PageTitle>
-<h1 class="admin-title">Upload .idea packages</h1>
+@* Upload Idea panel — hosted by AdminShell's "Upload Idea" tab (no own route). *@
 
 <div class="admin-upload">
     <p class="admin-sub">
-        Drop in Page / Theme / Plugin / Control <code>.idea</code> packages — each is validated and added to
+        Drop in Page / Theme / Widget / Control <code>.idea</code> packages — each is validated and added to
         the general collection of usable pieces. A package that re-declares a key already owned by a compiled
-        citizen needs <strong>Allow override</strong>. See the installed collection under
-        <a href="/admin/content">Content</a>.
+        citizen needs <strong>Allow override</strong>. See the installed collection under the
+        <a href="/admin/content">Idea Library</a> tab.
     </p>
 
     <label class="admin-flags">

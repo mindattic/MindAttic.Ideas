@@ -258,3 +258,60 @@ h1:focus {
 .admin-results li.ok{border-color:#2e7d32;background:rgba(46,125,50,.08);}
 .admin-results li.err{border-color:#e2231a;background:rgba(226,35,26,.08);}
 .admin-result-name{font-weight:600;}
+
+/* =====================================================================================
+   ADMIN ISOLATION  —  the admin lives OUTSIDE the Theme/Widget (.idea) world.
+   No installed package's CSS/JS, and not even the host `css.global` setting, is ever linked
+   on an /admin route: those are hoisted ONLY by PageHost when it renders a CONTENT page, and
+   PageHost explicitly refuses /admin and /_ slugs. So a broken or hostile .idea can never
+   style — or break — the admin (the classic DotNetNuke skin/CSS foot-gun where a bad module
+   stylesheet made the whole control panel unusable).
+
+   Second line of defence: the whole admin shell is wrapped in .ma-admin, which establishes an
+   explicit baseline (background / colour / font). The admin's many `inherit` / transparent
+   rules then resolve against the admin's OWN values, immune to whatever an ancestor set.
+
+   The reset below is based on Eric Meyer's public-domain "Reset CSS" — the canonical
+   "clear every browser default" stylesheet (credited in Admin -> Attributions). It is applied
+   through :where(...) so it carries ZERO specificity: it neutralises inherited / UA defaults at
+   the admin boundary WITHOUT ever overriding the .admin-* / .ma-admin-* component rules.
+   ===================================================================================== */
+:where(.ma-admin) :where(*) {
+    margin: 0; padding: 0; border: 0; box-sizing: border-box;
+    font: inherit; vertical-align: baseline;
+}
+:where(.ma-admin) :where(b, strong) { font-weight: 600; }
+:where(.ma-admin) :where(h1, h2, h3) { font-weight: 700; }
+:where(.ma-admin) :where(a) { color: #5aa0ff; text-decoration: none; }
+:where(.ma-admin) :where(ul, ol) { list-style: none; }
+:where(.ma-admin) :where(table) { border-collapse: collapse; border-spacing: 0; }
+
+.ma-admin {
+    box-sizing: border-box;
+    min-height: 100vh;
+    background: #0f1216;
+    color: #e7eaf0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    padding: 4rem 1.5rem 3rem;   /* top room for the fixed sign-out chrome */
+}
+.ma-admin * { box-sizing: border-box; }
+
+/* Tab control */
+.ma-admin-bar { display: flex; gap: .15rem; border-bottom: 1px solid rgba(127,127,127,.3); margin-bottom: 1.3rem; flex-wrap: wrap; }
+.ma-admin-tab { padding: .6rem 1.05rem; border: 0; border-bottom: 2px solid transparent; background: none; color: #9aa3af; cursor: pointer; font-size: .9rem; font-weight: 600; }
+.ma-admin-tab:hover { color: #e7eaf0; }
+.ma-admin-tab.on { color: #fff; border-bottom-color: #e2231a; }
+.ma-admin-h { font-size: 1.3rem; font-weight: 700; margin: 0 0 1rem; color: #fff; }
+
+/* Settings + Attributions panels */
+.ma-settings { display: flex; flex-direction: column; gap: 1.25rem; max-width: 48rem; }
+.ma-settings section { border: 1px solid rgba(127,127,127,.3); border-radius: 10px; padding: 1rem 1.1rem; }
+.ma-settings h2 { font-size: 1rem; font-weight: 700; margin: 0 0 .6rem; color: #fff; }
+.ma-settings p { font-size: .83rem; color: #c2c8d0; margin: .2rem 0; }
+.ma-attrib { display: flex; flex-direction: column; gap: .85rem; max-width: 48rem; }
+.ma-attrib-item { border: 1px solid rgba(127,127,127,.3); border-radius: 10px; padding: .85rem 1.05rem; }
+.ma-attrib-item h3 { font-size: .95rem; font-weight: 700; margin: 0 0 .2rem; color: #fff; }
+.ma-attrib-item p { font-size: .82rem; color: #c2c8d0; margin: .12rem 0; }
+.ma-attrib-lead { font-size: .86rem; color: #9aa3af; margin-bottom: .35rem; max-width: 48rem; }

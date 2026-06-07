@@ -1,10 +1,8 @@
-@page "/admin/content"
-@rendermode InteractiveServer
 @attribute [Authorize(Policy = MaPolicies.Admin)]
 @inject IContentLifecycleService Lifecycle
 
-<PageTitle>Content</PageTitle>
-<h1 class="admin-title">Themes, Components &amp; Controls</h1>
+@* Idea Library panel — installed Themes, Widgets &amp; Controls. Hosted by AdminShell's
+   "Idea Library" tab (no own route). *@
 
 @if (defs is null)
 {

@@ -1,10 +1,7 @@
-@page "/admin/pages"
-@rendermode InteractiveServer
 @attribute [Authorize(Policy = MaPolicies.Admin)]
 @inject IPageAdminService PagesSvc
 
-<PageTitle>Pages</PageTitle>
-<h1 class="admin-title">Pages</h1>
+@* Page Management panel — hosted by AdminShell's "Page Management" tab (no own route). *@
 
 <div class="admin-two-pane">
     <div class="admin-list">
