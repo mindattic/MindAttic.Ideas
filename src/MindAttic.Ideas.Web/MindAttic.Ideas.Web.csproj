@@ -22,6 +22,13 @@
     <PackageReference Include="MindAttic.Ideas.Page.Frontpage" Version="1.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The first-party widget library (Theme/Plugins/Controls packed from MindAttic.Ideas.Library).
+         Ships WITH the CMS and is seeded into the catalog on startup as OPTIONAL content (idempotent;
+         never clobbers admin edits). Copied to output so it deploys; NOT under wwwroot, so never served. -->
+    <Content Include="library\**\*.idea" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>

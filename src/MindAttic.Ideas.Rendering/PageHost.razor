@@ -1,5 +1,11 @@
 @page "/{*Slug}"
 @namespace MindAttic.Ideas.Rendering
+@*  One interactive circuit per content page: any stamped widget that needs interactivity (e.g. a
+    LegionPersonas gallery) is live, sharing this ONE circuit — no per-widget app pool. PageHost is the
+    interactive ROOT, so only its route param (Slug, a string) crosses the serialization boundary; the
+    IRenderContext cascade + RenderFragment body it builds internally never serialize. (Future perf
+    refinement: per-island render mode for purely-static pages — needs a serializable cascade first.) *@
+@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components
 @using Microsoft.EntityFrameworkCore
 @using MindAttic.Ideas.Core.Data

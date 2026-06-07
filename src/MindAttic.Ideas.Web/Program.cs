@@ -97,6 +97,27 @@ using (var scope = app.Services.CreateScope())
     await sp.GetRequiredService<SeedService>().SeedAsync();
     await sp.GetRequiredService<MindAttic.Authentication.Services.AuthBootstrapper>().SeedAdminAsync();
 
+    // SHIPS-WITH-A-LIBRARY: install the bundled first-party widgets (./library/*.idea, packed from
+    // MindAttic.Ideas.Library) through the REAL install path, so a fresh CMS has the Cyberspace theme +
+    // Plugins/Controls available to reference by {{tag}} out of the box. Idempotent and allowOverride:false —
+    // an already-installed version is a NoOp and an admin-edited catalog row is never clobbered. Optional:
+    // if the folder is absent the CMS runs fine with no first-party citizens.
+    var libraryDir = Path.Combine(app.Environment.ContentRootPath, "library");
+    if (Directory.Exists(libraryDir))
+    {
+        var seeder = sp.GetRequiredService<MindAttic.Ideas.Core.Services.IPackageInstallService>();
+        foreach (var file in Directory.EnumerateFiles(libraryDir, "*.idea").OrderBy(f => f, StringComparer.Ordinal))
+        {
+            try
+            {
+                await using var bytes = File.OpenRead(file);
+                var plan = await seeder.InstallAsync(bytes, allowOverride: false);
+                Console.WriteLine($"[library] {Path.GetFileName(file)} -> {plan.Action}");
+            }
+            catch (Exception ex) { Console.Error.WriteLine($"[library] {Path.GetFileName(file)} FAILED: {ex.Message}"); }
+        }
+    }
+
     // DEV convenience: auto-install every .idea dropped in the IDEAS_DROPBOX folder through the REAL
     // install path (IPackageInstallService = the admin-upload code path), idempotent + allowOverride.
     // Lets you stage a folder of packages and see them compose on a live page with no manual upload.
