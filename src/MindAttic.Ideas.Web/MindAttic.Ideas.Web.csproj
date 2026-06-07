@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The first-party widget library (Theme/Plugins/Controls packed from MindAttic.Ideas.Library).
+    <!-- The first-party widget library (Theme/Widgets/Controls packed from MindAttic.Ideas.Library).
          Ships WITH the CMS and is seeded into the catalog on startup as OPTIONAL content (idempotent;
          never clobbers admin edits). Copied to output so it deploys; NOT under wwwroot, so never served. -->
     <Content Include="library\**\*.idea" CopyToOutputDirectory="PreserveNewest" />

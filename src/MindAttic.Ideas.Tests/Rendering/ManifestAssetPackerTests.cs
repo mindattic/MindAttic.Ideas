@@ -9,7 +9,7 @@ namespace MindAttic.Ideas.Tests.Rendering;
 public class ManifestAssetPackerTests
 {
     private static IdeaManifest Manifest(IReadOnlyList<string> css, IReadOnlyList<string> scripts) =>
-        new() { ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = "ui.tooltip", Version = 1,
+        new() { ManifestVersion = 1, Category = "Widget", Kind = "code", Key = "ui.tooltip", Version = 1,
                 DisplayName = "Tooltip", Sdk = 1, EntryType = "X", Css = css, Scripts = scripts };
 
     [Test]
@@ -72,7 +72,7 @@ public class ManifestAssetPackerTests
     {
         var d = new ContentDescriptor
         {
-            Kind = ContentKind.Plugin, Key = "ui.tooltip", Version = 1, DisplayName = "Tooltip",
+            Kind = ContentKind.Widget, Key = "ui.tooltip", Version = 1, DisplayName = "Tooltip",
             Origin = ContentOrigin.Compiled,
             Extra = new Dictionary<string, string> { ["css"] = "should.css" },   // ignored for compiled
         };
@@ -84,7 +84,7 @@ public class ManifestAssetPackerTests
     {
         var d = new ContentDescriptor
         {
-            Kind = ContentKind.Plugin, Key = "ui.tooltip", Version = 1, DisplayName = "Tooltip",
+            Kind = ContentKind.Widget, Key = "ui.tooltip", Version = 1, DisplayName = "Tooltip",
             Origin = ContentOrigin.Package,
             Extra = ManifestAssetPacker.PackExtra(Manifest(["x.css"], ["x.js"])),
         };
@@ -101,15 +101,15 @@ public class ManifestAssetPackerTests
     {
         var d = new ContentDescriptor
         {
-            Kind = ContentKind.Plugin, Key = "ui.tooltip", Version = 1, DisplayName = "Tooltip",
-            Origin = ContentOrigin.Package, AssetMount = "/_ideas/Plugin/ui.tooltip/1",
+            Kind = ContentKind.Widget, Key = "ui.tooltip", Version = 1, DisplayName = "Tooltip",
+            Origin = ContentOrigin.Package, AssetMount = "/_ideas/Widget/ui.tooltip/1",
             Extra = ManifestAssetPacker.PackExtra(Manifest(["css/x.css", "/abs/already.css"], ["js/x.js"])),
         };
         var assets = PageAssets.PackageAssetsOf(d);
         Assert.Multiple(() =>
         {
-            Assert.That(assets.Css, Is.EqualTo(new[] { "/_ideas/Plugin/ui.tooltip/1/css/x.css", "/abs/already.css" }));
-            Assert.That(assets.Scripts, Is.EqualTo(new[] { "/_ideas/Plugin/ui.tooltip/1/js/x.js" }));
+            Assert.That(assets.Css, Is.EqualTo(new[] { "/_ideas/Widget/ui.tooltip/1/css/x.css", "/abs/already.css" }));
+            Assert.That(assets.Scripts, Is.EqualTo(new[] { "/_ideas/Widget/ui.tooltip/1/js/x.js" }));
         });
     }
 }

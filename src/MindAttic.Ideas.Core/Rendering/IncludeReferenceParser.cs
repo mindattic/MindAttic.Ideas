@@ -6,7 +6,9 @@ using MindAttic.Ideas.Abstractions;
 namespace MindAttic.Ideas.Core.Rendering;
 
 /// <summary>
-/// The ONE grammar for the include token <c>{{ MindAttic.Ideas.{Kind}.{Name}[.V{n}|.Latest] [attrs] }}</c>,
+/// The ONE grammar for the include token <c>{{ [MindAttic.Ideas.]{Kind}.{Name}[.V{n}|.Latest] [attrs] }}</c>
+/// — the <c>MindAttic.Ideas.</c> prefix is OPTIONAL, so <c>{{Theme.Cyberspace}}</c> and
+/// <c>{{MindAttic.Ideas.Theme.Cyberspace}}</c> are equivalent —
 /// extracted so the renderer (<see cref="IncludeExpander"/>) and the delete-guard
 /// (ContentLifecycleService) parse references identically — no divergent duplicate. We use DOUBLE BRACES
 /// (not a custom HTML element) because <c>&lt;MindAttic.Ideas.…/&gt;</c> is non-conforming HTML: the parser
@@ -20,9 +22,11 @@ public static class IncludeReferenceParser
 {
     private static readonly HtmlParser Parser = new();
 
-    /// <summary>The include-token grammar: group 1 = the dotted reference, group 2 = the raw attribute tail.</summary>
+    /// <summary>The include-token grammar: group 1 = the dotted reference (the <c>MindAttic.Ideas.</c>
+    /// prefix is OPTIONAL), group 2 = the raw attribute tail. A matched token whose first segment is not a
+    /// real <see cref="ContentKind"/> fails <see cref="TryParseTag"/> and is left as literal text.</summary>
     public static readonly Regex BraceInclude =
-        new(@"\{\{\s*(MindAttic\.Ideas\.[A-Za-z0-9_.]+)([^}]*?)\}\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        new(@"\{\{\s*((?:MindAttic\.Ideas\.)?[A-Za-z0-9_.]+)([^}]*?)\}\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>Every include reference in author HTML, in document order. Empty for null/blank.</summary>
     public static IReadOnlyList<(ContentKind Kind, string Key, int? Version)> Parse(string? html)
@@ -75,18 +79,29 @@ public static class IncludeReferenceParser
         return LegacySelfClosing.Replace(s, ToToken);
     }
 
-    /// <summary>Parse "mindattic.ideas.{kind}.{key...}[.v{n}|.latest]". Version null = float to latest.</summary>
+    /// <summary>
+    /// Parse "[mindattic.ideas.]{kind}.{key...}[.v{n}|.latest]". The <c>mindattic.ideas.</c> prefix is
+    /// OPTIONAL — <c>theme.cyberspace</c> and <c>mindattic.ideas.theme.cyberspace</c> parse identically.
+    /// Version null = float to latest.
+    /// </summary>
     public static bool TryParseTag(string localName, out ContentKind kind, out string key, out int? version)
     {
         kind = default; key = ""; version = null;
-        var parts = localName.Split('.');
-        if (parts.Length < 4 || !Enum.TryParse(parts[2], ignoreCase: true, out kind)) return false;
+        if (string.IsNullOrWhiteSpace(localName)) return false;
+
+        // The MindAttic.Ideas. prefix is optional; strip it if present, then parse {kind}.{key}[.v{n}|.latest].
+        var s = localName.Trim();
+        if (s.StartsWith("mindattic.ideas.", StringComparison.OrdinalIgnoreCase))
+            s = s["mindattic.ideas.".Length..];
+
+        var parts = s.Split('.');
+        if (parts.Length < 2 || !Enum.TryParse(parts[0], ignoreCase: true, out kind)) return false;
 
         int keyEnd = parts.Length;
         if (TryParseVersion(parts[^1], out var v)) { version = v; keyEnd = parts.Length - 1; }
         else if (parts[^1].Equals("latest", StringComparison.OrdinalIgnoreCase)) { keyEnd = parts.Length - 1; }
 
-        key = string.Join('.', parts[3..keyEnd]);
+        key = string.Join('.', parts[1..keyEnd]);
         return key.Length > 0;
     }
 

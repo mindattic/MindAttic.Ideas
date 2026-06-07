@@ -5,8 +5,8 @@ namespace MindAttic.Ideas.Tests.Packaging;
 [TestFixture]
 public class ManifestValidatorTests
 {
-    private static IdeaManifest Code(string key = "ui.tooltip", int version = 1, string category = "Plugin",
-        int? sdk = 1, string? entry = "MindAttic.Ideas.Plugin.Demo.V1") =>
+    private static IdeaManifest Code(string key = "ui.tooltip", int version = 1, string category = "Widget",
+        int? sdk = 1, string? entry = "MindAttic.Ideas.Widget.Demo.V1") =>
         new() { ManifestVersion = 1, Category = category, Kind = "code", Key = key, Version = version,
                 DisplayName = "Demo", Sdk = sdk, EntryType = entry };
 

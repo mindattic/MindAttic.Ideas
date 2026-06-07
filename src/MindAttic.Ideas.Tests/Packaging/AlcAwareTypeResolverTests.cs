@@ -37,7 +37,7 @@ public class AlcAwareTypeResolverTests
         var resolver = NewResolver(out _);
         var d = new ContentDescriptor
         {
-            Kind = ContentKind.Plugin, Key = "x", Version = 1, DisplayName = "X", Origin = ContentOrigin.Compiled,
+            Kind = ContentKind.Widget, Key = "x", Version = 1, DisplayName = "X", Origin = ContentOrigin.Compiled,
             ClrTypeName = typeof(PackageExtractor).FullName, AssemblyName = typeof(PackageExtractor).Assembly.GetName().Name!,
         };
         Assert.That(resolver.Resolve(d), Is.SameAs(typeof(PackageExtractor)));
@@ -49,7 +49,7 @@ public class AlcAwareTypeResolverTests
         var resolver = NewResolver(out _);
         var d = new ContentDescriptor
         {
-            Kind = ContentKind.Plugin, Key = "ghost", Version = 1, DisplayName = "Ghost", Origin = ContentOrigin.Package,
+            Kind = ContentKind.Widget, Key = "ghost", Version = 1, DisplayName = "Ghost", Origin = ContentOrigin.Package,
             ClrTypeName = "Some.Type", AssemblyName = "Ghost",
         };
         Assert.That(resolver.Resolve(d), Is.Null);
@@ -66,14 +66,14 @@ public class AlcAwareTypeResolverTests
         var src = asmType.Assembly.Location;
 
         var resolver = NewResolver(out var extractor);
-        var dir = Path.GetDirectoryName(extractor.EntryDllPath("Plugin", "pkg", 1, asmName))!;
+        var dir = Path.GetDirectoryName(extractor.EntryDllPath("Widget", "pkg", 1, asmName))!;
         Directory.CreateDirectory(dir);
         File.Copy(src, Path.Combine(dir, asmName + ".dll"));
 
         var d = new ContentDescriptor
         {
-            Kind = ContentKind.Plugin, Key = "pkg", Version = 1, DisplayName = "Pkg", Origin = ContentOrigin.Package,
-            Category = "Plugin", ClrTypeName = asmType.FullName, AssemblyName = asmName,
+            Kind = ContentKind.Widget, Key = "pkg", Version = 1, DisplayName = "Pkg", Origin = ContentOrigin.Package,
+            Category = "Widget", ClrTypeName = asmType.FullName, AssemblyName = asmName,
         };
 
         var t1 = resolver.Resolve(d);

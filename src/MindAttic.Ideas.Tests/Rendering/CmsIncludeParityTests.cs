@@ -9,8 +9,8 @@ namespace MindAttic.Ideas.Tests.Rendering;
 /// <summary>
 /// The CmsInclude (compiled-page) seam and the data-page include tag MUST route through the same
 /// resolve/render core (IncludeExpander.EmitInclude), so a compiled page's
-/// <c>&lt;CmsInclude Ref="MindAttic.Ideas.Plugin.Tooltip.V11"/&gt;</c> degrades and alerts identically
-/// to a data page's <c>&lt;MindAttic.Ideas.Plugin.Tooltip.V11/&gt;</c>. These tests assert that parity.
+/// <c>&lt;CmsInclude Ref="MindAttic.Ideas.Widget.Tooltip.V11"/&gt;</c> degrades and alerts identically
+/// to a data page's <c>&lt;MindAttic.Ideas.Widget.Tooltip.V11/&gt;</c>. These tests assert that parity.
 /// </summary>
 [TestFixture]
 public class CmsIncludeParityTests
@@ -85,7 +85,7 @@ public class CmsIncludeParityTests
         var sink = new RecordingSink();
         var b = new RenderTreeBuilder();
         var seq = 0;
-        IncludeExpander.Expand(b, ref seq, "{{MindAttic.Ideas.Plugin.Tooltip.V11}}",
+        IncludeExpander.Expand(b, ref seq, "{{MindAttic.Ideas.Widget.Tooltip.V11}}",
             new FakeCatalog { Outcome = outcome }, new PassGate(), ContentTrust.Author, sink,
             new FakePage().PageId, "demo");
         return Frames(b, sink);
@@ -96,7 +96,7 @@ public class CmsIncludeParityTests
     {
         var sink = new RecordingSink();
         var renderer = new IncludeRenderer(new FakeCatalog { Outcome = outcome }, sink);
-        var fragment = renderer.Render(new FakeRenderContext(), "MindAttic.Ideas.Plugin.Tooltip.V11");
+        var fragment = renderer.Render(new FakeRenderContext(), "MindAttic.Ideas.Widget.Tooltip.V11");
         var b = new RenderTreeBuilder();
         fragment(b);
         return Frames(b, sink);

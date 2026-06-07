@@ -33,8 +33,8 @@ public class LocalFolderPackageSourceTests
             {
                 ["idea.json"] = ManifestReader.Write(new IdeaManifest
                 {
-                    ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = "tooltip", Version = 1,
-                    DisplayName = "Tooltip", Sdk = 1, EntryType = "MindAttic.Ideas.Plugin.Tooltip.V1",
+                    ManifestVersion = 1, Category = "Widget", Kind = "code", Key = "tooltip", Version = 1,
+                    DisplayName = "Tooltip", Sdk = 1, EntryType = "MindAttic.Ideas.Widget.Tooltip.V1",
                     AssemblyName = "Tooltip", Css = ["tooltip.css"], Scripts = ["tooltip.js"],
                 }),
                 ["bin/Tooltip.dll"] = "MZ-fake",
@@ -44,8 +44,8 @@ public class LocalFolderPackageSourceTests
             {
                 ["idea.json"] = ManifestReader.Write(new IdeaManifest
                 {
-                    ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = "evil", Version = 1,
-                    DisplayName = "Evil", Sdk = 1, EntryType = "MindAttic.Ideas.Plugin.Evil.V1", AssemblyName = "Evil",
+                    ManifestVersion = 1, Category = "Widget", Kind = "code", Key = "evil", Version = 1,
+                    DisplayName = "Evil", Sdk = 1, EntryType = "MindAttic.Ideas.Widget.Evil.V1", AssemblyName = "Evil",
                 }),
                 ["bin/System.Text.Json.dll"] = "stowaway",   // host assembly -> validator rejects
             }));
@@ -58,16 +58,16 @@ public class LocalFolderPackageSourceTests
             Assert.Multiple(() =>
             {
                 Assert.That(d.Origin, Is.EqualTo(ContentOrigin.Package));
-                Assert.That(d.Kind, Is.EqualTo(ContentKind.Plugin));
+                Assert.That(d.Kind, Is.EqualTo(ContentKind.Widget));
                 Assert.That(d.Key, Is.EqualTo("tooltip"));
-                Assert.That(d.AssetMount, Is.EqualTo("/_ideas/Plugin/tooltip/1"));
-                Assert.That(extractor.IsExtracted("Plugin", "tooltip", 1, "Tooltip"), Is.True, "bin/ extracted for the ALC resolver");
+                Assert.That(d.AssetMount, Is.EqualTo("/_ideas/Widget/tooltip/1"));
+                Assert.That(extractor.IsExtracted("Widget", "tooltip", 1, "Tooltip"), Is.True, "bin/ extracted for the ALC resolver");
             });
 
             // The manifest assets are surfaced onto Extra and mount under /_ideas exactly as in production.
             var assets = PageAssets.PackageAssetsOf(d);
-            Assert.That(assets.Css, Is.EqualTo(new[] { "/_ideas/Plugin/tooltip/1/tooltip.css" }));
-            Assert.That(assets.Scripts, Is.EqualTo(new[] { "/_ideas/Plugin/tooltip/1/tooltip.js" }));
+            Assert.That(assets.Css, Is.EqualTo(new[] { "/_ideas/Widget/tooltip/1/tooltip.css" }));
+            Assert.That(assets.Scripts, Is.EqualTo(new[] { "/_ideas/Widget/tooltip/1/tooltip.js" }));
         }
         finally
         {

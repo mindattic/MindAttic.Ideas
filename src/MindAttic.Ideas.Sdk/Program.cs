@@ -148,7 +148,7 @@ static int RunVerify(ReadOnlySpan<string> rest)
         Console.WriteLine($"  {m.Category}.{m.Key}@{m.Version}");
         foreach (var use in m.Uses)
         {
-            // "<Kind>.<key>[@<version>]"  e.g. Plugin.tooltip  |  Plugin.tooltip@1
+            // "<Kind>.<key>[@<version>]"  e.g. Widget.tooltip  |  Widget.tooltip@1
             var spec = use.Trim();
             int? wantVersion = null;
             var at = spec.IndexOf('@');

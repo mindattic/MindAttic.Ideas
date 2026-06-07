@@ -78,7 +78,7 @@ public interface IInlineMarkup
 
 /// <summary>
 /// Host-provided render seam (resolved via <see cref="IRenderContext.TryGetFeature{T}"/>): turns a
-/// string-id include reference — e.g. <c>"MindAttic.Ideas.Plugin.Tooltip.V1"</c> (omit the version or
+/// string-id include reference — e.g. <c>"MindAttic.Ideas.Widget.Tooltip.V1"</c> (omit the version or
 /// use <c>.Latest</c> to float) — into a render fragment, using the SAME catalog resolution, Missing/
 /// Disabled degradation, and Admin-Inbox alerting as a data page's <c>&lt;MindAttic.Ideas.…/&gt;</c>
 /// include tag. This is what lets a COMPILED Page/Theme compose other citizens BY STRING ID with no
@@ -92,14 +92,14 @@ public interface IIncludeRenderer
         IReadOnlyDictionary<string, object?>? attributes = null, RenderFragment? childContent = null);
 }
 
-/// <summary>One child page in the site tree (for nav / the TableOfContents plugin).</summary>
+/// <summary>One child page in the site tree (for nav / the TableOfContents widget).</summary>
 public sealed record ChildPage(string Slug, string Title);
 
 /// <summary>
 /// Host-provided render seam (resolved via <see cref="IRenderContext.TryGetFeature{T}"/>): the published,
-/// enabled child pages of a page, ordered by sort order. Lets a Plugin (e.g. TableOfContents) render the
+/// enabled child pages of a page, ordered by sort order. Lets a Widget (e.g. TableOfContents) render the
 /// CURRENT page's children with NO compile-time host reference — it asks the context for this feature and,
-/// if present, lists <see cref="ChildPage"/>s; a Plugin renders nothing when a page has no children. The
+/// if present, lists <see cref="ChildPage"/>s; a Widget renders nothing when a page has no children. The
 /// host impl MUST never throw into a render. APPEND-ONLY interface (default methods only).
 /// </summary>
 public interface IPageTree

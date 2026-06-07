@@ -6,7 +6,7 @@ End-to-end coverage of the core goal flow:
 > that references it by a `{{tag}}` → the page **renders the widget** (no missing-content placeholder).
 
 Spec: [`cypress/e2e/admin-widget-flow.cy.js`](cypress/e2e/admin-widget-flow.cy.js). Fixture:
-`cypress/fixtures/MindAttic.Ideas.Plugin.Tooltip.V1.idea` (packed from `MindAttic.Ideas.Library`).
+`cypress/fixtures/MindAttic.Ideas.Widget.Tooltip.V1.idea` (packed from `MindAttic.Ideas.Library`).
 
 ## Run it
 

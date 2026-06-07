@@ -25,7 +25,7 @@ internal static class IdeaTestArchive
     }
 
     /// <summary>A minimal valid code-package manifest JSON with one bin/ assembly.</summary>
-    public static MemoryStream CodePackage(string key = "ui.tooltip", int version = 1, string category = "Plugin") =>
+    public static MemoryStream CodePackage(string key = "ui.tooltip", int version = 1, string category = "Widget") =>
         Build(new Dictionary<string, string>
         {
             ["idea.json"] = ManifestReader.Write(new IdeaManifest

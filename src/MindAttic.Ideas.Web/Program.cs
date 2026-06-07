@@ -99,7 +99,7 @@ using (var scope = app.Services.CreateScope())
 
     // SHIPS-WITH-A-LIBRARY: install the bundled first-party widgets (./library/*.idea, packed from
     // MindAttic.Ideas.Library) through the REAL install path, so a fresh CMS has the Cyberspace theme +
-    // Plugins/Controls available to reference by {{tag}} out of the box. Idempotent and allowOverride:false —
+    // Widgets/Controls available to reference by {{tag}} out of the box. Idempotent and allowOverride:false —
     // an already-installed version is a NoOp and an admin-edited catalog row is never clobbered. Optional:
     // if the folder is absent the CMS runs fine with no first-party citizens.
     var libraryDir = Path.Combine(app.Environment.ContentRootPath, "library");

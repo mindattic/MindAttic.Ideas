@@ -5,7 +5,7 @@ namespace MindAttic.Ideas.Core.Rendering;
 
 /// <summary>
 /// Host implementation of the <see cref="IIncludeRenderer"/> SDK seam. Lets a COMPILED Page/Theme drop a
-/// citizen by string id (e.g. <c>"MindAttic.Ideas.Plugin.Tooltip.V1"</c>) at runtime via the
+/// citizen by string id (e.g. <c>"MindAttic.Ideas.Widget.Tooltip.V1"</c>) at runtime via the
 /// <c>CmsInclude</c> primitive — with the SAME resolution, degradation, and Admin-Inbox alerting as a data
 /// page's include tag, because both route through <see cref="IncludeExpander.EmitInclude"/> (one code path,
 /// no divergence). Registered in DI and handed to packaged content through
@@ -21,7 +21,7 @@ public sealed class IncludeRenderer(IContentCatalog catalog, IRenderAlertSink al
             if (string.IsNullOrWhiteSpace(reference)) return;
 
             // Lowercase to match the data-page path (AngleSharp lowercases HTML tag names, and catalog keys
-            // are stored lowercase) so "MindAttic.Ideas.Plugin.Tooltip.V1" resolves identically.
+            // are stored lowercase) so "MindAttic.Ideas.Widget.Tooltip.V1" resolves identically.
             var localName = reference.Trim().ToLowerInvariant();
             var pageId = context.Page.PageId;
             var slug = context.Page.Slug;

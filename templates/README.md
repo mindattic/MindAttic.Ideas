@@ -15,8 +15,8 @@ dotnet new maidea-page -n MyPage --slug my-page --theme cyberspace
 
 The generated project mirrors [`samples/MindAttic.Ideas.Page.HelloWorld`](../samples/MindAttic.Ideas.Page.HelloWorld):
 a Razor Class Library that compiles against **only** the Abstractions SDK and composes its theme +
-plugins/controls **by string id**. Then follow [`docs/AUTHORING.md`](../docs/AUTHORING.md) to build, pack, and
+widgets/controls **by string id**. Then follow [`docs/AUTHORING.md`](../docs/AUTHORING.md) to build, pack, and
 upload.
 
-> `maidea-page` is the Page template. Plugin / Theme / Control templates follow the same shape (change
+> `maidea-page` is the Page template. Widget / Theme / Control templates follow the same shape (change
 > the base type, the namespace `Kind`, and drop the `data/page.json` for non-Page kinds).

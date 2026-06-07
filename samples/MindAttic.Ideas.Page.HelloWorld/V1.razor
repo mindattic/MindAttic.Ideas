@@ -1,6 +1,6 @@
 @namespace MindAttic.Ideas.Page.HelloWorld
 @inherits PageBase
-@attribute [Uses(ContentKind.Plugin, "tooltip", 1)]
+@attribute [Uses(ContentKind.Widget, "tooltip", 1)]
 @attribute [Uses(ContentKind.Control, "textbox", 1)]
 
 @* ============================================================================================
@@ -19,12 +19,12 @@
     <h1>Hello, world.</h1>
     <p>
         This page is a compiled <code>.razor</code> shipped as a <code>.idea</code>. It references the
-        Cyberspace theme and the Tooltip plugin <strong>by string id</strong> — neither is bundled with
+        Cyberspace theme and the Tooltip widget <strong>by string id</strong> — neither is bundled with
         it, neither is referenced at compile time.
     </p>
 
     @* Switch ON the tooltip capability (loads its css/js); thereafter any data-tooltip element works. *@
-    <CmsInclude Ref="MindAttic.Ideas.Plugin.Tooltip.V1" />
+    <CmsInclude Ref="MindAttic.Ideas.Widget.Tooltip.V1" />
     <p><button type="button" data-tooltip="Resolved at runtime by string id — not compiled in.">Hover me</button></p>
 
     @* Place an atomic Control by string id; unmatched attributes flow straight through to it. *@

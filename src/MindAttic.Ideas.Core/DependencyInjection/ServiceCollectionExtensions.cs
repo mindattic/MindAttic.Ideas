@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
         // page can drop a Component/Control by string id at runtime (the compiled-page analog of a data
         // page's <MindAttic.Ideas.…/> include tag). Singleton: depends only on the catalog + alert sink.
         services.AddSingleton<IIncludeRenderer, IncludeRenderer>();
-        // The TableOfContents plugin (and any nav citizen) resolves this via TryGetFeature to list the
+        // The TableOfContents widget (and any nav citizen) resolves this via TryGetFeature to list the
         // current page's children at render — the page hierarchy (Page.ParentId/SortOrder) surfaced to
         // package citizens with no compile-time host reference. Depends only on the DbContext factory.
         services.AddSingleton<IPageTree, PageTreeFeature>();

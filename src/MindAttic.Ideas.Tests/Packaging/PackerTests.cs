@@ -47,16 +47,16 @@ public class PackerTests
         // The shape the packer emits: manifestVersion + category(ContentKind) + kind(code) round-trips.
         var m = new IdeaManifest
         {
-            ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = "ui.tooltip", Version = 1,
-            DisplayName = "Tooltip", Sdk = 1, EntryType = "MindAttic.Ideas.Plugin.Tooltip.V1",
+            ManifestVersion = 1, Category = "Widget", Kind = "code", Key = "ui.tooltip", Version = 1,
+            DisplayName = "Tooltip", Sdk = 1, EntryType = "MindAttic.Ideas.Widget.Tooltip.V1",
         };
         var round = ManifestReader.Read(ManifestReader.Write(m));
         Assert.Multiple(() =>
         {
             Assert.That(round.ManifestVersion, Is.EqualTo(1));
-            Assert.That(round.Category, Is.EqualTo("Plugin"));
+            Assert.That(round.Category, Is.EqualTo("Widget"));
             Assert.That(round.Kind, Is.EqualTo("code"));
-            Assert.That(round.EntryType, Is.EqualTo("MindAttic.Ideas.Plugin.Tooltip.V1"));
+            Assert.That(round.EntryType, Is.EqualTo("MindAttic.Ideas.Widget.Tooltip.V1"));
         });
     }
 }

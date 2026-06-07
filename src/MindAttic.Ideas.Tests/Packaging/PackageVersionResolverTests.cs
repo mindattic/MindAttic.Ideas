@@ -5,12 +5,12 @@ namespace MindAttic.Ideas.Tests.Packaging;
 [TestFixture]
 public class PackageVersionResolverTests
 {
-    private static IdeaManifest Candidate(int version, string key = "ui.tooltip", string category = "Plugin") =>
+    private static IdeaManifest Candidate(int version, string key = "ui.tooltip", string category = "Widget") =>
         new() { ManifestVersion = 1, Category = category, Kind = "code", Key = key, Version = version,
                 DisplayName = "Demo", Sdk = 1, EntryType = "X" };
 
     private static InstalledRef Installed(int version, bool enabled = true, bool active = false,
-        string key = "ui.tooltip", string category = "Plugin") =>
+        string key = "ui.tooltip", string category = "Widget") =>
         new(category, key, version, enabled, active);
 
     [Test]
@@ -62,14 +62,14 @@ public class PackageVersionResolverTests
     public void ResolveLatest_PicksMaxEnabled_IgnoresDisabled()
     {
         IReadOnlyList<InstalledRef> set = [Installed(1), Installed(3, enabled: false), Installed(2)];
-        Assert.That(PackageVersionResolver.ResolveLatest("Plugin", "ui.tooltip", set), Is.EqualTo(2));
+        Assert.That(PackageVersionResolver.ResolveLatest("Widget", "ui.tooltip", set), Is.EqualTo(2));
     }
 
     [Test]
     public void ResolveLatest_NullWhenNoneEnabled()
     {
         IReadOnlyList<InstalledRef> set = [Installed(1, enabled: false)];
-        Assert.That(PackageVersionResolver.ResolveLatest("Plugin", "ui.tooltip", set), Is.Null);
+        Assert.That(PackageVersionResolver.ResolveLatest("Widget", "ui.tooltip", set), Is.Null);
     }
 
     [Test]

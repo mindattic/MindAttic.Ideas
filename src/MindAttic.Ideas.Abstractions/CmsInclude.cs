@@ -11,9 +11,9 @@ namespace MindAttic.Ideas.Abstractions;
 //  disabled target degrades to a visible placeholder + Admin-Inbox alert — never a crash.
 //
 //  Authoring (in a .razor that compiles against ONLY this SDK):
-//      <CmsInclude Ref="MindAttic.Ideas.Plugin.Tooltip.V1" />
+//      <CmsInclude Ref="MindAttic.Ideas.Widget.Tooltip.V1" />
 //      <CmsInclude Ref="MindAttic.Ideas.Control.Textbox.V1" placeholder="Name" />
-//      <CmsInclude Ref="MindAttic.Ideas.Plugin.Tooltip" />   @* no version = float to latest *@
+//      <CmsInclude Ref="MindAttic.Ideas.Widget.Tooltip" />   @* no version = float to latest *@
 //
 //  Themes are NOT placed with CmsInclude — a page selects its theme by ThemeKey metadata and the host
 //  wraps the body in it. Declare what a compiled page uses with [Uses(...)] so its assets hoist.
@@ -29,7 +29,7 @@ public sealed class CmsInclude : Microsoft.AspNetCore.Components.ComponentBase
     [CascadingParameter] private IRenderContext? Context { get; set; }
 
     /// <summary>
-    /// The include reference in the locked tag form, e.g. <c>"MindAttic.Ideas.Plugin.Tooltip.V1"</c>.
+    /// The include reference in the locked tag form, e.g. <c>"MindAttic.Ideas.Widget.Tooltip.V1"</c>.
     /// Omit the trailing <c>.V{n}</c> (or use <c>.Latest</c>) to float to the latest enabled version.
     /// </summary>
     [Parameter, EditorRequired] public string Ref { get; set; } = "";

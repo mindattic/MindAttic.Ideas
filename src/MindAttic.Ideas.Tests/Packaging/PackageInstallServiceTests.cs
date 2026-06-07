@@ -42,7 +42,7 @@ public class PackageInstallServiceTests
     public async Task Install_UpsertsRegistryAndMirroredCatalogRow()
     {
         var (svc, factory, _, blobs) = NewService();
-        var plan = await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin"), allowOverride: false);
+        var plan = await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Widget"), allowOverride: false);
 
         Assert.That(plan.Action, Is.EqualTo(InstallAction.Install));
         await using var db = factory.CreateDbContext();
@@ -54,7 +54,7 @@ public class PackageInstallServiceTests
             Assert.That(pkg.IsActiveVersion, Is.True);
             Assert.That(pkg.Sha256, Has.Length.EqualTo(64));
             Assert.That(pkg.ManifestJson, Does.Contain("ui.tooltip"));   // verbatim manifest stored
-            Assert.That(pkg.BlobPath, Is.EqualTo("Plugin/ui.tooltip/1.idea"));
+            Assert.That(pkg.BlobPath, Is.EqualTo("Widget/ui.tooltip/1.idea"));
             Assert.That(blobs.Saved.ContainsKey(pkg.BlobPath), Is.True, "the .idea bytes are persisted to the store");
         });
 
@@ -63,8 +63,8 @@ public class PackageInstallServiceTests
         {
             Assert.That(def.Origin, Is.EqualTo(ContentOrigin.Package));
             Assert.That(def.Priority, Is.EqualTo(50));
-            Assert.That(def.Kind, Is.EqualTo(ContentKind.Plugin));
-            Assert.That(def.AssetMount, Is.EqualTo("/_ideas/Plugin/ui.tooltip/1"));
+            Assert.That(def.Kind, Is.EqualTo(ContentKind.Widget));
+            Assert.That(def.AssetMount, Is.EqualTo("/_ideas/Widget/ui.tooltip/1"));
         });
     }
 
@@ -80,10 +80,10 @@ public class PackageInstallServiceTests
             var extractor = new PackageExtractor(root);
             var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), extractor, new NullRenderAlertSink());
 
-            await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin"), allowOverride: false);
+            await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Widget"), allowOverride: false);
 
             // CodePackage ships bin/Demo.dll with manifest AssemblyName "Demo".
-            Assert.That(extractor.IsExtracted("Plugin", "ui.tooltip", 1, "Demo"), Is.True);
+            Assert.That(extractor.IsExtracted("Widget", "ui.tooltip", 1, "Demo"), Is.True);
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
     }
@@ -124,9 +124,9 @@ public class PackageInstallServiceTests
     public async Task Disable_FlipsBothRowsEnabledFalse_BytesRemain_CatalogReportsDisabled()
     {
         var (svc, factory, catalog, _) = NewService();
-        await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin"), allowOverride: false);
+        await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Widget"), allowOverride: false);
 
-        await svc.DisableAsync("Plugin", "ui.tooltip", 1);
+        await svc.DisableAsync("Widget", "ui.tooltip", 1);
 
         await using var db = factory.CreateDbContext();
         Assert.Multiple(() =>
@@ -135,7 +135,7 @@ public class PackageInstallServiceTests
             Assert.That(db.ContentDefinitions.Single().Enabled, Is.False);
         });
         // Reloaded catalog now reports the disabled identity as Disabled, not Missing.
-        Assert.That(catalog.ResolveTag(ContentKind.Plugin, "ui.tooltip", 1).Outcome,
+        Assert.That(catalog.ResolveTag(ContentKind.Widget, "ui.tooltip", 1).Outcome,
             Is.EqualTo(ContentResolution.Disabled));
     }
 
@@ -147,8 +147,8 @@ public class PackageInstallServiceTests
         {
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
             {
-                ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = "evil", Version = 1,
-                DisplayName = "Evil", Sdk = 1, EntryType = "MindAttic.Ideas.Plugin.Evil.V1", AssemblyName = "Evil",
+                ManifestVersion = 1, Category = "Widget", Kind = "code", Key = "evil", Version = 1,
+                DisplayName = "Evil", Sdk = 1, EntryType = "MindAttic.Ideas.Widget.Evil.V1", AssemblyName = "Evil",
             }),
             ["bin/Microsoft.AspNetCore.Components.dll"] = "stowaway",   // host assembly must not ship
         });
@@ -168,11 +168,11 @@ public class PackageInstallServiceTests
     public async Task AfterInstall_CatalogRegistersPackageDescriptor_TypeUnresolvedUntilLoader()
     {
         var (svc, _, catalog, _) = NewService();
-        await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin"), allowOverride: false);
+        await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Widget"), allowOverride: false);
 
         Assert.That(catalog.All.Any(d => d.Origin == ContentOrigin.Package && d.Key == "ui.tooltip"), Is.True);
         // No ALC load yet (Phase-5/B): the descriptor is registered but its CLR type does not resolve.
-        Assert.That(catalog.ResolveTag(ContentKind.Plugin, "ui.tooltip", 1).Outcome,
+        Assert.That(catalog.ResolveTag(ContentKind.Widget, "ui.tooltip", 1).Outcome,
             Is.EqualTo(ContentResolution.Missing));
     }
 }

@@ -54,27 +54,28 @@ public abstract class ThemeBase : IdeaBase
     public virtual string? BodyPreludeHtml => null;
 }
 
-// ---- Plugin (a capability you add to a page) ----
+// ---- Widget (a composable UI unit you add to a page; can nest other widgets recursively) ----
 
 /// <summary>
-/// Base for a Plugin: a piece of CODE you add to a page to switch ON a capability — it loads its
-/// assets so a behavior works page-wide. e.g. dropping <c>MindAttic.Ideas.Plugin.Tooltip.V11</c>
-/// loads tooltip css/js so ANY element with <c>data-tooltip</c>/<c>data-tt</c> shows a tooltip on hover.
-/// By default it renders no widget of its own — it emits its <see cref="StylesheetUrls"/> as
-/// &lt;link&gt; and <see cref="ScriptUrls"/> as &lt;script&gt;. Such activators are normally code-only
-/// classes (no markup) so they inherit this asset-emitting render; override only to add markup.
+/// Base for a Widget: a composable unit you add to a page. At its simplest it switches ON a capability
+/// by loading assets page-wide — e.g. dropping <c>MindAttic.Ideas.Widget.Tooltip.V11</c> loads tooltip
+/// css/js so ANY element with <c>data-tooltip</c>/<c>data-tt</c> shows a tooltip on hover. At its richest
+/// it renders a full interactive UI that itself nests other widgets (via <c>CmsInclude</c>) to any depth.
+/// By default it renders no markup of its own — it emits its <see cref="StylesheetUrls"/> as
+/// &lt;link&gt; and <see cref="ScriptUrls"/> as &lt;script&gt;. Such asset-only activators are normally
+/// code-only classes (no markup) so they inherit this asset-emitting render; override only to add markup.
 ///
-/// CONFIGURABLE LIKE PROPS: a Plugin is a real Blazor component, so it can declare typed
+/// CONFIGURABLE LIKE PROPS: a Widget is a real Blazor component, so it can declare typed
 /// <c>[Parameter]</c> properties (the React-prop / Angular-@Input analog) that include-tag attributes
-/// bind to — e.g. <c>&lt;MindAttic.Ideas.Plugin.Foo variant="dark" delay="200"/&gt;</c>. Any attribute
+/// bind to — e.g. <c>&lt;MindAttic.Ideas.Widget.Foo variant="dark" delay="200"/&gt;</c>. Any attribute
 /// that doesn't match a declared parameter lands in <see cref="Attributes"/> instead of erroring, so a
 /// placement can spread arbitrary config to tune look/feel/behavior.
 /// </summary>
-public abstract class PluginBase : IdeaBase
+public abstract class WidgetBase : IdeaBase
 {
     /// <summary>
     /// Config attributes from the include tag that don't match a typed <c>[Parameter]</c> property — the
-    /// per-placement "props" bag. Lets a Plugin be configured for a specific look/feel/behavior without
+    /// per-placement "props" bag. Lets a Widget be configured for a specific look/feel/behavior without
     /// declaring every knob up front (declare the important ones as typed <c>[Parameter]</c>s; the rest
     /// land here). Never throws on an unknown attribute.
     /// </summary>

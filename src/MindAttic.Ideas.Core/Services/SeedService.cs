@@ -30,7 +30,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             await db.SaveChangesAsync(ct);
         }
 
-        // Global CSS = cascade tier 0 (CmsHead emits it before any theme/plugin/page CSS): a modern reset
+        // Global CSS = cascade tier 0 (CmsHead emits it before any theme/widget/page CSS): a modern reset
         // so every page starts from a clean slate with no browser-default "ghost" styling. Insert on a fresh
         // DB; migrate the old stock default in place; never clobber an admin-customized value.
         var globalCss = await db.Settings.FirstOrDefaultAsync(s => s.Scope == "Host" && s.Key == "css.global", ct);
@@ -109,9 +109,9 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
           <h1>MindAttic.Ideas</h1>
           <p>This page is data — free-form HTML rendered through the Cyberspace theme.</p>
 
-          <p>A <strong>Plugin</strong> switches on a capability (it loads the tooltip engine), so any
+          <p>A <strong>Widget</strong> switches on a capability (it loads the tooltip engine), so any
              element with <code>data-tooltip</code> works. No version = latest:</p>
-          {{ MindAttic.Ideas.Plugin.Tooltip }}
+          {{ MindAttic.Ideas.Widget.Tooltip }}
           <p><button type="button" data-tooltip="Composed from MindAttic.UiUx — latest version.">Hover me</button></p>
 
           <p>A <strong>Control</strong> is an atomic element placed by token (attributes flow through):</p>
@@ -120,7 +120,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         """;
 
     // A modern CSS reset (Josh Comeau's custom reset) emitted as cascade tier 0 — everything is reset before
-    // any theme/plugin/page CSS, so there are no browser-default "ghost" styles to fight. The --ma-ideas-accent
+    // any theme/widget/page CSS, so there are no browser-default "ghost" styles to fight. The --ma-ideas-accent
     // token rides along. Adjust in the admin global-CSS setting; this is just the seeded default.
     private const string GlobalCssReset =
         """

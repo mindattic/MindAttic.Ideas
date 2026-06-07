@@ -59,13 +59,13 @@ public class RawContentGateTests
     {
         // A non-admin page is sanitized, but must still be able to place widgets by token — the {{…}}
         // text survives so IncludeExpander can resolve it. (Injection is blocked; composition is not.)
-        const string body = "<p>before</p>{{ MindAttic.Ideas.Plugin.Tooltip }}<p>after</p>";
+        const string body = "<p>before</p>{{ MindAttic.Ideas.Widget.Tooltip }}<p>after</p>";
         var outp = Untrusted(body);
-        Assert.That(outp, Does.Contain("{{ MindAttic.Ideas.Plugin.Tooltip }}"));
+        Assert.That(outp, Does.Contain("{{ MindAttic.Ideas.Widget.Tooltip }}"));
         // and the parser still finds the reference in the sanitized output
         var refs = IncludeReferenceParser.Parse(outp);
         Assert.That(refs, Has.Count.EqualTo(1));
-        Assert.That(refs[0], Is.EqualTo((ContentKind.Plugin, "tooltip", (int?)null)));
+        Assert.That(refs[0], Is.EqualTo((ContentKind.Widget, "tooltip", (int?)null)));
     }
 
     [Test]

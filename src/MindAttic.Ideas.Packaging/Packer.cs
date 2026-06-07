@@ -64,7 +64,7 @@ public static partial class Packer
         var manifest = new IdeaManifest
         {
             ManifestVersion = 1,
-            Category = identity.Kind,         // the ContentKind name (Page | Plugin | Theme | Control)
+            Category = identity.Kind,         // the ContentKind name (Page | Widget | Theme | Control)
             Kind = "code",                    // this packer packs a compiled citizen
             Key = identity.Key,
             Version = identity.Version,
@@ -115,8 +115,8 @@ public static partial class Packer
         string Key, string DisplayName, string Kind, string Category, int Version,
         int SdkVersion, string EntryType, string RenderMode, string Scope, IReadOnlyList<string> Uses);
 
-    // ContentKind ordinal -> name (frozen, append-only enum: Page=0, Plugin=1, Theme=2, Control=3).
-    private static readonly string[] KindNames = { "Page", "Plugin", "Theme", "Control" };
+    // ContentKind ordinal -> name (frozen, append-only enum: Page=0, Widget=1, Theme=2, Control=3).
+    private static readonly string[] KindNames = { "Page", "Widget", "Theme", "Control" };
 
     private static Identity ResolveIdentity(Assembly asm, int? versionOverride)
     {
@@ -143,7 +143,7 @@ public static partial class Packer
         if (segs.Length < 4)
             throw new PackException($"namespace '{ns}' is too shallow; expected MindAttic.Ideas.<Kind>.<Key>.");
 
-        var kind = segs[2];                             // Page | Theme | Plugin | Control
+        var kind = segs[2];                             // Page | Theme | Widget | Control
         var key = string.Join('.', segs.Skip(3)).ToLowerInvariant();   // frontpage
         var convVersion = int.Parse(VersionClass().Match(type.Name).Groups[1].Value);
 

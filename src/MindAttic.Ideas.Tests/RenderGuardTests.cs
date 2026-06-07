@@ -19,9 +19,44 @@ public class RenderGuardTests
     [Test]
     public void Parse_PinnedVersion()
     {
-        var refs = IncludeReferenceParser.Parse("{{MindAttic.Ideas.Plugin.Tooltip.V11}}");
+        var refs = IncludeReferenceParser.Parse("{{MindAttic.Ideas.Widget.Tooltip.V11}}");
         Assert.That(refs, Has.Count.EqualTo(1));
-        Assert.That(refs[0], Is.EqualTo((ContentKind.Plugin, "tooltip", (int?)11)));
+        Assert.That(refs[0], Is.EqualTo((ContentKind.Widget, "tooltip", (int?)11)));
+    }
+
+    [Test]
+    public void Parse_PrefixIsOptional_ShortFormEqualsFullForm()
+    {
+        // {{Theme.Cyberspace}} == {{MindAttic.Ideas.Theme.Cyberspace}}; both forms parse identically.
+        Assert.That(IncludeReferenceParser.Parse("{{Theme.Cyberspace}}"),
+            Is.EqualTo(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Theme.Cyberspace}}")));
+
+        var refs = IncludeReferenceParser.Parse("{{Theme.Cyberspace}}{{Widget.Tooltip}}");
+        Assert.That(refs, Is.EqualTo(new[]
+        {
+            (ContentKind.Theme, "cyberspace", (int?)null),
+            (ContentKind.Widget, "tooltip", (int?)null),
+        }));
+    }
+
+    [Test]
+    public void TryParseTag_ShortForm_WithVersionAndDottedKey()
+    {
+        Assert.That(IncludeReferenceParser.TryParseTag("widget.tooltip.v11", out var k, out var key, out var v), Is.True);
+        Assert.That((k, key, v), Is.EqualTo((ContentKind.Widget, "tooltip", (int?)11)));
+
+        // Keys may contain dots; the short form preserves them just like the full form.
+        Assert.That(IncludeReferenceParser.TryParseTag("widget.ui.tooltip", out _, out var dotted, out _), Is.True);
+        Assert.That(dotted, Is.EqualTo("ui.tooltip"));
+    }
+
+    [Test]
+    public void TryParseTag_KindAloneOrUnknownKind_Fails()
+    {
+        // A lone kind has no key, and a first segment that isn't a real kind is not an include
+        // (so a stray {{foo.bar}} survives as literal text rather than becoming a placeholder).
+        Assert.That(IncludeReferenceParser.TryParseTag("theme", out _, out _, out _), Is.False);
+        Assert.That(IncludeReferenceParser.TryParseTag("foo.bar", out _, out _, out _), Is.False);
     }
 
     [Test]
@@ -30,9 +65,9 @@ public class RenderGuardTests
         // Tokens carry attributes (e.g. fontSize=0.5rem); they don't affect the (kind,key,version) identity,
         // and surrounding text is ignored. Only the reference is parsed here.
         var refs = IncludeReferenceParser.Parse(
-            "before {{ MindAttic.Ideas.Plugin.TableOfContents fontSize=0.5rem class=\"x y\" }} after");
+            "before {{ MindAttic.Ideas.Widget.TableOfContents fontSize=0.5rem class=\"x y\" }} after");
         Assert.That(refs, Has.Count.EqualTo(1));
-        Assert.That(refs[0], Is.EqualTo((ContentKind.Plugin, "tableofcontents", (int?)null)));
+        Assert.That(refs[0], Is.EqualTo((ContentKind.Widget, "tableofcontents", (int?)null)));
     }
 
     [Test]
@@ -47,14 +82,14 @@ public class RenderGuardTests
     [Test]
     public void UpgradeLegacyTags_RewritesOldElementFormToTokens_AndIsIdempotent()
     {
-        var html = "<p>x</p><MindAttic.Ideas.Plugin.Tooltip /><MindAttic.Ideas.Control.Textbox placeholder=\"Type\" />";
+        var html = "<p>x</p><MindAttic.Ideas.Widget.Tooltip /><MindAttic.Ideas.Control.Textbox placeholder=\"Type\" />";
         var up = IncludeReferenceParser.UpgradeLegacyTags(html)!;
-        Assert.That(up, Does.Contain("{{MindAttic.Ideas.Plugin.Tooltip}}"));
+        Assert.That(up, Does.Contain("{{MindAttic.Ideas.Widget.Tooltip}}"));
         Assert.That(up, Does.Contain("{{MindAttic.Ideas.Control.Textbox placeholder=\"Type\"}}"));
         Assert.That(up, Does.Not.Contain("<MindAttic.Ideas."));
         // Already-token content is left untouched (idempotent on a second pass / on new content).
-        Assert.That(IncludeReferenceParser.UpgradeLegacyTags("{{MindAttic.Ideas.Plugin.Tooltip}}"),
-            Is.EqualTo("{{MindAttic.Ideas.Plugin.Tooltip}}"));
+        Assert.That(IncludeReferenceParser.UpgradeLegacyTags("{{MindAttic.Ideas.Widget.Tooltip}}"),
+            Is.EqualTo("{{MindAttic.Ideas.Widget.Tooltip}}"));
     }
 
     [Test]
@@ -68,9 +103,9 @@ public class RenderGuardTests
     [Test]
     public void BodyPinsVersion_And_BodyReferencesKey()
     {
-        const string html = "{{MindAttic.Ideas.Plugin.Tooltip.V11}}{{MindAttic.Ideas.Theme.Cyberspace}}";
-        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Plugin, "tooltip", 11), Is.True);
-        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Plugin, "tooltip", 12), Is.False);
+        const string html = "{{MindAttic.Ideas.Widget.Tooltip.V11}}{{MindAttic.Ideas.Theme.Cyberspace}}";
+        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Widget, "tooltip", 11), Is.True);
+        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Widget, "tooltip", 12), Is.False);
         Assert.That(IncludeReferenceParser.BodyReferencesKey(html, ContentKind.Theme, "cyberspace"), Is.True);
         Assert.That(IncludeReferenceParser.BodyFloatsKey(html, ContentKind.Theme, "cyberspace"), Is.True);
     }
@@ -111,7 +146,7 @@ public class RenderGuardTests
         var builder = new RenderTreeBuilder();
         builder.OpenElement(0, "div");
         var seq = 1;
-        IncludeExpander.Expand(builder, ref seq, "{{MindAttic.Ideas.Plugin.Tooltip.V11}}",
+        IncludeExpander.Expand(builder, ref seq, "{{MindAttic.Ideas.Widget.Tooltip.V11}}",
             catalog, new PassGate(), ContentTrust.Author, sink, Guid.NewGuid(), "demo");
         builder.CloseElement();
 

@@ -9,14 +9,14 @@ namespace MindAttic.Ideas.Abstractions;
 
 /// <summary>
 /// The content kinds. The kind is determined by which base a type derives from
-/// (<see cref="PageBase"/> / <see cref="ThemeBase"/> / <see cref="PluginBase"/> /
+/// (<see cref="PageBase"/> / <see cref="ThemeBase"/> / <see cref="WidgetBase"/> /
 /// <see cref="ControlBase"/>). "Idea" is the package format (<c>.idea</c>) and the shared base
 /// (<see cref="IdeaBase"/>), never a kind. New kinds may be APPENDED here without a breaking change.
 /// </summary>
 public enum ContentKind
 {
     Page = 0,
-    Plugin = 1,      // a capability added to a page (e.g. Tooltip) — switches a behavior on
+    Widget = 1,      // a composable UI widget (e.g. Tooltip, Frontpage) — can nest other widgets recursively
     Theme = 2,
     Control = 3,     // one atomic UI unit (e.g. Textbox, Button)
 }
