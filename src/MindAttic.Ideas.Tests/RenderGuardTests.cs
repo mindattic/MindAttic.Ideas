@@ -75,17 +75,17 @@ public class RenderGuardTests
     {
         Assert.That(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Theme.Cyberspace}}")[0],
             Is.EqualTo((ContentKind.Theme, "cyberspace", (int?)null)));
-        Assert.That(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Control.Textbox.Latest}}")[0],
-            Is.EqualTo((ContentKind.Control, "textbox", (int?)null)));
+        Assert.That(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Widget.Tooltip.Latest}}")[0],
+            Is.EqualTo((ContentKind.Widget, "tooltip", (int?)null)));
     }
 
     [Test]
     public void UpgradeLegacyTags_RewritesOldElementFormToTokens_AndIsIdempotent()
     {
-        var html = "<p>x</p><MindAttic.Ideas.Widget.Tooltip /><MindAttic.Ideas.Control.Textbox placeholder=\"Type\" />";
+        var html = "<p>x</p><MindAttic.Ideas.Widget.Tooltip /><MindAttic.Ideas.Widget.Textbox placeholder=\"Type\" />";
         var up = IncludeReferenceParser.UpgradeLegacyTags(html)!;
         Assert.That(up, Does.Contain("{{MindAttic.Ideas.Widget.Tooltip}}"));
-        Assert.That(up, Does.Contain("{{MindAttic.Ideas.Control.Textbox placeholder=\"Type\"}}"));
+        Assert.That(up, Does.Contain("{{MindAttic.Ideas.Widget.Textbox placeholder=\"Type\"}}"));
         Assert.That(up, Does.Not.Contain("<MindAttic.Ideas."));
         // Already-token content is left untouched (idempotent on a second pass / on new content).
         Assert.That(IncludeReferenceParser.UpgradeLegacyTags("{{MindAttic.Ideas.Widget.Tooltip}}"),

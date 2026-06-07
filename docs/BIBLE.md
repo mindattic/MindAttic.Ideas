@@ -14,10 +14,10 @@ updated: 2026-06-07
 >
 > **Provenance.** This bible was reformatted from the frozen [`FOUNDATION_ADR.md`](FOUNDATION_ADR.md)
 > (the Legion deliberation that produced the foundation) as patched by the append-only
-> [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A18). Where this bible and an amendment disagree, **the
+> [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A19). Where this bible and an amendment disagree, **the
 > amendment wins** — see [§5](#MAI-§5). The ADR's original vocabulary (`Component` as a kind,
-> `Cms`-prefixed bases, `<ma-component>` tags) is **superseded**; current vocabulary is A18 (the
-> composable-UI kind is **Widget**).
+> `Cms`-prefixed bases, `<ma-component>` tags) is **superseded**; current vocabulary is A18/A19 (the
+> composable-UI kind is **Widget**; `Control` kind removed, ordinal 3 reserved).
 
 ## 1. The one sentence {#MAI-§1}
 
@@ -28,11 +28,11 @@ redeploy and no app-pool restart**.
 ## 2. The product promise {#MAI-§2}
 
 You ship capability by **uploading or CLI'ing a `.idea` file** (a plain zip). The CMS reads whether
-it contains a **Page**, **Widget**, **Theme**, or **Control**, registers it by convention, and it
-is live. The four kinds derive from one shared root `IdeaBase`; Themes/Widgets/Controls are
+it contains a **Page**, **Widget**, or **Theme**, registers it by convention, and it
+is live. The three kinds derive from one shared root `IdeaBase`; Themes/Widgets are
 **globally scoped**, so any Page composes them by dropping a token.
 
-- **A Page is free-form. A Theme wraps it. Widgets and Controls drop into it. Inline JS/CSS/HTML is
+- **A Page is free-form. A Theme wraps it. Widgets drop into it. Inline JS/CSS/HTML is
   yours.** There are no zones, panes, slots, or grids (DotNetNuke's fixed-layout model is rejected).
 - **Two authoring paths, one render path.** A *Data page* (free-form `BodyHtml`/`PageCss`/`PageJs`
   in the DB, zero deploy — the primary path) and a *Code page* (a compiled `PageBase` subclass for
@@ -62,7 +62,7 @@ is live. The four kinds derive from one shared root `IdeaBase`; Themes/Widgets/C
 - **NOT WebAssembly for uploaded packages.** Uploaded `.idea` types are Static or InteractiveServer
   only (a hard .NET boundary).
 - **"Idea" is NOT a content kind.** It names the shared base `IdeaBase`, the `.idea` package, and
-  the `/_ideas/...` asset route — never one of the four kinds.
+  the `/_ideas/...` asset route — never one of the content kinds.
 
 ## 4. Architecture canon {#MAI-§4}
 
@@ -94,14 +94,14 @@ is live. The four kinds derive from one shared root `IdeaBase`; Themes/Widgets/C
    │  IRenderContext, ICmsContentSource/ITypeResolver/IRawContentGate seams  │
    │  refs ONLY Microsoft.AspNetCore.Components + System.Text.Json           │
    └─────────────────────────────────────────────────────────────────────────┘
-   First-party content (Themes/Widgets/Controls) lives in the sibling repo
+   First-party content (Themes/Widgets) lives in the sibling repo
    MindAttic.Ideas.Library, packed to dist/*.idea. (MindAttic.Ideas.Rendering is
    a small rendering-support project.)
 ```
 
 ### 4.1 Projects
 - **`src/MindAttic.Ideas.Abstractions`** — the frozen v1 SDK: `IdeaBase` + the four kind bases
-  (`PageBase`/`WidgetBase`/`ThemeBase`/`ControlBase`), `[Idea]`, `IRenderContext`, `CmsInclude`,
+  (`PageBase`/`WidgetBase`/`ThemeBase`), `[Idea]`, `IRenderContext`, `CmsInclude`,
   discovery/catalog seams. References ONLY `Microsoft.AspNetCore.Components` + `System.Text.Json`.
 - **`src/MindAttic.Ideas.Core`** — EF entities, `CmsDbContext` (SQL Server, temporal `Pages`),
   convention discovery, persisted catalog, raw-content gate, `FreeFormPage`/include expander, the
@@ -113,12 +113,12 @@ is live. The four kinds derive from one shared root `IdeaBase`; Themes/Widgets/C
 - **`src/MindAttic.Ideas.Sdk`** — the `ma-idea` CLI (pack / inspect / list / install / upgrade / verify).
 - **`src/MindAttic.Ideas.Web`** — the Blazor Web App host: `PageHost` catch-all, `CmsHead` cascade,
   render fork, `/admin`, `/_ideas` route, Vault+Legion wiring; Phase-1 proof content under
-  `Components/Library/{Theme,Widget,Control}`.
+  `Components/Library/Theme` (Bootstrap theme only — Widget/Control inline content removed with A19).
 - **`src/MindAttic.Ideas.Tests`** — NUnit suite (169 tests).
 
 ### 4.2 Domain model — the NOUNS
 - **`IdeaBase`** — shared root of all four content kinds.
-- **`ContentKind`** — `Page=0 · Widget=1 · Theme=2 · Control=3` (append-only on *ordinals*;
+- **`ContentKind`** — `Page=0 · Widget=1 · Theme=2` (append-only on *ordinals*; `Control=3` removed pre-1.0 per A19, never reused;
   [A18](AMENDMENTS.md#MAI-A18) renamed ordinal 1 to Widget).
 - **`Page`** (`src/MindAttic.Ideas.Core/Entities/Page.cs`) — one durable EF row, `PageKind {Data,Code}`;
   Data columns `BodyHtml`/`PageCss`/`PageJs`/`BodyTrust`; shared `SiteId`/`ParentId`/`Slug`/`ThemeKey`.
@@ -162,13 +162,13 @@ is live. The four kinds derive from one shared root `IdeaBase`; Themes/Widgets/C
 > ([HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7)), and verified-DoD
 > ([HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8)).
 >
-> **Amendment supremacy.** The append-only [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A18) patches both the
+> **Amendment supremacy.** The append-only [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A19) patches both the
 > ADR and this bible. Where an amendment conflicts with bible prose, the amendment wins.
 
 These are the **project-specific** laws (the cross-cutting invariants the foundation may never change):
 
 - **{#MAI-LAW-1} Naming & identity lock.** A citizen's forever-identity is `(ContentKind Kind, string Key,
-  int Version)` — never the CLR type name. The four kinds are Page · Widget · Theme · Control under
+  int Version)` — never the CLR type name. The three kinds are Page · Widget · Theme under
   `IdeaBase`; "Idea" is never a kind. ([A2](AMENDMENTS.md#MAI-A2), [A9](AMENDMENTS.md#MAI-A9),
   [A18](AMENDMENTS.md#MAI-A18))
 - **{#MAI-LAW-2} Frozen SDK, MAJOR=1 forever.** `Abstractions` references only
@@ -201,8 +201,10 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 
 ## 6. Verified state {#MAI-§6}
 
-**Build/test evidence (2026-06-07):** `dotnet build MindAttic.Ideas.slnx -c Debug` → **succeeded, 0
-warnings, 0 errors**. `dotnet test src/MindAttic.Ideas.Tests` → **Passed: 169, Failed: 0, Skipped: 0**.
+**Build/test evidence (2026-06-07):** `dotnet build MindAttic.Ideas.slnx -c Debug` — all projects
+compiled successfully (0 CS warnings); the Web project's DLL-copy step failed due to a running host
+process locking its output DLLs (MSB3026/MSB3027 file-lock retries — not a compilation defect).
+`dotnet test src/MindAttic.Ideas.Tests --no-build` → **Passed: 169, Failed: 0, Skipped: 0**.
 
 Proven working (each cited in [`USER_STORIES.md`](USER_STORIES.md)):
 - ✅ Abstractions SDK frozen v1 (`IdeaBase` + four kind bases, `[Idea]`, seams).
@@ -251,19 +253,19 @@ Definition of done (a feature is `✅` only when *verified*, never merely assert
 ## 9. Glossary {#MAI-§9}
 
 - **.idea** — a plain zip whose only required member is `idea.json`; the install unit.
-- **Idea / IdeaBase** — the shared base of the four kinds and the package format; never a kind.
+- **Idea / IdeaBase** — the shared base of all content kinds and the package format; never a kind.
 - **Page** — content, a CMS DB row (Data or Code), resolved by `(SiteId, Slug)`.
 - **Widget** — the composable-UI kind ([A18](AMENDMENTS.md#MAI-A18)): from an asset-only capability
   activator (Tooltip) up to a full interactive UI that nests other widgets via `CmsInclude`. Formerly
   "Component" (A9) then "Plugin" (A17).
 - **Theme** — layout chrome + one `@Body` hole + a CSS bundle.
-- **Control** — *deprecated ([A19](AMENDMENTS.md#MAI-A19)): author atomic UI as a Widget.* Was one atomic placed UI element (e.g. Textbox → an `<input>`); `ContentKind.Control=3` stays reserved/frozen so installed Control packages still resolve.
-- **ContentKind** — `Page=0 · Widget=1 · Theme=2 · Control=3` (append-only ordinals).
+- **Control** — *removed ([A19](AMENDMENTS.md#MAI-A19)): atomic UI is authored as a Widget.* The `Control` kind and `ControlBase` were deleted; ordinal 3 is retired and never reused.
+- **ContentKind** — `Page=0 · Widget=1 · Theme=2` (append-only ordinals; `Control=3` removed pre-1.0, never reused).
 - **Data page / Code page** — free-form DB body (zero deploy) vs a compiled `PageBase` subclass.
 - **Catalog (`CmsContentDefinition`)** — the one persisted registry of all citizens.
 - **ALC** — the per-package collectible `AssemblyLoadContext` used to load `.idea` citizens.
 - **Raw-content gate (`IRawContentGate`)** — the sole `MarkupString` chokepoint; trust-keyed.
 - **Admin Inbox** — DB-backed dedup alert surface for render-time degradation.
 - **Trust (`ContentTrust`)** — `Author` (raw passthrough) vs `Untrusted` (sanitized), set at write time.
-- **MindAttic.Ideas.Library** — the sibling repo that is the home of all first-party Themes/Widgets/Controls.
+- **MindAttic.Ideas.Library** — the sibling repo that is the home of all first-party Themes/Widgets.
 - **UiUx** — MindAttic.UiUx, the build-free canonical source for official content (consumed by pinned-tag URL).

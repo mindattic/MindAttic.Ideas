@@ -38,9 +38,10 @@ updated: 2026-06-07
   `Untrusted_PreservesIncludeTokens_SoWidgetsStillCompose`.)*
 - **MAI-US-A5 ✅** As an Author, I can CRUD pages with soft-delete and publish/enable under the Admin
   policy. *(verified by `PageAdminServiceTests`, `AdminServiceContractTests`.)*
-- **MAI-US-A6 🟡** As a Visitor on the running host, a seeded Data page renders a Widget capability + a
-  Control through the Cyberspace theme end-to-end. *Mechanics are unit-proven (parity, gate, cascade);
-  the live render through the running host is not yet captured by an automated e2e.* *(component pieces
+- **MAI-US-A6 🟡** As a Visitor on the running host, a seeded Data page renders a Widget capability
+  through the Cyberspace theme end-to-end. *Mechanics are unit-proven (parity, gate, cascade);
+  the live render through the running host is not yet captured by an automated e2e. Note: the
+  "Control" kind was removed (A19) — atomic UI is now authored as a Widget.* *(component pieces
   verified by `CmsIncludeParityTests`, `RawContentGateTests`; live e2e pending — see MAI-US-F5.)*
 
 ## Epic B — Versioning, lifecycle & history

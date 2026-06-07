@@ -107,27 +107,4 @@ public abstract class WidgetBase : IdeaBase
     }
 }
 
-// ---- Control (DEPRECATED — fold atomic UI into a Widget; see amendment MAI-A19) ----
-
-/// <summary>
-/// DEPRECATED — author atomic UI as a <see cref="WidgetBase"/> Widget instead. A Control was "a single
-/// atomic placed UI element" (e.g. a Textbox -&gt; an &lt;input&gt;), but it has no behavior a Widget
-/// lacks: <see cref="WidgetBase"/> exposes the same unmatched-attribute passthrough, resolves through the
-/// identical include path, and can render a single visible element just as well. The
-/// <see cref="ContentKind.Control"/> ordinal stays RESERVED/frozen so already-installed Control packages
-/// keep discovering and resolving — no new Controls should be authored. (Amendment MAI-A19.)
-/// </summary>
-[Obsolete("Author atomic UI as a Widget (WidgetBase). ContentKind.Control is reserved/frozen for installed packages but no longer authored — see amendment MAI-A19.")]
-public abstract class ControlBase : IdeaBase
-{
-    [Parameter(CaptureUnmatchedValues = true)]
-    public IDictionary<string, object>? Attributes { get; set; }
-}
-
-/// <summary>DEPRECATED — see <see cref="ControlBase"/>. Author atomic UI as a Widget.</summary>
-[Obsolete("Author atomic UI as a Widget (WidgetBase). ContentKind.Control is reserved/frozen but no longer authored — see amendment MAI-A19.")]
-public abstract class ControlBase<TSettings> : ControlBase where TSettings : class, new()
-{
-    protected TSettings Settings { get; private set; } = new();
-    protected override void OnParametersSet() => Settings = Context?.GetSettings<TSettings>() ?? new();
-}
+// ---- (Control kind REMOVED pre-1.0 — MAI-A19. Author atomic UI as a Widget; WidgetBase covers it.) ----

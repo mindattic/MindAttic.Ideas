@@ -5,22 +5,22 @@ pool, **one** database hosts *many* pages — so a project like `MindAttic.Front
 `MindAttic.Legion.Frontend` no longer needs a whole web app just to serve essentially one page.
 
 You ship capability by **uploading or CLI'ing a `.idea` file** (a plain zip). The CMS reads whether
-it's a **Page**, **Component**, **Theme**, or **Control**, registers it, and it's live — no redeploy,
-no app-pool restart. Components, Themes, and Controls are **globally scoped**, so any Page composes
+it's a **Page**, **Widget**, or **Theme**, registers it, and it's live — no redeploy,
+no app-pool restart. Widgets and Themes are **globally scoped**, so any Page composes
 them by dropping a tag:
 
 ```razor
 <MindAttic.Ideas.Theme.Cyberspace.V1 />
-<MindAttic.Ideas.Component.Tooltip />        @* no version = latest *@
-<MindAttic.Ideas.Control.Textbox.V21 />
+<MindAttic.Ideas.Widget.Tooltip />        @* no version = latest *@
+<MindAttic.Ideas.Widget.Textbox.V1 />
 ```
 
 > **Status:** Phase 0/1 foundation **built and verified end-to-end**. This README is the **living
 > feature spec** — every feature is marked ✅ done · 🔨 building · 📋 planned, kept in lockstep with the
 > code so the documentation is feature-complete the moment the code is.
 >
-> **Canonical contracts:** [`docs/FOUNDATION_AMENDMENTS.md`](docs/FOUNDATION_AMENDMENTS.md) is the
-> current source of truth for the foundation. [`docs/FOUNDATION_ADR.md`](docs/FOUNDATION_ADR.md) is the
+> **Canonical contracts:** [`docs/BIBLE.md`](docs/BIBLE.md) + [`docs/AMENDMENTS.md`](docs/AMENDMENTS.md)
+> are the current source of truth for the foundation (A1..A19). [`docs/FOUNDATION_ADR.md`](docs/FOUNDATION_ADR.md) is the
 > Legion deliberation that produced it (its *vocabulary* is superseded by the amendments — see the
 > banner at its top). [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) is the original brief.
 
@@ -28,27 +28,27 @@ them by dropping a tag:
 
 ## The one mental model
 
-**A Page is free-form. A Theme wraps it. Components and Controls drop into it. Inline JS/CSS/HTML is yours.**
+**A Page is free-form. A Theme wraps it. Widgets drop into it. Inline JS/CSS/HTML is yours.**
 
 There are **no zones, panes, slots, or grids** — DotNetNuke's clunky fixed-layout model is explicitly
 rejected. You author a page however you like and place content exactly where you want it in your markup.
-The unit you install is a `.idea` zip; the things it contains are one of four **content kinds**.
+The unit you install is a `.idea` zip; the things it contains are one of three **content kinds**.
 
 | Kind | What it is | Base type | Example tag |
 |---|---|---|---|
 | **Page** | A free-form page (inline HTML/CSS/JS) that picks a Theme and drops tags | `PageBase` | `MindAttic.Ideas.Page.LegionFrontpage.V2` |
-| **Component** | A **capability** you add to a page — loads its js/css so a behavior works page-wide | `ComponentBase` | `MindAttic.Ideas.Component.Tooltip.V11` |
+| **Widget** | A composable unit — from a pure capability activator (loads js/css) up to a full interactive UI | `WidgetBase` | `MindAttic.Ideas.Widget.Tooltip.V11` |
 | **Theme** | A layout (chrome + one `@Body` hole) + a CSS bundle | `ThemeBase` | `MindAttic.Ideas.Theme.Cyberspace.V4` |
-| **Control** | One **atomic** placed UI element that renders visibly | `ControlBase` | `MindAttic.Ideas.Control.Textbox.V21` |
 
-All four derive from a shared root, **`IdeaBase`**. "Idea" names that shared base and the `.idea`
+All three derive from a shared root, **`IdeaBase`**. "Idea" names that shared base and the `.idea`
 package format (and the `/_ideas/...` asset route) — it is **never** a content kind. New kinds can be
 **appended** to the set later without breaking anything.
 
-> **Component vs Control.** A **Component** is a *behavior switch*: dropping
-> `<MindAttic.Ideas.Component.Tooltip />` loads the tooltip engine so that thereafter **any** element with
-> `data-tooltip`/`data-tt` shows a tooltip on hover — it renders no widget of its own. A **Control** is a
-> *thing you place*: `<MindAttic.Ideas.Control.Textbox />` renders an actual `<input>` right there.
+> **Widget range.** A Widget spans from a pure *capability activator* (dropping
+> `<MindAttic.Ideas.Widget.Tooltip />` loads the tooltip engine so that thereafter **any** element with
+> `data-tooltip`/`data-tt` shows a tooltip on hover — renders no markup of its own) up to a full
+> interactive UI like `MindAttic.Ideas.Widget.Textbox` that renders an actual `<input>` and can itself
+> nest other Widgets. Atomic placed UI (formerly "Control") is now just a Widget.
 
 ### Two ways to author a Page — one render path
 - **Data page** (zero deploy): free-form `BodyHtml` / `PageCss` / `PageJs` stored in the DB. Interactivity
@@ -68,7 +68,7 @@ never a schema change.
 <MindAttic.Ideas.{ContentKind}.{Name}.{Version} />
 ```
 
-- **`{ContentKind}`** — `Page` · `Component` · `Theme` · `Control`.
+- **`{ContentKind}`** — `Page` · `Widget` · `Theme`.
 - **`{Name}`** — the content's name (`Cyberspace`, `Tooltip`, `TabControl`, …).
 - **`{Version}`** — **optional**, uppercase `V{n}`:
   - omitted → **latest** enabled version &nbsp;·&nbsp; `.Latest` → **latest** (explicit) &nbsp;·&nbsp; `.V3` → **pins** version 3.
@@ -89,17 +89,17 @@ enhance"**:
 
 - You **never mutate** `Cyberspace.V1`. You ship `Cyberspace.V2` **alongside** it; versions coexist.
 - A tag may **pin** (`.V1`) when you care, or **float to latest** (no version / `.Latest`) when you don't
-  — so composing a `TabControl` + `TabButton` + `TabPage` doesn't make you juggle versions.
+  — so composing a `TabWidget` + `TabButton` + `TabPage` doesn't make you juggle versions.
 
 ### Lifecycle & integrity rules 📋 *(data model ✅; enforcement with Phase-2 admin)*
 - **A page must never be invalid.** At render, a missing/disabled reference degrades to a visible
   placeholder + fires an **Admin Inbox** alert — never a crash.
-- **Disabled = a version that exists but can't be used until re-enabled** (Page, Component, Theme, Control).
+- **Disabled = a version that exists but can't be used until re-enabled** (Page, Widget, Theme).
 - **Delete is version-specific and reference-guarded:** you can't delete `Tooltip.V11` while any page
   pins it. Shipping `V12` doesn't free `V11` — each page must first be migrated (`.V11`→`.V12`) until
   nothing references `V11`. A floating (`latest`) reference is fine as long as *some* enabled version remains.
 - **Wiki-like history** via SQL Server **temporal (system-versioned) tables**: every Page version records
-  which Component/Theme/Control versions it carried, so you can inspect — and roll back to — any prior state.
+  which Widget/Theme versions it carried, so you can inspect — and roll back to — any prior state.
 
 ---
 
@@ -110,12 +110,12 @@ The current standalone `MindAttic.Legion.Frontend` web app collapses into **one*
 ```html
 <!-- Data page: ThemeKey = cyberspace; inline content + tags. Version omitted = latest. -->
 <MindAttic.Ideas.Theme.Cyberspace />          <!-- global look & feel -->
-<MindAttic.Ideas.Component.SacredGeometry />  <!-- switch on the geometry engine -->
+<MindAttic.Ideas.Widget.SacredGeometry />     <!-- switch on the geometry engine -->
 
 <div class="legion-layout">
   <aside class="filters"><!-- inline HTML/JS: the left-hand filters --></aside>
   <section class="profiles">
-    <!-- paginated profiles on the right; geometry attaches to these via the Component above -->
+    <!-- paginated profiles on the right; geometry attaches to these via the Widget above -->
   </section>
 </div>
 
@@ -124,9 +124,9 @@ The current standalone `MindAttic.Legion.Frontend` web app collapses into **one*
 ```
 
 - **Theme** (`Cyberspace`) supplies the chrome and the global → theme CSS tiers.
-- **Component** (`SacredGeometry`) is a capability — it loads the engine that draws the geometric avatars.
+- **Widget** (`SacredGeometry`) is a capability activator — it loads the engine that draws the geometric avatars.
 - **Inline JS/CSS/HTML** does the filters, pagination, and the modal popup — no compiled code required.
-- The modal is a great **future Component `.idea`** candidate: extract it once, reuse it everywhere.
+- The modal is a great **future Widget `.idea`** candidate: extract it once, reuse it everywhere.
   Nothing about the page breaks when you do — the inline version simply becomes a tag.
 
 This single page, plus its seed data, replaces an entire deployed web app.
@@ -140,8 +140,8 @@ A `.idea` is **a plain zip**. Its only required member is `idea.json`. The six-f
 ```jsonc
 {
   "manifestVersion": 1,            // schema of this file (host-gated integer)
-  "category": "Component",         // Page | Component | Theme | Control   (WHAT it is)
-  "kind": "data",                  // data | code                          (HOW it renders)
+  "category": "Widget",            // Page | Widget | Theme   (WHAT it is)
+  "kind": "data",                  // data | code             (HOW it renders)
   "key": "tooltip",                // stable identity, never the CLR type name
   "version": 1,                    // whole-number content version (pins + asset URL segment)
   "displayName": "Tooltip"
@@ -152,7 +152,7 @@ A `.idea` is **a plain zip**. Its only required member is `idea.json`. The six-f
 ```
 tooltip.idea (a zip)
  ├─ idea.json                 # required
- ├─ wwwroot/                  # css/js/assets → served at /_ideas/{key}/{version}/...
+ ├─ wwwroot/                  # css/js/assets → served at /_ideas/{category}/{key}/{version}/...
  ├─ bin/                      # kind=code ONLY: the compiled assembly + non-host deps
  ├─ data/                     # optional idempotent seed
  └─ icon.png  README  LICENSE # never parsed
@@ -182,7 +182,7 @@ A per-page tweak is either **inline CSS** in the Page definition, or an uploaded
 Sign-in is **not** Ideas-owned: it comes from the **[MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication)**
 package (Argon2id+pepper, Vault-backed, lockout, TOTP/MFA, hardened sessions) — the same engine
 StreetSamurai and Tutor use. The BCrypt `AuthService`/`User` in Core today is an **interim port**, replaced
-on adoption (FOUNDATION_AMENDMENTS **A16**). What stays Ideas-owned is the *raw-content* trust gate below.
+on adoption (AMENDMENTS **A16**). What stays Ideas-owned is the *raw-content* trust gate below.
 
 You intentionally author **inline JavaScript** in trusted pages — that's a feature, not a leak. The trust
 boundary is **author identity at write time**:
@@ -214,9 +214,9 @@ MindAttic.Ideas reuses the ecosystem's shared infrastructure:
   => o.AppName = "Ideas")` + `app.UseMindAtticAuthentication()` + `MapMindAtticAuthEndpoints()`; the CMS
   DbContext applies its isolated `auth` schema (`b.ApplyMindAtticAuthConfiguration()`). `AppName = "Ideas"`
   is a hard per-app trust boundary (no cross-app SSO). **Supersedes** the interim BCrypt auth in Core; the
-  `Cms.AuthorRawMarkup` claim rides on its principal. Adopted once the package ships (FOUNDATION_AMENDMENTS **A16**).
+  `Cms.AuthorRawMarkup` claim rides on its principal. Adopted once the package ships (AMENDMENTS **A16**).
 - **[MindAttic.UiUx](https://github.com/mindattic/MindAttic.UiUx)** — the **single canonical source** for
-  all official Components, Themes, and Controls. UiUx has **no build**: one source distributed as **many
+  all official Widgets and Themes. UiUx has **no build**: one source distributed as **many
   wrappers/exports**:
 
   ```
@@ -232,23 +232,22 @@ MindAttic.Ideas reuses the ecosystem's shared infrastructure:
 ## Architecture 🔨
 
 ```
-MindAttic.Ideas.sln
+MindAttic.Ideas.slnx
 ├─ src/
-│  ├─ MindAttic.Ideas.Abstractions   # the frozen SDK: IdeaBase + PageBase/ComponentBase/ThemeBase/
-│  │                                  #   ControlBase, [Idea], IRenderContext, discovery/catalog seams.
+│  ├─ MindAttic.Ideas.Abstractions   # the frozen SDK: IdeaBase + PageBase/WidgetBase/ThemeBase,
+│  │                                  #   [Idea], IRenderContext, discovery/catalog seams.
 │  │                                  #   refs ONLY Microsoft.AspNetCore.Components + System.Text.Json.
 │  ├─ MindAttic.Ideas.Core           # EF entities, CmsDbContext (SQL Server, temporal Pages), convention
 │  │                                  #   discovery, catalog, raw-content gate, FreeFormPage, auth, seed.
+│  ├─ MindAttic.Ideas.Packaging      # pure .idea wire contract: manifest kernel, packer, reader, SHA-256.
+│  ├─ MindAttic.Ideas.Rendering      # rendering-support library.
+│  ├─ MindAttic.Ideas.Sdk            # ma-idea CLI: pack / inspect / list / install / verify.
 │  └─ MindAttic.Ideas.Web            # Blazor Web App (global InteractiveServer): PageHost catch-all,
 │                                     #   CmsHead cascade, render fork, /admin, /_ideas route, Vault+Legion.
-│                                     #   Phase-1 content under Components/Library/{Theme,Component,Control}.
-├─ tools/  MindAttic.Ideas.Cli       # `ma-idea` pack/install/list/upgrade/disable  (Phase 2) 📋
-└─ docs/   FOUNDATION_AMENDMENTS.md (current) · FOUNDATION_ADR.md (deliberation) · IMPLEMENTATION_PLAN.md
+│                                     #   Phase-1 content under Components/Library/Theme.
+├─ tools/  codex.ps1                 # Codex doctor + digest
+└─ docs/   BIBLE.md + AMENDMENTS.md (A1..A19) · FOUNDATION_ADR.md (deliberation) · IMPLEMENTATION_PLAN.md
 ```
-
-**The `ComponentBase` name.** MindAttic's `ComponentBase` owns the bare name; Blazor's framework base is
-referenced via an alias (`using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase`), and
-`_Imports.razor` aliases the bare `ComponentBase` to MindAttic's — so `@inherits ComponentBase` is yours.
 
 **Hot-load 📋.** New `.idea` packages load into a **collectible `AssemblyLoadContext`** with no app-pool
 restart. The coexisting-versions + disable-don't-delete model makes this the safe *additive-load* case.
@@ -261,13 +260,13 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 ## Feature checklist
 
 ### Foundation (Phase 0/1) — ✅ built & verified end-to-end
-- ✅ `Abstractions` SDK (frozen v1: `IdeaBase` + four kind bases, `[Idea]`, `IRenderContext`, seams)
+- ✅ `Abstractions` SDK (frozen v1: `IdeaBase` + `PageBase`/`WidgetBase`/`ThemeBase`, `[Idea]`, `IRenderContext`, seams)
 - ✅ `Core` EF model (one initial migration, reserved columns, temporal `Pages`) + ported auth/seed
 - ✅ `CompiledContentSource` convention discovery + persisted catalog + type resolver
 - ✅ `FreeFormPage` + `<MindAttic.Ideas.…>` include expander (AngleSharp) + missing-content placeholder
 - ✅ `PageHost` catch-all + `CmsHead` fixed cascade + render fork
-- ✅ Cyberspace + Bootstrap themes, Tooltip component, Textbox control (inline proof content)
-- ✅ End-to-end: a seeded Data page renders a Component capability + a Control through the Cyberspace theme
+- ✅ Bootstrap theme (inline proof content under `Components/Library/Theme`)
+- ✅ End-to-end: a seeded Data page renders through the theme (mechanics unit-proven; live e2e pending — see docs/USER_STORIES.md MAI-US-F5)
 
 ### Versioning, lifecycle & history
 - ✅ Whole-number versions; optional / `.Latest` / pinned `.V{n}` resolution
@@ -280,8 +279,8 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 ### Admin & CLI (Phase 2)
 - ✅ Admin: page CRUD + soft-delete + publish/enable, trust stamping on save (raw-markup claim);
   content-definition enable/disable/guarded-delete; Admin Inbox triage — all under `MaPolicies.Admin`
-- ✅ Login / sign-out / SecurityStamp via the **MindAttic.Authentication** package (A16) — not Ideas-owned
-- 📋 Theme/component/control assignment UI, file manager, roles
+- 📋 Login / sign-out / SecurityStamp via the **MindAttic.Authentication** package (A16) — not Ideas-owned (package mid-build; interim BCrypt stands)
+- 📋 Theme/widget assignment UI, file manager, roles
 - ✅ `ma-idea` CLI: pack / inspect / list / install (offline validate) / upgrade (plan preview)
 
 ### Packages & migration (Phase 5/6)
@@ -297,12 +296,12 @@ only — never Interactive WebAssembly (a hard .NET boundary).
   load + unification mechanics are NUnit-verified; ⚠️ **end-to-end render of a real packed `.idea` through
   the running host is not yet verified** (needs an attended run)
 - ✅ `PageAssetCollector` (pure, Core) + `<CmsHead>` binding: a page's package-citizen css/scripts are
-  cascade-ordered, deduped, and hoisted into `<head>` (band: Global → Theme → **Component** → Page →
+  cascade-ordered, deduped, and hoisted into `<head>` (band: Global → Theme → **Widget** → Page →
   inline), fed by a no-schema manifest→`ContentDescriptor.Extra` data path at catalog reload
 - ✅ `/_ideas/{category}/{key}/{version}/…` asset route serves a package's extracted `wwwroot/`
   (category-qualified to disambiguate kinds; path-traversal guarded). Install extracts `wwwroot/` too, and
   `PackageAssetsOf` prefixes the collected `<head>` URLs with the citizen's `AssetMount`
-- 📋 Compiled-citizen asset harvest (`Activator` on `ComponentBase`, replacing its per-instance inline
+- 📋 Compiled-citizen asset harvest (`Activator` on `WidgetBase`, replacing per-instance inline
   emission) — additive via the same collector delegate, attended
 - 📋 Move official content into MindAttic.UiUx (canonical source); then collapse `MindAttic.Frontpage`
   and `MindAttic.Legion.Frontend` into Pages

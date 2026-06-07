@@ -115,8 +115,8 @@ public static partial class Packer
         string Key, string DisplayName, string Kind, string Category, int Version,
         int SdkVersion, string EntryType, string RenderMode, string Scope, IReadOnlyList<string> Uses);
 
-    // ContentKind ordinal -> name (frozen, append-only enum: Page=0, Widget=1, Theme=2, Control=3).
-    private static readonly string[] KindNames = { "Page", "Widget", "Theme", "Control" };
+    // ContentKind ordinal -> name (Page=0, Widget=1, Theme=2; Control=3 removed pre-1.0 per MAI-A19 — never reuse 3).
+    private static readonly string[] KindNames = { "Page", "Widget", "Theme" };
 
     private static Identity ResolveIdentity(Assembly asm, int? versionOverride)
     {

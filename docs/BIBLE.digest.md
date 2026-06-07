@@ -34,7 +34,7 @@ redeploy and no app-pool restart**.
 - **NOT WebAssembly for uploaded packages.** Uploaded `.idea` types are Static or InteractiveServer
   only (a hard .NET boundary).
 - **"Idea" is NOT a content kind.** It names the shared base `IdeaBase`, the `.idea` package, and
-  the `/_ideas/...` asset route — never one of the four kinds.
+  the `/_ideas/...` asset route — never one of the content kinds.
 
 ## The Laws
 > **Inherited.** MindAttic.Ideas inherits every org-wide law in
@@ -49,13 +49,13 @@ redeploy and no app-pool restart**.
 > ([HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7)), and verified-DoD
 > ([HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8)).
 >
-> **Amendment supremacy.** The append-only [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A18) patches both the
+> **Amendment supremacy.** The append-only [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A19) patches both the
 > ADR and this bible. Where an amendment conflicts with bible prose, the amendment wins.
 
 These are the **project-specific** laws (the cross-cutting invariants the foundation may never change):
 
 - **{#MAI-LAW-1} Naming & identity lock.** A citizen's forever-identity is `(ContentKind Kind, string Key,
-  int Version)` — never the CLR type name. The four kinds are Page · Widget · Theme · Control under
+  int Version)` — never the CLR type name. The three kinds are Page · Widget · Theme under
   `IdeaBase`; "Idea" is never a kind. ([A2](AMENDMENTS.md#MAI-A2), [A9](AMENDMENTS.md#MAI-A9),
   [A18](AMENDMENTS.md#MAI-A18))
 - **{#MAI-LAW-2} Frozen SDK, MAJOR=1 forever.** `Abstractions` references only
@@ -88,26 +88,26 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 
 ## Glossary
 - **.idea** — a plain zip whose only required member is `idea.json`; the install unit.
-- **Idea / IdeaBase** — the shared base of the four kinds and the package format; never a kind.
+- **Idea / IdeaBase** — the shared base of all content kinds and the package format; never a kind.
 - **Page** — content, a CMS DB row (Data or Code), resolved by `(SiteId, Slug)`.
 - **Widget** — the composable-UI kind ([A18](AMENDMENTS.md#MAI-A18)): from an asset-only capability
   activator (Tooltip) up to a full interactive UI that nests other widgets via `CmsInclude`. Formerly
   "Component" (A9) then "Plugin" (A17).
 - **Theme** — layout chrome + one `@Body` hole + a CSS bundle.
-- **Control** — *deprecated ([A19](AMENDMENTS.md#MAI-A19)): author atomic UI as a Widget.* Was one atomic placed UI element (e.g. Textbox → an `<input>`); `ContentKind.Control=3` stays reserved/frozen so installed Control packages still resolve.
-- **ContentKind** — `Page=0 · Widget=1 · Theme=2 · Control=3` (append-only ordinals).
+- **Control** — *removed ([A19](AMENDMENTS.md#MAI-A19)): atomic UI is authored as a Widget.* The `Control` kind and `ControlBase` were deleted; ordinal 3 is retired and never reused.
+- **ContentKind** — `Page=0 · Widget=1 · Theme=2` (append-only ordinals; `Control=3` removed pre-1.0, never reused).
 - **Data page / Code page** — free-form DB body (zero deploy) vs a compiled `PageBase` subclass.
 - **Catalog (`CmsContentDefinition`)** — the one persisted registry of all citizens.
 - **ALC** — the per-package collectible `AssemblyLoadContext` used to load `.idea` citizens.
 - **Raw-content gate (`IRawContentGate`)** — the sole `MarkupString` chokepoint; trust-keyed.
 - **Admin Inbox** — DB-backed dedup alert surface for render-time degradation.
 - **Trust (`ContentTrust`)** — `Author` (raw passthrough) vs `Untrusted` (sanitized), set at write time.
-- **MindAttic.Ideas.Library** — the sibling repo that is the home of all first-party Themes/Widgets/Controls.
+- **MindAttic.Ideas.Library** — the sibling repo that is the home of all first-party Themes/Widgets.
 - **UiUx** — MindAttic.UiUx, the build-free canonical source for official content (consumed by pinned-tag URL).
 
 ## Status index (from USER_STORIES.md)
 - done: 23  |  partial: 2  |  planned: 6  |  cut: 0
 
 ## Latest amendment
-- MAI-A19 — Control folded into Widget (deprecated; ordinal reserved) (refines A9)
+- MAI-A19 — Control kind REMOVED (folded into Widget) (refines A9; breaks the append-only enum)
 

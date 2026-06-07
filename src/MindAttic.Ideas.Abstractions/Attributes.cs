@@ -2,7 +2,7 @@ namespace MindAttic.Ideas.Abstractions;
 
 // ============================================================================================
 //  DISCOVERY — by CONVENTION, with an OPTIONAL override attribute.
-//  A type becomes content by deriving from a kind base (PageBase/ThemeBase/WidgetBase/ControlBase).
+//  A type becomes content by deriving from a kind base (PageBase/ThemeBase/WidgetBase).
 //  Identity (Kind, Key, Version) is inferred:
 //    • Kind    = which base it derives from.
 //    • Key     = the namespace tail after MindAttic.Ideas.<Kind>.  (e.g. ...Module.Tooltip -> "tooltip")
