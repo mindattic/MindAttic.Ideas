@@ -21,8 +21,12 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-    <!-- The unified, Vault-backed auth engine. CmsDbContext implements its IAuthDataContext seam. -->
+    <!-- The unified, Vault-backed auth engine. CmsDbContext implements its IAuthDataContext seam.
+         Prod uses this clean package (dev auth bypass compiled out). In DEBUG only, the lib is ALSO
+         referenced as source below; MSBuild prefers the project output, so a dev build gets the lib's
+         Debug build (MA_DEV_AUTH → localhost dev-login bypass). Never present in a release build. -->
     <PackageReference Include="MindAttic.Authentication" Version="1.0.0" />
+    <ProjectReference Include="..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj" Condition="'$(Configuration)' == 'Debug'" />
     <!-- Rendering-time dependencies the ADR mandates: HTML sanitizer + HTML tokenizer.
          AngleSharp pinned to the exact version HtmlSanitizer requires (no version clash). -->
     <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
