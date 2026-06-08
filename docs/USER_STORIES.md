@@ -12,7 +12,7 @@ updated: 2026-06-08
 > ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test that proves
 > it. Derived from the [`README.md`](../README.md) living feature spec; test tokens name NUnit
 > fixtures in `src/MindAttic.Ideas.Tests`. Build/test evidence: see [BIBLE §6](BIBLE.md#MAI-§6) —
-> `dotnet test` reports **183 passed, 0 failed (2026-06-08)**.
+> `dotnet test` reports **185 passed, 0 failed (2026-06-08)**.
 >
 > Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages),
 > **Visitor** (reads a rendered page), **Widget-Dev** (builds first-party content in MindAttic.Ideas.Library).
@@ -129,12 +129,17 @@ updated: 2026-06-08
   `CatalogFilter_Widget_ReturnsOnlyWidgets`;
   and `PackageRegistryServiceTests`: `ListAsync_ReturnsAllPackages_SortedByCategoryKeyVersionDesc`,
   `ListAsync_Empty_ReturnsEmptyList`, `ListAsync_MapsAllFields`.)*
-- **MAI-US-F4 ⬜** As an Operator, I sign in via **MindAttic.Authentication** (the package, not Ideas-owned).
-  *(planned — package mid-build, not in the local feed; interim BCrypt stands. See
-  [A16](AMENDMENTS.md#MAI-A16), [HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7).)*
-- **MAI-US-F5 ⬜** As a Visitor, a real packed `.idea` renders end-to-end through the **running** host.
-  *(load + unification mechanics are NUnit-verified (MAI-US-E1); the live render needs an attended run —
-  flagged in the README packaging checklist.)*
+- **MAI-US-F4 ✅** As an Operator, I sign in via **MindAttic.Authentication** (the package, not Ideas-owned).
+  *`Program.cs` already wires `AddMindAtticAuthentication<CmsDbContext>`, `UseMindAtticAuthentication()`,
+  and `MapMindAtticAuthEndpoints()`; claim augmentation is fully adopted.*
+  *(verified by `IdeasClaimsAugmentorTests`; see [A16](AMENDMENTS.md#MAI-A16),
+  [HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7).)*
+- **MAI-US-F5 🟡** As a Visitor, a real packed `.idea` renders end-to-end through the **running** host.
+  *The automatable portion is NUnit-verified: install → catalog reload → IncludeExpander produces a
+  Resolved Component frame (not a MissingContent placeholder); unknown tokens correctly degrade.
+  The Blazor-host HTTP layer still requires an attended run.*
+  *(verified by `RenderPipelineTests`: `Install_ThenReload_ThenExpand_ProducesResolvedFrame`,
+  `Install_ThenExpand_UnknownToken_ProducesMissingFrame`; live HTTP render pending.)*
 - **MAI-US-F6 ✅** As a Widget-Dev, compiled-citizen asset harvest (`Activator` on `WidgetBase`) hoists
   declared `StylesheetUrls`/`ScriptUrls` into `<head>` via `PageAssets.AllAssetsOf` — the same
   `PageAssetCollector` delegate used for package widgets, consistent with how `PageHost` already
@@ -152,11 +157,9 @@ updated: 2026-06-08
 Dependency-ordered toward the headline goal (collapse standalone frontends into Pages with zero-deploy
 upload):
 
-1. **MAI-US-F5** — automated/attended e2e render of a packed `.idea` through the running host (unblocks
-   trusting the runtime-load path end-to-end).
-2. **MAI-US-A6 / MAI-US-B5** — promote the live-render and temporal-rollback stories once an e2e exists.
-3. **MAI-US-F4** — adopt MindAttic.Authentication (after the package ships & after StreetSamurai), drop
-   interim BCrypt.
+1. **MAI-US-F5** 🟡 — automatable pipeline NUnit-verified 2026-06-08; attended HTTP render still pending.
+2. **MAI-US-A6 / MAI-US-B5** — promote live-render and temporal-rollback once attended e2e exists.
+3. **MAI-US-F4** ✅ — shipped 2026-06-08 (MindAttic.Authentication fully wired).
 4. **MAI-US-F3** ✅ — shipped 2026-06-08.
 5. **MAI-US-F8** — RFC 0001 unified grammar + Monaco editor (graduates RFC 0001 into the bible).
 6. **MAI-US-F7** — UiUx extraction + frontend collapse (F6 ✅ shipped 2026-06-07).
