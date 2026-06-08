@@ -172,6 +172,16 @@ app.MapGet("/_ideas/{category}/{key}/{version:int}/{**path}",
         var contentType = assetContentTypes.TryGetContentType(file, out var ct) ? ct : "application/octet-stream";
         return Results.File(File.OpenRead(file), contentType);
     });
+// Admin-only: download the raw .idea blob (for rollback / re-share). Auth guard is enforced by RequireAuthorization.
+app.MapGet("/_ideas/packages/{category}/{key}/{version:int}",
+    async (string category, string key, int version, IPackageBlobStore blobs, CancellationToken ct) =>
+    {
+        var blobPath = LocalFilePackageBlobStore.BlobPathFor(category, key, version);
+        var stream = await blobs.OpenAsync(blobPath, ct);
+        if (stream is null) return Results.NotFound();
+        var filename = $"{key}.V{version}.idea";
+        return Results.File(stream, "application/octet-stream", filename);
+    }).RequireAuthorization("Admin");
 app.MapGet("/_ideas/{*path}", () => Results.NotFound());   // anything else under /_ideas
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode()

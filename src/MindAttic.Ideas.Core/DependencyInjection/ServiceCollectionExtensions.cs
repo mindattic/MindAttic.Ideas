@@ -67,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPackageBlobStore>(_ => new LocalFilePackageBlobStore());
         services.AddSingleton<IPackageExtractor>(_ => new PackageExtractor());
         services.AddScoped<IPackageInstallService, PackageInstallService>();
+        services.AddScoped<IPackageRegistryService, PackageRegistryService>();
 
         return services;
     }

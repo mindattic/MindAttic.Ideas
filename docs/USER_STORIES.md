@@ -12,7 +12,7 @@ updated: 2026-06-08
 > ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test that proves
 > it. Derived from the [`README.md`](../README.md) living feature spec; test tokens name NUnit
 > fixtures in `src/MindAttic.Ideas.Tests`. Build/test evidence: see [BIBLE §6](BIBLE.md#MAI-§6) —
-> `dotnet test` reports **180 passed, 0 failed (2026-06-08)**.
+> `dotnet test` reports **183 passed, 0 failed (2026-06-08)**.
 >
 > Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages),
 > **Visitor** (reads a rendered page), **Widget-Dev** (builds first-party content in MindAttic.Ideas.Library).
@@ -119,13 +119,16 @@ updated: 2026-06-08
 - **MAI-US-F2 ✅** As an Operator, the Admin can enable/disable/guarded-delete content definitions and
   triage the Admin Inbox under the Admin policy. *(verified by `AdminServiceContractTests`,
   `UsersAdminContractTests`, `IdeasClaimsAugmentorTests`.)*
-- **MAI-US-F3 🟡** As an Author, a theme/widget/control **assignment UI**, a file manager, and roles
+- **MAI-US-F3 ✅** As an Author, a theme/widget/control **assignment UI**, a file manager, and roles
   management. *Theme picker (catalog-driven `<select>` for key/version), widget palette (catalog-driven
-  token-insert), and Assets panel (mounted CSS/scripts browser) are implemented in the admin shell.
-  Roles management is already done at `/users`. File manager is not yet implemented.*
+  token-insert), Assets panel (mounted CSS/scripts browser), and Packages panel (installed `.idea` blob
+  browser with SHA-256 + admin-protected download) are all implemented in the admin shell. Roles
+  management is already done at `/users`.*
   *(verified by `AdminAssignmentTests`: `WidgetToken_PinnedVersion_ParsesBack`,
   `ThemeToken_PinnedVersion_ParsesBack`, `CatalogFilter_Theme_ReturnsOnlyThemes`,
-  `CatalogFilter_Widget_ReturnsOnlyWidgets`.)*
+  `CatalogFilter_Widget_ReturnsOnlyWidgets`;
+  and `PackageRegistryServiceTests`: `ListAsync_ReturnsAllPackages_SortedByCategoryKeyVersionDesc`,
+  `ListAsync_Empty_ReturnsEmptyList`, `ListAsync_MapsAllFields`.)*
 - **MAI-US-F4 ⬜** As an Operator, I sign in via **MindAttic.Authentication** (the package, not Ideas-owned).
   *(planned — package mid-build, not in the local feed; interim BCrypt stands. See
   [A16](AMENDMENTS.md#MAI-A16), [HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7).)*
@@ -154,7 +157,7 @@ upload):
 2. **MAI-US-A6 / MAI-US-B5** — promote the live-render and temporal-rollback stories once an e2e exists.
 3. **MAI-US-F4** — adopt MindAttic.Authentication (after the package ships & after StreetSamurai), drop
    interim BCrypt.
-4. **MAI-US-F3** — remaining: file manager (Phase 2).
+4. **MAI-US-F3** ✅ — shipped 2026-06-08.
 5. **MAI-US-F8** — RFC 0001 unified grammar + Monaco editor (graduates RFC 0001 into the bible).
 6. **MAI-US-F7** — UiUx extraction + frontend collapse (F6 ✅ shipped 2026-06-07).
 

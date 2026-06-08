@@ -1,0 +1,58 @@
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@inject IPackageRegistryService Registry
+
+@* Packages panel — browses every installed .idea blob (for download / SHA-256 verification / rollback).
+   The download link hits the admin-protected /_ideas/packages/{category}/{key}/{version} endpoint. *@
+
+@if (packages is null)
+{
+    <p>Loading…</p>
+}
+else if (!packages.Any())
+{
+    <p class="admin-empty">No .idea packages installed yet. Use the <a href="/admin/upload">Upload</a> tab to install one.</p>
+}
+else
+{
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Key</th>
+                <th>Ver</th>
+                <th>Name</th>
+                <th>Installed</th>
+                <th>SHA-256</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in packages)
+            {
+                <tr class="@(!p.Enabled ? "row-off" : "") @(p.IsActiveVersion ? "" : "row-dim")">
+                    <td>@p.Category</td>
+                    <td>@p.Key</td>
+                    <td>V@p.Version</td>
+                    <td>@p.DisplayName</td>
+                    <td><span title="@p.InstalledUtc.ToString("O")">@p.InstalledUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span></td>
+                    <td><code class="admin-hash">@p.Sha256[..12]…</code></td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(p.BlobPath))
+                        {
+                            <a class="admin-link" href="/_ideas/packages/@p.Category/@p.Key/@p.Version" download>Download</a>
+                        }
+                        @if (!p.IsActiveVersion) { <span class="admin-badge">superseded</span> }
+                        @if (!p.Enabled)         { <span class="admin-badge">disabled</span>   }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<PackageSummary>? packages;
+
+    protected override async Task OnInitializedAsync() =>
+        packages = await Registry.ListAsync();
+}
