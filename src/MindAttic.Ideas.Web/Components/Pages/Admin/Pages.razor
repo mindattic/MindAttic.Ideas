@@ -1,5 +1,6 @@
 @attribute [Authorize(Policy = MaPolicies.Admin)]
 @inject IPageAdminService PagesSvc
+@inject IContentCatalog Catalog
 
 @* Page Management panel — hosted by AdminShell's "Page Management" tab (no own route). *@
 
@@ -83,8 +84,25 @@
                         }
                     </select>
                 </label>
-                <label>Theme key<input @bind="editing.ThemeKey" placeholder="(site default)" /></label>
-                <label>Theme version<input type="number" @bind="editing.ThemeVersion" /></label>
+                <label>Theme
+                    <select @bind="editing.ThemeKey">
+                        <option value="">(site default)</option>
+                        @foreach (var k in UniqueThemeKeys())
+                        {
+                            <option value="@k">@k</option>
+                        }
+                    </select>
+                </label>
+                <label>Theme version
+                    <select value="@(editing.ThemeVersion?.ToString() ?? "")"
+                            @onchange="e => editing.ThemeVersion = e.Value?.ToString() is { Length: > 0 } s && int.TryParse(s, out var v) ? v : null">
+                        <option value="">(latest)</option>
+                        @foreach (var ver in ThemeVersionsFor(editing.ThemeKey))
+                        {
+                            <option value="@ver">V@ver</option>
+                        }
+                    </select>
+                </label>
             </div>
 
             @if (editing.Kind == PageKind.Data)
@@ -92,6 +110,24 @@
                 <label class="admin-area">Body HTML<textarea rows="10" @bind="editing.BodyHtml"></textarea></label>
                 <label class="admin-area">Page CSS<textarea rows="5" @bind="editing.PageCss"></textarea></label>
                 <label class="admin-area">Page JS (only runs when saved as Author)<textarea rows="5" @bind="editing.PageJs"></textarea></label>
+
+                @if (Catalog.All.Any(d => d.Kind == ContentKind.Widget))
+                {
+                    <details class="admin-widget-palette">
+                        <summary>Widget Palette (@Catalog.All.Count(d => d.Kind == ContentKind.Widget) available)</summary>
+                        <div class="admin-palette-list">
+                            @foreach (var w in Catalog.All.Where(d => d.Kind == ContentKind.Widget).OrderBy(d => d.Key).ThenByDescending(d => d.Version))
+                            {
+                                var token = "{{Widget." + w.Key + ".V" + w.Version + "}}";
+                                <div class="admin-palette-item">
+                                    <code>@token</code>
+                                    <span class="admin-sub">@w.DisplayName</span>
+                                    <button class="admin-mini" @onclick="() => AppendToken(token)">Insert</button>
+                                </div>
+                            }
+                        </div>
+                    </details>
+                }
             }
 
             <div class="admin-flags">
@@ -225,5 +261,20 @@
         if (editing is not null) editing = await PagesSvc.GetAsync(editing.Id);
         status = "Restored from history."; statusBad = false;
         await Load();
+    }
+
+    private IEnumerable<string> UniqueThemeKeys() =>
+        Catalog.All.Where(d => d.Kind == ContentKind.Theme)
+            .Select(d => d.Key).Distinct().OrderBy(k => k);
+
+    private IEnumerable<int> ThemeVersionsFor(string? key) =>
+        string.IsNullOrEmpty(key) ? [] :
+        Catalog.All.Where(d => d.Kind == ContentKind.Theme && d.Key == key)
+            .Select(d => d.Version).OrderBy(v => v);
+
+    private void AppendToken(string token)
+    {
+        if (editing is null) return;
+        editing.BodyHtml = (editing.BodyHtml ?? "") + token;
     }
 }

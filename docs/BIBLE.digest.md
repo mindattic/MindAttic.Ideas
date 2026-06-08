@@ -106,7 +106,7 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - **UiUx** — MindAttic.UiUx, the build-free canonical source for official content (consumed by pinned-tag URL).
 
 ## Status index (from USER_STORIES.md)
-- done: 24  |  partial: 2  |  planned: 5  |  cut: 0
+- done: 24  |  partial: 3  |  planned: 4  |  cut: 0
 
 ## Latest amendment
 - MAI-A19 — Control kind REMOVED (folded into Widget) (refines A9; breaks the append-only enum)
