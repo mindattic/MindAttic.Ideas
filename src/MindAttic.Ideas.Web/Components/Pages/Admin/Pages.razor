@@ -107,7 +107,7 @@
 
             @if (editing.Kind == PageKind.Data)
             {
-                <label class="admin-area">Body HTML<textarea rows="10" @bind="editing.BodyHtml"></textarea></label>
+                <label class="admin-area">Body HTML<MonacoEditor @bind-Value="editing.BodyHtml" /></label>
                 <label class="admin-area">Page CSS<textarea rows="5" @bind="editing.PageCss"></textarea></label>
                 <label class="admin-area">Page JS (only runs when saved as Author)<textarea rows="5" @bind="editing.PageJs"></textarea></label>
 

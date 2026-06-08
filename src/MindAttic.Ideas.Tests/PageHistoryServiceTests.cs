@@ -130,4 +130,13 @@ public class PageHistoryServiceTests
 
         Assert.That(ok, Is.False);
     }
+
+    [Test]
+    public void GetHistoryAsync_RequiresSqlServer_ThrowsOnInMemoryDb()
+    {
+        // GetHistoryAsync uses EF Core TemporalAll() which only works with SQL Server temporal
+        // tables. On InMemory this throws, documenting the SQL Server requirement for MAI-US-B5.
+        var svc = new PageHistoryService(NewFactory());
+        Assert.ThrowsAsync<InvalidOperationException>(() => svc.GetHistoryAsync(1));
+    }
 }

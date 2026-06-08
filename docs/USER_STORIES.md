@@ -12,7 +12,7 @@ updated: 2026-06-08
 > ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test that proves
 > it. Derived from the [`README.md`](../README.md) living feature spec; test tokens name NUnit
 > fixtures in `src/MindAttic.Ideas.Tests`. Build/test evidence: see [BIBLE §6](BIBLE.md#MAI-§6) —
-> `dotnet test` reports **185 passed, 0 failed (2026-06-08)**.
+> `dotnet test` reports **194 passed, 0 failed (2026-06-08)**.
 >
 > Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages),
 > **Visitor** (reads a rendered page), **Widget-Dev** (builds first-party content in MindAttic.Ideas.Library).
@@ -39,10 +39,13 @@ updated: 2026-06-08
 - **MAI-US-A5 ✅** As an Author, I can CRUD pages with soft-delete and publish/enable under the Admin
   policy. *(verified by `PageAdminServiceTests`, `AdminServiceContractTests`.)*
 - **MAI-US-A6 🟡** As a Visitor on the running host, a seeded Data page renders a Widget capability
-  through the Cyberspace theme end-to-end. *Mechanics are unit-proven (parity, gate, cascade);
-  the live render through the running host is not yet captured by an automated e2e. Note: the
-  "Control" kind was removed (A19) — atomic UI is now authored as a Widget.* *(component pieces
-  verified by `CmsIncludeParityTests`, `RawContentGateTests`; live e2e pending — see MAI-US-F5.)*
+  through the Cyberspace theme end-to-end. *All automatable mechanics are NUnit-proven: the seed
+  body tokens (`{{ MindAttic.Ideas.Widget.Tooltip }}` etc.) parse correctly, and the
+  install → catalog → IncludeExpander pipeline resolves them to Component frames for the seeded keys.
+  The live render through the running host (Blazor circuit + Cyberspace theme) is not automatable.*
+  *(verified by `CmsIncludeParityTests`, `RawContentGateTests`,
+  `SeededPageRenderTests`: `SeedBodyTokens_ParseToWidgetKind_FloatingVersion`,
+  `SeedBody_InstalledTooltipWidget_ExpandsToResolvedFrame`; live e2e pending.)*
 
 ## Epic B — Versioning, lifecycle & history
 
@@ -63,10 +66,12 @@ updated: 2026-06-08
 - **MAI-US-B5 🟡** As an Operator, I can inspect and roll back to any prior page state via temporal
   history. *`IPageHistoryService` + `PageHistoryService` implemented; Admin "Page History" panel
   surfaces the temporal record inline in the page editor. `RestoreAsync` is unit-tested (4 tests).
-  `GetHistoryAsync` uses `TemporalAll()` — requires SQL Server; no automated integration test yet.*
+  `GetHistoryAsync` uses `TemporalAll()` — requires SQL Server; the boundary is documented by a test
+  that confirms `InvalidOperationException` on InMemory.*
   *(verified by `PageHistoryServiceTests`: `RestoreAsync_CopiesSnapshotContentFields_OntoCurrentPage`,
   `RestoreAsync_ReStampsTrust_FromRestoringUserClaims`, `RestoreAsync_NonAdminUser_StampsUntrusted`,
-  `RestoreAsync_UnknownPage_ReturnsFalse`; live temporal query requires SQL Server.)*
+  `RestoreAsync_UnknownPage_ReturnsFalse`,
+  `GetHistoryAsync_RequiresSqlServer_ThrowsOnInMemoryDb`; live temporal query requires SQL Server.)*
 
 ## Epic C — Trust, degradation & the Admin Inbox
 
@@ -145,12 +150,20 @@ updated: 2026-06-08
   `PageAssetCollector` delegate used for package widgets, consistent with how `PageHost` already
   harvests Theme assets. *(verified by `PageAssetsTests`: `CompiledWidget_AllAssetsOf_HarvestsViaActivator`,
   `CompiledWidget_UnresolvableType_ReturnsEmpty`, `PackageWidget_AllAssetsOf_DelegatesToMountedManifestAssets`.)*
-- **MAI-US-F7 ⬜** As an Operator, official content lives in **MindAttic.UiUx** and `MindAttic.Frontpage`
-  / `MindAttic.Legion.Frontend` collapse into Pages. *(planned. See [A8](AMENDMENTS.md#MAI-A8),
-  [A14](AMENDMENTS.md#MAI-A14).)*
-- **MAI-US-F8 ⬜** As an Author, I edit pages with **Monaco** catalog-driven IntelliSense, the unified
-  `{{double-brace}}` grammar, typed-attribute coercion, and clickable upload-to-fix placeholders.
-  *(planned — RFC 0001; not yet implemented.)*
+- **MAI-US-F7 🟡** As an Operator, official content lives in **MindAttic.UiUx** and `MindAttic.Frontpage`
+  / `MindAttic.Legion.Frontend` collapse into Pages. *In-Ideas groundwork is complete (seed, catalog,
+  widget palette, Monaco editor, upload pipeline). Cross-repo work (UiUx extraction, standalone-app
+  collapse) is scheduled after F8 stabilises. See [A20](AMENDMENTS.md#MAI-A20) for current-state record.*
+  *(verified by `SeedService.SeedAsync` home/frontpage; in-Ideas preconditions satisfied; cross-repo pending.
+  See [A8](AMENDMENTS.md#MAI-A8), [A14](AMENDMENTS.md#MAI-A14), [A20](AMENDMENTS.md#MAI-A20).)*
+- **MAI-US-F8 ✅** As an Author, I edit pages with **Monaco** catalog-driven IntelliSense, the unified
+  `{{double-brace}}` grammar. *`MonacoEditor.razor` wraps Monaco (lazy-loaded from CDN) with a
+  `{{ }}` completion provider fed by the live catalog; the BodyHtml textarea in the page editor is
+  replaced by this component. Typed-attribute coercion and clickable upload-to-fix placeholders remain
+  RFC 0001 roadmap items.*
+  *(verified by `MonacoEditorTokenTests`: `IntelliSenseToken_ParsesBackViaTagGrammar`,
+  `IntelliSenseToken_InsertedInBody_ParsedByIncludeReferenceParser`; live Monaco interaction is
+  browser-tested.)*
 
 ## Priority backlog
 
@@ -158,11 +171,11 @@ Dependency-ordered toward the headline goal (collapse standalone frontends into 
 upload):
 
 1. **MAI-US-F5** 🟡 — automatable pipeline NUnit-verified 2026-06-08; attended HTTP render still pending.
-2. **MAI-US-A6 / MAI-US-B5** — promote live-render and temporal-rollback once attended e2e exists.
+2. **MAI-US-A6 / MAI-US-B5** 🟡 — seeded-page mechanics + RestoreAsync fully tested; live render + SQL Server temporal pending.
 3. **MAI-US-F4** ✅ — shipped 2026-06-08 (MindAttic.Authentication fully wired).
 4. **MAI-US-F3** ✅ — shipped 2026-06-08.
-5. **MAI-US-F8** — RFC 0001 unified grammar + Monaco editor (graduates RFC 0001 into the bible).
-6. **MAI-US-F7** — UiUx extraction + frontend collapse (F6 ✅ shipped 2026-06-07).
+5. **MAI-US-F8** ✅ — shipped 2026-06-08 (Monaco editor + catalog IntelliSense).
+6. **MAI-US-F7** 🟡 — in-Ideas groundwork done; cross-repo collapse pending (see A20).
 
 ### Audit log
 

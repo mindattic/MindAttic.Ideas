@@ -1,0 +1,63 @@
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject IContentCatalog Catalog
+
+@* Thin Monaco wrapper for the admin body-HTML editor. Lazy-loads Monaco from CDN on first use
+   and registers a catalog-driven {{ }} completion provider for token IntelliSense. *@
+
+<div @ref="_host" class="admin-monaco-host"></div>
+
+@code {
+    private ElementReference _host;
+    private DotNetObjectReference<MonacoEditor>? _self;
+    private string? _lastPushed;
+
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _self = DotNetObjectReference.Create(this);
+        _lastPushed = Value;
+
+        var tokens = Catalog.All
+            .OrderBy(d => d.Kind).ThenBy(d => d.Key).ThenByDescending(d => d.Version)
+            .Select(d => new
+            {
+                label       = $"{{{{{d.Kind}.{d.Key}.V{d.Version}}}}}",
+                token       = $"{{{{{d.Kind}.{d.Key}.V{d.Version}}}}}",
+                kind        = d.Kind.ToString(),
+                displayName = d.DisplayName
+            });
+
+        await JS.InvokeVoidAsync("MaMonaco.init", _host, _self, Value,
+            System.Text.Json.JsonSerializer.Serialize(tokens));
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_self is null) return; // not yet rendered — init() picks up Value directly
+        if (Value == _lastPushed) return;
+        _lastPushed = Value;
+        await JS.InvokeVoidAsync("MaMonaco.setValue", _host, Value);
+    }
+
+    [JSInvokable]
+    public async Task OnValueChanged(string? value)
+    {
+        _lastPushed = value;
+        await ValueChanged.InvokeAsync(value);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_self is not null)
+        {
+            try { await JS.InvokeVoidAsync("MaMonaco.dispose", _host); }
+            catch { /* circuit already gone — ignore */ }
+            _self.Dispose();
+        }
+    }
+}

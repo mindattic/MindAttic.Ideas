@@ -319,3 +319,20 @@ single visible element. So **atomic UI is authored as a Widget**, and `Control` 
 
 **The kinds are now `ContentKind { Page=0, Widget=1, Theme=2 }`** under `IdeaBase`
 (`PageBase` / `WidgetBase` / `ThemeBase`).
+
+## MAI-A20 — F7 cross-repo collapse: current-state record (2026-06-08) {#MAI-A20}
+
+MAI-US-F7 ("official content lives in MindAttic.UiUx; MindAttic.Frontpage / MindAttic.Legion.Frontend
+collapse into Pages") is cross-repo work that cannot be completed inside `MindAttic.Ideas` alone.
+State as of 2026-06-08:
+
+- **MindAttic.Ideas** seeds a `frontpage` Code page and a home Data page; the home page already
+  demonstrates zero-deploy widget composition via `{{ MindAttic.Ideas.Widget.Tooltip }}` tokens.
+- **MindAttic.Ideas.Library** (sibling repo) is the single `.idea` home for all first-party widgets
+  (A19 removed the duplicate `.idea` projects from UiUx; UiUx remains raw multi-target source).
+- **MindAttic.Authentication** (F4 ✅) and the **Monaco editor** (F8 ✅) are the in-Ideas
+  preconditions for a complete authoring experience; both are now shipped.
+- **MindAttic.Frontpage** and **MindAttic.Legion.Frontend** remain standalone apps; they will be
+  replaced by Data pages + Widget `.idea` files once UiUx extraction is scheduled.
+- No code change in `MindAttic.Ideas` is required for F7 itself: the seed, catalog, widget palette,
+  Monaco editor, and upload pipeline are all in place.
