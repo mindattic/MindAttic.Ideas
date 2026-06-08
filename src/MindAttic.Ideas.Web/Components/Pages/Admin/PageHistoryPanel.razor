@@ -1,0 +1,87 @@
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@inject IPageHistoryService HistorySvc
+
+@* Temporal history panel for a single page: lists prior states and provides one-click restore.
+   GetHistoryAsync uses SQL Server TemporalAll() — gracefully falls back to an inline notice
+   when run against a non-temporal provider (dev InMemory, integration tests). *@
+
+@if (_error is not null)
+{
+    <p class="admin-hint">History unavailable: @_error</p>
+}
+else if (_loading)
+{
+    <p class="admin-hint">Loading…</p>
+}
+else if (_entries.Count == 0)
+{
+    <p class="admin-hint">No recorded history for this page.</p>
+}
+else
+{
+    <table class="admin-hist-table">
+        <thead>
+            <tr>
+                <th>Date (UTC)</th>
+                <th>Title</th>
+                <th>Theme</th>
+                <th>Published</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (var i = 0; i < _entries.Count; i++)
+            {
+                var e = _entries[i];
+                var isCurrent = i == 0;
+                <tr class="@(isCurrent ? "admin-hist-current" : "")">
+                    <td>@e.ValidFrom.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@e.Title</td>
+                    <td>@(e.ThemeKey is null ? "—" : $"{e.ThemeKey} v{e.ThemeVersion}")</td>
+                    <td>@(e.IsPublished ? "✓" : "—")</td>
+                    <td>
+                        @if (isCurrent)
+                        {
+                            <span class="admin-badge ok">current</span>
+                        }
+                        else
+                        {
+                            <button class="admin-mini" @onclick="() => Restore(e)">Restore</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired] public int PageId { get; set; }
+    [Parameter] public EventCallback OnRestored { get; set; }
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private IReadOnlyList<PageHistoryEntry> _entries = [];
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true; _error = null;
+        try   { _entries = await HistorySvc.GetHistoryAsync(PageId); }
+        catch (Exception ex) { _error = ex.Message; _entries = []; }
+        finally { _loading = false; }
+    }
+
+    private async Task Restore(PageHistoryEntry entry)
+    {
+        _error = null;
+        try
+        {
+            var principal = AuthState is null ? new ClaimsPrincipal() : (await AuthState).User;
+            await HistorySvc.RestoreAsync(entry, principal);
+            _entries = await HistorySvc.GetHistoryAsync(PageId);
+            await OnRestored.InvokeAsync();
+        }
+        catch (Exception ex) { _error = ex.Message; }
+    }
+}

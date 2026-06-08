@@ -188,7 +188,7 @@ else if (_context is not null)
             if (pageDesc is not null)
                 refs.AddRange(IncludeReferenceParser.ParseUses(ManifestAssetPacker.UsesFromExtra(pageDesc.Extra)));
         }
-        var head = PageAssetCollector.Collect(refs, Catalog, PageAssets.PackageAssetsOf);
+        var head = PageAssetCollector.Collect(refs, Catalog, d => PageAssets.AllAssetsOf(d, Catalog));
         _componentCss = head.Css;
         _componentScripts = head.Scripts;
 

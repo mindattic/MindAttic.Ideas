@@ -52,11 +52,10 @@ public static class ManifestAssetPacker
 public static class PageAssets
 {
     /// <summary>
-    /// The production adapter for THIS slot: a package citizen's manifest css/scripts (surfaced into Extra
-    /// at reload) prefixed with the citizen's <see cref="ContentDescriptor.AssetMount"/> so the emitted
-    /// &lt;head&gt; URLs resolve under the <c>/_ideas</c> route. Compiled citizens return none here (their
-    /// assets live on the instantiated component and require <c>Activator</c> — the attended host TODO).
-    /// Pure and additive: extending it to also harvest compiled citizens later changes no caller.
+    /// Package-only adapter: a package citizen's manifest css/scripts (surfaced into Extra at reload)
+    /// prefixed with the citizen's <see cref="ContentDescriptor.AssetMount"/> so the emitted &lt;head&gt;
+    /// URLs resolve under the <c>/_ideas</c> route. Compiled citizens return none — use
+    /// <see cref="AllAssetsOf"/> to also harvest compiled widgets via Activator.
     /// </summary>
     public static CitizenAssets PackageAssetsOf(ContentDescriptor d)
     {
@@ -64,6 +63,23 @@ public static class PageAssets
         var raw = ManifestAssetPacker.FromExtra(d.Extra);
         var mount = (d.AssetMount ?? "").TrimEnd('/');
         return new(Mount(raw.Css, mount), Mount(raw.Scripts, mount));
+    }
+
+    /// <summary>
+    /// Unified adapter: package citizens → manifest css/scripts (mounted); compiled widgets →
+    /// instantiated via <see cref="Activator"/> to read their declared
+    /// <see cref="WidgetBase.StylesheetUrls"/>/<see cref="WidgetBase.ScriptUrls"/> (the same pattern
+    /// <c>PageHost</c> uses for Theme harvest). Pass this as the <c>assetsOf</c> delegate to
+    /// <see cref="PageAssetCollector.Collect"/> so compiled widget assets are hoisted into
+    /// <c>&lt;head&gt;</c> alongside package widget assets.
+    /// </summary>
+    public static CitizenAssets AllAssetsOf(ContentDescriptor d, IContentCatalog catalog)
+    {
+        if (d.Origin == ContentOrigin.Package)
+            return PackageAssetsOf(d);
+        var type = catalog.ResolveType(d);
+        if (type is null) return new([], []);
+        return Activator.CreateInstance(type) is WidgetBase w ? new(w.StylesheetUrls, w.ScriptUrls) : new([], []);
     }
 
     // Prefix a relative asset path with the package's mount; leave already-absolute (or unmounted) paths as-is.

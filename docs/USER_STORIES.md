@@ -12,7 +12,7 @@ updated: 2026-06-07
 > ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test that proves
 > it. Derived from the [`README.md`](../README.md) living feature spec; test tokens name NUnit
 > fixtures in `src/MindAttic.Ideas.Tests`. Build/test evidence: see [BIBLE §6](BIBLE.md#MAI-§6) —
-> `dotnet test` reports **169 passed, 0 failed (2026-06-07)**.
+> `dotnet test` reports **176 passed, 0 failed (2026-06-07)**.
 >
 > Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages),
 > **Visitor** (reads a rendered page), **Widget-Dev** (builds first-party content in MindAttic.Ideas.Library).
@@ -61,8 +61,12 @@ updated: 2026-06-07
 - **MAI-US-B4 ✅** As an Operator, the EF model guards reserved columns and a delete-guard projection, so
   integrity holds at the data layer. *(verified by `CmsModelGuardTests`.)*
 - **MAI-US-B5 🟡** As an Operator, I can inspect and roll back to any prior page state via temporal
-  history. *Data substrate (system-versioned `Pages`) is in the model ([A4](AMENDMENTS.md#MAI-A4)); the
-  history-view / rollback UI is not yet built.* *(temporal model present; no rollback test yet.)*
+  history. *`IPageHistoryService` + `PageHistoryService` implemented; Admin "Page History" panel
+  surfaces the temporal record inline in the page editor. `RestoreAsync` is unit-tested (4 tests).
+  `GetHistoryAsync` uses `TemporalAll()` — requires SQL Server; no automated integration test yet.*
+  *(verified by `PageHistoryServiceTests`: `RestoreAsync_CopiesSnapshotContentFields_OntoCurrentPage`,
+  `RestoreAsync_ReStampsTrust_FromRestoringUserClaims`, `RestoreAsync_NonAdminUser_StampsUntrusted`,
+  `RestoreAsync_UnknownPage_ReturnsFalse`; live temporal query requires SQL Server.)*
 
 ## Epic C — Trust, degradation & the Admin Inbox
 
@@ -123,8 +127,11 @@ updated: 2026-06-07
 - **MAI-US-F5 ⬜** As a Visitor, a real packed `.idea` renders end-to-end through the **running** host.
   *(load + unification mechanics are NUnit-verified (MAI-US-E1); the live render needs an attended run —
   flagged in the README packaging checklist.)*
-- **MAI-US-F6 ⬜** As a Widget-Dev, compiled-citizen asset harvest (`Activator` on `WidgetBase`) replaces
-  per-instance inline emission via the same collector delegate. *(planned — attended.)*
+- **MAI-US-F6 ✅** As a Widget-Dev, compiled-citizen asset harvest (`Activator` on `WidgetBase`) hoists
+  declared `StylesheetUrls`/`ScriptUrls` into `<head>` via `PageAssets.AllAssetsOf` — the same
+  `PageAssetCollector` delegate used for package widgets, consistent with how `PageHost` already
+  harvests Theme assets. *(verified by `PageAssetsTests`: `CompiledWidget_AllAssetsOf_HarvestsViaActivator`,
+  `CompiledWidget_UnresolvableType_ReturnsEmpty`, `PackageWidget_AllAssetsOf_DelegatesToMountedManifestAssets`.)*
 - **MAI-US-F7 ⬜** As an Operator, official content lives in **MindAttic.UiUx** and `MindAttic.Frontpage`
   / `MindAttic.Legion.Frontend` collapse into Pages. *(planned. See [A8](AMENDMENTS.md#MAI-A8),
   [A14](AMENDMENTS.md#MAI-A14).)*
@@ -144,7 +151,7 @@ upload):
    interim BCrypt.
 4. **MAI-US-F3** — Phase-2 admin assignment UI / file manager / roles.
 5. **MAI-US-F8** — RFC 0001 unified grammar + Monaco editor (graduates RFC 0001 into the bible).
-6. **MAI-US-F6 / MAI-US-F7** — compiled-citizen asset harvest; UiUx extraction + frontend collapse.
+6. **MAI-US-F7** — UiUx extraction + frontend collapse (F6 ✅ shipped 2026-06-07).
 
 ### Audit log
 

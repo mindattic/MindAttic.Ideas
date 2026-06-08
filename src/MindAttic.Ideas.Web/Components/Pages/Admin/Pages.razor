@@ -98,6 +98,14 @@
                 <label><input type="checkbox" @bind="editing.IsPublished" /> Published</label>
                 <label><input type="checkbox" @bind="editing.Enabled" /> Enabled</label>
             </div>
+
+            @if (!isNew)
+            {
+                <details class="admin-history">
+                    <summary>Page History</summary>
+                    <PageHistoryPanel PageId="editing.Id" OnRestored="OnHistoryRestored" />
+                </details>
+            }
         }
     </div>
 </div>
@@ -209,6 +217,13 @@
     {
         await PagesSvc.SoftDeleteAsync(id);
         editing = null; status = "";
+        await Load();
+    }
+
+    private async Task OnHistoryRestored()
+    {
+        if (editing is not null) editing = await PagesSvc.GetAsync(editing.Id);
+        status = "Restored from history."; statusBad = false;
         await Load();
     }
 }
