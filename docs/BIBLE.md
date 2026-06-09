@@ -4,7 +4,7 @@ project: MindAttic.Ideas
 code: MAI
 layer: bible
 status: living
-updated: 2026-06-07
+updated: 2026-06-09
 ---
 
 # MindAttic.Ideas — Project Bible
@@ -201,10 +201,12 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 
 ## 6. Verified state {#MAI-§6}
 
-**Build/test evidence (2026-06-07):** `dotnet build MindAttic.Ideas.slnx -c Debug` — all projects
-compiled successfully (0 CS warnings); the Web project's DLL-copy step failed due to a running host
-process locking its output DLLs (MSB3026/MSB3027 file-lock retries — not a compilation defect).
-`dotnet test src/MindAttic.Ideas.Tests --no-build` → **Passed: 169, Failed: 0, Skipped: 0**.
+**Build/test evidence (2026-06-09):** `dotnet build MindAttic.Ideas.slnx -c Debug` — Build succeeded,
+0 errors (0 CS warnings; pre-existing ASP0006 analyzer notes in Core rendering are tracked, not new).
+`dotnet test src/MindAttic.Ideas.Tests --no-build` → **Passed: 199, Failed: 0, Skipped: 0**.
+**Live render evidence (2026-06-09, attended):** with all 33 library `.idea`s installed, `GET /` →
+302 → `/frontpage`; the rendered HTML contains the mindattic.com recreation (wordmark, tab boards,
+books grid, footer) with **zero** `ma-missing` placeholders, and `/_ideas/...` mounts serve 200.
 
 Proven working (each cited in [`USER_STORIES.md`](USER_STORIES.md)):
 - ✅ Abstractions SDK frozen v1 (`IdeaBase` + four kind bases, `[Idea]`, seams).

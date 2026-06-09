@@ -4,7 +4,7 @@ project: MindAttic.Ideas
 code: MAI
 layer: stories
 status: living
-updated: 2026-06-08
+updated: 2026-06-09
 ---
 
 # MindAttic.Ideas — User Stories
@@ -12,7 +12,7 @@ updated: 2026-06-08
 > ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test that proves
 > it. Derived from the [`README.md`](../README.md) living feature spec; test tokens name NUnit
 > fixtures in `src/MindAttic.Ideas.Tests`. Build/test evidence: see [BIBLE §6](BIBLE.md#MAI-§6) —
-> `dotnet test` reports **194 passed, 0 failed (2026-06-08)**.
+> `dotnet test` reports **199 passed, 0 failed (2026-06-09)**.
 >
 > Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages),
 > **Visitor** (reads a rendered page), **Widget-Dev** (builds first-party content in MindAttic.Ideas.Library).
@@ -38,14 +38,25 @@ updated: 2026-06-08
   `Untrusted_PreservesIncludeTokens_SoWidgetsStillCompose`.)*
 - **MAI-US-A5 ✅** As an Author, I can CRUD pages with soft-delete and publish/enable under the Admin
   policy. *(verified by `PageAdminServiceTests`, `AdminServiceContractTests`.)*
-- **MAI-US-A6 🟡** As a Visitor on the running host, a seeded Data page renders a Widget capability
-  through the Cyberspace theme end-to-end. *All automatable mechanics are NUnit-proven: the seed
-  body tokens (`{{ MindAttic.Ideas.Widget.Tooltip }}` etc.) parse correctly, and the
-  install → catalog → IncludeExpander pipeline resolves them to Component frames for the seeded keys.
-  The live render through the running host (Blazor circuit + Cyberspace theme) is not automatable.*
-  *(verified by `CmsIncludeParityTests`, `RawContentGateTests`,
-  `SeededPageRenderTests`: `SeedBodyTokens_ParseToWidgetKind_FloatingVersion`,
-  `SeedBody_InstalledTooltipWidget_ExpandsToResolvedFrame`; live e2e pending.)*
+- **MAI-US-A6 ✅** As a Visitor on the running host, the seeded **Frontpage** — the mindattic.com
+  recreation as a Data page ([A21](AMENDMENTS.md#MAI-A21)) — renders its widget capabilities (Tabs
+  board, Gallery, pin-when-short Footer) through the Cyberspace theme end-to-end. *NUnit proves the
+  mechanics (the real seeded body parses to exactly the three floating Widget tokens; the install →
+  catalog → IncludeExpander pipeline resolves them to Component frames; the seed's
+  create/migrate/never-clobber behavior holds), and an attended run proves the live render.*
+  *(verified by `CmsIncludeParityTests`, `RawContentGateTests`, `SeededPageRenderTests`:
+  `SeedBodyTokens_ParseToWidgetKind_FloatingVersion`, `FrontpageBody_AllSeedTokens_ParseFromTheRealSeededPage`,
+  `Seed_MigratesStockCodeFrontpage_ToDataPage_ButNeverAnAdminPage`,
+  `Seed_SoftDisablesStockHomePage_AndNeverAnEditedOne`,
+  `SeedBody_InstalledTabsWidget_ExpandsToResolvedFrame`; live render observed 2026-06-09 — see
+  [BIBLE §6](BIBLE.md#MAI-§6) live-render evidence: zero `ma-missing` placeholders. Interactive
+  circuit behavior (clicking a tab tile) remains browser-only.)*
+- **MAI-US-A7 ✅** As a Visitor, navigating to the application with **no route** forwards me to the
+  Frontpage. *`PageHost` forwards the `""` slug to the slug named by the Host setting `page.frontpage`
+  (default `frontpage`) instead of resolving it to a page; the retired stock home page is soft-disabled
+  by the seed.* *(seed-side behavior verified by
+  `SeededPageRenderTests.Seed_SoftDisablesStockHomePage_AndNeverAnEditedOne`; the forward observed live
+  2026-06-09 — `GET /` → 302 → `/frontpage` ([BIBLE §6](BIBLE.md#MAI-§6)). See [A21](AMENDMENTS.md#MAI-A21).)*
 
 ## Epic B — Versioning, lifecycle & history
 
@@ -139,12 +150,14 @@ updated: 2026-06-08
   and `MapMindAtticAuthEndpoints()`; claim augmentation is fully adopted.*
   *(verified by `IdeasClaimsAugmentorTests`; see [A16](AMENDMENTS.md#MAI-A16),
   [HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7).)*
-- **MAI-US-F5 🟡** As a Visitor, a real packed `.idea` renders end-to-end through the **running** host.
-  *The automatable portion is NUnit-verified: install → catalog reload → IncludeExpander produces a
-  Resolved Component frame (not a MissingContent placeholder); unknown tokens correctly degrade.
-  The Blazor-host HTTP layer still requires an attended run.*
+- **MAI-US-F5 ✅** As a Visitor, a real packed `.idea` renders end-to-end through the **running** host.
+  *NUnit verifies the pipeline (install → catalog reload → IncludeExpander produces a Resolved
+  Component frame; unknown tokens correctly degrade), and an attended run proves the HTTP layer: all
+  33 library `.idea`s installed at startup and the frontpage rendered their citizens with hoisted
+  assets served at `/_ideas/...` mounts (200), zero placeholders.*
   *(verified by `RenderPipelineTests`: `Install_ThenReload_ThenExpand_ProducesResolvedFrame`,
-  `Install_ThenExpand_UnknownToken_ProducesMissingFrame`; live HTTP render pending.)*
+  `Install_ThenExpand_UnknownToken_ProducesMissingFrame`; live HTTP render observed 2026-06-09 —
+  [BIBLE §6](BIBLE.md#MAI-§6).)*
 - **MAI-US-F6 ✅** As a Widget-Dev, compiled-citizen asset harvest (`Activator` on `WidgetBase`) hoists
   declared `StylesheetUrls`/`ScriptUrls` into `<head>` via `PageAssets.AllAssetsOf` — the same
   `PageAssetCollector` delegate used for package widgets, consistent with how `PageHost` already
@@ -170,8 +183,8 @@ updated: 2026-06-08
 Dependency-ordered toward the headline goal (collapse standalone frontends into Pages with zero-deploy
 upload):
 
-1. **MAI-US-F5** 🟡 — automatable pipeline NUnit-verified 2026-06-08; attended HTTP render still pending.
-2. **MAI-US-A6 / MAI-US-B5** 🟡 — seeded-page mechanics + RestoreAsync fully tested; live render + SQL Server temporal pending.
+1. **MAI-US-F5** ✅ — shipped 2026-06-09 (live HTTP render of 33 installed `.idea`s observed).
+2. **MAI-US-A6** ✅ — shipped 2026-06-09 (the mindattic.com Frontpage recreation, live; A21). **MAI-US-B5** 🟡 — RestoreAsync fully tested; SQL Server temporal query pending.
 3. **MAI-US-F4** ✅ — shipped 2026-06-08 (MindAttic.Authentication fully wired).
 4. **MAI-US-F3** ✅ — shipped 2026-06-08.
 5. **MAI-US-F8** ✅ — shipped 2026-06-08 (Monaco editor + catalog IntelliSense).

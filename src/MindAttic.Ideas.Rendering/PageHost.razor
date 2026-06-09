@@ -14,6 +14,7 @@
 @inject IContentCatalog Catalog
 @inject IServiceProvider Services
 @inject IRenderAlertSink Alerts
+@inject NavigationManager Nav
 
 @* The single, permanent render entry point for free-form pages. No zones. Resolution is by
    (SiteId, Slug) data lookup, never per-page routing — so a runtime-loaded type renders unchanged. *@
@@ -77,6 +78,17 @@ else if (_context is not null)
         }
 
         await using var db = await DbFactory.CreateDbContextAsync();
+
+        // The bare route never renders content itself — it forwards to the site's front page
+        // (Host setting "page.frontpage"; default slug "frontpage"). During prerender the
+        // NavigationException this raises is converted by the framework into an HTTP redirect.
+        if (slug.Length == 0)
+        {
+            var fp = await db.Settings.FirstOrDefaultAsync(s => s.Scope == "Host" && s.Key == "page.frontpage");
+            Nav.NavigateTo("/" + (string.IsNullOrWhiteSpace(fp?.Value) ? "frontpage" : fp!.Value.Trim('/')), replace: true);
+            return;
+        }
+
         var site = await db.Sites.FirstOrDefaultAsync(s => s.IsDefault) ?? await db.Sites.FirstOrDefaultAsync();
         var siteId = site?.Id;
         var page = await db.Pages.FirstOrDefaultAsync(p =>

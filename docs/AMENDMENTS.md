@@ -336,3 +336,32 @@ State as of 2026-06-08:
   replaced by Data pages + Widget `.idea` files once UiUx extraction is scheduled.
 - No code change in `MindAttic.Ideas` is required for F7 itself: the seed, catalog, widget palette,
   Monaco editor, and upload pipeline are all in place.
+
+## MAI-A21 — The Frontpage: mindattic.com as a Data page + bare-route forward (supersedes A20's seed record) {#MAI-A21}
+
+**What changed (2026-06-09).**
+- The seeded `frontpage` page is no longer a compiled Code page (`MindAttic.Ideas.Page.Frontpage.V1`).
+  It is now a **Data page** that recreates the mindattic.com look from the baseline widget set
+  (MindAttic.Ideas.Library, MAIL-A3): `{{ MindAttic.Ideas.Widget.Tabs }}` (the `ma-tabs-board`
+  project boards for Software/Hardware), `{{ MindAttic.Ideas.Widget.Gallery }}` (the Writing books
+  grid + Visual Arts), and `{{ MindAttic.Ideas.Widget.Footer }}` (pin-when-short), through the
+  Cyberspace theme. Layout is plain flex in author HTML (no layout system); page CSS rides at the
+  top and page JS at the bottom of the body; cover images are inline base64 CSS classes.
+- **The bare route forwards to the Frontpage.** `PageHost` no longer resolves the `""` slug to a
+  page: it forwards to the slug named by the Host setting **`page.frontpage`** (default
+  `frontpage`). The seeded `""` home demo page is retired — an untouched stock copy is
+  soft-disabled by the seed (HOUSE-LAW-2), an admin-edited one is left untouched (and reachable
+  again by re-pointing the setting).
+- **Seed migration, never clobber:** a DB still carrying the stock compiled frontpage is migrated
+  in place to the Data recreation (a row edit — Data ↔ Code graduation is never a schema change);
+  any admin-authored frontpage is not recognized as stock and is never overwritten.
+
+**Why.** The product goal is "recreate whole sites from reusable widgets + a Page record" — the
+CMS's own front door should be the proof. A compiled accordion page demonstrated the Code path but
+not the product promise; the Data recreation exercises upload → install → token → render end to end
+and is editable in Monaco with zero deploys.
+
+**Proof.** `SeededPageRenderTests` (NUnit): `FrontpageBody_AllSeedTokens_ParseFromTheRealSeededPage`,
+`Seed_MigratesStockCodeFrontpage_ToDataPage_ButNeverAnAdminPage`,
+`Seed_SoftDisablesStockHomePage_AndNeverAnEditedOne`,
+`SeedBody_InstalledTabsWidget_ExpandsToResolvedFrame`. Suite: 199 passed / 0 failed (2026-06-09). Live proof: GET / → 302 → /frontpage; the rendered frontpage shows zero ma-missing placeholders with all 33 library .ideas installed (attended run 2026-06-09).
