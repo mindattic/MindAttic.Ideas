@@ -203,10 +203,12 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 
 **Build/test evidence (2026-06-09):** `dotnet build MindAttic.Ideas.slnx -c Debug` — Build succeeded,
 0 errors (0 CS warnings; pre-existing ASP0006 analyzer notes in Core rendering are tracked, not new).
-`dotnet test src/MindAttic.Ideas.Tests --no-build` → **Passed: 199, Failed: 0, Skipped: 0**.
-**Live render evidence (2026-06-09, attended):** with all 33 library `.idea`s installed, `GET /` →
+`dotnet test src/MindAttic.Ideas.Tests --no-build` → **Passed: 210, Failed: 0, Skipped: 0**, plus the
+[Explicit] SQL Server temporal proof (`PageHistorySqlServerTests`) run against LocalDB — passed.
+**Live render evidence (2026-06-09, attended):** with all 36 library `.idea`s installed, `GET /` →
 302 → `/frontpage`; the rendered HTML contains the mindattic.com recreation (wordmark, tab boards,
-books grid, footer) with **zero** `ma-missing` placeholders, and `/_ideas/...` mounts serve 200.
+books grid, footer) with **zero** `ma-missing` placeholders, `/_ideas/...` mounts serve 200, and
+`/personas` (the collapsed Legion.Frontend) renders the full gallery with zero placeholders.
 
 Proven working (each cited in [`USER_STORIES.md`](USER_STORIES.md)):
 - ✅ Abstractions SDK frozen v1 (`IdeaBase` + four kind bases, `[Idea]`, seams).
@@ -223,22 +225,21 @@ Proven working (each cited in [`USER_STORIES.md`](USER_STORIES.md)):
 - ✅ `PageAssetCollector` cascade ordering + `/_ideas/{Kind}/{key}/{version}/…` asset route.
 - ✅ `ma-idea` CLI: pack / inspect / list / install / verify.
 
-**Not yet verified (downgraded to 🟡/⬜ in stories):**
-- ⚠️ End-to-end render of a real packed `.idea` through the *running* host (needs an attended run).
-- 📋 Lifecycle/integrity *enforcement UI* with the Phase-2 admin; CSP nonce wiring.
-- 📋 MindAttic.Authentication adoption (package mid-build, not in the local feed — A16).
-- 📋 Moving official content into MindAttic.UiUx; Frontpage/Legion.Frontend collapse.
-- 📋 The Unified Page Plan (`{{double-brace}}` grammar + Monaco editor) — see RFC 0001.
+**The former "not yet verified" list is closed ([A22](AMENDMENTS.md#MAI-A22)):** the live packed-`.idea`
+render, the admin lifecycle UI, MindAttic.Authentication adoption, the frontend collapse
+(`frontpage` = mindattic.com per A21, `personas` = Legion.Frontend per A22), and the full Unified
+Page Plan (Monaco + typed-attribute coercion + clickable upload-to-fix placeholders) are all shipped
+and story-cited. Every story in [`USER_STORIES.md`](USER_STORIES.md) is ✅; the priority backlog is empty.
 
 ## 7. Active frontier {#MAI-§7}
 
-- **RFC 0001 — Unified reference grammar** ([`rfc/0001-unified-page-plan.md`](rfc/0001-unified-page-plan.md)):
-  one `{{Kind.Name[.Vn]}}` token, two backing forms (non-compiled content/template/asset vs compiled
-  component), clickable upload-to-fix placeholders, Monaco catalog-driven IntelliSense. **PLAN — not yet
-  implemented.**
-- **User-story epics** in [`USER_STORIES.md`](USER_STORIES.md): Phase-2 admin UI (theme/widget assignment,
-  file manager, roles), compiled-citizen asset harvest, MindAttic.UiUx extraction, frontend collapse,
-  end-to-end packed-`.idea` render proof.
+The foundation-era frontier is **closed** — RFC 0001 is implemented
+([`rfc/0001-unified-page-plan.md`](rfc/0001-unified-page-plan.md), `status: implemented`) and every
+user story is ✅ ([A22](AMENDMENTS.md#MAI-A22)). The CMS is in **enhance-only** mode per
+[§2](#MAI-§2) (never change, only enhance): new capability arrives as new stories, new whole-number
+content versions, and new Library `.idea`s. Known nice-to-haves live outside this repo's stories —
+e.g. the Library's component smoke-test harness (MAIL RFC 0001) and observing its baseline-widget
+demos interactively (MAIL-US-A4).
 
 ## 8. Quality bar {#MAI-§8}
 

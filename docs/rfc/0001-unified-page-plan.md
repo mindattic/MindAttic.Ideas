@@ -3,13 +3,13 @@ codex: 1
 project: MindAttic.Ideas
 code: MAI
 layer: rfc
-status: planned
-updated: 2026-06-07
+status: implemented
+updated: 2026-06-09
 ---
 
 # RFC 0001 — One reference grammar, two backing forms (behavior vs. composition)
 
-> Status: **PLAN — not yet implemented.** Supersedes the rigid `PageKind { Data, Code }` split and the
+> Status: **IMPLEMENTED 2026-06-09** — the {{token}} grammar, Monaco IntelliSense (MAI-US-F8), typed-attribute coercion (`IncludeAttributeCoercionTests`), and clickable upload-to-fix placeholders (`RenderGuardTests.MissingPlaceholder_LinksToAdminUpload_WithTheMissingKey`) are all shipped; this RFC is historical record. Supersedes the rigid `PageKind { Data, Code }` split and the
 > "every citizen is a compiled dll" assumption. Legion-deliberated (see the deliberation in chat history).
 > **Graduates into:** [BIBLE §4](../BIBLE.md#MAI-§4) (the render model) and
 > [USER_STORIES MAI-US-F8](../USER_STORIES.md). Tracked frontier item; mark superseded once shipped.

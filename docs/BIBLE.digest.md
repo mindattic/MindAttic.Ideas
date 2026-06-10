@@ -106,8 +106,8 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - **UiUx** — MindAttic.UiUx, the build-free canonical source for official content (consumed by pinned-tag URL).
 
 ## Status index (from USER_STORIES.md)
-- done: 30  |  partial: 2  |  planned: 0  |  cut: 0
+- done: 32  |  partial: 0  |  planned: 0  |  cut: 0
 
 ## Latest amendment
-- MAI-A21 — The Frontpage: mindattic.com as a Data page + bare-route forward (supersedes A20's seed record)
+- MAI-A22 — F7 complete + RFC 0001 implemented: the CMS reaches its definition of done (supersedes A20's "pending" items)
 

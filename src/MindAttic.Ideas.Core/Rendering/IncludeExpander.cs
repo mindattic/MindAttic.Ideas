@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
@@ -126,9 +128,18 @@ public static class IncludeExpander
         {
             case ContentResolution.Resolved:
                 var type = resolved.Type!;
+                var paramTypes = ParameterTypesOf(type);
                 b.OpenComponent(seq++, type);
                 foreach (var attr in attributes)
-                    b.AddAttribute(seq++, attr.Key, attr.Value);
+                {
+                    // RFC 0001 typed-attribute coercion: a token attribute that matches a declared
+                    // typed [Parameter] is converted to that type (bool/int/double/enum/…); anything
+                    // else keeps its raw value and lands in the CaptureUnmatchedValues bag.
+                    var value = paramTypes.TryGetValue(attr.Key, out var pt)
+                        ? CoerceAttributeValue(pt, attr.Value)
+                        : attr.Value;
+                    b.AddAttribute(seq++, attr.Key, value);
+                }
                 // Pass inner content as ChildContent only if the resolved type actually declares it.
                 if (childContent is not null && HasChildContent(type))
                     b.AddAttribute(seq++, "ChildContent", childContent);
@@ -153,6 +164,52 @@ public static class IncludeExpander
         return p is not null
             && p.PropertyType == typeof(RenderFragment)
             && p.GetCustomAttribute<ParameterAttribute>() is not null;
+    }
+
+    // ---- RFC 0001: typed-attribute coercion -----------------------------------------------------
+
+    // name -> property type for every typed [Parameter] (the CaptureUnmatchedValues bag is excluded
+    // on purpose: its values must stay raw). Case-insensitive: token attributes are author markup.
+    private static readonly ConcurrentDictionary<Type, Dictionary<string, Type>> ParameterTypeCache = new();
+
+    private static Dictionary<string, Type> ParameterTypesOf(Type componentType) =>
+        ParameterTypeCache.GetOrAdd(componentType, static t =>
+        {
+            var map = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (!p.CanWrite) continue;
+                if (p.GetCustomAttribute<ParameterAttribute>() is not { CaptureUnmatchedValues: false }) continue;
+                map[p.Name] = p.PropertyType;
+            }
+            return map;
+        });
+
+    /// <summary>
+    /// Converts a token attribute's raw value (string, or bool for a bare attribute) to the declared
+    /// parameter type: bool, enums (by name, case-insensitive), and the IConvertible numerics
+    /// (int/long/double/decimal/…), with Nullable&lt;T&gt; unwrapped. A failed conversion returns the
+    /// RAW value — a render never throws; Blazor's own parameter binding then surfaces the mismatch.
+    /// </summary>
+    public static object? CoerceAttributeValue(Type targetType, object? raw)
+    {
+        if (raw is null) return null;
+        var t = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        if (t.IsInstanceOfType(raw)) return raw;
+        if (t == typeof(string)) return raw.ToString();
+        if (t == typeof(object)) return raw;
+        var s = raw.ToString();
+        if (string.IsNullOrWhiteSpace(s)) return raw;
+        try
+        {
+            if (t == typeof(bool)) return bool.Parse(s);
+            if (t.IsEnum) return Enum.Parse(t, s, ignoreCase: true);
+            return Convert.ChangeType(s, t, CultureInfo.InvariantCulture);
+        }
+        catch
+        {
+            return raw;
+        }
     }
 
     internal static void EmitMissing(RenderTreeBuilder b, ref int seq, string tag)

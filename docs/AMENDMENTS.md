@@ -365,3 +365,32 @@ and is editable in Monaco with zero deploys.
 `Seed_MigratesStockCodeFrontpage_ToDataPage_ButNeverAnAdminPage`,
 `Seed_SoftDisablesStockHomePage_AndNeverAnEditedOne`,
 `SeedBody_InstalledTabsWidget_ExpandsToResolvedFrame`. Suite: 199 passed / 0 failed (2026-06-09). Live proof: GET / → 302 → /frontpage; the rendered frontpage shows zero ma-missing placeholders with all 33 library .ideas installed (attended run 2026-06-09).
+
+## MAI-A22 — F7 complete + RFC 0001 implemented: the CMS reaches its definition of done (supersedes A20's "pending" items) {#MAI-A22}
+
+**What changed (2026-06-09).**
+- **MAI-US-F7 is complete.** Both standalone frontends are collapsed into Pages:
+  `MindAttic.Frontpage` → the `frontpage` Data page (mindattic.com recreated verbatim, A21), and
+  `MindAttic.Legion.Frontend` → the seeded **`personas`** Data page, whose whole body is one token —
+  `{{ MindAttic.Ideas.Widget.LegionPersonas }}` — through the Cyberspace theme. Verified live:
+  `/personas` renders the full gallery with zero placeholders. "Official content lives in
+  MindAttic.UiUx" is restated per A19/A20 reality: **MindAttic.Ideas.Library is the single home of
+  first-party `.idea` content** (36 components); UiUx remains an upstream raw-source repo and is no
+  longer on the Ideas critical path.
+- **RFC 0001 is fully implemented** (marked `status: implemented`):
+  - *Typed-attribute coercion* — a `{{token}}` attribute matching a declared typed `[Parameter]` on
+    the resolved component coerces to bool/int/double/decimal/enum (Nullable unwrapped) in the ONE
+    shared `EmitInclude` path; unmatched attributes stay raw for the `CaptureUnmatchedValues` bag; a
+    failed conversion falls back to the raw value (a render never throws).
+  - *Clickable upload-to-fix placeholders* — `MissingContent` renders as a LINK to
+    `/admin/upload?missing=<reference>`, and the admin Upload panel reads `?missing=` and shows
+    which `.idea` the page is waiting on.
+- **MAI-US-B5 is complete.** The live SQL Server temporal proof ran against the dev LocalDB:
+  `GetHistoryAsync` returned multiple ordered temporal versions of the much-edited frontpage row
+  (`PageHistorySqlServerTests`, [Explicit], passed 2026-06-09).
+
+**Proof.** 210 NUnit tests green (`IncludeAttributeCoercionTests` ×9,
+`RenderGuardTests.MissingPlaceholder_LinksToAdminUpload_WithTheMissingKey`,
+`SeededPageRenderTests.Seed_CreatesPersonasPage_CollapsingLegionFrontendIntoOneToken`) plus the
+explicit SQL Server temporal test; live render checks for `/personas` and `/frontpage` (0 missing).
+With this amendment every MAI user story is ✅ (or 🗑️) — the foundation-era definition of done is met.

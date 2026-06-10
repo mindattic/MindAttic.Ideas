@@ -112,6 +112,20 @@ public class RenderGuardTests
 
     // ---- IncludeExpander guard behavior ----
 
+    [Test]
+    public void MissingPlaceholder_LinksToAdminUpload_WithTheMissingKey()
+    {
+        // RFC 0001 "clickable upload-to-fix": the placeholder targets the admin upload surface with
+        // the broken reference in the query, so the admin fixes the page by uploading the named .idea.
+        Assert.Multiple(() =>
+        {
+            Assert.That(MissingContent.UploadToFixHref("MindAttic.Ideas.Widget.Tooltip.V1"),
+                Is.EqualTo("/admin/upload?missing=MindAttic.Ideas.Widget.Tooltip.V1"));
+            Assert.That(MissingContent.UploadToFixHref("a b"),
+                Is.EqualTo("/admin/upload?missing=a%20b"), "the key is query-escaped");
+        });
+    }
+
     private sealed class DummyComponent : Microsoft.AspNetCore.Components.ComponentBase { }
 
     private sealed class FakeCatalog : IContentCatalog

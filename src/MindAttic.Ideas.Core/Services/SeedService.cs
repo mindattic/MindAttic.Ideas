@@ -98,6 +98,26 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             await db.SaveChangesAsync(ct);
         }
 
+        // Personas page — MindAttic.Legion.Frontend collapsed into a Data page (MAI-A22): the
+        // persona gallery ships as the LegionPersonas Widget .idea, so the standalone Blazor app
+        // reduces to one token through the theme. Upsert by (SiteId, Slug); never clobber.
+        if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "personas", ct))
+        {
+            db.Pages.Add(new Page
+            {
+                SiteId = site.Id, Slug = "personas", Title = "Legion Personas",
+                ThemeKey = "cyberspace", ThemeVersion = 1,
+                Kind = PageKind.Data,
+                BodyHtml = PersonasBodyHtml,
+                PageCss = PersonasCss,
+                BodyTrust = ContentTrust.Author,
+                AuthoredByUserId = "system-seed",
+                IsPublished = true, Enabled = true,
+                CreatedUtc = now, ModifiedUtc = now,
+            });
+            await db.SaveChangesAsync(ct);
+        }
+
         // One-time data upgrade: rewrite any data page still using the retired <MindAttic.Ideas.…/> include
         // tags to the {{ … }} token grammar. Idempotent — the filter excludes already-converted bodies, so
         // this is a no-op once the cutover is done. (SQL has no regex, so the rewrite is done here in code.)
@@ -241,6 +261,22 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         .img-book-harvest { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzYTdkNWUiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZjFkMTUiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
         .img-book-returns { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM3ZDZhM2EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxZDE4MGYiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
         .img-book-mosaic { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM0NjYzN2QiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxMDE2MWQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
+        """;
+
+    // ── The Personas page: MindAttic.Legion.Frontend collapsed into one token (MAI-A22) ──────────
+    private const string PersonasBodyHtml =
+        """
+        <main class="personas">
+          <h1>Legion Personas</h1>
+          <p>Browse MindAttic.Legion's psychometrically-scored personas, each with a generated
+             abstract-art portrait — the whole former standalone frontend, as one widget.</p>
+          {{ MindAttic.Ideas.Widget.LegionPersonas }}
+        </main>
+        """;
+
+    private const string PersonasCss =
+        """
+        .personas { display: flex; flex-direction: column; gap: 1rem; max-width: 64rem; margin: 0 auto; padding: 1.5rem; }
         """;
 
     // Page JS rides at the bottom of the body (the page convention). Kept tiny: widgets carry their

@@ -12,7 +12,7 @@ updated: 2026-06-09
 > ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test that proves
 > it. Derived from the [`README.md`](../README.md) living feature spec; test tokens name NUnit
 > fixtures in `src/MindAttic.Ideas.Tests`. Build/test evidence: see [BIBLE §6](BIBLE.md#MAI-§6) —
-> `dotnet test` reports **199 passed, 0 failed (2026-06-09)**.
+> `dotnet test` reports **210 passed, 0 failed (2026-06-09)**, plus the [Explicit] SQL Server temporal proof.
 >
 > Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages),
 > **Visitor** (reads a rendered page), **Widget-Dev** (builds first-party content in MindAttic.Ideas.Library).
@@ -74,15 +74,17 @@ updated: 2026-06-09
   `ContentLifecycleServiceTests.SetEnabledFalse_ReloadsCatalog_SoResolveTagReportsDisabled`.)*
 - **MAI-US-B4 ✅** As an Operator, the EF model guards reserved columns and a delete-guard projection, so
   integrity holds at the data layer. *(verified by `CmsModelGuardTests`.)*
-- **MAI-US-B5 🟡** As an Operator, I can inspect and roll back to any prior page state via temporal
+- **MAI-US-B5 ✅** As an Operator, I can inspect and roll back to any prior page state via temporal
   history. *`IPageHistoryService` + `PageHistoryService` implemented; Admin "Page History" panel
-  surfaces the temporal record inline in the page editor. `RestoreAsync` is unit-tested (4 tests).
-  `GetHistoryAsync` uses `TemporalAll()` — requires SQL Server; the boundary is documented by a test
-  that confirms `InvalidOperationException` on InMemory.*
+  surfaces the temporal record inline in the page editor. `RestoreAsync` is unit-tested (4 tests);
+  the live temporal query is proven against real SQL Server.*
   *(verified by `PageHistoryServiceTests`: `RestoreAsync_CopiesSnapshotContentFields_OntoCurrentPage`,
   `RestoreAsync_ReStampsTrust_FromRestoringUserClaims`, `RestoreAsync_NonAdminUser_StampsUntrusted`,
   `RestoreAsync_UnknownPage_ReturnsFalse`,
-  `GetHistoryAsync_RequiresSqlServer_ThrowsOnInMemoryDb`; live temporal query requires SQL Server.)*
+  `GetHistoryAsync_RequiresSqlServer_ThrowsOnInMemoryDb`; and the LIVE proof
+  `PageHistorySqlServerTests.GetHistoryAsync_OnSqlServer_ReturnsOrderedTemporalVersions` —
+  [Explicit], run 2026-06-09 against LocalDB: multiple ordered temporal versions of the frontpage
+  row. See [A22](AMENDMENTS.md#MAI-A22).)*
 
 ## Epic C — Trust, degradation & the Admin Inbox
 
@@ -163,32 +165,40 @@ updated: 2026-06-09
   `PageAssetCollector` delegate used for package widgets, consistent with how `PageHost` already
   harvests Theme assets. *(verified by `PageAssetsTests`: `CompiledWidget_AllAssetsOf_HarvestsViaActivator`,
   `CompiledWidget_UnresolvableType_ReturnsEmpty`, `PackageWidget_AllAssetsOf_DelegatesToMountedManifestAssets`.)*
-- **MAI-US-F7 🟡** As an Operator, official content lives in **MindAttic.UiUx** and `MindAttic.Frontpage`
-  / `MindAttic.Legion.Frontend` collapse into Pages. *In-Ideas groundwork is complete (seed, catalog,
-  widget palette, Monaco editor, upload pipeline). Cross-repo work (UiUx extraction, standalone-app
-  collapse) is scheduled after F8 stabilises. See [A20](AMENDMENTS.md#MAI-A20) for current-state record.*
-  *(verified by `SeedService.SeedAsync` home/frontpage; in-Ideas preconditions satisfied; cross-repo pending.
-  See [A8](AMENDMENTS.md#MAI-A8), [A14](AMENDMENTS.md#MAI-A14), [A20](AMENDMENTS.md#MAI-A20).)*
+- **MAI-US-F7 ✅** As an Operator, official content lives in the first-party library and
+  `MindAttic.Frontpage` / `MindAttic.Legion.Frontend` collapse into Pages. *(original spec said
+  "official content lives in MindAttic.UiUx" — restated by [A22](AMENDMENTS.md#MAI-A22) per A19/A20:
+  the single first-party home is **MindAttic.Ideas.Library**; UiUx remains upstream raw source.)*
+  *Both frontends are collapsed: mindattic.com → the `frontpage` Data page
+  ([A21](AMENDMENTS.md#MAI-A21)), Legion.Frontend → the seeded `personas` Data page whose body is one
+  `{{ MindAttic.Ideas.Widget.LegionPersonas }}` token.*
+  *(verified by `SeededPageRenderTests.Seed_CreatesPersonasPage_CollapsingLegionFrontendIntoOneToken`
+  and live renders 2026-06-09: `/personas` 200 with the full gallery and zero placeholders,
+  `/frontpage` zero placeholders. See [A8](AMENDMENTS.md#MAI-A8), [A14](AMENDMENTS.md#MAI-A14),
+  [A20](AMENDMENTS.md#MAI-A20), [A22](AMENDMENTS.md#MAI-A22).)*
 - **MAI-US-F8 ✅** As an Author, I edit pages with **Monaco** catalog-driven IntelliSense, the unified
   `{{double-brace}}` grammar. *`MonacoEditor.razor` wraps Monaco (lazy-loaded from CDN) with a
   `{{ }}` completion provider fed by the live catalog; the BodyHtml textarea in the page editor is
-  replaced by this component. Typed-attribute coercion and clickable upload-to-fix placeholders remain
-  RFC 0001 roadmap items.*
+  replaced by this component. RFC 0001 is now fully implemented ([A22](AMENDMENTS.md#MAI-A22)):
+  **typed-attribute coercion** (token attributes bind to bool/int/double/enum `[Parameter]`s through
+  the one shared `EmitInclude` path) and **clickable upload-to-fix placeholders** (`MissingContent`
+  links to `/admin/upload?missing=<reference>`; the Upload panel shows what the page is waiting on).*
   *(verified by `MonacoEditorTokenTests`: `IntelliSenseToken_ParsesBackViaTagGrammar`,
-  `IntelliSenseToken_InsertedInBody_ParsedByIncludeReferenceParser`; live Monaco interaction is
-  browser-tested.)*
+  `IntelliSenseToken_InsertedInBody_ParsedByIncludeReferenceParser`;
+  `IncludeAttributeCoercionTests` (9 tests incl. `Expand_TokenAttributes_BindTyped_AndLeaveUnmatchedRaw`);
+  `RenderGuardTests.MissingPlaceholder_LinksToAdminUpload_WithTheMissingKey`; live Monaco interaction
+  is browser-tested.)*
 
 ## Priority backlog
 
-Dependency-ordered toward the headline goal (collapse standalone frontends into Pages with zero-deploy
-upload):
+**Empty — every story is ✅ (2026-06-09, [A22](AMENDMENTS.md#MAI-A22)).** The headline goal is met:
+standalone frontends collapse into Pages with zero-deploy upload (`frontpage` = mindattic.com,
+`personas` = Legion.Frontend), RFC 0001 is fully implemented, and the foundation-era definition of
+done holds (210 NUnit green + the explicit SQL Server temporal proof + live render checks). New work
+enters as new stories.
 
-1. **MAI-US-F5** ✅ — shipped 2026-06-09 (live HTTP render of 33 installed `.idea`s observed).
-2. **MAI-US-A6** ✅ — shipped 2026-06-09 (the mindattic.com Frontpage recreation, live; A21). **MAI-US-B5** 🟡 — RestoreAsync fully tested; SQL Server temporal query pending.
-3. **MAI-US-F4** ✅ — shipped 2026-06-08 (MindAttic.Authentication fully wired).
-4. **MAI-US-F3** ✅ — shipped 2026-06-08.
-5. **MAI-US-F8** ✅ — shipped 2026-06-08 (Monaco editor + catalog IntelliSense).
-6. **MAI-US-F7** 🟡 — in-Ideas groundwork done; cross-repo collapse pending (see A20).
+Shipping record: F6/F8 2026-06-08 · F4/F3 2026-06-08 · F5/A6/A7 2026-06-09 (A21) ·
+B5/F7 + RFC 0001 completion 2026-06-09 (A22).
 
 ### Audit log
 

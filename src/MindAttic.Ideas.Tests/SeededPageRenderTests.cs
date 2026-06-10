@@ -75,6 +75,29 @@ public class SeededPageRenderTests
         });
     }
 
+    [Test]
+    public async Task Seed_CreatesPersonasPage_CollapsingLegionFrontendIntoOneToken()
+    {
+        // MAI-A22 / MAI-US-F7: the former MindAttic.Legion.Frontend standalone app is one Data page
+        // composing the LegionPersonas widget .idea by token.
+        var factory = new InMemoryFactory("seed_" + Guid.NewGuid().ToString("N"));
+        await new SeedService(factory).SeedAsync();
+
+        await using var db = factory.CreateDbContext();
+        var personas = await db.Pages.SingleAsync(p => p.Slug == "personas");
+        var refs = IncludeReferenceParser.Parse(personas.BodyHtml);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(personas.Kind, Is.EqualTo(PageKind.Data));
+            Assert.That(personas.IsPublished && personas.Enabled, Is.True);
+            Assert.That(refs.Select(r => (r.Kind, r.Key, r.Version)), Is.EquivalentTo(new[]
+            {
+                (ContentKind.Widget, "legionpersonas", (int?)null),
+            }));
+        });
+    }
+
     [TestCase("MindAttic.Ideas.Page.Frontpage.V1")]
     [TestCase("MindAttic.Ideas.Page.MindAtticFrontpage.V1")]   // pre-rename stock name in older DBs
     public async Task Seed_MigratesStockCodeFrontpage_ToDataPage_ButNeverAnAdminPage(string stockTypeName)
