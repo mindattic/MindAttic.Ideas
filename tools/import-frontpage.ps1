@@ -47,7 +47,7 @@ $css = @(
 ) -join "`n"
 
 $tokens = @'
-{{ MindAttic.Ideas.Widget.TabBoard }}
+{{ MindAttic.Ideas.Widget.TabBoard alwaysShowTabPage=true }}
 {{ MindAttic.Ideas.Widget.PinFooter }}
 {{ MindAttic.Ideas.Widget.WebSnapshot }}
 
