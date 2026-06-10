@@ -4,7 +4,7 @@ project: MindAttic.Ideas
 code: MAI
 layer: amendments
 status: living
-updated: 2026-06-07
+updated: 2026-06-09
 ---
 
 # MindAttic.Ideas — Amendments (append-only; amendment wins over the bible)

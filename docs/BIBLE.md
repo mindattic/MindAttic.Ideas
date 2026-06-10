@@ -90,7 +90,7 @@ is live. The three kinds derive from one shared root `IdeaBase`; Themes/Widgets 
                │ references             └───────────────────────────────────┘
    ┌───────────▼───────────────────────────────────────────────────────────┐
    │ MindAttic.Ideas.Abstractions   (frozen v1 SDK, MAJOR pinned at 1)       │
-   │  IdeaBase + PageBase/WidgetBase/ThemeBase/ControlBase, [Idea],          │
+   │  IdeaBase + PageBase/WidgetBase/ThemeBase, [Idea],                      │
    │  IRenderContext, ICmsContentSource/ITypeResolver/IRawContentGate seams  │
    │  refs ONLY Microsoft.AspNetCore.Components + System.Text.Json           │
    └─────────────────────────────────────────────────────────────────────────┘
@@ -100,7 +100,7 @@ is live. The three kinds derive from one shared root `IdeaBase`; Themes/Widgets 
 ```
 
 ### 4.1 Projects
-- **`src/MindAttic.Ideas.Abstractions`** — the frozen v1 SDK: `IdeaBase` + the four kind bases
+- **`src/MindAttic.Ideas.Abstractions`** — the frozen v1 SDK: `IdeaBase` + the three kind bases
   (`PageBase`/`WidgetBase`/`ThemeBase`), `[Idea]`, `IRenderContext`, `CmsInclude`,
   discovery/catalog seams. References ONLY `Microsoft.AspNetCore.Components` + `System.Text.Json`.
 - **`src/MindAttic.Ideas.Core`** — EF entities, `CmsDbContext` (SQL Server, temporal `Pages`),
@@ -114,7 +114,7 @@ is live. The three kinds derive from one shared root `IdeaBase`; Themes/Widgets 
 - **`src/MindAttic.Ideas.Web`** — the Blazor Web App host: `PageHost` catch-all, `CmsHead` cascade,
   render fork, `/admin`, `/_ideas` route, Vault+Legion wiring; Phase-1 proof content under
   `Components/Library/Theme` (Bootstrap theme only — Widget/Control inline content removed with A19).
-- **`src/MindAttic.Ideas.Tests`** — NUnit suite (169 tests).
+- **`src/MindAttic.Ideas.Tests`** — NUnit suite (210 tests).
 
 ### 4.2 Domain model — the NOUNS
 - **`IdeaBase`** — shared root of all four content kinds.

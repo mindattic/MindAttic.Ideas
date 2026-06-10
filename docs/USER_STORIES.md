@@ -155,7 +155,7 @@ updated: 2026-06-09
 - **MAI-US-F5 ✅** As a Visitor, a real packed `.idea` renders end-to-end through the **running** host.
   *NUnit verifies the pipeline (install → catalog reload → IncludeExpander produces a Resolved
   Component frame; unknown tokens correctly degrade), and an attended run proves the HTTP layer: all
-  33 library `.idea`s installed at startup and the frontpage rendered their citizens with hoisted
+  36 library `.idea`s installed at startup and the frontpage rendered their citizens with hoisted
   assets served at `/_ideas/...` mounts (200), zero placeholders.*
   *(verified by `RenderPipelineTests`: `Install_ThenReload_ThenExpand_ProducesResolvedFrame`,
   `Install_ThenExpand_UnknownToken_ProducesMissingFrame`; live HTTP render observed 2026-06-09 —
@@ -203,12 +203,16 @@ B5/F7 + RFC 0001 completion 2026-06-09 (A22).
 ### Audit log
 
 No story has been *changed* from its original README spec; this file is the first derivation. The README
-marks the foundation features ✅ and the frontier 🔨/📋; this file downgrades two README ✅ items to 🟡/⬜
-where the proof is mechanics-only rather than a live e2e, in keeping with
-[HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8) (verified, not asserted):
+marks the foundation features ✅ and the frontier 🔨/📋; this file initially downgraded two README items
+where the proof was mechanics-only rather than a live e2e, in keeping with
+[HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8) (verified, not asserted). Both were subsequently
+promoted to ✅ when attended live renders confirmed the HTTP layer on 2026-06-09:
 
-- **MAI-US-A6** (README "End-to-end: a seeded Data page renders … through the Cyberspace theme", ✅ →
-  🟡 here) — *(original spec — audit log)* — downgraded because the live render through the running host is
-  not captured by an automated test; only its constituent mechanics are.
-- **MAI-US-F5** (README "⚠️ end-to-end render of a real packed `.idea` through the running host is not yet
-  verified", ⬜ here) — preserved verbatim from the README's own caveat *(original spec — audit log)*.
+- **MAI-US-A6** — initially 🟡 (the live render through the running host was not yet captured by an
+  automated test; only the constituent mechanics were). **Promoted to ✅** when the attended run on
+  2026-06-09 confirmed zero `ma-missing` placeholders with all 36 library `.idea`s installed
+  ([A21](AMENDMENTS.md#MAI-A21), [BIBLE §6](BIBLE.md#MAI-§6)).
+- **MAI-US-F5** — initially ⬜ (preserved from the README's own caveat: "end-to-end render of a real
+  packed `.idea` through the running host is not yet verified"). **Promoted to ✅** when the attended run on
+  2026-06-09 confirmed `/_ideas/...` asset mounts serving 200 with zero placeholders
+  ([A22](AMENDMENTS.md#MAI-A22), [BIBLE §6](BIBLE.md#MAI-§6)).
