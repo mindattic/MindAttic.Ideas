@@ -10,7 +10,6 @@
 @using Microsoft.EntityFrameworkCore
 @using MindAttic.Ideas.Core.Data
 @using MindAttic.Ideas.Core.Entities
-@using MindAttic.Ideas.Core.Services
 @inject IDbContextFactory<CmsDbContext> DbFactory
 @inject IContentCatalog Catalog
 @inject IServiceProvider Services
@@ -96,7 +95,7 @@ else if (_context is not null)
 
         var site = await db.Sites.FirstOrDefaultAsync(s => s.IsDefault) ?? await db.Sites.FirstOrDefaultAsync();
         var siteId = site?.Id;
-        var page = await db.Pages.FirstOrDefaultAsync(p =>
+        var page = await db.Pages.Include(p => p.MetaTags).FirstOrDefaultAsync(p =>
             p.SiteId == siteId && p.Slug == slug && p.IsPublished && p.Enabled);
 
         if (page is null)
@@ -112,10 +111,7 @@ else if (_context is not null)
             Js = page.PageJs,
             Trusted = page.BodyTrust == ContentTrust.Author,
         };
-        var seo = SeoMeta.Parse(page.SeoMetaJson);
-        var seoDict = new Dictionary<string, string?>();
-        if (!string.IsNullOrWhiteSpace(seo?.Title))       seoDict["seo.title"]       = seo.Title;
-        if (!string.IsNullOrWhiteSpace(seo?.Description)) seoDict["seo.description"] = seo.Description;
+        var seoDict = page.MetaTags.ToDictionary(t => t.Name, t => (string?)t.Content);
 
         var pageCtx = new CmsPageContext
         {

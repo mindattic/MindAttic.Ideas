@@ -126,48 +126,6 @@ public class PageAdminServiceTests
         Assert.That((await svc.ListAsync()).Single(p => p.Id == a.Id).ParentId, Is.Null, "a stays at top level");
     }
 
-    // ── SeoMeta unit tests ──────────────────────────────────────────────────────────────────
-
-    [Test]
-    public void SeoMeta_Parse_ReturnsNull_ForNullOrEmpty()
-    {
-        Assert.That(SeoMeta.Parse(null), Is.Null);
-        Assert.That(SeoMeta.Parse(""), Is.Null);
-        Assert.That(SeoMeta.Parse("   "), Is.Null);
-    }
-
-    [Test]
-    public void SeoMeta_Parse_ExtractsFields()
-    {
-        var seo = SeoMeta.Parse("""{"title":"My Title","description":"My Desc"}""");
-        Assert.That(seo, Is.Not.Null);
-        Assert.That(seo!.Title, Is.EqualTo("My Title"));
-        Assert.That(seo.Description, Is.EqualTo("My Desc"));
-    }
-
-    [Test]
-    public void SeoMeta_Parse_ReturnsNull_ForMalformedJson()
-    {
-        Assert.That(SeoMeta.Parse("not-json"), Is.Null);
-    }
-
-    [Test]
-    public void SeoMeta_Serialize_ReturnsNull_WhenBothFieldsNull()
-    {
-        Assert.That(new SeoMeta().Serialize(), Is.Null);
-        Assert.That(new SeoMeta { Title = null, Description = null }.Serialize(), Is.Null);
-    }
-
-    [Test]
-    public void SeoMeta_Serialize_ReturnsJson_WhenAnyFieldSet()
-    {
-        var json = new SeoMeta { Title = "T" }.Serialize();
-        Assert.That(json, Is.Not.Null);
-        var roundtrip = SeoMeta.Parse(json);
-        Assert.That(roundtrip!.Title, Is.EqualTo("T"));
-        Assert.That(roundtrip.Description, Is.Null);
-    }
-
     [Test]
     public async Task Save_WithSeoFields_PersistsThroughGetAsync()
     {
@@ -187,7 +145,7 @@ public class PageAdminServiceTests
     }
 
     [Test]
-    public async Task Save_WithNullSeoFields_LeavesJsonNull()
+    public async Task Save_WithNullSeoFields_ReturnsNullOnLoad()
     {
         var svc = await NewServiceAsync();
         var result = await svc.SaveAsync(new PageEditModel

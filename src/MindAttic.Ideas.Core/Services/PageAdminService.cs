@@ -1,29 +1,10 @@
 using System.Security.Claims;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Entities;
 
 namespace MindAttic.Ideas.Core.Services;
-
-/// <summary>Per-page SEO metadata stored as JSON in <see cref="Page.SeoMetaJson"/>.</summary>
-public sealed class SeoMeta
-{
-    public string? Title { get; set; }
-    public string? Description { get; set; }
-
-    private static readonly JsonSerializerOptions _opts = new(JsonSerializerDefaults.Web);
-
-    public static SeoMeta? Parse(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json)) return null;
-        try { return JsonSerializer.Deserialize<SeoMeta>(json, _opts); } catch { return null; }
-    }
-
-    public string? Serialize() =>
-        (Title is null && Description is null) ? null : JsonSerializer.Serialize(this, _opts);
-}
 
 public sealed record PageSummary(
     int Id, string Slug, string Title, PageKind Kind, bool IsPublished, bool Enabled, ContentTrust BodyTrust,
@@ -92,15 +73,15 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
     public async Task<PageEditModel?> GetAsync(int id, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var p = await db.Pages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+        var p = await db.Pages.AsNoTracking().Include(x => x.MetaTags).FirstOrDefaultAsync(x => x.Id == id, ct);
         if (p is null) return null;
-        var seo = SeoMeta.Parse(p.SeoMetaJson);
         return new PageEditModel
         {
             Id = p.Id, Slug = p.Slug, Title = p.Title, ThemeKey = p.ThemeKey, ThemeVersion = p.ThemeVersion,
             Kind = p.Kind, BodyHtml = p.BodyHtml, PageCss = p.PageCss, PageJs = p.PageJs,
             IsPublished = p.IsPublished, Enabled = p.Enabled, ParentId = p.ParentId, SortOrder = p.SortOrder,
-            SeoTitle = seo?.Title, SeoDescription = seo?.Description,
+            SeoTitle       = p.MetaTags.FirstOrDefault(t => t.Name == "seo.title")?.Content,
+            SeoDescription = p.MetaTags.FirstOrDefault(t => t.Name == "seo.description")?.Content,
         };
     }
 
@@ -136,11 +117,6 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.Title = model.Title;
         page.ThemeKey = string.IsNullOrWhiteSpace(model.ThemeKey) ? null : model.ThemeKey.Trim();
         page.ThemeVersion = model.ThemeVersion;
-        page.SeoMetaJson = new SeoMeta
-        {
-            Title = string.IsNullOrWhiteSpace(model.SeoTitle) ? null : model.SeoTitle.Trim(),
-            Description = string.IsNullOrWhiteSpace(model.SeoDescription) ? null : model.SeoDescription.Trim(),
-        }.Serialize();
         page.Kind = model.Kind;
         page.BodyHtml = model.BodyHtml;
         page.PageCss = model.PageCss;
@@ -162,6 +138,18 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         {
             return new PageSaveResult(false, page.Id, trust, "Could not save — the slug may already be in use.");
         }
+
+        // Upsert meta tags: wipe the existing rows for this page, then re-insert.
+        // RemoveRange (not ExecuteDeleteAsync) keeps compatibility with the InMemory provider in tests.
+        var existingTags = await db.PageMetaTags.Where(t => t.PageId == page.Id).ToListAsync(ct);
+        db.PageMetaTags.RemoveRange(existingTags);
+        if (!string.IsNullOrWhiteSpace(model.SeoTitle))
+            db.PageMetaTags.Add(new PageMetaTag { PageId = page.Id, Name = "seo.title",       Content = model.SeoTitle.Trim() });
+        if (!string.IsNullOrWhiteSpace(model.SeoDescription))
+            db.PageMetaTags.Add(new PageMetaTag { PageId = page.Id, Name = "seo.description", Content = model.SeoDescription.Trim() });
+        if (db.ChangeTracker.HasChanges())
+            await db.SaveChangesAsync(ct);
+
         return new PageSaveResult(true, page.Id, trust, null);
     }
 

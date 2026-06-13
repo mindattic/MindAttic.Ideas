@@ -15,6 +15,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
 {
     public DbSet<Site> Sites => Set<Site>();
     public DbSet<Page> Pages => Set<Page>();
+    public DbSet<PageMetaTag> PageMetaTags => Set<PageMetaTag>();
     public DbSet<CmsContentDefinition> ContentDefinitions => Set<CmsContentDefinition>();
     public DbSet<InstalledPackage> InstalledPackages => Set<InstalledPackage>();
     public DbSet<Asset> Assets => Set<Asset>();
@@ -68,6 +69,14 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.HasQueryFilter(x => !x.IsDeleted);
             // Wiki-like history: SQL Server system-versioned temporal table.
             e.ToTable("Pages", t => t.IsTemporal());
+        });
+
+        b.Entity<PageMetaTag>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            e.HasIndex(x => new { x.PageId, x.Name }).IsUnique();
+            e.HasOne<Page>().WithMany(p => p.MetaTags).HasForeignKey(x => x.PageId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<CmsContentDefinition>(e =>

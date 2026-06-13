@@ -37,7 +37,8 @@ public sealed class Page : ContentEntityBase
     /// <summary>Disabled = exists but cannot be served until re-enabled.</summary>
     public bool Enabled { get; set; } = true;
     public int SortOrder { get; set; }
-    public string? SeoMetaJson { get; set; }
+
+    public ICollection<PageMetaTag> MetaTags { get; set; } = [];
 
     /// <summary>Set when this page arrived from an installed .idea package (reserved for Phase 5).</summary>
     public int? SourcePackageId { get; set; }
