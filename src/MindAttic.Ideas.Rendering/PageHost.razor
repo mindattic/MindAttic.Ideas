@@ -10,6 +10,7 @@
 @using Microsoft.EntityFrameworkCore
 @using MindAttic.Ideas.Core.Data
 @using MindAttic.Ideas.Core.Entities
+@using MindAttic.Ideas.Core.Services
 @inject IDbContextFactory<CmsDbContext> DbFactory
 @inject IContentCatalog Catalog
 @inject IServiceProvider Services
@@ -26,8 +27,12 @@
 }
 else if (_context is not null)
 {
-    <PageTitle>@_context.Page.Title</PageTitle>
+    <PageTitle>@(_context.Page.Meta.GetValueOrDefault("seo.title") ?? _context.Page.Title)</PageTitle>
     <HeadContent>
+        @if (_context.Page.Meta.GetValueOrDefault("seo.description") is { Length: > 0 } desc)
+        {
+            <meta name="description" content="@desc" />
+        }
         <CmsHead GlobalCss="@_globalCss"
                  ThemeGlobalCss="@_themeGlobalCss"
                  ThemeCss="@_themeCss"
@@ -107,10 +112,16 @@ else if (_context is not null)
             Js = page.PageJs,
             Trusted = page.BodyTrust == ContentTrust.Author,
         };
+        var seo = SeoMeta.Parse(page.SeoMetaJson);
+        var seoDict = new Dictionary<string, string?>();
+        if (!string.IsNullOrWhiteSpace(seo?.Title))       seoDict["seo.title"]       = seo.Title;
+        if (!string.IsNullOrWhiteSpace(seo?.Description)) seoDict["seo.description"] = seo.Description;
+
         var pageCtx = new CmsPageContext
         {
             PageId = page.Uid, Slug = page.Slug, Title = page.Title,
             ThemeKey = page.ThemeKey, ThemeVersion = page.ThemeVersion, Inline = inline,
+            Meta = seoDict,
         };
         var siteCtx = new CmsSiteContext
         {

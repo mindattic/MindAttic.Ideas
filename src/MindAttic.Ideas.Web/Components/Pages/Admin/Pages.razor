@@ -68,42 +68,50 @@
                 <div class="admin-status @(statusBad ? "err" : "ok")">@status</div>
             }
 
-            <div class="admin-grid">
-                <label>Slug<input @bind="editing.Slug" placeholder="(blank = home)" /></label>
-                <label>Title<input @bind="editing.Title" /></label>
-                <label>Kind<select @bind="editing.Kind"><option value="Data">Data</option><option value="Code">Code</option></select></label>
-                <label>Parent
-                    <select @bind="editing.ParentId">
-                        <option value="">(top level)</option>
-                        @if (pages is not null)
-                        {
-                            @foreach (var p in pages.Where(p => p.Id != editing.Id))
+            <details class="admin-page-props" open>
+                <summary>
+                    Page Properties
+                    <span class="admin-props-hint">@(editing.Slug.Length > 0 ? "/" + editing.Slug : "(home)")@(editing.ThemeKey is { Length: > 0 } tk ? " · " + tk : "")</span>
+                </summary>
+                <div class="admin-grid">
+                    <label>Route<input @bind="editing.Slug" placeholder="(blank = home)" /></label>
+                    <label>Title<input @bind="editing.Title" /></label>
+                    <label>Kind<select @bind="editing.Kind"><option value="Data">Data</option><option value="Code">Code</option></select></label>
+                    <label>Parent
+                        <select @bind="editing.ParentId">
+                            <option value="">(top level)</option>
+                            @if (pages is not null)
                             {
-                                <option value="@p.Id">@(p.Slug.Length == 0 ? "(home)" : "/" + p.Slug)</option>
+                                @foreach (var p in pages.Where(p => p.Id != editing.Id))
+                                {
+                                    <option value="@p.Id">@(p.Slug.Length == 0 ? "(home)" : "/" + p.Slug)</option>
+                                }
                             }
-                        }
-                    </select>
-                </label>
-                <label>Theme
-                    <select @bind="editing.ThemeKey">
-                        <option value="">(site default)</option>
-                        @foreach (var k in UniqueThemeKeys())
-                        {
-                            <option value="@k">@k</option>
-                        }
-                    </select>
-                </label>
-                <label>Theme version
-                    <select value="@(editing.ThemeVersion?.ToString() ?? "")"
-                            @onchange="e => editing.ThemeVersion = e.Value?.ToString() is { Length: > 0 } s && int.TryParse(s, out var v) ? v : null">
-                        <option value="">(latest)</option>
-                        @foreach (var ver in ThemeVersionsFor(editing.ThemeKey))
-                        {
-                            <option value="@ver">V@ver</option>
-                        }
-                    </select>
-                </label>
-            </div>
+                        </select>
+                    </label>
+                    <label>Theme
+                        <select @bind="editing.ThemeKey">
+                            <option value="">(site default)</option>
+                            @foreach (var k in UniqueThemeKeys())
+                            {
+                                <option value="@k">@k</option>
+                            }
+                        </select>
+                    </label>
+                    <label>Theme version
+                        <select value="@(editing.ThemeVersion?.ToString() ?? "")"
+                                @onchange="e => editing.ThemeVersion = e.Value?.ToString() is { Length: > 0 } s && int.TryParse(s, out var v) ? v : null">
+                            <option value="">(latest)</option>
+                            @foreach (var ver in ThemeVersionsFor(editing.ThemeKey))
+                            {
+                                <option value="@ver">V@ver</option>
+                            }
+                        </select>
+                    </label>
+                    <label>SEO Title<input @bind="editing.SeoTitle" placeholder="(uses Title if blank)" /></label>
+                    <label>SEO Description<input @bind="editing.SeoDescription" placeholder="(meta description)" /></label>
+                </div>
+            </details>
 
             @if (editing.Kind == PageKind.Data)
             {

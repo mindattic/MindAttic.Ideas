@@ -246,6 +246,13 @@ h1:focus {
 .admin-editor-head{display:flex;align-items:center;gap:.6rem;border-bottom:1px solid rgba(127,127,127,.3);padding-bottom:.5rem;margin-bottom:.9rem;}
 .admin-editor-head h2{flex:1 1 auto;margin:0;font-size:1.05rem;}
 .admin-save{padding:.45rem .9rem;border:none;border-radius:8px;background:#2e7d32;color:#fff;cursor:pointer;}
+.admin-page-props{border:1px solid rgba(127,127,127,.25);border-radius:8px;padding:.55rem .75rem;margin-bottom:.9rem;}
+.admin-page-props>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:.5rem;font-size:.82rem;font-weight:600;user-select:none;}
+.admin-page-props>summary::-webkit-details-marker{display:none;}
+.admin-page-props>summary::before{content:'▶';font-size:.55rem;opacity:.55;transition:transform .15s;width:.8rem;}
+.admin-page-props[open]>summary::before{transform:rotate(90deg);}
+.admin-page-props>.admin-grid{margin-top:.7rem;margin-bottom:0;}
+.admin-props-hint{font-weight:400;opacity:.55;font-size:.76rem;}
 .admin-grid{display:flex;flex-wrap:wrap;gap:.8rem;margin-bottom:.9rem;}
 .admin-grid label,.admin-area label{display:flex;flex-direction:column;gap:.25rem;font-size:.8rem;}
 .admin-grid input,.admin-grid select{padding:.4rem .55rem;border-radius:6px;border:1px solid #555;background:#0c0e12;color:#e7eaf0;}
