@@ -118,6 +118,40 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             await db.SaveChangesAsync(ct);
         }
 
+        // Claudia — Pi Zero 2 WH + WonderEcho smart speaker (Hardware theme + Claudia widget).
+        if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "claudia", ct))
+        {
+            db.Pages.Add(new Page
+            {
+                SiteId = site.Id, Slug = "claudia", Title = "Claudia",
+                ThemeKey = "hardware", ThemeVersion = 1,
+                Kind = PageKind.Data,
+                BodyHtml = "{{ MindAttic.Ideas.Widget.Claudia }}",
+                BodyTrust = ContentTrust.Author,
+                AuthoredByUserId = "system-seed",
+                IsPublished = true, Enabled = true,
+                CreatedUtc = now, ModifiedUtc = now,
+            });
+            await db.SaveChangesAsync(ct);
+        }
+
+        // ChiMesh — solar RAK4631 LoRa / Meshtastic mesh (Hardware theme + ChiMesh widget).
+        if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "chimesh", ct))
+        {
+            db.Pages.Add(new Page
+            {
+                SiteId = site.Id, Slug = "chimesh", Title = "ChiMesh",
+                ThemeKey = "hardware", ThemeVersion = 1,
+                Kind = PageKind.Data,
+                BodyHtml = "{{ MindAttic.Ideas.Widget.ChiMesh }}",
+                BodyTrust = ContentTrust.Author,
+                AuthoredByUserId = "system-seed",
+                IsPublished = true, Enabled = true,
+                CreatedUtc = now, ModifiedUtc = now,
+            });
+            await db.SaveChangesAsync(ct);
+        }
+
         // One-time data upgrade: rewrite any data page still using the retired <MindAttic.Ideas.…/> include
         // tags to the {{ … }} token grammar. Idempotent — the filter excludes already-converted bodies, so
         // this is a no-op once the cutover is done. (SQL has no regex, so the rewrite is done here in code.)
