@@ -30,6 +30,14 @@ public sealed class PageEditModel
     public string? SeoTitle { get; set; }
     /// <summary>Content for <c>&lt;meta name="description"&gt;</c>.</summary>
     public string? SeoDescription { get; set; }
+
+    // ---- Access control ----
+    /// <summary>False (default) = public. True = viewers must match at least one role or user entry.</summary>
+    public bool IsRestricted { get; set; }
+    /// <summary>Role names (auth or CMS) allowed to view when restricted.</summary>
+    public List<string> AllowedRoles { get; set; } = [];
+    /// <summary>Individual user IDs (ma:uid Guid strings) allowed to view when restricted.</summary>
+    public List<string> AllowedUserIds { get; set; } = [];
 }
 
 public sealed record PageSaveResult(bool Ok, int Id, ContentTrust StampedTrust, string? Error);
@@ -73,7 +81,9 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
     public async Task<PageEditModel?> GetAsync(int id, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var p = await db.Pages.AsNoTracking().Include(x => x.MetaTags).FirstOrDefaultAsync(x => x.Id == id, ct);
+        var p = await db.Pages.AsNoTracking()
+            .Include(x => x.MetaTags).Include(x => x.RoleAccess).Include(x => x.UserAccess)
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
         if (p is null) return null;
         return new PageEditModel
         {
@@ -82,6 +92,9 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             IsPublished = p.IsPublished, Enabled = p.Enabled, ParentId = p.ParentId, SortOrder = p.SortOrder,
             SeoTitle       = p.SeoTitle,
             SeoDescription = p.MetaTags.FirstOrDefault(t => t.Name == "seo.description")?.Content,
+            IsRestricted   = p.IsRestricted,
+            AllowedRoles   = p.RoleAccess.Select(r => r.RoleName).ToList(),
+            AllowedUserIds = p.UserAccess.Select(u => u.UserId).ToList(),
         };
     }
 
@@ -124,6 +137,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.PageJs = model.PageJs;
         page.IsPublished = model.IsPublished;
         page.Enabled = model.Enabled;
+        page.IsRestricted = model.IsRestricted;
         page.ParentId = model.ParentId == model.Id ? null : model.ParentId;   // never self-parent
         page.SortOrder = model.SortOrder;
         page.BodyTrust = trust;                 // write-time trust stamp
@@ -140,12 +154,24 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             return new PageSaveResult(false, page.Id, trust, "Could not save — the slug may already be in use.");
         }
 
-        // Upsert meta tags: wipe the existing rows for this page, then re-insert.
-        // RemoveRange (not ExecuteDeleteAsync) keeps compatibility with the InMemory provider in tests.
+        // Upsert meta tags — RemoveRange (not ExecuteDeleteAsync) keeps InMemory provider compatible.
         var existingTags = await db.PageMetaTags.Where(t => t.PageId == page.Id).ToListAsync(ct);
         db.PageMetaTags.RemoveRange(existingTags);
         if (!string.IsNullOrWhiteSpace(model.SeoDescription))
             db.PageMetaTags.Add(new PageMetaTag { PageId = page.Id, Name = "seo.description", Content = model.SeoDescription.Trim() });
+
+        // Upsert role access.
+        var existingRoles = await db.PageRoleAccess.Where(r => r.PageId == page.Id).ToListAsync(ct);
+        db.PageRoleAccess.RemoveRange(existingRoles);
+        foreach (var role in (model.AllowedRoles ?? []).Select(r => r.Trim()).Where(r => r.Length > 0).Distinct())
+            db.PageRoleAccess.Add(new PageRoleAccess { PageId = page.Id, RoleName = role });
+
+        // Upsert user access.
+        var existingUsers = await db.PageUserAccess.Where(u => u.PageId == page.Id).ToListAsync(ct);
+        db.PageUserAccess.RemoveRange(existingUsers);
+        foreach (var uid in (model.AllowedUserIds ?? []).Select(u => u.Trim()).Where(u => u.Length > 0).Distinct())
+            db.PageUserAccess.Add(new PageUserAccess { PageId = page.Id, UserId = uid });
+
         if (db.ChangeTracker.HasChanges())
             await db.SaveChangesAsync(ct);
 

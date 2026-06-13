@@ -61,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IContentLifecycleService, ContentLifecycleService>();
         services.AddScoped<IPageAdminService, PageAdminService>();
         services.AddScoped<IPageHistoryService, PageHistoryService>();
+        services.AddScoped<ICmsRoleService, CmsRoleService>();
 
         // Phase-5: .idea package install (validate + persist bytes + extract + register rows + ALC resolve).
         // Local file store/extractor by default; the ADR's Azure Blob backing slots in behind IPackageBlobStore.

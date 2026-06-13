@@ -16,6 +16,10 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
     public DbSet<Site> Sites => Set<Site>();
     public DbSet<Page> Pages => Set<Page>();
     public DbSet<PageMetaTag> PageMetaTags => Set<PageMetaTag>();
+    public DbSet<CmsRole> CmsRoles => Set<CmsRole>();
+    public DbSet<CmsUserRole> CmsUserRoles => Set<CmsUserRole>();
+    public DbSet<PageRoleAccess> PageRoleAccess => Set<PageRoleAccess>();
+    public DbSet<PageUserAccess> PageUserAccess => Set<PageUserAccess>();
     public DbSet<CmsContentDefinition> ContentDefinitions => Set<CmsContentDefinition>();
     public DbSet<InstalledPackage> InstalledPackages => Set<InstalledPackage>();
     public DbSet<Asset> Assets => Set<Asset>();
@@ -146,6 +150,35 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.Property(x => x.Subject).HasMaxLength(400);
             e.Property(x => x.DedupKey).HasMaxLength(450).IsRequired();
             e.Property(x => x.Status).HasMaxLength(16);
+        });
+
+        b.Entity<CmsRole>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Name).IsUnique();
+            e.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(500);
+        });
+
+        b.Entity<CmsUserRole>(e =>
+        {
+            e.HasKey(x => new { x.UserId, x.RoleId });
+            e.Property(x => x.UserId).HasMaxLength(64).IsRequired();
+            e.HasOne<CmsRole>().WithMany().HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<PageRoleAccess>(e =>
+        {
+            e.HasKey(x => new { x.PageId, x.RoleName });
+            e.Property(x => x.RoleName).HasMaxLength(100).IsRequired();
+            e.HasOne<Page>().WithMany(p => p.RoleAccess).HasForeignKey(x => x.PageId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<PageUserAccess>(e =>
+        {
+            e.HasKey(x => new { x.PageId, x.UserId });
+            e.Property(x => x.UserId).HasMaxLength(64).IsRequired();
+            e.HasOne<Page>().WithMany(p => p.UserAccess).HasForeignKey(x => x.PageId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // MindAttic.Authentication identity tables — all 8 in the isolated 'auth' schema.

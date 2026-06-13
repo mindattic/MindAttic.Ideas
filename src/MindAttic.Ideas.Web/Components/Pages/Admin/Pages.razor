@@ -1,6 +1,8 @@
 @attribute [Authorize(Policy = MaPolicies.Admin)]
 @inject IPageAdminService PagesSvc
 @inject IContentCatalog Catalog
+@inject ICmsRoleService RolesSvc
+@inject MindAttic.Authentication.Services.IUserAdminService UserAdmin
 
 @* Page Management panel — hosted by AdminShell's "Page Management" tab (no own route). *@
 
@@ -141,7 +143,45 @@
             <div class="admin-flags">
                 <label><input type="checkbox" @bind="editing.IsPublished" /> Published</label>
                 <label><input type="checkbox" @bind="editing.Enabled" /> Enabled</label>
+                <label><input type="checkbox" @bind="editing.IsRestricted" @bind:after="OnRestrictedChanged" /> Restricted</label>
             </div>
+
+            @if (editing.IsRestricted)
+            {
+                <details class="admin-access-control" open>
+                    <summary>Access Control</summary>
+                    <p class="admin-hint">Restricted pages are only visible to users who match at least one allowed role or are listed by name. Admins always have access.</p>
+                    <div class="admin-access-grid">
+                        <div>
+                            <strong>Allowed roles</strong>
+                            @foreach (var role in allRoleNames)
+                            {
+                                var roleName = role;
+                                <label class="admin-access-check">
+                                    <input type="checkbox"
+                                           checked="@editing.AllowedRoles.Contains(roleName)"
+                                           @onchange="e => ToggleRole(roleName, (bool)(e.Value ?? false))" />
+                                    @roleName
+                                </label>
+                            }
+                        </div>
+                        <div>
+                            <strong>Allowed users</strong>
+                            <p class="admin-hint">Select users who can view this page regardless of role.</p>
+                            @foreach (var u in allUsers)
+                            {
+                                var uid = u.Id.ToString();
+                                <label class="admin-access-check">
+                                    <input type="checkbox"
+                                           checked="@editing.AllowedUserIds.Contains(uid)"
+                                           @onchange="e => ToggleUser(uid, (bool)(e.Value ?? false))" />
+                                    @u.UserName @(u.Email is { Length: > 0 } em ? $"({em})" : "")
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </details>
+            }
 
             @if (!isNew)
             {
@@ -167,7 +207,16 @@
     private int? dragId;
     private int? dragOverId;
 
-    protected override async Task OnInitializedAsync() => await Load();
+    // Access control data loaded once.
+    private IReadOnlyList<string> allRoleNames = [];
+    private IReadOnlyList<AuthUserSummary> allUsers = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+        allRoleNames = await RolesSvc.GetAllRoleNamesAsync();
+        allUsers = await UserAdmin.ListAsync();
+    }
 
     private async Task Load() => pages = await PagesSvc.ListAsync();
 
@@ -284,5 +333,30 @@
     {
         if (editing is null) return;
         editing.BodyHtml = (editing.BodyHtml ?? "") + token;
+    }
+
+    private Task OnRestrictedChanged()
+    {
+        // Clear access lists when un-restricting so stale entries don't linger.
+        if (editing is not null && !editing.IsRestricted)
+        {
+            editing.AllowedRoles.Clear();
+            editing.AllowedUserIds.Clear();
+        }
+        return Task.CompletedTask;
+    }
+
+    private void ToggleRole(string roleName, bool add)
+    {
+        if (editing is null) return;
+        if (add) { if (!editing.AllowedRoles.Contains(roleName)) editing.AllowedRoles.Add(roleName); }
+        else editing.AllowedRoles.Remove(roleName);
+    }
+
+    private void ToggleUser(string userId, bool add)
+    {
+        if (editing is null) return;
+        if (add) { if (!editing.AllowedUserIds.Contains(userId)) editing.AllowedUserIds.Add(userId); }
+        else editing.AllowedUserIds.Remove(userId);
     }
 }

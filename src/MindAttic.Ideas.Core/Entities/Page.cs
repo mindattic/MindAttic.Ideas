@@ -44,4 +44,11 @@ public sealed class Page : ContentEntityBase
 
     /// <summary>Set when this page arrived from an installed .idea package (reserved for Phase 5).</summary>
     public int? SourcePackageId { get; set; }
+
+    // ---- Access control ----
+    /// <summary>False (default) = public. True = only users whose role or ID appears in the access lists can view.</summary>
+    public bool IsRestricted { get; set; }
+
+    public ICollection<PageRoleAccess> RoleAccess { get; set; } = [];
+    public ICollection<PageUserAccess> UserAccess { get; set; } = [];
 }

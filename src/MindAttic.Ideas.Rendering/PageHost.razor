@@ -6,8 +6,12 @@
     IRenderContext cascade + RenderFragment body it builds internally never serialize. (Future perf
     refinement: per-island render mode for purely-static pages — needs a serializable cascade first.) *@
 @rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
+@using MindAttic.Authentication
 @using MindAttic.Ideas.Core.Data
 @using MindAttic.Ideas.Core.Entities
 @inject IDbContextFactory<CmsDbContext> DbFactory
@@ -20,6 +24,11 @@
    (SiteId, Slug) data lookup, never per-page routing — so a runtime-loaded type renders unchanged. *@
 
 @if (_status == Status.NotFound)
+{
+    <PageTitle>Not found</PageTitle>
+    <p class="ma-404">Page not found.</p>
+}
+else if (_status == Status.Forbidden)
 {
     <PageTitle>Not found</PageTitle>
     <p class="ma-404">Page not found.</p>
@@ -54,8 +63,9 @@ else if (_context is not null)
 
 @code {
     [Parameter] public string? Slug { get; set; }
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
-    private enum Status { Pending, Ok, NotFound }
+    private enum Status { Pending, Ok, NotFound, Forbidden }
     private Status _status = Status.Pending;
 
     private IRenderContext? _context;
@@ -102,6 +112,55 @@ else if (_context is not null)
         {
             _status = Status.NotFound;
             return;
+        }
+
+        // Access control: if the page is restricted, verify the viewer has permission.
+        if (page.IsRestricted)
+        {
+            var authState = AuthState is not null ? await AuthState : null;
+            var user = authState?.User;
+
+            if (user?.Identity?.IsAuthenticated != true)
+            {
+                Nav.NavigateTo("/_ma-auth/login?returnUrl=/" + Uri.EscapeDataString(slug), forceLoad: true);
+                return;
+            }
+
+            var userRole = user.FindFirstValue(ClaimTypes.Role);
+            var userId = user.FindFirstValue("ma:uid");
+
+            // Admins always have access.
+            bool hasAccess = userRole == MaRoles.Admin;
+
+            if (!hasAccess)
+            {
+                var allowedRoles = await db.PageRoleAccess.Where(x => x.PageId == page.Id)
+                    .Select(x => x.RoleName).ToListAsync();
+
+                // Auth role match.
+                if (userRole is not null && allowedRoles.Contains(userRole))
+                    hasAccess = true;
+
+                // CMS role match.
+                if (!hasAccess && userId is not null)
+                {
+                    var cmsRoleNames = await db.CmsUserRoles
+                        .Where(ur => ur.UserId == userId)
+                        .Join(db.CmsRoles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
+                        .ToListAsync();
+                    hasAccess = cmsRoleNames.Any(r => allowedRoles.Contains(r));
+                }
+
+                // Per-user access.
+                if (!hasAccess && userId is not null)
+                    hasAccess = await db.PageUserAccess.AnyAsync(x => x.PageId == page.Id && x.UserId == userId);
+            }
+
+            if (!hasAccess)
+            {
+                _status = Status.Forbidden;
+                return;
+            }
         }
 
         var inline = new CmsInlineMarkup

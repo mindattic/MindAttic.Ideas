@@ -1,0 +1,109 @@
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@inject ICmsRoleService RolesSvc
+
+@* Roles management panel — hosted by AdminShell's "Roles" tab. *@
+
+<div class="admin-two-pane">
+    <div class="admin-list">
+        <button class="admin-new" @onclick="StartNew">+ New Role</button>
+        @foreach (var r in roles)
+        {
+            <div class="admin-item @(editing?.Id == r.Id ? "active" : "")" @onclick="() => Edit(r)">
+                <span class="admin-item-name">@r.Name</span>
+                @if (r.Description is { Length: > 0 } desc)
+                {
+                    <span class="admin-sub">@desc</span>
+                }
+            </div>
+        }
+        @if (!roles.Any())
+        {
+            <p class="admin-hint">No custom roles yet. Create one to restrict pages to groups of users.</p>
+        }
+    </div>
+
+    <div class="admin-editor">
+        @if (editing is null)
+        {
+            <p class="admin-empty">Select a role or create a new one.</p>
+        }
+        else
+        {
+            <div class="admin-editor-head">
+                <h2>@(isNew ? "New Role" : editing.Name)</h2>
+                <button class="admin-save" @onclick="Save">Save</button>
+                @if (!isNew)
+                {
+                    <button class="admin-link danger" @onclick="Delete">Delete</button>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(status))
+            {
+                <div class="admin-status @(statusBad ? "err" : "ok")">@status</div>
+            }
+
+            <label class="admin-area">Name
+                <input @bind="editing.Name" placeholder="e.g. Member, Subscriber, Editor" disabled="@(!isNew)" />
+                @if (!isNew) { <small>Role name is fixed after creation.</small> }
+            </label>
+            <label class="admin-area">Description
+                <input @bind="editing.Description" placeholder="(optional)" />
+            </label>
+        }
+    </div>
+</div>
+
+@code {
+    private sealed class RoleEdit
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
+    }
+
+    private IReadOnlyList<CmsRoleSummary> roles = [];
+    private RoleEdit? editing;
+    private bool isNew;
+    private string status = "";
+    private bool statusBad;
+
+    protected override async Task OnInitializedAsync() => await Load();
+    private async Task Load() => roles = await RolesSvc.ListRolesAsync();
+
+    private void StartNew()
+    {
+        editing = new RoleEdit();
+        isNew = true; status = "";
+    }
+
+    private void Edit(CmsRoleSummary r)
+    {
+        editing = new RoleEdit { Id = r.Id, Name = r.Name, Description = r.Description };
+        isNew = false; status = "";
+    }
+
+    private async Task Save()
+    {
+        if (editing is null) return;
+        if (isNew)
+        {
+            var (ok, error) = await RolesSvc.CreateRoleAsync(editing.Name, editing.Description);
+            if (!ok) { status = error ?? "Could not create role."; statusBad = true; return; }
+            status = "Role created."; statusBad = false; isNew = false;
+        }
+        else
+        {
+            status = "Role name cannot be changed after creation."; statusBad = false;
+        }
+        await Load();
+    }
+
+    private async Task Delete()
+    {
+        if (editing is null || isNew) return;
+        await RolesSvc.DeleteRoleAsync(editing.Id);
+        editing = null; status = "";
+        await Load();
+    }
+}
