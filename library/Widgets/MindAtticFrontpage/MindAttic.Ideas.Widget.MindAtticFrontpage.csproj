@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!-- MindAtticFrontpage widget — self-contained mindattic.com frontpage with scoped CSS (.maf-*)
+       served from assets/maf.css and a scoped IIFE for JS. Composes Tabs, Gallery, Footer by
+       string id. Common props + Abstractions come from ../../Directory.Build.props. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+</Project>

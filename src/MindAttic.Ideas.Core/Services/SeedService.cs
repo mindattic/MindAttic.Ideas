@@ -67,9 +67,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
                 SiteId = site.Id, Slug = "frontpage", Title = "MindAttic",
                 ThemeKey = "cyberspace", ThemeVersion = 1,
                 Kind = PageKind.Data,
-                BodyHtml = FrontpageBodyHtml,
-                PageCss = FrontpageCss,
-                PageJs = FrontpageJs,
+                BodyHtml = FrontpageWidgetToken,
                 BodyTrust = ContentTrust.Author,
                 AuthoredByUserId = "system-seed",
                 IsPublished = true, Enabled = true,
@@ -83,17 +81,25 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         {
             // Both names are recognized stock: older DBs carry the pre-rename compiled type
             // (MindAtticFrontpage); anything else is admin-authored and untouchable.
-            // Migrate the stock compiled frontpage in place to the Data recreation — Data <-> Code
-            // graduation is a row edit, never a schema change. An admin-authored frontpage (anything
-            // other than the recognized stock Code page) is never clobbered.
+            // Migrate the stock compiled frontpage in place to the widget-based Data page.
             front.Kind = PageKind.Data;
             front.ComponentTypeName = null;
             front.AssemblyName = null;
-            front.BodyHtml = FrontpageBodyHtml;
-            front.PageCss = FrontpageCss;
-            front.PageJs = FrontpageJs;
+            front.BodyHtml = FrontpageWidgetToken;
+            front.PageCss = null;
+            front.PageJs = null;
             front.BodyTrust = ContentTrust.Author;
             front.AuthoredByUserId = "system-seed";
+            front.ModifiedUtc = now;
+            await db.SaveChangesAsync(ct);
+        }
+        else if (front.Kind == PageKind.Data && front.BodyHtml == FrontpageBodyHtml)
+        {
+            // Migrate the stock inline HTML/CSS/JS data page to the self-contained widget token.
+            // The widget carries all CSS (.maf-*) and JS (IIFE) internally.
+            front.BodyHtml = FrontpageWidgetToken;
+            front.PageCss = null;
+            front.PageJs = null;
             front.ModifiedUtc = now;
             await db.SaveChangesAsync(ct);
         }
@@ -190,11 +196,12 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         </div>
         """;
 
-    // ── The Frontpage: mindattic.com recreated as a Data page ─────────────────────────────────────
-    // Three widget tokens switch on the capabilities (tab boards, gallery grids, pin-when-short
-    // footer); everything else is plain HTML the author owns. Layout is display:flex sections in
-    // PageCss — no zones, no layout system. Cover images are inline base64 CSS classes (placeholder
-    // gradients; paste real base64 cover data into the .img-* classes to finish the look).
+    // The self-contained frontpage widget token — no PageCss or PageJs needed; the widget carries both.
+    private const string FrontpageWidgetToken = "{{ MindAttic.Ideas.Widget.MindAtticFrontpage }}";
+
+    // ── The Frontpage (legacy inline form, kept for migration recognition only) ────────────────────
+    // Recognised in the else-if branch above so an existing DB row using this exact body is migrated
+    // to the widget token in place. Not used for new installs.
     private const string FrontpageBodyHtml =
         """
         {{ MindAttic.Ideas.Widget.Tabs }}

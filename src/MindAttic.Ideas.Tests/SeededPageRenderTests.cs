@@ -28,8 +28,8 @@ namespace MindAttic.Ideas.Tests;
 [TestFixture]
 public class SeededPageRenderTests
 {
-    // Tokens lifted directly from SeedService.FrontpageBodyHtml — the seeded frontpage.
-    // If these change in SeedService the constants below must be updated to match.
+    // Floating widget tokens used by the frontpage. SeedBodyTokens_ParseToWidgetKind_FloatingVersion
+    // uses these to verify the token parser handles each format correctly, independent of the seed.
     private const string SeedTabsToken = "{{ MindAttic.Ideas.Widget.Tabs }}";
     private const string SeedGalleryToken = "{{ MindAttic.Ideas.Widget.Gallery }}";
     private const string SeedFooterToken = "{{ MindAttic.Ideas.Widget.Footer }}";
@@ -53,8 +53,8 @@ public class SeededPageRenderTests
     [Test]
     public async Task FrontpageBody_AllSeedTokens_ParseFromTheRealSeededPage()
     {
-        // Parse the ACTUAL seeded body (not copies of its tokens): the frontpage must reference
-        // exactly the three baseline widgets, all floating.
+        // Parse the ACTUAL seeded body: the frontpage must reference the self-contained
+        // MindAtticFrontpage widget (which carries Tabs/Gallery/Footer internally).
         var factory = new InMemoryFactory("seed_" + Guid.NewGuid().ToString("N"));
         await new SeedService(factory).SeedAsync();
 
@@ -68,9 +68,7 @@ public class SeededPageRenderTests
             Assert.That(front.IsPublished && front.Enabled, Is.True);
             Assert.That(refs.Select(r => (r.Kind, r.Key, r.Version)), Is.EquivalentTo(new[]
             {
-                (ContentKind.Widget, "tabs", (int?)null),
-                (ContentKind.Widget, "gallery", (int?)null),
-                (ContentKind.Widget, "footer", (int?)null),
+                (ContentKind.Widget, "mindatticfrontpage", (int?)null),
             }));
         });
     }
@@ -146,7 +144,7 @@ public class SeededPageRenderTests
             {
                 Assert.That(front.Kind, Is.EqualTo(PageKind.Data), "stock compiled frontpage migrates to Data");
                 Assert.That(front.ComponentTypeName, Is.Null);
-                Assert.That(front.BodyHtml, Does.Contain("{{ MindAttic.Ideas.Widget.Tabs }}"));
+                Assert.That(front.BodyHtml, Is.EqualTo("{{ MindAttic.Ideas.Widget.MindAtticFrontpage }}"));
                 Assert.That(custom.Kind, Is.EqualTo(PageKind.Code), "admin page is never clobbered");
                 Assert.That(custom.ComponentTypeName, Is.EqualTo("My.Custom.Page.V1"));
             });

@@ -28,7 +28,8 @@
 
     <label class="admin-dropzone">
         <InputFile OnChange="OnFiles" multiple accept=".idea" />
-        <span>Choose one or more <code>.idea</code> files…</span>
+        <span class="admin-dropzone-label">Drop <code>.idea</code> packages here</span>
+        <span class="admin-dropzone-hint">or <strong>click to browse</strong> · multiple files accepted</span>
     </label>
 
     @if (busy)
