@@ -1,0 +1,16 @@
+@namespace MindAttic.Ideas.Theme.Hardware
+@inherits ThemeBase
+@attribute [Idea(DisplayName = "Hardware")]
+
+@* MindAttic.Ideas.Theme.Hardware.V1 — industrial/maker dark chrome. Provides the global PCB-green
+   palette, monospace typography, scan-line texture, and baseline element styles for hardware project
+   pages. Structural .hw-* layout classes ship in the HardwareHero widget; compose that alongside
+   any page that uses this theme. *@
+<div class="page">
+    @Body
+</div>
+
+@code {
+    private const string Mount = "/_ideas/Theme/hardware/1";
+    public override IReadOnlyList<string> ThemeCssUrls { get; } = new[] { Mount + "/theme.css" };
+}

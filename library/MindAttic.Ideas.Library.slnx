@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Themes/">
     <Project Path="Themes/Cyberspace/MindAttic.Ideas.Theme.Cyberspace.csproj" />
+    <Project Path="Themes/Hardware/MindAttic.Ideas.Theme.Hardware.csproj" />
     <Project Path="Themes/Light/MindAttic.Ideas.Theme.Light.csproj" />
     <Project Path="Themes/Dark/MindAttic.Ideas.Theme.Dark.csproj" />
     <Project Path="Themes/Spring/MindAttic.Ideas.Theme.Spring.csproj" />
@@ -38,5 +39,8 @@
     <Project Path="Widgets/TabBoard/MindAttic.Ideas.Widget.TabBoard.csproj" />
     <Project Path="Widgets/PinFooter/MindAttic.Ideas.Widget.PinFooter.csproj" />
     <Project Path="Widgets/WebSnapshot/MindAttic.Ideas.Widget.WebSnapshot.csproj" />
+    <Project Path="Widgets/HardwareHero/MindAttic.Ideas.Widget.HardwareHero.csproj" />
+    <Project Path="Widgets/Claudia/MindAttic.Ideas.Widget.Claudia.csproj" />
+    <Project Path="Widgets/ChiMesh/MindAttic.Ideas.Widget.ChiMesh.csproj" />
   </Folder>
 </Solution>

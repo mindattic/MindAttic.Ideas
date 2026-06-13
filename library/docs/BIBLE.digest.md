@@ -4,7 +4,7 @@ project: MindAttic.Ideas.Library
 code: MAIL
 layer: bible
 status: living
-updated: 2026-06-10
+updated: 2026-06-12
 generatedFrom: docs/BIBLE.md
 ---
 

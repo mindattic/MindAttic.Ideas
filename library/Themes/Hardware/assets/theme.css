@@ -1,0 +1,122 @@
+/* ====================================================================
+ * MindAttic.Ideas.Theme.Hardware.V1 — industrial / maker dark chrome.
+ * Global PCB-green palette, monospace typography, scan-line texture.
+ * Structural .hw-* layout classes live in the HardwareHero widget.
+ * Served at /_ideas/Theme/hardware/1/theme.css.
+ * ==================================================================== */
+
+:root {
+    color-scheme: dark;
+    --hw-bg:           #0b0e0d;
+    --hw-fg:           #b8ccbf;
+    --hw-muted:        #5a7566;
+    --hw-accent:       #00d26a;
+    --hw-accent-fg:    #0b0e0d;
+    --hw-surface:      #0f1812;
+    --hw-border:       rgba(0, 210, 106, 0.16);
+    --hw-code-bg:      rgba(0, 210, 106, 0.05);
+    --hw-line:         rgba(0, 210, 106, 0.12);
+    --hw-link:         #4dff91;
+    --hw-link-hover:   #98ffc4;
+    --hw-table-stripe: rgba(0, 210, 106, 0.03);
+    --hw-max-width:    920px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--hw-bg);
+    color: var(--hw-fg);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace,
+                 SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+/* subtle horizontal scan-line overlay — CRT/terminal feel */
+body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 3px,
+        rgba(0, 210, 106, 0.012) 3px,
+        rgba(0, 210, 106, 0.012) 4px
+    );
+    pointer-events: none;
+}
+
+.page { position: relative; z-index: 1; }
+
+a { color: var(--hw-link); text-decoration: none; }
+a:hover { color: var(--hw-link-hover); text-decoration: underline; }
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--hw-fg);
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 1.6em 0 0.5em;
+    letter-spacing: -0.01em;
+}
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.2rem; }
+
+code {
+    font-family: inherit;
+    font-size: 0.9em;
+    background: var(--hw-code-bg);
+    border: 1px solid var(--hw-line);
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    color: var(--hw-accent);
+}
+
+pre {
+    background: var(--hw-code-bg);
+    border: 1px solid var(--hw-line);
+    border-radius: 6px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    line-height: 1.5;
+}
+pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font-size: 0.88em;
+    color: var(--hw-fg);
+}
+
+blockquote {
+    margin: 1em 0;
+    padding: 0.4em 1em;
+    border-left: 3px solid var(--hw-accent);
+    background: rgba(0, 210, 106, 0.05);
+    color: var(--hw-muted);
+}
+
+table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.93em; }
+th, td { border: 1px solid var(--hw-line); padding: 7px 12px; text-align: left; }
+th { background: rgba(0, 210, 106, 0.06); font-weight: 700; color: var(--hw-accent); }
+tr:nth-child(even) td { background: var(--hw-table-stripe); }
+
+hr { border: none; border-top: 1px solid var(--hw-line); margin: 2em 0; }
+
+ul, ol { padding-left: 1.6em; margin: 0.5em 0 1em; }
+li + li { margin-top: 3px; }
+
+p { margin: 0 0 1em; }
+
+strong { color: var(--hw-fg); font-weight: 700; }
+
+::selection { background: rgba(0, 210, 106, 0.25); }
+
+@media (max-width: 640px) {
+    html { font-size: 14px; }
+}

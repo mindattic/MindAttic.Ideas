@@ -1,0 +1,147 @@
+@namespace MindAttic.Ideas.Widget.ChiMesh
+@inherits WidgetBase
+@attribute [Uses(ContentKind.Widget, "hardwarehero", 1)]
+@attribute [Uses(ContentKind.Widget, "codeblock", 1)]
+@attribute [Uses(ContentKind.Widget, "backtotop", 1)]
+
+@* MindAttic.Ideas.Widget.ChiMesh.V1 — ChiMesh project page. Three solar-powered RAK4631 LoRa nodes
+   running Meshtastic, deployed across Chicago rooftops.
+   Content adapted from github.com/mindattic/ChiMesh README.
+   Composes: HardwareHero (shared .hw-* layout CSS), CodeBlock (pre>code chrome + copy button),
+   BackToTop (floating scroll button). Hardware theme sets the global palette. *@
+<CmsInclude Ref="MindAttic.Ideas.Widget.HardwareHero.V1" />
+<CmsInclude Ref="MindAttic.Ideas.Widget.CodeBlock.V1" />
+<CmsInclude Ref="MindAttic.Ideas.Widget.BackToTop.V1" />
+
+<header class="hw-hero">
+    <h1 class="hw-title">ChiMesh</h1>
+    <p class="hw-tagline">Three solar-powered LoRa nodes running Meshtastic, forming a city-wide off-grid mesh across Chicago rooftops.</p>
+    <div class="hw-badge-row">
+        <span class="hw-badge">RAK4631</span>
+        <span class="hw-badge">Meshtastic</span>
+        <span class="hw-badge">LoRa 915 MHz</span>
+        <span class="hw-badge">Solar</span>
+        <span class="hw-badge-dim hw-badge">MIT License</span>
+    </div>
+    <div class="hw-btn-row">
+        <a class="hw-btn hw-btn-primary" href="https://github.com/mindattic/ChiMesh" target="_blank" rel="noopener">
+            View on GitHub
+        </a>
+    </div>
+</header>
+
+<main class="hw-content">
+
+    <div class="hw-warn">
+        <strong>LiFePO4 only.</strong> Do not substitute Li-ion cells — LiFePO4 chemistry is mandatory for
+        unattended outdoor enclosures with no thermal management. Also: never plug USB-C into a node
+        while the JST battery connector is wired.
+    </div>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Shopping List <span style="font-weight:400;text-transform:none;letter-spacing:0">(per node × 3)</span></h2>
+        <table class="hw-stack-table">
+            <thead>
+                <tr><th>Part</th><th>Notes</th><th>~Price</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>RAK4631 WisBlock Core</td><td>nRF52840 + SX1262 LoRa</td><td>$20</td></tr>
+                <tr><td>RAK19001 WisBlock Base</td><td>Dual-slot, solar charge input</td><td>$15</td></tr>
+                <tr><td>5 W / 6 V solar panel</td><td>138 × 160 mm, JST-PH 2.0</td><td>$12</td></tr>
+                <tr><td>LiFePO4 3.2 V 6000 mAh</td><td>IFR18650 × 2 in 2S holder — <strong>LiFePO4 only</strong></td><td>$18</td></tr>
+                <tr><td>915 MHz fiberglass antenna</td><td>3 dBi, N-male to SMA adapter</td><td>$14</td></tr>
+                <tr><td>IP67 enclosure 200×120×75</td><td>ABS outdoor, cable glands included</td><td>$16</td></tr>
+                <tr><td>M2.5 stainless standoffs</td><td>10 mm, for mounting WisBlock inside enclosure</td><td>$4</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Assemble</h2>
+        <ol class="hw-steps">
+            <li>Attach the RAK4631 Core to the RAK19001 Base board (press into the slot, secure with screws).</li>
+            <li>Connect the 915 MHz antenna to the IPEX/U.FL connector on the RAK4631.</li>
+            <li>Mount the assembly inside the IP67 enclosure on M2.5 standoffs. Route the antenna cable through a gland.</li>
+            <li>Wire the solar panel JST to the WisBlock Base solar input <em>first</em>, then connect the battery JST.</li>
+            <li>Repeat for all 3 nodes before flashing.</li>
+        </ol>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Flash Firmware</h2>
+        <ol class="hw-steps">
+            <li>Download the latest <strong>Meshtastic</strong> firmware UF2 for RAK4631 from <code>meshtastic.org/downloads</code>.</li>
+            <li>Put the RAK4631 into bootloader mode: double-tap the reset button or hold BOOT while powering on.</li>
+            <li>A USB drive labeled <code>RAK4631</code> appears. Drag-and-drop the <code>.uf2</code> file onto it. The board reboots automatically.</li>
+        </ol>
+        <p>Alternatively, use the Meshtastic flasher CLI:</p>
+        <pre><code data-lang="bash">pip install meshtastic
+meshtastic --flash rak4631</code></pre>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Configure Node</h2>
+        <p>Use the Meshtastic app (Android/iOS) or CLI. Apply the same channel config to <strong>all 3 nodes</strong>:</p>
+        <pre><code data-lang="bash">meshtastic --ch-set name ChiMesh --ch-set psk random
+meshtastic --set lora.region US
+meshtastic --set lora.modem_preset LONG_FAST</code></pre>
+        <p>Gateway node only — enable MQTT bridge to relay mesh traffic to the internet:</p>
+        <pre><code data-lang="bash">meshtastic --set mqtt.enabled true
+meshtastic --set mqtt.address mqtt.mindattic.com
+meshtastic --set mqtt.root meshtastic/chimesh</code></pre>
+        <p>Relay nodes: leave GPS and MQTT disabled to conserve power.</p>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Deploy</h2>
+        <p>Planned placement across Chicago to maximize mesh coverage:</p>
+        <table class="hw-stack-table">
+            <thead><tr><th>Node</th><th>Location</th><th>Role</th></tr></thead>
+            <tbody>
+                <tr><td>A</td><td>MindAttic studio rooftop (West Loop)</td><td>Gateway — MQTT enabled</td></tr>
+                <tr><td>B</td><td>~1.8 km NW relay</td><td>Relay only</td></tr>
+                <tr><td>C</td><td>~1.6 km SE relay</td><td>Relay only</td></tr>
+            </tbody>
+        </table>
+        <p>Mount enclosures on a flat roof or parapet. Orient the antenna vertically, clear of HVAC units. Panel faces south at ≈30° tilt.</p>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Verify Mesh</h2>
+        <p>After deploying all 3 nodes and powering on:</p>
+        <pre><code data-lang="bash">meshtastic --info            # shows all visible nodes in the mesh
+meshtastic --nodes           # table of node IDs + SNR
+meshtastic --sendtext "ping" # broadcast to all nodes</code></pre>
+        <p>All 3 nodes should appear within 60 s. Check the SNR column — values above −10 dB indicate a solid link. Gateway node should show MQTT <code>connected</code>.</p>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Troubleshooting</h2>
+        <table class="hw-stack-table">
+            <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+            <tbody>
+                <tr><td>Node not appearing in mesh</td><td>Channel PSK mismatch</td><td>Re-apply channel config; all 3 nodes must share the same PSK</td></tr>
+                <tr><td>Very poor SNR / lost packets</td><td>Antenna orientation or obstruction</td><td>Mount higher; ensure antenna is vertical and unobstructed</td></tr>
+                <tr><td>Battery drains overnight</td><td>Too small a panel or Li-ion cells</td><td>Verify 5 W panel + <strong>LiFePO4</strong> (not Li-ion)</td></tr>
+                <tr><td>MQTT not connecting</td><td>Gateway node config</td><td>Check <code>mqtt.enabled</code>, address, and root path on Node A only</td></tr>
+                <tr><td>UF2 flash fails</td><td>Driver issue on Windows</td><td>Install the Adafruit bootloader driver; try a different USB cable</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Summary Stack</h2>
+        <table class="hw-stack-table">
+            <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+            <tbody>
+                <tr><td>Mesh firmware</td><td>Meshtastic (latest stable)</td></tr>
+                <tr><td>Radio</td><td>LoRa SX1262, 915 MHz, LONG_FAST preset</td></tr>
+                <tr><td>Hardware</td><td>RAK4631 WisBlock Core + RAK19001 Base</td></tr>
+                <tr><td>Power</td><td>5 W solar + LiFePO4 6000 mAh (per node)</td></tr>
+                <tr><td>Internet bridge</td><td>MQTT → mqtt.mindattic.com (gateway node)</td></tr>
+                <tr><td>Enclosure</td><td>IP67 ABS outdoor, 200 × 120 × 75 mm</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+</main>

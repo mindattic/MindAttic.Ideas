@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- Hardware theme. Common props + the Abstractions reference come from ../../Directory.Build.props.
+       Self-contained chrome: assets/theme.css provides the industrial/maker palette and base typography.
+       StaticWebAssetsEnabled=false because assets/ is a plain folder packed as the .idea wwwroot. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+</Project>

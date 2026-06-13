@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!-- Claudia project page widget. Common props + Abstractions from ../../Directory.Build.props.
+       Composes the HardwareHero CSS widget for shared .hw-* layout classes. All content is inline
+       Razor; no separate assets/ folder. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+</Project>

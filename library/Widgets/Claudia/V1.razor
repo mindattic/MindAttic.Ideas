@@ -1,0 +1,154 @@
+@namespace MindAttic.Ideas.Widget.Claudia
+@inherits WidgetBase
+@attribute [Uses(ContentKind.Widget, "hardwarehero", 1)]
+@attribute [Uses(ContentKind.Widget, "codeblock", 1)]
+@attribute [Uses(ContentKind.Widget, "backtotop", 1)]
+
+@* MindAttic.Ideas.Widget.Claudia.V1 — Claudia project page. Pi Zero 2 WH + WonderEcho smart speaker
+   running the Claude API. Content adapted from github.com/mindattic/Claudia README.
+   Composes: HardwareHero (shared .hw-* layout CSS), CodeBlock (pre>code chrome + copy button),
+   BackToTop (floating scroll button). Hardware theme sets the global palette. *@
+<CmsInclude Ref="MindAttic.Ideas.Widget.HardwareHero.V1" />
+<CmsInclude Ref="MindAttic.Ideas.Widget.CodeBlock.V1" />
+<CmsInclude Ref="MindAttic.Ideas.Widget.BackToTop.V1" />
+
+<header class="hw-hero">
+    <h1 class="hw-title">Claudia</h1>
+    <p class="hw-tagline">An open-hardware smart speaker for the Claude API — wake word, voice ASR, and TTS on a Raspberry Pi Zero 2 WH.</p>
+    <div class="hw-badge-row">
+        <span class="hw-badge">Pi Zero 2 WH</span>
+        <span class="hw-badge">WonderEcho Hat</span>
+        <span class="hw-badge">Python 3.11</span>
+        <span class="hw-badge-dim hw-badge">MIT License</span>
+    </div>
+    <div class="hw-btn-row">
+        <a class="hw-btn hw-btn-primary" href="https://github.com/mindattic/Claudia" target="_blank" rel="noopener">
+            View on GitHub
+        </a>
+    </div>
+</header>
+
+<main class="hw-content">
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Shopping List</h2>
+        <table class="hw-stack-table">
+            <thead>
+                <tr><th>Part</th><th>Notes</th><th>~Price</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Raspberry Pi Zero 2 WH</td><td>Pre-soldered 40-pin header</td><td>$15</td></tr>
+                <tr><td>WonderEcho Hat</td><td>I²C wake-word + speaker amp</td><td>$25</td></tr>
+                <tr><td>USB Micro microphone</td><td>Basic; or ReSpeaker 2-mic Hat for beam-forming</td><td>$8</td></tr>
+                <tr><td>32 GB microSD</td><td>A1 or A2 rated</td><td>$8</td></tr>
+                <tr><td>USB-C power supply</td><td>5 V / 3 A minimum</td><td>$10</td></tr>
+                <tr><td>MicroHDMI adapter</td><td>For initial headless setup only</td><td>$6</td></tr>
+                <tr><td>3D-printed case</td><td>FDM or SLA — optional</td><td>—</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Assemble</h2>
+        <ol class="hw-steps">
+            <li>Mount the WonderEcho Hat onto the Pi Zero 2 WH's 40-pin GPIO header. Press firmly until all pins seat.</li>
+            <li>Plug the USB mic into the Pi's micro-USB port via an OTG adapter (or into the WonderEcho's USB-A port if present).</li>
+            <li>Insert the microSD card. Connect power last.</li>
+        </ol>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Flash microSD</h2>
+        <p>Use <strong>Raspberry Pi Imager</strong> to write <em>Raspberry Pi OS Lite (64-bit)</em>. In the advanced options, pre-configure your Wi-Fi SSID + password and enable SSH before writing.</p>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">System Setup</h2>
+        <p>SSH in after first boot, then install the audio and Python dependencies:</p>
+        <pre><code data-lang="bash">sudo apt update &amp;&amp; sudo apt upgrade -y
+sudo apt install -y python3-pip ffmpeg portaudio19-dev libsndfile1</code></pre>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Install Chatbot</h2>
+        <pre><code data-lang="bash">git clone https://github.com/mindattic/Claudia.git
+cd Claudia
+pip install -r requirements.txt</code></pre>
+        <p>Core Python packages: <code>anthropic</code>, <code>sounddevice</code>, <code>piper-tts</code>, <code>faster-whisper</code>.</p>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">API Key</h2>
+        <p>Create a <code>.env</code> file in the repo root (never commit it):</p>
+        <pre><code data-lang="env">ANTHROPIC_API_KEY=sk-ant-...</code></pre>
+        <p>Or export the variable in your shell profile. The chatbot reads it at startup via <code>python-dotenv</code>.</p>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Configure Chatbot</h2>
+        <p>Edit <code>config.yaml</code> to select your ASR and TTS backend:</p>
+        <table class="hw-stack-table">
+            <thead><tr><th>Option</th><th>ASR</th><th>TTS</th></tr></thead>
+            <tbody>
+                <tr><td>Offline (default)</td><td>faster-whisper (whisper.cpp)</td><td>Piper (local model)</td></tr>
+                <tr><td>OpenAI cloud</td><td>openai/whisper-1</td><td>openai/tts-1</td></tr>
+                <tr><td>Google / ElevenLabs</td><td>google-cloud-speech</td><td>elevenlabs</td></tr>
+            </tbody>
+        </table>
+        <p>Smart-home integration (Kasa, Shelly, Sonoff) is optional; leave <code>smarthome: none</code> to skip.</p>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Healthcheck</h2>
+        <p>Confirm both mic input and speaker output work before running the chatbot:</p>
+        <pre><code data-lang="bash">arecord -D plughw:1,0 -f cd -d 3 test.wav
+aplay test.wav</code></pre>
+        <p>You should hear a 3-second recording play back. If the device index is wrong, list cards with <code>arecord -l</code>.</p>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Run</h2>
+        <pre><code data-lang="bash">python3 claudia.py</code></pre>
+        <p>Say the wake word <strong>"Claudia"</strong>, pause, then speak your prompt. Claude responds via the TTS speaker. Press <kbd>Ctrl+C</kbd> to stop.</p>
+        <p>To run as a systemd service on boot, copy <code>claudia.service</code> to <code>/etc/systemd/system/</code> and run <code>sudo systemctl enable --now claudia</code>.</p>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Case</h2>
+        <p>Three options depending on your setup:</p>
+        <ul>
+            <li><strong>FDM print</strong> — standard resolution, any PLA/PETG printer. STL files in <code>case/fdm/</code>.</li>
+            <li><strong>SLA print</strong> — higher detail, resin printer. STL files in <code>case/sla/</code>.</li>
+            <li><strong>None</strong> — leave bare during development.</li>
+        </ul>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Troubleshooting</h2>
+        <table class="hw-stack-table">
+            <thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+            <tbody>
+                <tr><td>No audio output</td><td>Wrong ALSA device index</td><td>Run <code>aplay -l</code> and update <code>config.yaml</code> → <code>audio.output_device</code></td></tr>
+                <tr><td>Wake word never fires</td><td>Mic not detected</td><td>Run <code>arecord -l</code>; check USB OTG adapter</td></tr>
+                <tr><td>API key error</td><td><code>.env</code> not loaded</td><td>Verify <code>ANTHROPIC_API_KEY</code> is set; check <code>python-dotenv</code> installed</td></tr>
+                <tr><td>Whisper very slow</td><td>No hardware accel</td><td>Use <code>model_size: tiny</code> in config, or switch ASR to OpenAI cloud</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="hw-section">
+        <h2 class="hw-section-heading">Summary Stack</h2>
+        <table class="hw-stack-table">
+            <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+            <tbody>
+                <tr><td>AI inference</td><td>Claude API (Anthropic)</td></tr>
+                <tr><td>Wake word</td><td>WonderEcho Hat (I²C, on-device)</td></tr>
+                <tr><td>ASR (default)</td><td>faster-whisper / whisper.cpp (offline)</td></tr>
+                <tr><td>TTS (default)</td><td>Piper (local neural voice)</td></tr>
+                <tr><td>Runtime</td><td>Python 3.11 on Raspberry Pi OS Lite 64-bit</td></tr>
+                <tr><td>Hardware</td><td>Raspberry Pi Zero 2 WH + WonderEcho Hat</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+</main>
