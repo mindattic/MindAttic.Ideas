@@ -14,7 +14,7 @@ updated: 2026-06-09
 >
 > **Provenance.** This bible was reformatted from the frozen [`FOUNDATION_ADR.md`](FOUNDATION_ADR.md)
 > (the Legion deliberation that produced the foundation) as patched by the append-only
-> [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A19). Where this bible and an amendment disagree, **the
+> [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A24). Where this bible and an amendment disagree, **the
 > amendment wins** — see [§5](#MAI-§5). The ADR's original vocabulary (`Component` as a kind,
 > `Cms`-prefixed bases, `<ma-component>` tags) is **superseded**; current vocabulary is A18/A19 (the
 > composable-UI kind is **Widget**; `Control` kind removed, ordinal 3 reserved).
@@ -94,9 +94,9 @@ is live. The three kinds derive from one shared root `IdeaBase`; Themes/Widgets 
    │  IRenderContext, ICmsContentSource/ITypeResolver/IRawContentGate seams  │
    │  refs ONLY Microsoft.AspNetCore.Components + System.Text.Json           │
    └─────────────────────────────────────────────────────────────────────────┘
-   First-party content (Themes/Widgets) lives in the sibling repo
-   MindAttic.Ideas.Library, packed to dist/*.idea. (MindAttic.Ideas.Rendering is
-   a small rendering-support project.)
+   First-party content (Themes/Widgets) lives in the `library/` directory of
+   this repo (merged from the former sibling repo, A23), packed to dist/*.idea.
+   (MindAttic.Ideas.Rendering is a small rendering-support project.)
 ```
 
 ### 4.1 Projects
@@ -114,14 +114,18 @@ is live. The three kinds derive from one shared root `IdeaBase`; Themes/Widgets 
 - **`src/MindAttic.Ideas.Web`** — the Blazor Web App host: `PageHost` catch-all, `CmsHead` cascade,
   render fork, `/admin`, `/_ideas` route, Vault+Legion wiring; Phase-1 proof content under
   `Components/Library/Theme` (Bootstrap theme only — Widget/Control inline content removed with A19).
-- **`src/MindAttic.Ideas.Tests`** — NUnit suite (210 tests).
+- **`src/MindAttic.Ideas.Tests`** — NUnit suite (217 tests).
+- **`library/`** — first-party widget/theme library (`library/MindAttic.Ideas.Library.slnx`);
+  independent of the CMS, references only `src/MindAttic.Ideas.Abstractions`. Merged from the
+  former sibling repo ([A23](AMENDMENTS.md#MAI-A23)).
 
 ### 4.2 Domain model — the NOUNS
 - **`IdeaBase`** — shared root of all four content kinds.
 - **`ContentKind`** — `Page=0 · Widget=1 · Theme=2` (append-only on *ordinals*; `Control=3` removed pre-1.0 per A19, never reused;
   [A18](AMENDMENTS.md#MAI-A18) renamed ordinal 1 to Widget).
 - **`Page`** (`src/MindAttic.Ideas.Core/Entities/Page.cs`) — one durable EF row, `PageKind {Data,Code}`;
-  Data columns `BodyHtml`/`PageCss`/`PageJs`/`BodyTrust`; shared `SiteId`/`ParentId`/`Slug`/`ThemeKey`.
+  Data columns `BodyHtml`/`PageCss`/`PageJs`/`BodyTrust`; shared `SiteId`/`ParentId`/`Slug`/`ThemeKey`;
+  `SeoMetaJson` (JSON, `{title,description}` via `SeoMeta` — wired in A24).
   System-versioned temporal table.
 - **`CmsContentDefinition`** — the persisted catalog row: `UNIQUE(Kind,Key,Origin)`, `Priority`,
   `IsShadowed`, asset mount, raw bundle.
@@ -145,7 +149,8 @@ is live. The three kinds derive from one shared root `IdeaBase`; Themes/Widgets 
 - **`ContentLifecycleService`** (`Core/Services`) — enable/disable + reference-guarded version-specific delete.
 - **`AdminInboxService` / `RenderAlertSink`** (`Core/Services`) — DB-backed dedup alerting; the render thread
   fire-and-forgets and never throws.
-- **`PageAdminService` / `PageAuthoring`** (`Core/Services`) — page CRUD, soft-delete, publish, trust stamping.
+- **`PageAdminService` / `PageAuthoring`** (`Core/Services`) — page CRUD, soft-delete, publish, trust stamping,
+  SEO metadata round-trip (`SeoMeta` serialize/parse, `PageEditModel.SeoTitle`/`SeoDescription`).
 - **`SeedService`** (`Core/Services`) — idempotent upsert-by-key seed that never clobbers admin edits.
 
 ## 5. The Laws {#MAI-§5}
@@ -162,7 +167,7 @@ is live. The three kinds derive from one shared root `IdeaBase`; Themes/Widgets 
 > ([HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7)), and verified-DoD
 > ([HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8)).
 >
-> **Amendment supremacy.** The append-only [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A19) patches both the
+> **Amendment supremacy.** The append-only [`AMENDMENTS.md`](AMENDMENTS.md) (A1..A24) patches both the
 > ADR and this bible. Where an amendment conflicts with bible prose, the amendment wins.
 
 These are the **project-specific** laws (the cross-cutting invariants the foundation may never change):
@@ -201,11 +206,11 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 
 ## 6. Verified state {#MAI-§6}
 
-**Build/test evidence (2026-06-09):** `dotnet build MindAttic.Ideas.slnx -c Debug` — Build succeeded,
+**Build/test evidence (2026-06-12):** `dotnet build MindAttic.Ideas.slnx -c Debug` — Build succeeded,
 0 errors (0 CS warnings; pre-existing ASP0006 analyzer notes in Core rendering are tracked, not new).
-`dotnet test src/MindAttic.Ideas.Tests --no-build` → **Passed: 210, Failed: 0, Skipped: 0**, plus the
+`dotnet test src/MindAttic.Ideas.Tests --no-build` → **Passed: 217, Failed: 0, Skipped: 0**, plus the
 [Explicit] SQL Server temporal proof (`PageHistorySqlServerTests`) run against LocalDB — passed.
-**Live render evidence (2026-06-09, attended):** with all 36 library `.idea`s installed, `GET /` →
+**Live render evidence (2026-06-09, attended):** with all 37 library `.idea`s installed, `GET /` →
 302 → `/frontpage`; the rendered HTML contains the mindattic.com recreation (wordmark, tab boards,
 books grid, footer) with **zero** `ma-missing` placeholders, `/_ideas/...` mounts serve 200, and
 `/personas` (the collapsed Legion.Frontend) renders the full gallery with zero placeholders.
@@ -229,7 +234,15 @@ Proven working (each cited in [`USER_STORIES.md`](USER_STORIES.md)):
 render, the admin lifecycle UI, MindAttic.Authentication adoption, the frontend collapse
 (`frontpage` = mindattic.com per A21, `personas` = Legion.Frontend per A22), and the full Unified
 Page Plan (Monaco + typed-attribute coercion + clickable upload-to-fix placeholders) are all shipped
-and story-cited. Every story in [`USER_STORIES.md`](USER_STORIES.md) is ✅; the priority backlog is empty.
+and story-cited.
+
+**Post-A22 enhancements verified (2026-06-12):**
+- ✅ Library mono-repo consolidation: `library/` merged into this repo ([A23](AMENDMENTS.md#MAI-A23)).
+  37 `.idea`s (7 Themes + 30 Widgets); `ma-idea verify` compose-graph green.
+- ✅ Page Properties collapsible panel with SEO Title, SEO Description, Theme picker, Route field
+  ([A24](AMENDMENTS.md#MAI-A24)). 7 new NUnit tests in `PageAdminServiceTests`.
+
+Every story in [`USER_STORIES.md`](USER_STORIES.md) is ✅; the priority backlog is empty.
 
 ## 7. Active frontier {#MAI-§7}
 
@@ -270,5 +283,7 @@ Definition of done (a feature is `✅` only when *verified*, never merely assert
 - **Raw-content gate (`IRawContentGate`)** — the sole `MarkupString` chokepoint; trust-keyed.
 - **Admin Inbox** — DB-backed dedup alert surface for render-time degradation.
 - **Trust (`ContentTrust`)** — `Author` (raw passthrough) vs `Untrusted` (sanitized), set at write time.
-- **MindAttic.Ideas.Library** — the sibling repo that is the home of all first-party Themes/Widgets.
+- **MindAttic.Ideas.Library** — the `library/` directory in this repo (merged from the former
+  sibling repo per [A23](AMENDMENTS.md#MAI-A23)): the single home of all first-party Themes/Widgets.
+  Build-independent from the CMS; references only `Abstractions`; packs to `dist/*.idea`.
 - **UiUx** — MindAttic.UiUx, the build-free canonical source for official content (consumed by pinned-tag URL).

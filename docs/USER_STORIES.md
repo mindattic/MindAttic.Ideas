@@ -12,7 +12,7 @@ updated: 2026-06-09
 > ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test that proves
 > it. Derived from the [`README.md`](../README.md) living feature spec; test tokens name NUnit
 > fixtures in `src/MindAttic.Ideas.Tests`. Build/test evidence: see [BIBLE §6](BIBLE.md#MAI-§6) —
-> `dotnet test` reports **210 passed, 0 failed (2026-06-09)**, plus the [Explicit] SQL Server temporal proof.
+> `dotnet test` reports **217 passed, 0 failed (2026-06-12)**, plus the [Explicit] SQL Server temporal proof.
 >
 > Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages),
 > **Visitor** (reads a rendered page), **Widget-Dev** (builds first-party content in MindAttic.Ideas.Library).
@@ -189,16 +189,42 @@ updated: 2026-06-09
   `RenderGuardTests.MissingPlaceholder_LinksToAdminUpload_WithTheMissingKey`; live Monaco interaction
   is browser-tested.)*
 
+## Epic G — Page authoring enhancements (post-A22)
+
+- **MAI-US-G1 ✅** As an Author, I can set a Theme for a page from a dropdown in the admin UI
+  (catalog-driven, no token in the HTML body required), so theme assignment is a metadata operation
+  not a markup change. *`ThemeKey`/`ThemeVersion` columns already existed; the Page Properties
+  collapsible `<details>` panel and admin CSS (A24) make them accessible.* *(verified by the
+  existing `AdminAssignmentTests`: `CatalogFilter_Theme_ReturnsOnlyThemes`,
+  `ThemeToken_PinnedVersion_ParsesBack`; the panel UI is browser-confirmed.)*
+- **MAI-US-G2 ✅** As an Author, I can set a custom SEO Title and SEO Description for a page,
+  overriding the page title in the browser tab and providing a `<meta name="description">` tag.
+  *`PageAdminService.SaveAsync` serializes `{title,description}` to `Page.SeoMetaJson`; `GetAsync`
+  deserializes it; `PageHost.razor` reads `seo.title`/`seo.description` from the `IPageContext.Meta`
+  dictionary.*
+  *(verified by `PageAdminServiceTests`:
+  `SeoMeta_Parse_ReturnsNull_ForNullOrEmpty`, `SeoMeta_Parse_ExtractsFields`,
+  `SeoMeta_Parse_ReturnsNull_ForMalformedJson`, `SeoMeta_Serialize_ReturnsNull_WhenBothFieldsNull`,
+  `SeoMeta_Serialize_ReturnsJson_WhenAnyFieldSet`, `Save_WithSeoFields_PersistsThroughGetAsync`,
+  `Save_WithNullSeoFields_LeavesJsonNull`. See [A24](AMENDMENTS.md#MAI-A24).)*
+- **MAI-US-G3 ✅** As a Widget-Dev, the first-party widget/theme library lives in the same git
+  repo as the CMS engine (`library/` directory), so the project is maintained in one place without
+  coupling the two build graphs. *`library/Directory.Build.props` carries a single intra-repo
+  `Abstractions` reference; the CMS `src/` and `library/` each have their own `.slnx` and never
+  cross-reference at build time. Abstractions types used by library widgets are exercised by
+  `PackerTests` and `ManifestAssetPackerTests`; compose-graph independence is confirmed by
+  `ma-idea verify` across all 37 `.idea`s.* *(see [A23](AMENDMENTS.md#MAI-A23).)*
+
 ## Priority backlog
 
-**Empty — every story is ✅ (2026-06-09, [A22](AMENDMENTS.md#MAI-A22)).** The headline goal is met:
+**Empty — every story is ✅ (2026-06-12, [A24](AMENDMENTS.md#MAI-A24)).** The headline goal is met:
 standalone frontends collapse into Pages with zero-deploy upload (`frontpage` = mindattic.com,
 `personas` = Legion.Frontend), RFC 0001 is fully implemented, and the foundation-era definition of
-done holds (210 NUnit green + the explicit SQL Server temporal proof + live render checks). New work
+done holds (217 NUnit green + the explicit SQL Server temporal proof + live render checks). New work
 enters as new stories.
 
 Shipping record: F6/F8 2026-06-08 · F4/F3 2026-06-08 · F5/A6/A7 2026-06-09 (A21) ·
-B5/F7 + RFC 0001 completion 2026-06-09 (A22).
+B5/F7 + RFC 0001 completion 2026-06-09 (A22) · G1/G2/G3 (library mono-repo + Page Properties + SEO) 2026-06-12 (A23/A24).
 
 ### Audit log
 

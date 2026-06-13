@@ -20,7 +20,7 @@ them by dropping a tag:
 > code so the documentation is feature-complete the moment the code is.
 >
 > **Canonical contracts:** [`docs/BIBLE.md`](docs/BIBLE.md) + [`docs/AMENDMENTS.md`](docs/AMENDMENTS.md)
-> are the current source of truth for the foundation (A1..A19). [`docs/FOUNDATION_ADR.md`](docs/FOUNDATION_ADR.md) is the
+> are the current source of truth for the foundation (A1..A24). [`docs/FOUNDATION_ADR.md`](docs/FOUNDATION_ADR.md) is the
 > Legion deliberation that produced it (its *vocabulary* is superseded by the amendments — see the
 > banner at its top). [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) is the original brief.
 
@@ -103,14 +103,14 @@ enhance"**:
 
 ---
 
-## How a real page is built (worked example: `MindAttic.Legion.Frontend`) 📋
+## How a real page is built (worked example: `MindAttic.Legion.Frontend`) ✅
 
-The current standalone `MindAttic.Legion.Frontend` web app collapses into **one** `MindAttic.Ideas` Page:
+The former standalone `MindAttic.Legion.Frontend` web app is now the seeded **`personas`** Data page
+in the CMS. Its body is exactly one token — the rest is free-form markup:
 
 ```html
-<!-- Data page: ThemeKey = cyberspace; inline content + tags. Version omitted = latest. -->
-<MindAttic.Ideas.Theme.Cyberspace />          <!-- global look & feel -->
-<MindAttic.Ideas.Widget.SacredGeometry />     <!-- switch on the geometry engine -->
+<!-- Data page body.  Theme is set in Page Properties (ThemeKey = "cyberspace") — not a tag. -->
+<MindAttic.Ideas.Widget.SacredGeometry />     <!-- capability activator: loads the geometry engine -->
 
 <div class="legion-layout">
   <aside class="filters"><!-- inline HTML/JS: the left-hand filters --></aside>
@@ -123,13 +123,17 @@ The current standalone `MindAttic.Legion.Frontend` web app collapses into **one*
 <script>/* inline JS: pagination, filtering, and the modal popup (this page's own invention) */</script>
 ```
 
-- **Theme** (`Cyberspace`) supplies the chrome and the global → theme CSS tiers.
-- **Widget** (`SacredGeometry`) is a capability activator — it loads the engine that draws the geometric avatars.
-- **Inline JS/CSS/HTML** does the filters, pagination, and the modal popup — no compiled code required.
-- The modal is a great **future Widget `.idea`** candidate: extract it once, reuse it everywhere.
-  Nothing about the page breaks when you do — the inline version simply becomes a tag.
+> **Theme is a Page Property, not a token.** In the admin Page Properties panel you pick a Theme
+> from a dropdown (`ThemeKey` / `ThemeVersion` DB columns); the include expander never sees a
+> `<MindAttic.Ideas.Theme.…>` tag in the body. The body is free-form widget composition only.
 
-This single page, plus its seed data, replaces an entire deployed web app.
+- **Theme** (`Cyberspace`) is wired via the Page Properties dropdown — supplies the chrome.
+- **Widget** (`SacredGeometry`) is a capability activator — loads the geometry engine page-wide.
+- **Inline JS/CSS/HTML** handles filters, pagination, and the modal popup — no compiled code.
+- The modal is a great **future Widget `.idea`** candidate: extract once, reuse everywhere.
+
+This single page (plus its seed) replaces an entire deployed web app. Verified live 2026-06-09:
+`/personas` renders the full gallery with zero `ma-missing` placeholders.
 
 ---
 
@@ -232,7 +236,7 @@ MindAttic.Ideas reuses the ecosystem's shared infrastructure:
 ## Architecture 🔨
 
 ```
-MindAttic.Ideas.slnx
+MindAttic.Ideas.slnx                 # CMS engine
 ├─ src/
 │  ├─ MindAttic.Ideas.Abstractions   # the frozen SDK: IdeaBase + PageBase/WidgetBase/ThemeBase,
 │  │                                  #   [Idea], IRenderContext, discovery/catalog seams.
@@ -244,9 +248,13 @@ MindAttic.Ideas.slnx
 │  ├─ MindAttic.Ideas.Sdk            # ma-idea CLI: pack / inspect / list / install / verify.
 │  └─ MindAttic.Ideas.Web            # Blazor Web App (global InteractiveServer): PageHost catch-all,
 │                                     #   CmsHead cascade, render fork, /admin, /_ideas route, Vault+Legion.
-│                                     #   Phase-1 content under Components/Library/Theme.
 ├─ tools/  codex.ps1                 # Codex doctor + digest
-└─ docs/   BIBLE.md + AMENDMENTS.md (A1..A19) · FOUNDATION_ADR.md (deliberation) · IMPLEMENTATION_PLAN.md
+├─ docs/   BIBLE.md + AMENDMENTS.md (A1..A24) · FOUNDATION_ADR.md (deliberation) · IMPLEMENTATION_PLAN.md
+│
+library/MindAttic.Ideas.Library.slnx # first-party widget/theme library (build-independent of CMS)
+├─ Themes/   # 7 themes (Cyberspace, …)
+└─ Widgets/  # 30 widgets (LegionPersonas, SacredGeometry, Tooltip, Tabs, Gallery, …)
+             # packed to dist/*.idea → copied to src/MindAttic.Ideas.Web/library/ at pack time
 ```
 
 **Hot-load 📋.** New `.idea` packages load into a **collectible `AssemblyLoadContext`** with no app-pool
@@ -279,9 +287,14 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 ### Admin & CLI (Phase 2)
 - ✅ Admin: page CRUD + soft-delete + publish/enable, trust stamping on save (raw-markup claim);
   content-definition enable/disable/guarded-delete; Admin Inbox triage — all under `MaPolicies.Admin`
+- ✅ **Page Properties panel** (collapsible `<details>` in the page editor): Route, Title, Theme
+  dropdown (catalog-driven), Theme version, SEO Title, SEO Description, Published/Enabled flags
+- ✅ **SEO metadata** (`SeoMetaJson` column → `PageHost` renders `<title>` + `<meta name="description">`)
+- ✅ **Monaco editor** for page body (catalog-driven `{{ }}` autocomplete, RFC 0001 typed-attribute
+  coercion, clickable upload-to-fix placeholders) — replaces the plain textarea
+- ✅ Theme/widget assignment UI, file manager, roles management (`/users`)
 - 📋 Login / sign-out / SecurityStamp via the **MindAttic.Authentication** package (A16) — not Ideas-owned (package mid-build; interim BCrypt stands)
-- 📋 Theme/widget assignment UI, file manager, roles
-- ✅ `ma-idea` CLI: pack / inspect / list / install (offline validate) / upgrade (plan preview)
+- ✅ `ma-idea` CLI: pack / inspect / list / install (offline validate) / verify
 
 ### Packages & migration (Phase 5/6)
 - ✅ `.idea` format frozen as a wire contract: `MindAttic.Ideas.Packaging` (manifest kernel + lossless
@@ -301,10 +314,11 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 - ✅ `/_ideas/{category}/{key}/{version}/…` asset route serves a package's extracted `wwwroot/`
   (category-qualified to disambiguate kinds; path-traversal guarded). Install extracts `wwwroot/` too, and
   `PackageAssetsOf` prefixes the collected `<head>` URLs with the citizen's `AssetMount`
-- 📋 Compiled-citizen asset harvest (`Activator` on `WidgetBase`, replacing per-instance inline
-  emission) — additive via the same collector delegate, attended
-- 📋 Move official content into MindAttic.UiUx (canonical source); then collapse `MindAttic.Frontpage`
-  and `MindAttic.Legion.Frontend` into Pages
+- ✅ Compiled-citizen asset harvest (`Activator` on `WidgetBase`) — `PageAssets.AllAssetsOf` hoists
+  declared `StylesheetUrls`/`ScriptUrls` via the same `PageAssetCollector` delegate (NUnit-verified)
+- ✅ Official content in the first-party library (`library/` in this repo, A23): `MindAttic.Frontpage`
+  → `frontpage` Data page (A21); `MindAttic.Legion.Frontend` → `personas` Data page (A22).
+  37 `.idea`s: 7 Themes + 30 Widgets
 
 ---
 

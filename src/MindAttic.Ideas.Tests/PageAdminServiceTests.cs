@@ -125,4 +125,82 @@ public class PageAdminServiceTests
         Assert.That(await svc.MoveAsync(a.Id, a.Id, 0), Is.False, "a page cannot be its own parent");
         Assert.That((await svc.ListAsync()).Single(p => p.Id == a.Id).ParentId, Is.Null, "a stays at top level");
     }
+
+    // ── SeoMeta unit tests ──────────────────────────────────────────────────────────────────
+
+    [Test]
+    public void SeoMeta_Parse_ReturnsNull_ForNullOrEmpty()
+    {
+        Assert.That(SeoMeta.Parse(null), Is.Null);
+        Assert.That(SeoMeta.Parse(""), Is.Null);
+        Assert.That(SeoMeta.Parse("   "), Is.Null);
+    }
+
+    [Test]
+    public void SeoMeta_Parse_ExtractsFields()
+    {
+        var seo = SeoMeta.Parse("""{"title":"My Title","description":"My Desc"}""");
+        Assert.That(seo, Is.Not.Null);
+        Assert.That(seo!.Title, Is.EqualTo("My Title"));
+        Assert.That(seo.Description, Is.EqualTo("My Desc"));
+    }
+
+    [Test]
+    public void SeoMeta_Parse_ReturnsNull_ForMalformedJson()
+    {
+        Assert.That(SeoMeta.Parse("not-json"), Is.Null);
+    }
+
+    [Test]
+    public void SeoMeta_Serialize_ReturnsNull_WhenBothFieldsNull()
+    {
+        Assert.That(new SeoMeta().Serialize(), Is.Null);
+        Assert.That(new SeoMeta { Title = null, Description = null }.Serialize(), Is.Null);
+    }
+
+    [Test]
+    public void SeoMeta_Serialize_ReturnsJson_WhenAnyFieldSet()
+    {
+        var json = new SeoMeta { Title = "T" }.Serialize();
+        Assert.That(json, Is.Not.Null);
+        var roundtrip = SeoMeta.Parse(json);
+        Assert.That(roundtrip!.Title, Is.EqualTo("T"));
+        Assert.That(roundtrip.Description, Is.Null);
+    }
+
+    [Test]
+    public async Task Save_WithSeoFields_PersistsThroughGetAsync()
+    {
+        var svc = await NewServiceAsync();
+        var result = await svc.SaveAsync(new PageEditModel
+        {
+            Slug = "seo-page", Title = "SEO Page",
+            SeoTitle = "Custom SEO Title",
+            SeoDescription = "This is the meta description.",
+        }, Author(withClaim: true));
+
+        Assert.That(result.Ok, Is.True);
+        var loaded = await svc.GetAsync(result.Id);
+        Assert.That(loaded, Is.Not.Null);
+        Assert.That(loaded!.SeoTitle, Is.EqualTo("Custom SEO Title"));
+        Assert.That(loaded.SeoDescription, Is.EqualTo("This is the meta description."));
+    }
+
+    [Test]
+    public async Task Save_WithNullSeoFields_LeavesJsonNull()
+    {
+        var svc = await NewServiceAsync();
+        var result = await svc.SaveAsync(new PageEditModel
+        {
+            Slug = "no-seo", Title = "No SEO",
+            SeoTitle = null,
+            SeoDescription = null,
+        }, Author(withClaim: true));
+
+        Assert.That(result.Ok, Is.True);
+        var loaded = await svc.GetAsync(result.Id);
+        Assert.That(loaded, Is.Not.Null);
+        Assert.That(loaded!.SeoTitle, Is.Null);
+        Assert.That(loaded.SeoDescription, Is.Null);
+    }
 }

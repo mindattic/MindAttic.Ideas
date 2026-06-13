@@ -394,3 +394,58 @@ and is editable in Monaco with zero deploys.
 `SeededPageRenderTests.Seed_CreatesPersonasPage_CollapsingLegionFrontendIntoOneToken`) plus the
 explicit SQL Server temporal test; live render checks for `/personas` and `/frontpage` (0 missing).
 With this amendment every MAI user story is ✅ (or 🗑️) — the foundation-era definition of done is met.
+
+## MAI-A23 — Library mono-repo consolidation: `library/` merged into the Ideas repo {#MAI-A23}
+
+**What changed (2026-06-12).**
+`MindAttic.Ideas.Library` (the first-party widget/theme library, formerly a sibling repo) was
+merged into this repo under the **`library/`** subdirectory. The sibling GitHub repo is retired
+and can be deleted. The two halves of the project are now:
+
+- **`src/`** — the CMS engine (unchanged; stand-alone `.slnx`: `MindAttic.Ideas.slnx`).
+- **`library/`** — the widget/theme library (stand-alone `.slnx`: `library/MindAttic.Ideas.Library.slnx`).
+
+**Key structural facts:**
+- The two solutions are **independent**: the CMS never references the library as a project; it
+  only installs packed `dist/*.idea` files as optional content (copied to
+  `src/MindAttic.Ideas.Web/library/` on pack). The library references only
+  `src/MindAttic.Ideas.Abstractions` as a `Private=false ExcludeAssets=runtime` project reference
+  (so Abstractions is not bundled into the `.idea`; the host provides it at runtime).
+- **`library/Directory.Build.props`** carries the single, intra-repo path fix:
+  `$(MSBuildThisFileDirectory)..\src\MindAttic.Ideas.Abstractions\...` — each widget `.csproj` is
+  ~3 lines.
+- **`library/.gitignore`** covers library-specific build artifacts (`**/artifacts/`,
+  `Themes/**/dist/`, `Widgets/**/dist/`, `/dist/`).
+- The CMS Web host ships **37** first-party `.idea` files in `src/MindAttic.Ideas.Web/library/`
+  (7 Themes + 30 Widgets) — verified by `ma-idea verify` (compose-graph green).
+
+**Why.** Single-repo maintenance: git history, issues, PRs, and CI stay unified while the engine
+and the library remain build-independent. No external reference change is needed because the CMS
+loads `.idea` blobs at runtime, not project references.
+
+## MAI-A24 — Page Properties panel + SEO metadata wired end-to-end {#MAI-A24}
+
+**What changed (2026-06-12).**
+
+- **Collapsible "Page Properties" panel in the admin page editor** (`Web/Components/Pages/Admin/Pages.razor`):
+  the flat property grid is now a `<details>` element with an animated chevron, a hint line
+  (`/slug · theme-key`) in the `<summary>`, and a CSS rule set in `app.css`.
+- **SEO Title / SEO Description** fields added to the panel. They write to the pre-existing but
+  previously unread `Page.SeoMetaJson` JSON column via the new `SeoMeta` helper class in
+  `PageAdminService.cs` (serializes `{title,description}` as camelCase JSON; null when both are
+  blank — no migration required).
+- **`PageEditModel`** gains `SeoTitle` and `SeoDescription` properties; `GetAsync` deserializes
+  the JSON column on load; `SaveAsync` serializes it on save.
+- **`PageHost.razor`** now renders `<PageTitle>` from `seo.title` (falling back to `Page.Title`)
+  and emits a `<meta name="description">` tag when `seo.description` is set, both populated via
+  the `IPageContext.Meta` dictionary (the pre-existing-but-empty seam in Abstractions).
+- **Theme** dropdown was already implemented via the pre-existing `ThemeKey`/`ThemeVersion` DB
+  columns; A24 moves that assignment into the new collapsible panel and labels the route field
+  "Route" (was "Slug").
+
+**Proof.** 7 new NUnit tests in `PageAdminServiceTests`:
+`SeoMeta_Parse_ReturnsNull_ForNullOrEmpty`, `SeoMeta_Parse_ExtractsFields`,
+`SeoMeta_Parse_ReturnsNull_ForMalformedJson`, `SeoMeta_Serialize_ReturnsNull_WhenBothFieldsNull`,
+`SeoMeta_Serialize_ReturnsJson_WhenAnyFieldSet`,
+`Save_WithSeoFields_PersistsThroughGetAsync`, `Save_WithNullSeoFields_LeavesJsonNull`.
+Suite: **217 NUnit green**.
