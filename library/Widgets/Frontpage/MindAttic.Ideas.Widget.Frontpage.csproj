@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- Frontpage — the MindAttic corporate front page, ported from the standalone page app into a
+       single .idea widget. The whole-site accordion (Portfolio / Software / Ecosystem / Hardware /
+       Writing / Visual Arts) renders from self-contained bundled data — no database, no API. Common
+       props + the Abstractions reference come from ../../Directory.Build.props. Identity by convention:
+       namespace tail "Frontpage" => key "frontpage", class "V1" => version 1.
+
+       The accordion data (Data/hub.json), the ecosystem diagram (Data/ecosystem.svg), and the inline
+       stylesheet (Resources/frontpage.css) ship baked into the assembly so the widget renders under any
+       host theme. Cover images live in assets/ (a plain folder packed as the .idea wwwroot, served at
+       /_ideas/Widget/frontpage/1/). -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Self-contained content baked into the assembly so the widget needs no database or external file. -->
+    <EmbeddedResource Include="Data\hub.json" />
+    <EmbeddedResource Include="Data\ecosystem.svg" />
+    <EmbeddedResource Include="Resources\frontpage.css" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- Summer theme. Common props + the Abstractions reference come from ../../Directory.Build.props.
+       Identity by convention: namespace tail (summer) + V{n} class -> Theme/summer/1. Self-contained chrome
+       lives in assets/theme.css (a PLAIN folder, NOT wwwroot/, so StaticWebAssetsEnabled=false keeps the
+       Razor SDK from claiming it). At pack time assets/ IS the package wwwroot, served at
+       /_ideas/Theme/summer/1/. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+</Project>

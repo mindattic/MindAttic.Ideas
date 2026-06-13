@@ -1,0 +1,30 @@
+/* MindAttic.Ideas.Widget.SocialLinks — icon link row. Scoped under .ma-social (MAIL-LAW-6). */
+.ma-social {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ma-social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  color: inherit;
+  opacity: .7;
+  transition: opacity .15s ease, background .15s ease, transform .15s ease;
+}
+.ma-social-link:hover,
+.ma-social-link:focus-visible {
+  opacity: 1;
+  background: rgba(128, 128, 128, .15);
+  transform: translateY(-2px);
+}
+.ma-social-link svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}

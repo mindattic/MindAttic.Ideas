@@ -1,0 +1,35 @@
+/* ============================================================================
+   MindAttic.Ideas.Widget.TableOfContents.V1 — minimal, theme-agnostic styling for
+   the auto-generated subpage list. Uses `inherit`/neutral grays so it sits cleanly
+   on any host theme (light or dark). Scoped under .ma-toc so it never leaks.
+   Served from this .idea's wwwroot at /_ideas/Widget/tableofcontents/1/.
+   ============================================================================ */
+
+.ma-toc { margin: 1.25rem 0; }
+
+.ma-toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.ma-toc-item { margin: 0; }
+
+.ma-toc-link {
+    display: block;
+    padding: 0.4rem 0.65rem;
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    color: inherit;
+    text-decoration: none;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.ma-toc-link:hover,
+.ma-toc-link:focus-visible {
+    background: rgba(127, 127, 127, 0.12);
+    border-left-color: currentColor;
+}

@@ -1,0 +1,42 @@
+<Solution>
+  <Folder Name="/Themes/">
+    <Project Path="Themes/Cyberspace/MindAttic.Ideas.Theme.Cyberspace.csproj" />
+    <Project Path="Themes/Light/MindAttic.Ideas.Theme.Light.csproj" />
+    <Project Path="Themes/Dark/MindAttic.Ideas.Theme.Dark.csproj" />
+    <Project Path="Themes/Spring/MindAttic.Ideas.Theme.Spring.csproj" />
+    <Project Path="Themes/Summer/MindAttic.Ideas.Theme.Summer.csproj" />
+    <Project Path="Themes/Autumn/MindAttic.Ideas.Theme.Autumn.csproj" />
+    <Project Path="Themes/Winter/MindAttic.Ideas.Theme.Winter.csproj" />
+  </Folder>
+  <Folder Name="/Widgets/">
+    <Project Path="Widgets/OutfitFont/MindAttic.Ideas.Widget.OutfitFont.csproj" />
+    <Project Path="Widgets/AtticFont/MindAttic.Ideas.Widget.AtticFont.csproj" />
+    <Project Path="Widgets/BackHomeM/MindAttic.Ideas.Widget.BackHomeM.csproj" />
+    <Project Path="Widgets/Cyberspace/MindAttic.Ideas.Widget.Cyberspace.csproj" />
+    <Project Path="Widgets/SacredGeometry/MindAttic.Ideas.Widget.SacredGeometry.csproj" />
+    <Project Path="Widgets/Tooltip/MindAttic.Ideas.Widget.Tooltip.csproj" />
+    <Project Path="Widgets/TableOfContents/MindAttic.Ideas.Widget.TableOfContents.csproj" />
+    <Project Path="Widgets/LegionPersonas/MindAttic.Ideas.Widget.LegionPersonas.csproj" />
+    <Project Path="Widgets/Frontpage/MindAttic.Ideas.Widget.Frontpage.csproj" />
+    <Project Path="Widgets/HelloWorld/MindAttic.Ideas.Widget.HelloWorld.csproj" />
+    <Project Path="Widgets/Textbox/MindAttic.Ideas.Widget.Textbox.csproj" />
+    <Project Path="Widgets/NavMenu/MindAttic.Ideas.Widget.NavMenu.csproj" />
+    <Project Path="Widgets/Breadcrumbs/MindAttic.Ideas.Widget.Breadcrumbs.csproj" />
+    <Project Path="Widgets/Hero/MindAttic.Ideas.Widget.Hero.csproj" />
+    <Project Path="Widgets/Card/MindAttic.Ideas.Widget.Card.csproj" />
+    <Project Path="Widgets/Accordion/MindAttic.Ideas.Widget.Accordion.csproj" />
+    <Project Path="Widgets/Tabs/MindAttic.Ideas.Widget.Tabs.csproj" />
+    <Project Path="Widgets/Gallery/MindAttic.Ideas.Widget.Gallery.csproj" />
+    <Project Path="Widgets/Carousel/MindAttic.Ideas.Widget.Carousel.csproj" />
+    <Project Path="Widgets/Callout/MindAttic.Ideas.Widget.Callout.csproj" />
+    <Project Path="Widgets/CodeBlock/MindAttic.Ideas.Widget.CodeBlock.csproj" />
+    <Project Path="Widgets/VideoEmbed/MindAttic.Ideas.Widget.VideoEmbed.csproj" />
+    <Project Path="Widgets/ContactForm/MindAttic.Ideas.Widget.ContactForm.csproj" />
+    <Project Path="Widgets/SocialLinks/MindAttic.Ideas.Widget.SocialLinks.csproj" />
+    <Project Path="Widgets/BackToTop/MindAttic.Ideas.Widget.BackToTop.csproj" />
+    <Project Path="Widgets/Footer/MindAttic.Ideas.Widget.Footer.csproj" />
+    <Project Path="Widgets/TabBoard/MindAttic.Ideas.Widget.TabBoard.csproj" />
+    <Project Path="Widgets/PinFooter/MindAttic.Ideas.Widget.PinFooter.csproj" />
+    <Project Path="Widgets/WebSnapshot/MindAttic.Ideas.Widget.WebSnapshot.csproj" />
+  </Folder>
+</Solution>

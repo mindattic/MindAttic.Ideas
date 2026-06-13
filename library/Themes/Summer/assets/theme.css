@@ -1,0 +1,83 @@
+/* ============================================================================
+   MindAttic.Ideas.Theme.Summer.V1 — bright sun-and-sky: warm sand, sky blue,
+   sunset-orange accent. Scoped under .theme-summer.
+   Served at /_ideas/Theme/summer/1/theme.css.
+   ============================================================================ */
+
+.theme-summer {
+    --bg: #fffaf0;
+    --surface: #ffffff;
+    --text: #2a2418;
+    --muted: #7a6f57;
+    --line: #f0e3c8;
+    --accent: #ff7a18;       /* sunset orange */
+    --accent-2: #1ea7e1;     /* sky blue */
+    --accent-contrast: #ffffff;
+    --code-bg: #fdf2dc;
+
+    min-height: 100vh;
+    margin: 0;
+    background:
+        radial-gradient(820px 460px at 0% -8%, rgba(255,196,0,0.18), transparent 60%),
+        radial-gradient(900px 520px at 100% 0%, rgba(30,167,225,0.12), transparent 60%),
+        #fffaf0;
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+.theme-summer * { box-sizing: border-box; }
+.theme-summer > * { max-width: 860px; margin-inline: auto; padding-inline: 1.25rem; }
+.theme-summer { padding-block: 2.5rem; }
+
+.theme-summer h1, .theme-summer h2, .theme-summer h3,
+.theme-summer h4, .theme-summer h5, .theme-summer h6 {
+    line-height: 1.2; font-weight: 800; margin: 1.8em 0 0.6em; letter-spacing: -0.01em; color: #34291a;
+}
+.theme-summer h1 { font-size: 2.2rem; background: linear-gradient(90deg, var(--accent), #ffb300); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.theme-summer h2 { font-size: 1.6rem; }
+.theme-summer h3 { font-size: 1.3rem; }
+
+.theme-summer a { color: var(--accent-2); text-decoration: none; font-weight: 600; }
+.theme-summer a:hover { text-decoration: underline; }
+
+.theme-summer hr { border: 0; border-top: 2px dotted var(--line); margin: 2rem 0; }
+
+.theme-summer code {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px;
+    padding: 0.1em 0.4em; font-size: 0.88em;
+    font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.theme-summer pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1rem 1.1rem; overflow-x: auto;
+}
+.theme-summer pre code { background: none; border: 0; padding: 0; }
+
+.theme-summer blockquote {
+    margin: 1.4rem 0; padding: 0.4rem 1.1rem; color: var(--muted);
+    border-left: 4px solid var(--accent); background: var(--surface);
+}
+
+.theme-summer table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; }
+.theme-summer th, .theme-summer td { border: 1px solid var(--line); padding: 0.5rem 0.7rem; text-align: left; }
+.theme-summer th { background: var(--code-bg); font-weight: 700; }
+
+.theme-summer button, .theme-summer .btn {
+    background: linear-gradient(90deg, var(--accent), #ffb300); color: var(--accent-contrast); border: 0;
+    border-radius: 999px; padding: 0.55rem 1.2rem; font: inherit; font-weight: 700; cursor: pointer;
+    transition: filter 0.12s ease;
+}
+.theme-summer button:hover, .theme-summer .btn:hover { filter: brightness(1.05); }
+
+.theme-summer input, .theme-summer select, .theme-summer textarea {
+    background: var(--surface); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 0.5rem 0.65rem; font: inherit;
+}
+.theme-summer input:focus, .theme-summer select:focus, .theme-summer textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent-2) 40%, transparent); border-color: var(--accent-2);
+}
+
+.theme-summer ::selection { background: color-mix(in srgb, var(--accent) 22%, transparent); }

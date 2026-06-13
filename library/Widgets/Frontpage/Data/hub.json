@@ -1,0 +1,72 @@
+{
+  "sections": [
+    {
+      "key": "portfolio",
+      "title": "Portfolio",
+      "kind": "links",
+      "pages": [
+        { "slug": "ryandebraal-com", "title": "ryandebraal.com", "openUrl": "https://ryandebraal.com" },
+        { "slug": "github-mindattic", "title": "github.com/mindattic", "openUrl": "https://github.com/mindattic" },
+        { "slug": "mindattic-cares", "title": "MindAttic Cares", "openUrl": "https://mindatticcares.com" }
+      ]
+    },
+    {
+      "key": "software",
+      "title": "Software",
+      "kind": "cards",
+      "pages": [
+        { "slug": "idiotproof", "title": "IdiotProof", "tagline": "Branching trading strategies, evaluated 24/7.", "gitHubUrl": "https://github.com/mindattic/IdiotProof" },
+        { "slug": "gridgame2026", "title": "GridGame2026", "tagline": "Unity 6000.3 tactical grid RPG, 2D sprites on a 3D board.", "gitHubUrl": "https://github.com/mindattic/GridGame2026" },
+        { "slug": "mindatticlegion", "title": "MindAttic.Legion", "tagline": ".NET 10 library and CLI for multi-LLM consensus across 11 providers.", "gitHubUrl": "https://github.com/mindattic/MindAttic.Legion" },
+        { "slug": "mindatticpsst", "title": "MindAttic.Psst", "tagline": "Stop babysitting your terminal. Psst taps you on the shoulder the moment a long-running command finishes — a sound at your desk, a text on your phone.", "gitHubUrl": "https://github.com/mindattic/MindAttic.Psst" },
+        { "slug": "mindatticconsole", "title": "MindAttic.Console", "tagline": "C# CLI that orchestrates every MindAttic project — project menus, per-tab AI agent hosting, commit/push, and backup, all through Windows Terminal.", "gitHubUrl": "https://github.com/mindattic/MindAttic.Console" },
+        { "slug": "mindatticvault", "title": "MindAttic.Vault", "tagline": ".NET 9/10 library for credentials and per-app settings.", "gitHubUrl": "https://github.com/mindattic/MindAttic.Vault" },
+        { "slug": "taxratecollector", "title": "TaxRateCollector", "tagline": "Blazor Server app maintaining a US sales tax rate database for 14,000+ jurisdictions.", "gitHubUrl": "https://github.com/mindattic/TaxRateCollector" },
+        { "slug": "thinktank", "title": "ThinkTank", "tagline": ".NET 10 MAUI + Blazor desktop app for multi-LLM conversations across 11 providers.", "gitHubUrl": "https://github.com/mindattic/ThinkTank" },
+        { "slug": "tutor", "title": "Tutor", "tagline": "Blazor Server app converting books and documents into structured courses via multi-LLM pipeline.", "gitHubUrl": "https://github.com/mindattic/Tutor" },
+        { "slug": "mediabutler", "title": "MediaButler", "tagline": "Automated media renamer and reorganizer. FileBot + Plex-ready library layout, for people whose media folder looks like a crime scene.", "gitHubUrl": "https://github.com/mindattic/MediaButler" },
+        { "slug": "streetsamurai", "title": "StreetSamurai", "tagline": "A literary fiction engine for a cyberpunk century.", "openUrl": "https://streetsamurai.azurewebsites.net/", "gitHubUrl": "https://github.com/mindattic/StreetSamurai" },
+        { "slug": "cursory", "title": "Cursory", "tagline": "Cooperative cursor puzzles in a shared room.", "openUrl": "https://cursory.azurewebsites.net/", "gitHubUrl": "https://github.com/mindattic/Cursory" },
+        { "slug": "mindattichelpers", "title": "MindAttic.Helpers", "tagline": "Dependency-free .NET helpers — including a deterministic abstract-art generator that turns any string into a stable SVG fingerprint.", "gitHubUrl": "https://github.com/mindattic/MindAttic.Helpers" },
+        { "slug": "personagallery", "title": "Persona Gallery", "tagline": "Browse MindAttic.Legion's 1024 psychometrically-scored personas — each an individual with a generated abstract-art portrait.", "openUrl": "https://personagallery.azurewebsites.net/", "gitHubUrl": "https://github.com/mindattic/MindAttic.Legion.PersonaGallery" },
+        { "slug": "mindatticuiux", "title": "MindAttic.UiUx", "tagline": "Shared front-end library — the Cyberspace look (animated console-background effects, fonts, scan-line overlays) inlined into every MindAttic site and app via jsDelivr and PowerShell sync. No build step.", "gitHubUrl": "https://github.com/mindattic/MindAttic.UiUx" }
+      ]
+    },
+    {
+      "key": "ecosystem",
+      "title": "Ecosystem",
+      "kind": "diagram",
+      "pages": []
+    },
+    {
+      "key": "hardware",
+      "title": "Hardware",
+      "kind": "cards",
+      "pages": [
+        { "slug": "claudia", "title": "Claudia", "tagline": "Build your own Claude-powered smart speaker in an afternoon. No soldering. No cloud lock-in.", "gitHubUrl": "https://github.com/mindattic/Claudia" },
+        { "slug": "chimesh", "title": "ChiMesh", "tagline": "Off-grid Chicago. A solar-powered LoRa mesh that runs without the internet, the grid, or anyone's permission.", "gitHubUrl": "https://github.com/mindattic/ChiMesh" }
+      ]
+    },
+    {
+      "key": "writing",
+      "title": "Writing",
+      "kind": "books",
+      "pages": [
+        { "slug": "melody-valkyrie-huntress-of-norp", "title": "Melody Valkyrie: Huntress of Norp", "openUrl": "https://www.amazon.com/dp/B0G4NS2WZL", "cover": "melody-valkyrie-huntress-of-norp.jpg" },
+        { "slug": "melody-valkyrie-harbinger-of-vengeance", "title": "Melody Valkyrie: Harbinger of Vengeance", "openUrl": "https://www.amazon.com/dp/B0G4NPLWJY", "cover": "melody-valkyrie-harbinger-of-vengeance.jpg" },
+        { "slug": "melody-valkyrie-harvestman-of-palus", "title": "Melody Valkyrie: Harvestman of Palus", "openUrl": "https://www.amazon.com/dp/B0G4NPLKW9", "cover": "melody-valkyrie-harvestman-of-palus.jpg" },
+        { "slug": "the-rime-of-aurora-roe", "title": "The Rime of Aurora Roe", "openUrl": "https://www.amazon.com/dp/B0GDYXD6H1", "cover": "the-rime-of-aurora-roe.jpg" },
+        { "slug": "aurora-roe-harvest-prime", "title": "Aurora Roe: Harvest Prime", "openUrl": "https://www.amazon.com/dp/B0GDYXBYFP", "cover": "aurora-roe-harvest-prime.jpg" },
+        { "slug": "diminishing-returns", "title": "Diminishing Returns", "openUrl": "https://www.amazon.com/dp/B0GX36R57Z", "cover": "diminishing-returns.jpg" }
+      ]
+    },
+    {
+      "key": "visual-arts",
+      "title": "Visual Arts",
+      "kind": "art",
+      "pages": [
+        { "slug": "mosaic", "title": "Mosaic", "openUrl": "https://ryandebraal.com/mosaic/", "cover": "mosaic.jpg" }
+      ]
+    }
+  ]
+}

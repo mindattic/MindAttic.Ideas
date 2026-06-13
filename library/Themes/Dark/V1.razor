@@ -1,0 +1,15 @@
+@namespace MindAttic.Ideas.Theme.Dark
+@inherits ThemeBase
+@attribute [Idea(DisplayName = "Dark")]
+
+@* MindAttic.Ideas.Theme.Dark.V1 — a self-contained Dark theme: chrome (theme.css) + ONE @Body hole.
+   All look/feel ships in this theme's own assets/theme.css (served at /_ideas/Theme/dark/1/), scoped
+   under .theme-dark so it never leaks into widgets or other themes. *@
+<div class="page theme-dark">
+    @Body
+</div>
+
+@code {
+    private const string Mount = "/_ideas/Theme/dark/1";
+    public override IReadOnlyList<string> ThemeCssUrls { get; } = new[] { Mount + "/theme.css" };
+}

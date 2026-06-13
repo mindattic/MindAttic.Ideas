@@ -1,0 +1,66 @@
+/* MindAttic.Ideas.Widget.Hero — full-width banner. Scoped under .ma-hero (MAIL-LAW-6).
+   The background image arrives either as an inline base64 CSS class on the section (the page
+   authoring convention) or as an inline style; .ma-hero-img adds the readability overlay for both. */
+.ma-hero {
+  --ma-hero-min-height: 18rem;
+  --ma-hero-accent: #4a6cf7;
+  display: flex;
+  align-items: center;
+  min-height: var(--ma-hero-min-height);
+  padding: 3rem 1.5rem;
+  background-size: cover;
+  background-position: center;
+  border-radius: .5rem;
+}
+/* Image variant: light text + a darkening overlay painted above the background, below content. */
+.ma-hero-img {
+  color: #fff;
+  position: relative;
+  isolation: isolate;
+}
+.ma-hero-img::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  border-radius: inherit;
+  z-index: -1;
+}
+.ma-hero-inner {
+  max-width: 42rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.ma-hero-center { text-align: center; }
+.ma-hero-left  { text-align: left; }
+.ma-hero-left .ma-hero-inner { margin-left: 0; }
+.ma-hero-right { text-align: right; }
+.ma-hero-right .ma-hero-inner { margin-right: 0; }
+.ma-hero-title {
+  margin: 0;
+  font-size: clamp(1.9rem, 5vw, 3.2rem);
+  line-height: 1.1;
+}
+.ma-hero-subtitle {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+  opacity: .85;
+}
+.ma-hero-cta {
+  align-self: center;
+  display: inline-block;
+  margin-top: .5rem;
+  padding: .7rem 1.6rem;
+  border-radius: 2rem;
+  background: var(--ma-hero-accent);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: filter .15s ease, transform .15s ease;
+}
+.ma-hero-left .ma-hero-cta  { align-self: flex-start; }
+.ma-hero-right .ma-hero-cta { align-self: flex-end; }
+.ma-hero-cta:hover,
+.ma-hero-cta:focus-visible { filter: brightness(1.1); transform: translateY(-1px); }

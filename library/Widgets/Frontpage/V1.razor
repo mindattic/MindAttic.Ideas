@@ -1,0 +1,28 @@
+@namespace MindAttic.Ideas.Widget.Frontpage
+@inherits WidgetBase
+@attribute [Idea(DisplayName = "MindAttic Frontpage", RenderMode = CmsRenderMode.InteractiveServer)]
+@attribute [Uses(ContentKind.Widget, "tooltip", 1)]
+
+@* ============================================================================================
+   MindAttic.Ideas.Widget.Frontpage.V1 — the MindAttic corporate front page, ported from the
+   standalone page app into a single .idea widget. Renders the whole-site accordion (Portfolio /
+   Software / Ecosystem / Hardware / Writing / Visual Arts) from self-contained bundled data — no
+   database, no API. Identity by convention: namespace tail "Frontpage" => key "frontpage", class
+   "V1" => version 1. Its stylesheet is emitted inline so the widget renders correctly under any host
+   theme; project taglines surface through the Tooltip widget (composed BY STRING ID via uses[]).
+   ============================================================================================ *@
+
+@* Styles are emitted inline (not via <HeadContent>) so this widget needs no AspNetCore.Components.Web
+   reference — only the frozen Abstractions SDK, like every other .idea in this library. *@
+<style>@((MarkupString)HubContent.Css)</style>
+
+@* Switch ON the Tooltip capability so NavTabItem's data-tooltip taglines render on hover. *@
+<CmsInclude Ref="MindAttic.Ideas.Widget.Tooltip.V1" />
+
+<SiteNav Sections="HubContent.Sections" AssetBase="@AssetBase" />
+
+@code {
+    // Cover images ship in this package's assets/ folder, served by the host at the package asset
+    // mount /_ideas/{kind}/{key}/{version}. For this Widget that resolves to the path below.
+    private const string AssetBase = "/_ideas/Widget/frontpage/1";
+}

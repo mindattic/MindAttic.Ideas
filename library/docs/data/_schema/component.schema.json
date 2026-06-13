@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mindattic.com/ideas-library/schema/component.schema.json",
+  "title": "MindAttic.Ideas.Library shipped component catalog",
+  "description": "Canon-as-data (L5) for MAIL: one row per shipped .idea component. The catalog is derived from the component source (namespace tail => key, V{n} class => version) and the packed artifacts in dist/. Prose in docs/BIBLE.md cites entries by id and never restates these fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["components"],
+  "properties": {
+    "components": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/component" }
+    }
+  },
+  "definitions": {
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "kind", "version", "displayName", "assembly", "artifact"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable entity id, '<kind>.<key>' (kind lowercased).",
+          "pattern": "^(theme|widget|control)\\.[a-z0-9]+$"
+        },
+        "key": {
+          "type": "string",
+          "description": "Convention key: the namespace tail, lowercased. Drives the mount path.",
+          "pattern": "^[a-z0-9]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["Theme", "Widget", "Control"]
+        },
+        "version": {
+          "type": "integer",
+          "description": "Content version = the V{n} class number (whole-number; HOUSE-LAW-1).",
+          "minimum": 1
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human label from [Idea(DisplayName=...)]; defaults to the key when unset."
+        },
+        "assembly": {
+          "type": "string",
+          "description": "The one DLL the .idea packs.",
+          "pattern": "^MindAttic\\.Ideas\\.(Theme|Widget|Control)\\.[A-Za-z0-9]+$"
+        },
+        "artifact": {
+          "type": "string",
+          "description": "Packed .idea filename under dist/.",
+          "pattern": "^MindAttic\\.Ideas\\.(Theme|Widget|Control)\\.[A-Za-z0-9]+\\.V[0-9]+\\.idea$"
+        },
+        "mount": {
+          "type": "string",
+          "description": "Static-asset mount path, when the component ships assets.",
+          "pattern": "^/_ideas/(Theme|Widget|Control)/[a-z0-9]+/[0-9]+$"
+        },
+        "interactive": {
+          "type": "boolean",
+          "description": "true when [Idea(RenderMode = CmsRenderMode.InteractiveServer)]."
+        },
+        "uses": {
+          "type": "array",
+          "description": "Composition edges: keys this component pulls in by string id via [Uses]/<CmsInclude>.",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+$" }
+        },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

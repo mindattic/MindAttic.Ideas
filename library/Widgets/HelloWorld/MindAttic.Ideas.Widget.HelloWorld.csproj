@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- HelloWorld — the canonical smallest .idea widget: a self-contained greeting that also serves as
+       a live smoke test (a click counter proves interactive rendering works end to end). Common props +
+       the Abstractions reference come from ../../Directory.Build.props. Identity by convention: namespace
+       tail "HelloWorld" => key "helloworld", class "V1" => version 1. All markup, behavior, and styles
+       are inline, so the widget has no embedded resources and no static assets. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+</Project>

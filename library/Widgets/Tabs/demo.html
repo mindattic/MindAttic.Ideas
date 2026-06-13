@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): the exact authoring markup a CMS page would use. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tabs — raw assets demo</title>
+  <link rel="stylesheet" href="assets/tabs.css">
+  <script src="assets/tabs.js" defer></script>
+  <style>body { font-family: system-ui, sans-serif; margin: 2rem; }</style>
+</head>
+<body>
+  <h2>Classic tabs</h2>
+  <div class="ma-tabs">
+    <section data-title="Overview"><p>The first panel opens by default.</p></section>
+    <section data-title="Details"><p>Arrow keys move between tabs (ARIA tabs pattern).</p></section>
+    <section data-title="History"><p>The tablist is generated from data-title.</p></section>
+  </div>
+
+  <h2>Tab board (mindattic.com project board)</h2>
+  <div class="ma-tabs ma-tabs-board" data-closed>
+    <section data-title="ChiMesh"><p><strong>ChiMesh</strong> — a mesh networking experiment. <a href="#">Open</a></p></section>
+    <section data-title="Cursory"><p><strong>Cursory</strong> — cursor-tracking toolkit. <a href="#">Open</a></p></section>
+    <section data-title="GridGame"><p><strong>GridGame</strong> — a grid puzzle. <a href="#">Open</a></p></section>
+    <section data-title="MediaButler"><p><strong>MediaButler</strong> — media automation. <a href="#">Open</a></p></section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+@namespace MindAttic.Ideas.Widget.NavMenu
+@inherits WidgetBase
+@attribute [Idea(DisplayName = "Nav Menu")]
+
+@* MindAttic.Ideas.Widget.NavMenu.V1 — the site navigation bar. Links come from the placement's
+   links="Text=/href;Text=/href" attribute, falling back to the site setting "nav.links" (Host ->
+   Site -> Page override chain), so one theme can carry the token while every SITE supplies its own
+   menu — the multi-site seam. Brand text/href work the same way ("nav.brand" / "nav.brandhref").
+   The current page's slug gets aria-current. Collapses to a hamburger below 720px (navmenu.js). *@
+<link rel="stylesheet" href="/_ideas/Widget/navmenu/1/navmenu.css" />
+<script src="/_ideas/Widget/navmenu/1/navmenu.js" defer></script>
+<nav class="ma-nav" aria-label="Site">
+    <a class="ma-nav-brand" href="@_brandHref">@_brand</a>
+    <button class="ma-nav-toggle" type="button" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+    </button>
+    <ul class="ma-nav-list">
+        @foreach (var (text, href) in _links)
+        {
+            <li class="ma-nav-item">
+                <a class="ma-nav-link" href="@href" aria-current="@(IsCurrent(href) ? "page" : null)">@text</a>
+            </li>
+        }
+    </ul>
+</nav>
+
+@code {
+    /// <summary>Menu entries as "Text=/href;Text=/href". Overrides the "nav.links" site setting.</summary>
+    [Parameter] public string? Links { get; set; }
+
+    /// <summary>Brand text shown at the left. Overrides the "nav.brand" site setting.</summary>
+    [Parameter] public string? Brand { get; set; }
+
+    /// <summary>Brand link target (default "/"). Overrides the "nav.brandhref" site setting.</summary>
+    [Parameter] public string? BrandHref { get; set; }
+
+    private IReadOnlyList<(string Text, string Href)> _links = Array.Empty<(string, string)>();
+    private string _brand = "";
+    private string _brandHref = "/";
+
+    protected override void OnParametersSet()
+    {
+        var site = Context?.Site;
+        _brand = FirstNonEmpty(Brand, site?.GetSetting("nav.brand"), site?.Key) ?? "Home";
+        _brandHref = FirstNonEmpty(BrandHref, site?.GetSetting("nav.brandhref")) ?? "/";
+        _links = ParseLinks(FirstNonEmpty(Links, site?.GetSetting("nav.links")));
+    }
+
+    private bool IsCurrent(string href) =>
+        Context?.Page is { } p && href.Trim('/').Equals(p.Slug.Trim('/'), StringComparison.OrdinalIgnoreCase);
+
+    private static string? FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+    // "Home=/;About=/about" -> [(Home, /), (About, /about)]. Tolerant: skips malformed pairs.
+    private static IReadOnlyList<(string, string)> ParseLinks(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return Array.Empty<(string, string)>();
+        var list = new List<(string, string)>();
+        foreach (var pair in raw.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var eq = pair.IndexOf('=');
+            if (eq <= 0 || eq == pair.Length - 1) continue;
+            list.Add((pair[..eq].Trim(), pair[(eq + 1)..].Trim()));
+        }
+        return list;
+    }
+}

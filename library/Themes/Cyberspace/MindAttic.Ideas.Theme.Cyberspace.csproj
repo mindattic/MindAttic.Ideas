@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- Cyberspace theme. Common props + the Abstractions reference come from ../../Directory.Build.props.
+       Identity is convention: namespace tail (cyberspace) + V{n} class → Theme/cyberspace/1.
+
+       This RCL ships NO Razor static web assets of its own. Its chrome lives in assets/theme.css — a PLAIN
+       folder (NOT wwwroot/), so the Razor SDK never picks it up as a static web asset (which is what caused
+       the cross-host collisions). At pack time, assets/ IS the package wwwroot (the packer's wwwroot input);
+       at render the .idea serves it under /_ideas/Theme/cyberspace/1/. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+</Project>

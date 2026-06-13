@@ -1,0 +1,63 @@
+@namespace MindAttic.Ideas.Widget.VideoEmbed
+@inherits WidgetBase
+@attribute [Idea(DisplayName = "Video Embed")]
+
+@* MindAttic.Ideas.Widget.VideoEmbed.V1 — a responsive video player. Give it any YouTube or Vimeo
+   URL and it derives the privacy-friendly embed iframe (youtube-nocookie / dnt=1); any other URL
+   (including a data: URI, per the inline-asset convention) renders a native <video controls>.
+   {{ MindAttic.Ideas.Widget.VideoEmbed url="https://youtu.be/xyz" title="Launch demo" }} *@
+<link rel="stylesheet" href="/_ideas/Widget/videoembed/1/videoembed.css" />
+@if (!string.IsNullOrWhiteSpace(_embedUrl))
+{
+    <div class="ma-video">
+        <iframe src="@_embedUrl" title="@(Title ?? "Video")"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(Url))
+{
+    <div class="ma-video">
+        <video controls src="@Url" title="@(Title ?? "Video")"></video>
+    </div>
+}
+
+@code {
+    /// <summary>The video URL: YouTube/Vimeo page URL, a file URL, or a data: URI.</summary>
+    [Parameter] public string? Url { get; set; }
+
+    /// <summary>Accessible title for the player.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    private string? _embedUrl;
+
+    protected override void OnParametersSet() => _embedUrl = ToEmbedUrl(Url);
+
+    // YouTube (watch / youtu.be / shorts / embed) and Vimeo page URLs -> embed URLs; else null.
+    internal static string? ToEmbedUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url.Trim(), UriKind.Absolute, out var u))
+            return null;
+        var host = u.Host.ToLowerInvariant();
+        var path = u.AbsolutePath.Trim('/');
+
+        if (host is "youtu.be")
+            return Embed(path.StartsWith("shorts/") ? path["shorts/".Length..] : path);
+        if (host.EndsWith("youtube.com") || host.EndsWith("youtube-nocookie.com"))
+        {
+            if (path.StartsWith("embed/") || path.StartsWith("shorts/")) return Embed(path[(path.IndexOf('/') + 1)..]);
+            var v = u.Query.TrimStart('?').Split('&')
+                .Select(p => p.Split('=', 2))
+                .Where(p => p.Length == 2 && p[0] == "v")
+                .Select(p => Uri.UnescapeDataString(p[1]))
+                .FirstOrDefault();
+            return string.IsNullOrEmpty(v) ? null : Embed(v);
+        }
+        if (host.EndsWith("vimeo.com") && long.TryParse(path.Split('/')[^1], out var id))
+            return $"https://player.vimeo.com/video/{id}?dnt=1";
+        return null;
+
+        static string? Embed(string id) =>
+            string.IsNullOrWhiteSpace(id) ? null : $"https://www.youtube-nocookie.com/embed/{id}";
+    }
+}

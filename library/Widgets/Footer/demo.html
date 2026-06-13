@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): short page, so the footer pins to the bottom edge.
+     Click the button to grow the content past one screen and watch the pin release. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Footer — raw assets demo</title>
+  <link rel="stylesheet" href="assets/footer.css">
+  <script src="assets/footer.js" defer></script>
+  <style>body { font-family: system-ui, sans-serif; margin: 2rem; }</style>
+</head>
+<body>
+  <h2>Pin-when-short footer</h2>
+  <button onclick="for (var i = 0; i < 40; i++) { var p = document.createElement('p'); p.textContent = 'Content line ' + i; document.querySelector('main').appendChild(p); }">
+    Grow content
+  </button>
+  <main></main>
+  <footer class="ma-footer">© 2026 MindAttic · <a href="#">Privacy</a></footer>
+</body>
+</html>

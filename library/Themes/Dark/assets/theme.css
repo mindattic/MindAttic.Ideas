@@ -1,0 +1,78 @@
+/* ============================================================================
+   MindAttic.Ideas.Theme.Dark.V1 — a deep, low-glare dark theme.
+   Scoped under .theme-dark. Served at /_ideas/Theme/dark/1/theme.css.
+   ============================================================================ */
+
+.theme-dark {
+    --bg: #0e1116;
+    --surface: #161b22;
+    --text: #e6edf3;
+    --muted: #9aa6b2;
+    --line: #273039;
+    --accent: #58a6ff;
+    --accent-contrast: #0e1116;
+    --code-bg: #1b222c;
+
+    min-height: 100vh;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+.theme-dark * { box-sizing: border-box; }
+.theme-dark > * { max-width: 860px; margin-inline: auto; padding-inline: 1.25rem; }
+.theme-dark { padding-block: 2.5rem; }
+
+.theme-dark h1, .theme-dark h2, .theme-dark h3,
+.theme-dark h4, .theme-dark h5, .theme-dark h6 {
+    line-height: 1.25; font-weight: 700; margin: 1.8em 0 0.6em; letter-spacing: -0.01em; color: #f0f6fc;
+}
+.theme-dark h1 { font-size: 2.1rem; }
+.theme-dark h2 { font-size: 1.6rem; }
+.theme-dark h3 { font-size: 1.3rem; }
+
+.theme-dark a { color: var(--accent); text-decoration: none; }
+.theme-dark a:hover { text-decoration: underline; }
+
+.theme-dark hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+
+.theme-dark code {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px;
+    padding: 0.1em 0.4em; font-size: 0.88em;
+    font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.theme-dark pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1rem 1.1rem; overflow-x: auto;
+}
+.theme-dark pre code { background: none; border: 0; padding: 0; }
+
+.theme-dark blockquote {
+    margin: 1.4rem 0; padding: 0.4rem 1.1rem; color: var(--muted);
+    border-left: 3px solid var(--accent); background: var(--surface);
+}
+
+.theme-dark table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; }
+.theme-dark th, .theme-dark td { border: 1px solid var(--line); padding: 0.5rem 0.7rem; text-align: left; }
+.theme-dark th { background: var(--code-bg); font-weight: 600; }
+
+.theme-dark button, .theme-dark .btn {
+    background: var(--accent); color: var(--accent-contrast); border: 0; border-radius: 8px;
+    padding: 0.55rem 1.1rem; font: inherit; font-weight: 700; cursor: pointer;
+    transition: filter 0.12s ease;
+}
+.theme-dark button:hover, .theme-dark .btn:hover { filter: brightness(1.1); }
+
+.theme-dark input, .theme-dark select, .theme-dark textarea {
+    background: var(--surface); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 0.5rem 0.65rem; font: inherit;
+}
+.theme-dark input:focus, .theme-dark select:focus, .theme-dark textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent);
+}
+
+.theme-dark ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }

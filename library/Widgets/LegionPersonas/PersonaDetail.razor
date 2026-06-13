@@ -1,0 +1,55 @@
+@namespace MindAttic.Ideas.Widget.LegionPersonas
+
+<div class="persona-detail">
+    <div class="persona-detail-head">
+        <div class="persona-art persona-art-lg">
+            <canvas class="persona-art-canvas" data-sacred-shape="@Persona.Shape" data-sacred-bg="#0a1014"></canvas>
+        </div>
+        <div class="persona-detail-title">
+            <h2>@Persona.Name</h2>
+            <div class="muted small">@Persona.Id</div>
+        </div>
+    </div>
+
+    <p class="persona-bio">@Persona.Bio</p>
+
+    <dl class="trait-grid">
+        @Trait("Archetype", Persona.Archetype)
+        @Trait("Worldview", Persona.Worldview)
+        @Trait("Background", Persona.Background)
+        @Trait("Age", Persona.Age?.ToString())
+        @Trait("Pronouns", Persona.Pronouns)
+        @Trait("Quirk", Persona.Quirk)
+    </dl>
+
+    @if (Persona.HasProfile)
+    {
+        <h3 class="section">Psychometric profile</h3>
+        <dl class="trait-grid">
+            @Trait("MBTI", Persona.MbtiLine)
+            @Trait("Enneagram", Persona.EnneagramLine)
+            @Trait("DISC", Persona.DiscLine)
+            @Trait("OCEAN", Persona.OceanLine)
+            @Trait("HEXACO", Persona.HexacoLine)
+        </dl>
+        <div class="muted small scored-line">@Persona.ScoredLine</div>
+    }
+    else
+    {
+        <p class="muted">Not yet scored.</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Persona Persona { get; set; } = default!;
+
+    private RenderFragment Trait(string label, string? value) => builder =>
+    {
+        if (string.IsNullOrEmpty(value)) return;
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "trait");
+        builder.OpenElement(2, "dt"); builder.AddContent(3, label); builder.CloseElement();
+        builder.OpenElement(4, "dd"); builder.AddContent(5, value); builder.CloseElement();
+        builder.CloseElement();
+    };
+}

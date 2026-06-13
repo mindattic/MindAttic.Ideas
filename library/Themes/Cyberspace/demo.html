@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cyberspace theme — raw-html proof</title>
+
+  <!-- CONSUMER 1: a raw .html page links the SAME chrome the .idea bundles. No CMS, no build, no Blazor.
+       Open this file in a browser to see the theme. (Fonts fall back to system-ui and the animated
+       background is absent until the Cyberspace effects Plugin is also present — both are separate
+       Plugin .ideas the theme [Uses]; this proves the theme's own chrome stands alone.) -->
+  <link rel="stylesheet" href="./assets/theme.css" />
+</head>
+<body>
+  <!-- the three effect layers the Cyberspace plugin's engine would paint into -->
+  <div class="cyberspace-sl-fine"   aria-hidden="true"></div>
+  <div class="cyberspace-sl-coarse" aria-hidden="true"></div>
+  <div class="console-bg-host"      aria-hidden="true"></div>
+
+  <div class="page">
+    <header class="hero">
+      <h1 class="project-name">Cyberspace</h1>
+      <p class="tagline">One theme, three consumers: this raw <code>.html</code> page, a standalone Blazor
+        app, and an uploadable <code>.idea</code> for the MindAttic.Ideas CMS — all from one
+        <code>assets/theme.css</code>.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="#readme">Primary</a>
+        <a class="btn btn-secondary" href="#readme">Secondary</a>
+      </div>
+    </header>
+
+    <main id="readme" class="readme">
+      <h1>Theme chrome demo</h1>
+      <p>Everything you see here is styled by <code>assets/theme.css</code> — the single source of truth.
+        The CMS serves this exact file under <code>/_ideas/Theme/cyberspace/1/theme.css</code>; a standalone
+        app links it directly, just like this page does.</p>
+      <h2>Typography &amp; code</h2>
+      <p>Body copy, <a href="#">a link</a>, and inline <code>code</code> all inherit the cyberpunk palette.</p>
+      <pre><code>dotnet build -c Release Themes/Cyberspace</code></pre>
+      <blockquote>The asset bundle is the universal interchange format.</blockquote>
+    </main>
+  </div>
+</body>
+</html>

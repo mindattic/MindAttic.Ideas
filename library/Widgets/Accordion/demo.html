@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): the exact authoring markup a CMS page would use. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Accordion — raw assets demo</title>
+  <link rel="stylesheet" href="assets/accordion.css">
+  <script src="assets/accordion.js" defer></script>
+  <style>body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; }</style>
+</head>
+<body>
+  <h2>FAQ (exclusive — one open at a time)</h2>
+  <div class="ma-accordion" data-exclusive>
+    <details open>
+      <summary>What is a .idea file?</summary>
+      <p>A plain zip whose only required member is idea.json — the install unit of the CMS.</p>
+    </details>
+    <details>
+      <summary>Do I need to redeploy to ship content?</summary>
+      <p>No. Upload the .idea and it is live; no app-pool restart.</p>
+    </details>
+    <details>
+      <summary>How are versions handled?</summary>
+      <p>Whole numbers only. V2 ships alongside V1; shipped versions never mutate.</p>
+    </details>
+  </div>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- LegionPersonas — a LARGE widget: a self-contained interactive gallery (filter + grid + detail in ONE
+       widget; CSS does the left/right layout) that COMPOSES the small SacredGeometry widget BY STRING ID.
+       The page drops only the top tag {{Widget.LegionPersonas}}; SacredGeometry rides along via uses[].
+       Common props + Abstractions reference come from ../../Directory.Build.props. Identity by convention:
+       namespace tail + V{n} → Widget/legionpersonas/1. The persona library is the embedded personas.json. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The flattened persona library, baked into the assembly (read once via reflection at startup). -->
+    <None Remove="personas.json" />
+    <EmbeddedResource Include="personas.json" />
+  </ItemGroup>
+
+</Project>

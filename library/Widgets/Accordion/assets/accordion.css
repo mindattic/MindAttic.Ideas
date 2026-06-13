@@ -1,0 +1,36 @@
+/* MindAttic.Ideas.Widget.Accordion — chrome for native <details> groups. Scoped (MAIL-LAW-6). */
+.ma-accordion {
+  --ma-accordion-border: rgba(128, 128, 128, .35);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ma-accordion-border);
+  border-radius: .5rem;
+  overflow: hidden;
+}
+.ma-accordion details + details { border-top: 1px solid var(--ma-accordion-border); }
+.ma-accordion summary {
+  cursor: pointer;
+  padding: .8rem 1rem;
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+.ma-accordion summary::-webkit-details-marker { display: none; }
+/* Chevron that rotates open — drawn in CSS, no image asset. */
+.ma-accordion summary::after {
+  content: "";
+  width: .5rem;
+  height: .5rem;
+  flex: none;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform .2s ease;
+  opacity: .6;
+}
+.ma-accordion details[open] > summary::after { transform: rotate(225deg); }
+.ma-accordion summary:hover { background: rgba(128, 128, 128, .08); }
+.ma-accordion details > *:not(summary) { margin: 0; padding: 0 1rem 1rem; }

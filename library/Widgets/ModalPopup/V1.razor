@@ -1,0 +1,281 @@
+@namespace MindAttic.Ideas.Widget.ModalPopup
+@using System.Text.Json
+@inherits WidgetBase
+@attribute [Idea(DisplayName = "Modal Popup", RenderMode = CmsRenderMode.InteractiveServer)]
+
+@* CSS always emitted so .ma-modal* classes work for plain-HTML callers too. *@
+<style>
+    .ma-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 4vh 1rem;
+        z-index: 1000;
+        overscroll-behavior: contain;
+    }
+    .ma-modal[hidden] { display: none; }
+
+    .ma-modal-dialog {
+        background: var(--ma-modal-bg, #121723);
+        border: 1px solid var(--ma-modal-line, #232c3d);
+        border-radius: var(--ma-modal-radius, 14px);
+        width: 100%;
+        max-height: 92vh;
+        overflow-y: auto;
+        padding: 1.4rem;
+        box-sizing: border-box;
+        position: relative;
+        color: var(--ma-modal-text, #dce1e6);
+    }
+    .ma-modal-dialog:focus { outline: none; }
+    .ma-modal-dialog::-webkit-scrollbar { width: 6px; }
+    .ma-modal-dialog::-webkit-scrollbar-thumb { background: var(--ma-modal-line, #232c3d); border-radius: 3px; }
+
+    /* size variants — override max-width via --ma-modal-width or pick a class */
+    .ma-modal-sm   { max-width: var(--ma-modal-width, 400px);  }
+    .ma-modal-md   { max-width: var(--ma-modal-width, 640px);  }
+    .ma-modal-lg   { max-width: var(--ma-modal-width, 900px);  }
+    .ma-modal-xl   { max-width: var(--ma-modal-width, 1200px); }
+    .ma-modal-full { max-width: none; width: calc(100% - 2rem); }
+
+    .ma-modal-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    .ma-modal-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        flex: 1;
+        color: var(--ma-modal-text, #dce1e6);
+    }
+    .ma-modal-close {
+        margin-left: auto;
+        flex-shrink: 0;
+        background: transparent;
+        border: none;
+        color: var(--ma-modal-muted, #8b97a8);
+        font-size: 1.25rem;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0.2rem 0.45rem;
+        border-radius: 6px;
+    }
+    .ma-modal-close:hover {
+        color: var(--ma-modal-text, #dce1e6);
+        background: var(--ma-modal-hover-bg, rgba(255, 255, 255, 0.08));
+    }
+    .ma-modal-body { color: var(--ma-modal-text, #dce1e6); }
+    .ma-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.6rem;
+        margin-top: 1.2rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--ma-modal-line, #232c3d);
+    }
+    .ma-modal-btn {
+        padding: 0.45rem 1.1rem;
+        border-radius: 8px;
+        font: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border: 1px solid var(--ma-modal-line, #232c3d);
+    }
+    .ma-modal-cancel {
+        background: transparent;
+        color: var(--ma-modal-muted, #8b97a8);
+    }
+    .ma-modal-cancel:hover {
+        color: var(--ma-modal-text, #dce1e6);
+        border-color: var(--ma-modal-text, #dce1e6);
+    }
+    .ma-modal-confirm {
+        background: var(--ma-modal-accent, #3c82ff);
+        color: #fff;
+        border-color: transparent;
+    }
+    .ma-modal-confirm:hover { filter: brightness(1.1); }
+
+    @@media (max-width: 640px) {
+        .ma-modal { padding: 2vh 0; align-items: flex-end; }
+        .ma-modal-dialog { border-radius: 14px 14px 0 0; max-height: 96vh; }
+    }
+</style>
+
+@if (_open)
+{
+    <div class="ma-modal" @onclick="HandleBackdropClick" @onkeydown="HandleKeyDown">
+        @if (_wrapForm)
+        {
+            <form class="ma-modal-dialog @_sizeClass" role="dialog" aria-modal="true"
+                  aria-labelledby="@LabelledBy" tabindex="-1" @ref="_dialog"
+                  @onclick:stopPropagation="true"
+                  @onsubmit="HandleConfirm" @onsubmit:preventDefault="true">
+                @HeaderFragment
+                <div class="ma-modal-body">@ChildContent</div>
+                @FooterFragment
+            </form>
+        }
+        else
+        {
+            <div class="ma-modal-dialog @_sizeClass" role="dialog" aria-modal="true"
+                 aria-labelledby="@LabelledBy" tabindex="-1" @ref="_dialog"
+                 @onclick:stopPropagation="true">
+                @HeaderFragment
+                <div class="ma-modal-body">@ChildContent</div>
+                @FooterFragment
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; } = true;
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public bool? ShowClose { get; set; }
+    [Parameter] public bool? ShowHeader { get; set; }
+    [Parameter] public bool? ShowFooter { get; set; }
+    [Parameter] public string? ConfirmText { get; set; }
+    [Parameter] public string? CancelText { get; set; }
+    [Parameter] public bool? WrapForm { get; set; }
+    [Parameter] public string? Size { get; set; }
+    [Parameter] public string? Config { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
+
+    private bool _open;
+    private bool _wasOpen;
+    private ElementReference _dialog;
+    private readonly string _titleId = "ma-modal-title-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+    private bool _showClose;
+    private bool _showHeader;
+    private bool _showFooter;
+    private bool _wrapForm;
+    private string? _title;
+    private string? _confirmText;
+    private string? _cancelText;
+    private string _sizeClass = "ma-modal-md";
+
+    protected override void OnParametersSet()
+    {
+        _open = IsOpen;
+
+        ModalConfig? cfg = null;
+        if (!string.IsNullOrEmpty(Config))
+            try { cfg = JsonSerializer.Deserialize<ModalConfig>(Config, JsonOpts); } catch { }
+
+        _title        = Title ?? cfg?.Title;
+        _showClose    = ShowClose    ?? cfg?.ShowClose    ?? true;
+        _wrapForm     = WrapForm     ?? cfg?.WrapForm     ?? false;
+        _confirmText  = ConfirmText  ?? cfg?.ConfirmText;
+        _cancelText   = CancelText   ?? cfg?.CancelText;
+
+        var size = Size ?? cfg?.Size ?? "md";
+        _sizeClass = size switch
+        {
+            "sm"   => "ma-modal-sm",
+            "lg"   => "ma-modal-lg",
+            "xl"   => "ma-modal-xl",
+            "full" => "ma-modal-full",
+            _      => "ma-modal-md",
+        };
+
+        _showFooter = ShowFooter ?? cfg?.ShowFooter
+            ?? (!string.IsNullOrEmpty(_confirmText) || !string.IsNullOrEmpty(_cancelText));
+        _showHeader = ShowHeader ?? cfg?.ShowHeader
+            ?? (_showClose || !string.IsNullOrEmpty(_title));
+    }
+
+    private RenderFragment HeaderFragment => builder =>
+    {
+        if (!_showHeader) return;
+        int i = 0;
+        builder.OpenElement(i++, "div");
+        builder.AddAttribute(i++, "class", "ma-modal-header");
+        if (!string.IsNullOrEmpty(_title))
+        {
+            builder.OpenElement(i++, "div");
+            builder.AddAttribute(i++, "class", "ma-modal-title");
+            builder.AddAttribute(i++, "id", _titleId);
+            builder.AddContent(i++, _title);
+            builder.CloseElement();
+        }
+        if (_showClose)
+        {
+            builder.OpenElement(i++, "button");
+            builder.AddAttribute(i++, "class", "ma-modal-close");
+            builder.AddAttribute(i++, "type", "button");
+            builder.AddAttribute(i++, "aria-label", "Close");
+            builder.AddAttribute(i++, "onclick", EventCallback.Factory.Create(this, HandleClose));
+            builder.AddContent(i++, "✕");
+            builder.CloseElement();
+        }
+        builder.CloseElement();
+    };
+
+    private RenderFragment FooterFragment => builder =>
+    {
+        if (!_showFooter) return;
+        int i = 0;
+        builder.OpenElement(i++, "div");
+        builder.AddAttribute(i++, "class", "ma-modal-footer");
+        if (!string.IsNullOrEmpty(_cancelText))
+        {
+            builder.OpenElement(i++, "button");
+            builder.AddAttribute(i++, "class", "ma-modal-btn ma-modal-cancel");
+            builder.AddAttribute(i++, "type", "button");
+            builder.AddAttribute(i++, "onclick", EventCallback.Factory.Create(this, HandleCancel));
+            builder.AddContent(i++, _cancelText);
+            builder.CloseElement();
+        }
+        if (!string.IsNullOrEmpty(_confirmText))
+        {
+            builder.OpenElement(i++, "button");
+            builder.AddAttribute(i++, "class", "ma-modal-btn ma-modal-confirm");
+            builder.AddAttribute(i++, "type", _wrapForm ? "submit" : "button");
+            if (!_wrapForm)
+                builder.AddAttribute(i++, "onclick", EventCallback.Factory.Create(this, HandleConfirm));
+            builder.AddContent(i++, _confirmText);
+            builder.CloseElement();
+        }
+        builder.CloseElement();
+    };
+
+    private string? LabelledBy => _showHeader && !string.IsNullOrEmpty(_title) ? _titleId : null;
+
+    // Focus the dialog when it opens so keyboard events (Escape) land inside it and AT announces it.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_open && !_wasOpen)
+            try { await _dialog.FocusAsync(); } catch { /* prerender / element already gone */ }
+        _wasOpen = _open;
+    }
+
+    private async Task HandleClose()         { if (OnClose.HasDelegate)   await OnClose.InvokeAsync(); }
+    private async Task HandleConfirm()       { if (OnConfirm.HasDelegate) await OnConfirm.InvokeAsync(); }
+    private async Task HandleCancel()        { if (OnCancel.HasDelegate)  await OnCancel.InvokeAsync(); }
+    private async Task HandleBackdropClick() { if (OnClose.HasDelegate)   await OnClose.InvokeAsync(); }
+    private async Task HandleKeyDown(KeyboardEventArgs e) { if (e.Key == "Escape") await HandleClose(); }
+
+    private sealed class ModalConfig
+    {
+        public string? Title        { get; set; }
+        public bool?   ShowClose    { get; set; }
+        public bool?   ShowHeader   { get; set; }
+        public bool?   ShowFooter   { get; set; }
+        public string? ConfirmText  { get; set; }
+        public string? CancelText   { get; set; }
+        public bool?   WrapForm     { get; set; }
+        public string? Size         { get; set; }
+    }
+}

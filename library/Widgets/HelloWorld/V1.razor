@@ -1,0 +1,56 @@
+@namespace MindAttic.Ideas.Widget.HelloWorld
+@inherits WidgetBase
+@attribute [Idea(DisplayName = "Hello World", RenderMode = CmsRenderMode.InteractiveServer)]
+
+@* ============================================================================================
+   MindAttic.Ideas.Widget.HelloWorld.V1 — the canonical smallest .idea widget. A page drops the tag
+   {{Widget.HelloWorld}} and gets a self-contained greeting card. The click counter is a live smoke
+   test: if it increments, interactive server rendering is wired up correctly. Identity by convention:
+   namespace tail "HelloWorld" => key "helloworld", class "V1" => version 1. All CSS is scoped under
+   .hello-world so it never leaks into the host theme.
+   ============================================================================================ *@
+
+<div class="hello-world">
+    <p class="hw-greeting">Hello, World!</p>
+    <p class="hw-sub">This is a MindAttic <code>.idea</code> widget.</p>
+    <button class="hw-btn" type="button" @onclick="Increment">
+        Clicked @count time@(count == 1 ? "" : "s")
+    </button>
+</div>
+
+@code {
+    private int count;
+
+    private void Increment() => count++;
+}
+
+<style>
+    /* All selectors scoped under .hello-world so the widget never leaks styles into the host/theme. */
+    .hello-world {
+        --hw-bg: #121723;
+        --hw-line: #232c3d;
+        --hw-text: #dce1e6;
+        --hw-muted: #8b97a8;
+        --hw-accent: #3c82ff;
+        max-width: 380px;
+        padding: 1.5rem;
+        border: 1px solid var(--hw-line);
+        border-radius: 12px;
+        background: var(--hw-bg);
+        color: var(--hw-text);
+        font-family: system-ui, sans-serif;
+    }
+    .hello-world * { box-sizing: border-box; }
+    .hello-world .hw-greeting { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+    .hello-world .hw-sub { margin: 0.25rem 0 1rem; color: var(--hw-muted); font-size: 0.9rem; }
+    .hello-world .hw-sub code {
+        background: #1a2130; border: 1px solid var(--hw-line);
+        border-radius: 5px; padding: 0.05rem 0.35rem; font-size: 0.85em;
+    }
+    .hello-world .hw-btn {
+        background: var(--hw-accent); color: #fff; border: none;
+        border-radius: 7px; padding: 0.5rem 1rem; font: inherit; font-weight: 600; cursor: pointer;
+        transition: filter 0.1s ease;
+    }
+    .hello-world .hw-btn:hover { filter: brightness(1.1); }
+</style>

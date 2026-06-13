@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!-- Common props + the Abstractions reference come from the repo Directory.Build.props. Identity is
+       convention (namespace tail + V{n}). assets/ is a plain folder packed as the .idea wwwroot. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compile-only: KeyboardEventArgs + the typed @onkeydown mapping live in Components.Web. The host
+         CMS supplies the assembly at runtime; ExcludeAssets=runtime keeps it out of the packed bin/. -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>

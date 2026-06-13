@@ -1,0 +1,81 @@
+/* ============================================================================
+   MindAttic.Ideas.Theme.Light.V1 — a clean, neutral light theme.
+   Everything is scoped under .theme-light (the chrome wrapper) so it never leaks
+   into widgets or other themes. Served at /_ideas/Theme/light/1/theme.css.
+   ============================================================================ */
+
+.theme-light {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1b2230;
+    --muted: #5c6675;
+    --line: #e3e7ee;
+    --accent: #2563eb;
+    --accent-contrast: #ffffff;
+    --code-bg: #f0f2f6;
+
+    min-height: 100vh;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+.theme-light * { box-sizing: border-box; }
+
+/* Comfortable reading column for free-form page content. */
+.theme-light > * { max-width: 860px; margin-inline: auto; padding-inline: 1.25rem; }
+.theme-light { padding-block: 2.5rem; }
+
+.theme-light h1, .theme-light h2, .theme-light h3,
+.theme-light h4, .theme-light h5, .theme-light h6 {
+    line-height: 1.25; font-weight: 700; margin: 1.8em 0 0.6em; letter-spacing: -0.01em;
+}
+.theme-light h1 { font-size: 2.1rem; }
+.theme-light h2 { font-size: 1.6rem; }
+.theme-light h3 { font-size: 1.3rem; }
+
+.theme-light a { color: var(--accent); text-decoration: none; }
+.theme-light a:hover { text-decoration: underline; }
+
+.theme-light hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+
+.theme-light code {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px;
+    padding: 0.1em 0.4em; font-size: 0.88em;
+    font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.theme-light pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1rem 1.1rem; overflow-x: auto;
+}
+.theme-light pre code { background: none; border: 0; padding: 0; }
+
+.theme-light blockquote {
+    margin: 1.4rem 0; padding: 0.4rem 1.1rem; color: var(--muted);
+    border-left: 3px solid var(--accent); background: var(--surface);
+}
+
+.theme-light table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; }
+.theme-light th, .theme-light td { border: 1px solid var(--line); padding: 0.5rem 0.7rem; text-align: left; }
+.theme-light th { background: var(--code-bg); font-weight: 600; }
+
+.theme-light button, .theme-light .btn {
+    background: var(--accent); color: var(--accent-contrast); border: 0; border-radius: 8px;
+    padding: 0.55rem 1.1rem; font: inherit; font-weight: 600; cursor: pointer;
+    transition: filter 0.12s ease;
+}
+.theme-light button:hover, .theme-light .btn:hover { filter: brightness(1.07); }
+
+.theme-light input, .theme-light select, .theme-light textarea {
+    background: var(--surface); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 0.5rem 0.65rem; font: inherit;
+}
+.theme-light input:focus, .theme-light select:focus, .theme-light textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent);
+}
+
+.theme-light ::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }

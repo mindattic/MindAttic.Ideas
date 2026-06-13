@@ -1,0 +1,69 @@
+/* MindAttic.Ideas.Widget.Gallery — responsive image grid + lightbox. Scoped (MAIL-LAW-6).
+   Tiles are elements carrying a base64 background-image CSS class (the page convention);
+   plain <img> children are styled too. */
+.ma-gallery {
+  --ma-gallery-min: 9rem;
+  --ma-gallery-gap: 1rem;
+  --ma-gallery-ratio: 2 / 3;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--ma-gallery-min), 1fr));
+  gap: var(--ma-gallery-gap);
+  align-items: start;
+}
+.ma-gallery-tile {
+  display: block;
+  width: 100%;
+  aspect-ratio: var(--ma-gallery-ratio);
+  background-size: cover;
+  background-position: center;
+  border-radius: .4rem;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.ma-gallery img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: .4rem;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.ma-gallery-tile:hover,
+.ma-gallery-tile:focus-visible,
+.ma-gallery img:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .25);
+}
+
+/* ── Lightbox overlay (created once by gallery.js for unlinked tiles) ───────────────── */
+.ma-gallery-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .85);
+}
+.ma-gallery-lightbox img {
+  max-width: min(92vw, 70rem);
+  max-height: 88vh;
+  border-radius: .4rem;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .6);
+}
+.ma-gallery-lightbox button {
+  position: absolute;
+  background: none;
+  border: 0;
+  color: #fff;
+  font-size: 2.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: .5rem .9rem;
+  opacity: .8;
+}
+.ma-gallery-lightbox button:hover,
+.ma-gallery-lightbox button:focus-visible { opacity: 1; }
+.ma-gallery-lightbox .ma-gallery-close { top: .5rem; right: .75rem; }
+.ma-gallery-lightbox .ma-gallery-prev  { left: .5rem; top: 50%; transform: translateY(-50%); }
+.ma-gallery-lightbox .ma-gallery-next  { right: .5rem; top: 50%; transform: translateY(-50%); }

@@ -1,0 +1,56 @@
+/* MindAttic.Ideas.Widget.Carousel — slider chrome. Scoped under .ma-carousel (MAIL-LAW-6). */
+.ma-carousel {
+  --ma-carousel-height: 20rem;
+  position: relative;
+  overflow: hidden;
+  border-radius: .5rem;
+}
+.ma-slide {
+  display: none;
+  min-height: var(--ma-carousel-height);
+  background-size: cover;
+  background-position: center;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+.ma-slide.ma-slide-active { display: block; }
+.ma-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, .35);
+  color: #fff;
+  border: 0;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: .75;
+  transition: opacity .15s ease;
+}
+.ma-carousel-arrow:hover,
+.ma-carousel-arrow:focus-visible { opacity: 1; }
+.ma-carousel-prev { left: .75rem; }
+.ma-carousel-next { right: .75rem; }
+.ma-carousel-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: .6rem;
+  display: flex;
+  justify-content: center;
+  gap: .45rem;
+}
+.ma-carousel-dot {
+  width: .6rem;
+  height: .6rem;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, .55);
+  box-shadow: 0 0 2px rgba(0, 0, 0, .6);
+}
+.ma-carousel-dot[aria-current="true"] { background: #fff; }

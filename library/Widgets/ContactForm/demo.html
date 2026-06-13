@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): static markup mirroring V1.razor. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ContactForm — raw assets demo</title>
+  <link rel="stylesheet" href="assets/contactform.css">
+  <style>body { font-family: system-ui, sans-serif; margin: 2rem; }</style>
+</head>
+<body>
+  <h2>Contact form</h2>
+  <form class="ma-contact" method="post" action="#">
+    <label class="ma-contact-field"><span>Name</span><input name="name" type="text" required maxlength="200" autocomplete="name"></label>
+    <label class="ma-contact-field"><span>Email</span><input name="email" type="email" required maxlength="320" autocomplete="email"></label>
+    <label class="ma-contact-field"><span>Message</span><textarea name="message" required rows="6" maxlength="4000"></textarea></label>
+    <input class="ma-contact-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <button class="ma-contact-submit" type="submit">Send message</button>
+  </form>
+
+  <h2>Unconfigured hint</h2>
+  <div class="ma-contact ma-contact-unconfigured">
+    ContactForm: set <code>action=</code> on the include token (or the <code>contact.action</code>
+    site setting) to the endpoint that should receive submissions.
+  </div>
+</body>
+</html>

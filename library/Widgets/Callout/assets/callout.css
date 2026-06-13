@@ -1,0 +1,29 @@
+/* MindAttic.Ideas.Widget.Callout — notice boxes. Scoped under .ma-callout (MAIL-LAW-6).
+   Icons are text glyphs (no images, no requests); accents are custom properties per variant. */
+.ma-callout {
+  --ma-callout-accent: #3b82d4;
+  --ma-callout-icon: "\2139";       /* ℹ */
+  position: relative;
+  padding: .9rem 1rem .9rem 2.9rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--ma-callout-accent);
+  border-radius: .35rem;
+  background:
+    linear-gradient(color-mix(in srgb, var(--ma-callout-accent) 9%, transparent),
+                    color-mix(in srgb, var(--ma-callout-accent) 9%, transparent));
+  line-height: 1.5;
+}
+.ma-callout::before {
+  content: var(--ma-callout-icon);
+  position: absolute;
+  left: 1rem;
+  top: .85rem;
+  font-weight: 700;
+  color: var(--ma-callout-accent);
+}
+.ma-callout > :first-child { margin-top: 0; }
+.ma-callout > :last-child { margin-bottom: 0; }
+
+.ma-callout-success { --ma-callout-accent: #2e9e5b; --ma-callout-icon: "\2713"; }  /* ✓ */
+.ma-callout-warn    { --ma-callout-accent: #d4a52e; --ma-callout-icon: "\26A0"; }  /* ⚠ */
+.ma-callout-error   { --ma-callout-accent: #d44a3b; --ma-callout-icon: "\2717"; }  /* ✗ */

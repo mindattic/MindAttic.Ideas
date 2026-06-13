@@ -1,0 +1,65 @@
+/* MindAttic.Ideas.Widget.ContactForm — form chrome. Scoped under .ma-contact (MAIL-LAW-6). */
+.ma-contact {
+  --ma-contact-accent: #4a6cf7;
+  --ma-contact-border: rgba(128, 128, 128, .4);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 34rem;
+}
+.ma-contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+.ma-contact-field span {
+  font-size: .85rem;
+  font-weight: 600;
+  opacity: .8;
+}
+.ma-contact input,
+.ma-contact textarea {
+  font: inherit;
+  color: inherit;
+  background: rgba(128, 128, 128, .07);
+  border: 1px solid var(--ma-contact-border);
+  border-radius: .4rem;
+  padding: .6rem .75rem;
+}
+.ma-contact input:focus-visible,
+.ma-contact textarea:focus-visible {
+  outline: 2px solid var(--ma-contact-accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.ma-contact textarea { resize: vertical; }
+/* Honeypot: removed from view and tab order but present in the POST. */
+.ma-contact-hp {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.ma-contact-submit {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--ma-contact-accent);
+  border: 0;
+  border-radius: 2rem;
+  padding: .65rem 1.6rem;
+  cursor: pointer;
+  transition: filter .15s ease;
+}
+.ma-contact-submit:hover,
+.ma-contact-submit:focus-visible { filter: brightness(1.1); }
+.ma-contact-unconfigured {
+  border: 1px dashed var(--ma-contact-border);
+  border-radius: .4rem;
+  padding: 1rem;
+  font-size: .9rem;
+  opacity: .8;
+}

@@ -1,0 +1,91 @@
+/* MindAttic.Ideas.Widget.ModalPopup — Scoped to .ma-modal* selectors (MAIL-LAW-6).
+ * Provides the backdrop + dialog chrome. CSS custom properties let the host page override colours
+ * without rewriting this sheet. Dark defaults match the Cyberspace theme palette. */
+
+/* ── backdrop ─────────────────────────────────────────────────────────────────── */
+.ma-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 4vh 1rem;
+    z-index: 1000;
+    overscroll-behavior: contain;
+}
+
+.ma-modal[hidden] { display: none; }
+
+/* ── dialog panel ─────────────────────────────────────────────────────────────── */
+.ma-modal-dialog {
+    background: var(--ma-modal-bg, #121723);
+    border: 1px solid var(--ma-modal-line, #232c3d);
+    border-radius: 14px;
+    max-width: var(--ma-modal-width, 640px);
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 1.4rem;
+    box-sizing: border-box;
+    position: relative;
+    color: var(--ma-modal-text, #dce1e6);
+}
+
+.ma-modal-dialog::-webkit-scrollbar { width: 6px; }
+.ma-modal-dialog::-webkit-scrollbar-thumb {
+    background: var(--ma-modal-line, #232c3d);
+    border-radius: 3px;
+}
+
+/* ── header row (optional helper) ────────────────────────────────────────────── */
+.ma-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.ma-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    flex: 1;
+    color: var(--ma-modal-text, #dce1e6);
+}
+
+/* ── close button ─────────────────────────────────────────────────────────────── */
+.ma-modal-close {
+    margin-left: auto;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: var(--ma-modal-muted, #8b97a8);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.2rem 0.45rem;
+    border-radius: 6px;
+}
+
+.ma-modal-close:hover {
+    color: var(--ma-modal-text, #dce1e6);
+    background: var(--ma-modal-hover-bg, rgba(255, 255, 255, 0.08));
+}
+
+/* ── body ─────────────────────────────────────────────────────────────────────── */
+.ma-modal-body {
+    color: var(--ma-modal-text, #dce1e6);
+}
+
+/* ── responsive: sheet from bottom on narrow viewports ───────────────────────── */
+@media (max-width: 640px) {
+    .ma-modal {
+        padding: 2vh 0;
+        align-items: flex-end;
+    }
+    .ma-modal-dialog {
+        border-radius: 14px 14px 0 0;
+        max-height: 96vh;
+    }
+}

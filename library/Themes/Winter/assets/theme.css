@@ -1,0 +1,81 @@
+/* ============================================================================
+   MindAttic.Ideas.Theme.Winter.V1 — cool, crisp ice: frost white, slate, glacial blue.
+   Scoped under .theme-winter. Served at /_ideas/Theme/winter/1/theme.css.
+   ============================================================================ */
+
+.theme-winter {
+    --bg: #eef3f8;
+    --surface: #ffffff;
+    --text: #16222e;
+    --muted: #5a6b7b;
+    --line: #d4e0ea;
+    --accent: #2f7dbd;       /* glacial blue */
+    --accent-2: #6aa9d6;     /* ice */
+    --accent-contrast: #ffffff;
+    --code-bg: #e6eef6;
+
+    min-height: 100vh;
+    margin: 0;
+    background:
+        radial-gradient(900px 520px at 100% -8%, rgba(106,169,214,0.16), transparent 60%),
+        linear-gradient(180deg, #f2f6fb 0%, #e7eef6 100%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+.theme-winter * { box-sizing: border-box; }
+.theme-winter > * { max-width: 860px; margin-inline: auto; padding-inline: 1.25rem; }
+.theme-winter { padding-block: 2.5rem; }
+
+.theme-winter h1, .theme-winter h2, .theme-winter h3,
+.theme-winter h4, .theme-winter h5, .theme-winter h6 {
+    line-height: 1.25; font-weight: 700; margin: 1.8em 0 0.6em; letter-spacing: 0.01em; color: #14303f;
+}
+.theme-winter h1 { font-size: 2.1rem; }
+.theme-winter h2 { font-size: 1.6rem; }
+.theme-winter h3 { font-size: 1.3rem; }
+
+.theme-winter a { color: var(--accent); text-decoration: none; }
+.theme-winter a:hover { text-decoration: underline; }
+
+.theme-winter hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+
+.theme-winter code {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px;
+    padding: 0.1em 0.4em; font-size: 0.88em;
+    font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.theme-winter pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1rem 1.1rem; overflow-x: auto;
+}
+.theme-winter pre code { background: none; border: 0; padding: 0; }
+
+.theme-winter blockquote {
+    margin: 1.4rem 0; padding: 0.4rem 1.1rem; color: var(--muted);
+    border-left: 3px solid var(--accent-2); background: var(--surface);
+}
+
+.theme-winter table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; }
+.theme-winter th, .theme-winter td { border: 1px solid var(--line); padding: 0.5rem 0.7rem; text-align: left; }
+.theme-winter th { background: var(--code-bg); font-weight: 600; }
+
+.theme-winter button, .theme-winter .btn {
+    background: var(--accent); color: var(--accent-contrast); border: 0; border-radius: 8px;
+    padding: 0.55rem 1.1rem; font: inherit; font-weight: 600; cursor: pointer;
+    transition: filter 0.12s ease;
+}
+.theme-winter button:hover, .theme-winter .btn:hover { filter: brightness(1.08); }
+
+.theme-winter input, .theme-winter select, .theme-winter textarea {
+    background: var(--surface); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 0.5rem 0.65rem; font: inherit;
+}
+.theme-winter input:focus, .theme-winter select:focus, .theme-winter textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent);
+}
+
+.theme-winter ::selection { background: color-mix(in srgb, var(--accent-2) 30%, transparent); }

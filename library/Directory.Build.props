@@ -1,0 +1,34 @@
+<Project>
+
+  <!-- ============================================================================================
+       Common settings for EVERY .idea component in this library, defined ONCE so each component's
+       .csproj stays tiny. A component project only needs to declare its own assets/StaticWebAssets
+       quirks (if any); identity comes from convention (namespace tail + V{n} class).
+
+       The ONLY reference is the frozen Abstractions SDK in the sibling CMS repo. Private=false +
+       ExcludeAssets=runtime keep Abstractions (and the framework Components it carries) OUT of bin/ —
+       the package validator FORBIDS host assemblies in bin/, so the packed bin/ holds exactly one DLL.
+       ============================================================================================ -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Whole-number versioning (MindAttic rule). The .idea CONTENT version is the V{n} class name,
+         independent of this assembly version. -->
+    <Version>1.0.0</Version>
+
+    <!-- A distributable .idea citizen: never a NuGet package, never built by the CMS solution. -->
+    <IsPackable>false</IsPackable>
+
+    <!-- Path to the CMS Abstractions project in the sibling src/ tree (same repo). -->
+    <IdeasAbstractionsProject Condition="'$(IdeasAbstractionsProject)' == ''">$(MSBuildThisFileDirectory)..\src\MindAttic.Ideas.Abstractions\MindAttic.Ideas.Abstractions.csproj</IdeasAbstractionsProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(IdeasAbstractionsProject)" Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+</Project>

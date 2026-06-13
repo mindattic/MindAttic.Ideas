@@ -1,0 +1,47 @@
+/* MindAttic.Ideas.Widget.Card — content card + .ma-cards row helper. Scoped (MAIL-LAW-6). */
+.ma-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+}
+.ma-card {
+  --ma-card-radius: .6rem;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(128, 128, 128, .3);
+  border-radius: var(--ma-card-radius);
+  overflow: hidden;
+  background: rgba(128, 128, 128, .06);
+  color: inherit;
+  text-decoration: none;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.ma-card-link:hover,
+.ma-card-link:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .15);
+}
+/* A div carrying a base64 background-image class (the page convention) — never an <img> file. */
+.ma-card-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-size: cover;
+  background-position: center;
+}
+.ma-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: 1rem;
+  flex: 1;
+}
+.ma-card-title { margin: 0; font-size: 1.15rem; }
+.ma-card-text  { margin: 0; opacity: .8; line-height: 1.5; }
+.ma-card-footer {
+  margin-top: auto;
+  padding-top: .5rem;
+  font-size: .8rem;
+  opacity: .6;
+}

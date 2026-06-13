@@ -1,0 +1,85 @@
+/* ============================================================================
+   MindAttic.Ideas.Theme.Spring.V1 — fresh greens with a blossom-pink accent.
+   Scoped under .theme-spring. Served at /_ideas/Theme/spring/1/theme.css.
+   ============================================================================ */
+
+.theme-spring {
+    --bg: #f3faf1;
+    --surface: #ffffff;
+    --text: #1f2e22;
+    --muted: #5a6f5e;
+    --line: #d8ead2;
+    --accent: #e26d9b;       /* cherry blossom */
+    --accent-2: #4caf50;     /* new-leaf green */
+    --accent-contrast: #ffffff;
+    --code-bg: #eaf5e6;
+
+    min-height: 100vh;
+    margin: 0;
+    background:
+        radial-gradient(900px 500px at 100% -5%, rgba(226,109,155,0.10), transparent 60%),
+        linear-gradient(180deg, #f3faf1 0%, #eef7ec 100%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+.theme-spring * { box-sizing: border-box; }
+.theme-spring > * { max-width: 860px; margin-inline: auto; padding-inline: 1.25rem; }
+.theme-spring { padding-block: 2.5rem; }
+
+.theme-spring h1, .theme-spring h2, .theme-spring h3,
+.theme-spring h4, .theme-spring h5, .theme-spring h6 {
+    line-height: 1.25; font-weight: 700; margin: 1.8em 0 0.6em; color: #213a27;
+}
+.theme-spring h1 { font-size: 2.1rem; }
+.theme-spring h1::after {
+    content: ""; display: block; width: 64px; height: 3px; margin-top: 0.4rem; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+.theme-spring h2 { font-size: 1.6rem; }
+.theme-spring h3 { font-size: 1.3rem; }
+
+.theme-spring a { color: var(--accent); text-decoration: none; }
+.theme-spring a:hover { text-decoration: underline; }
+
+.theme-spring hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+
+.theme-spring code {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px;
+    padding: 0.1em 0.4em; font-size: 0.88em;
+    font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.theme-spring pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1rem 1.1rem; overflow-x: auto;
+}
+.theme-spring pre code { background: none; border: 0; padding: 0; }
+
+.theme-spring blockquote {
+    margin: 1.4rem 0; padding: 0.4rem 1.1rem; color: var(--muted);
+    border-left: 3px solid var(--accent-2); background: var(--surface);
+}
+
+.theme-spring table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; }
+.theme-spring th, .theme-spring td { border: 1px solid var(--line); padding: 0.5rem 0.7rem; text-align: left; }
+.theme-spring th { background: var(--code-bg); font-weight: 600; }
+
+.theme-spring button, .theme-spring .btn {
+    background: var(--accent); color: var(--accent-contrast); border: 0; border-radius: 999px;
+    padding: 0.55rem 1.2rem; font: inherit; font-weight: 600; cursor: pointer;
+    transition: filter 0.12s ease;
+}
+.theme-spring button:hover, .theme-spring .btn:hover { filter: brightness(1.05); }
+
+.theme-spring input, .theme-spring select, .theme-spring textarea {
+    background: var(--surface); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 0.5rem 0.65rem; font: inherit;
+}
+.theme-spring input:focus, .theme-spring select:focus, .theme-spring textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent-2) 40%, transparent); border-color: var(--accent-2);
+}
+
+.theme-spring ::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }

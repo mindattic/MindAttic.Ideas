@@ -1,0 +1,20 @@
+@namespace MindAttic.Ideas.Widget.Frontpage
+
+@* One project/child entry in a section's left-hand tab rail. The tagline shows
+   on hover/focus via the Tooltip widget (data-tooltip attribute) — no interop,
+   no service; harmless if no Tooltip component is loaded. *@
+<button type="button"
+        class="siteNav-item @(Selected ? "is-selected" : null)"
+        data-tooltip="@(string.IsNullOrWhiteSpace(Page.Tagline) ? null : Page.Tagline)"
+        data-tooltip-pos="right"
+        @onclick="OnClick">
+    <span class="siteNav-item-name">@Page.Title</span>
+</button>
+
+@code {
+    [Parameter, EditorRequired] public HubPage Page { get; set; } = default!;
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+
+    private Task OnClick() => OnSelect.InvokeAsync(Page.Slug);
+}

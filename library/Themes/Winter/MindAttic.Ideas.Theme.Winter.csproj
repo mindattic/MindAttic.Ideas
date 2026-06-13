@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- Winter theme. Common props + the Abstractions reference come from ../../Directory.Build.props.
+       Identity by convention: namespace tail (winter) + V{n} class -> Theme/winter/1. Self-contained chrome
+       lives in assets/theme.css (a PLAIN folder, NOT wwwroot/, so StaticWebAssetsEnabled=false keeps the
+       Razor SDK from claiming it). At pack time assets/ IS the package wwwroot, served at
+       /_ideas/Theme/winter/1/. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+</Project>

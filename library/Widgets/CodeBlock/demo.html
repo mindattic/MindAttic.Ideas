@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): plain pre>code markup; the activator adds chrome + copy. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CodeBlock — raw assets demo</title>
+  <link rel="stylesheet" href="assets/codeblock.css">
+  <script src="assets/codeblock.js" defer></script>
+  <style>body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 44rem; }</style>
+</head>
+<body>
+  <h2>Code block (hover for Copy)</h2>
+  <pre data-lang="csharp"><code>public sealed class V1 : WidgetBase
+{
+    private const string Mount = "/_ideas/Widget/codeblock/1";
+    public override IReadOnlyList&lt;string&gt; StylesheetUrls { get; } = new[] { Mount + "/codeblock.css" };
+}</code></pre>
+  <pre data-lang="html"><code>&lt;div class="ma-callout ma-callout-warn"&gt;Heads up.&lt;/div&gt;</code></pre>
+</body>
+</html>

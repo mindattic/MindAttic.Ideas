@@ -1,0 +1,42 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): static markup mirroring V1.razor inside the .ma-cards
+     helper. Images follow the page convention — inline base64 CSS classes, never files. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Card — raw assets demo</title>
+  <link rel="stylesheet" href="assets/card.css">
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    /* The page-authoring convention: each image IS a class (base64 data, not a file). */
+    .img-docs { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMjcwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGE2Y2Y3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5Eb2NzPC90ZXh0Pjwvc3ZnPg=='); }
+    .img-blog { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMjcwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjN2M1Y2JmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5CbG9nPC90ZXh0Pjwvc3ZnPg=='); }
+  </style>
+</head>
+<body>
+  <div class="ma-cards">
+    <a class="ma-card ma-card-link" href="#">
+      <div class="ma-card-image img-docs" role="img" aria-label="Docs"></div>
+      <div class="ma-card-body">
+        <h3 class="ma-card-title">Documentation</h3>
+        <p class="ma-card-text">Guides, the page grammar, and the .idea packaging walkthrough.</p>
+        <div class="ma-card-footer">Updated weekly</div>
+      </div>
+    </a>
+    <article class="ma-card">
+      <div class="ma-card-body">
+        <h3 class="ma-card-title">No image, no link</h3>
+        <p class="ma-card-text">A plain informational card.</p>
+      </div>
+    </article>
+    <a class="ma-card ma-card-link" href="#">
+      <div class="ma-card-image img-blog" role="img" aria-label="Blog"></div>
+      <div class="ma-card-body">
+        <h3 class="ma-card-title">Blog</h3>
+        <p class="ma-card-text">Release notes and engineering write-ups.</p>
+      </div>
+    </a>
+  </div>
+</body>
+</html>

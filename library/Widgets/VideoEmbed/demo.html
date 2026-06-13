@@ -1,0 +1,20 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): static markup mirroring V1.razor (native <video> case;
+     iframe embeds need a network so the offline demo shows the file/data-URI path). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoEmbed — raw assets demo</title>
+  <link rel="stylesheet" href="assets/videoembed.css">
+  <style>body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 44rem; }</style>
+</head>
+<body>
+  <h2>Responsive player frame</h2>
+  <div class="ma-video">
+    <video controls title="Demo video"></video>
+  </div>
+  <p>In the CMS: <code>{{ MindAttic.Ideas.Widget.VideoEmbed url="https://youtu.be/…" }}</code>
+     derives the privacy-friendly youtube-nocookie embed automatically.</p>
+</body>
+</html>

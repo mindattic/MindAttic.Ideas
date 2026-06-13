@@ -1,0 +1,55 @@
+@namespace MindAttic.Ideas.Widget.ContactForm
+@inherits WidgetBase
+@attribute [Idea(DisplayName = "Contact Form")]
+
+@* MindAttic.Ideas.Widget.ContactForm.V1 — a name/email/message contact form that POSTs to a
+   configurable endpoint (action=, falling back to the "contact.action" site setting so each SITE
+   wires its own backend — Formspree-style relay or a future host endpoint). Includes a honeypot
+   field bots fill and servers should reject. With no action configured it renders a visible
+   configuration hint instead of a dead form.
+   {{ MindAttic.Ideas.Widget.ContactForm action="https://formspree.io/f/abc" submittext="Send" }} *@
+<link rel="stylesheet" href="/_ideas/Widget/contactform/1/contactform.css" />
+@if (string.IsNullOrWhiteSpace(_action))
+{
+    <div class="ma-contact ma-contact-unconfigured">
+        ContactForm: set <code>action=</code> on the include token (or the <code>contact.action</code>
+        site setting) to the endpoint that should receive submissions.
+    </div>
+}
+else
+{
+    <form class="ma-contact" method="post" action="@_action">
+        <label class="ma-contact-field">
+            <span>Name</span>
+            <input name="name" type="text" required maxlength="200" autocomplete="name" />
+        </label>
+        <label class="ma-contact-field">
+            <span>Email</span>
+            <input name="email" type="email" required maxlength="320" autocomplete="email" />
+        </label>
+        <label class="ma-contact-field">
+            <span>Message</span>
+            <textarea name="message" required rows="6" maxlength="4000"></textarea>
+        </label>
+        @* Honeypot: visually hidden, tempting name; servers should drop submissions that fill it. *@
+        <input class="ma-contact-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <button class="ma-contact-submit" type="submit">@_submitText</button>
+    </form>
+}
+
+@code {
+    /// <summary>POST endpoint. Overrides the "contact.action" site setting.</summary>
+    [Parameter] public string? Action { get; set; }
+
+    /// <summary>Submit button text (default "Send message").</summary>
+    [Parameter] public string? SubmitText { get; set; }
+
+    private string? _action;
+    private string _submitText = "Send message";
+
+    protected override void OnParametersSet()
+    {
+        _action = !string.IsNullOrWhiteSpace(Action) ? Action : Context?.Site?.GetSetting("contact.action");
+        _submitText = string.IsNullOrWhiteSpace(SubmitText) ? "Send message" : SubmitText;
+    }
+}

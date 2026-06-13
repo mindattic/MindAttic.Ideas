@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): the exact authoring markup a CMS page would use.
+     Images follow the page convention — inline base64 CSS classes (.img-* below), never files.
+     Top grid = the mindattic.com books-grid case (linked tiles, no lightbox);
+     bottom grid = unlinked tiles with the lightbox. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gallery — raw assets demo</title>
+  <link rel="stylesheet" href="assets/gallery.css">
+  <script src="assets/gallery.js" defer></script>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    /* The page-authoring convention: each image IS a class (base64 data, not a file). */
+    .img-book1 { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjOGQzYjQ2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5Cb29rIDE8L3RleHQ+PC9zdmc+'); }
+    .img-book2 { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjM2I2ZThkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5Cb29rIDI8L3RleHQ+PC9zdmc+'); }
+    .img-book3 { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjM2I4ZDVhIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5Cb29rIDM8L3RleHQ+PC9zdmc+'); }
+    .img-photo1 { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMzIwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMmU1ZDRiIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5QaG90byAxPC90ZXh0Pjwvc3ZnPg=='); }
+    .img-photo2 { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMzIwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNWQyZTRiIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5QaG90byAyPC90ZXh0Pjwvc3ZnPg=='); }
+    .img-photo3 { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0ODAiIGhlaWdodD0iMzIwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMmUzYTVkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5QaG90byAzPC90ZXh0Pjwvc3ZnPg=='); }
+  </style>
+</head>
+<body>
+  <h2>Linked tiles (books grid)</h2>
+  <div class="ma-gallery" style="--ma-gallery-min: 8rem;">
+    <a class="ma-gallery-tile img-book1" href="#" target="_blank" rel="noopener noreferrer" aria-label="Book one"></a>
+    <a class="ma-gallery-tile img-book2" href="#" target="_blank" rel="noopener noreferrer" aria-label="Book two"></a>
+    <a class="ma-gallery-tile img-book3" href="#" target="_blank" rel="noopener noreferrer" aria-label="Book three"></a>
+  </div>
+
+  <h2>Unlinked tiles (lightbox: click, then arrows / Esc)</h2>
+  <div class="ma-gallery" style="--ma-gallery-ratio: 3 / 2;">
+    <div class="ma-gallery-tile img-photo1" role="img" aria-label="Photo one"></div>
+    <div class="ma-gallery-tile img-photo2" role="img" aria-label="Photo two"></div>
+    <div class="ma-gallery-tile img-photo3" role="img" aria-label="Photo three"></div>
+  </div>
+</body>
+</html>

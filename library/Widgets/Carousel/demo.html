@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): image slides are inline base64 CSS classes (page convention). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carousel — raw assets demo</title>
+  <link rel="stylesheet" href="assets/carousel.css">
+  <script src="assets/carousel.js" defer></script>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    .img-slide1 { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMmU1ZDRiIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjMyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5TbGlkZSAxPC90ZXh0Pjwvc3ZnPg=='); }
+    .img-slide2 { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNWQyZTRiIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjMyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5TbGlkZSAyPC90ZXh0Pjwvc3ZnPg=='); }
+  </style>
+</head>
+<body>
+  <h2>Carousel (autoplay 5s, arrows, dots, keyboard)</h2>
+  <div class="ma-carousel" data-autoplay="5000">
+    <div class="ma-slide img-slide1" role="img" aria-label="Slide one"></div>
+    <div class="ma-slide img-slide2" role="img" aria-label="Slide two"></div>
+    <div class="ma-slide" style="background: #33415c; color: #fff;">
+      <h3>Any markup works as a slide</h3>
+      <p>This one is plain HTML, no image class.</p>
+    </div>
+  </div>
+</body>
+</html>

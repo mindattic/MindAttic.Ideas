@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): short page → footer pins to the bottom edge (the
+     authentic mindattic.com pin-when-short behavior). Grow the content and the pin releases. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PinFooter — raw assets demo</title>
+  <link rel="stylesheet" href="assets/pinfooter.css">
+  <script src="assets/pinfooter.js" defer></script>
+  <style>body { font-family: system-ui, sans-serif; margin: 2rem; min-height: 100vh; }</style>
+</head>
+<body>
+  <h2>pin-when-short</h2>
+  <button onclick="for (var i = 0; i < 40; i++) { var p = document.createElement('p'); p.textContent = 'Line ' + i; document.querySelector('main').appendChild(p); }">
+    Grow content
+  </button>
+  <main></main>
+  <footer class="pin-when-short"><span>&copy; 2026 MindAttic LLC</span></footer>
+</body>
+</html>

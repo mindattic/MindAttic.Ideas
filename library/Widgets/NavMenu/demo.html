@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- Raw-HTML consumer proof (MAIL-US-B1): the same assets/ bundle, no CMS, no Blazor.
+     The static markup below mirrors what V1.razor renders. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NavMenu — raw assets demo</title>
+  <link rel="stylesheet" href="assets/navmenu.css">
+  <script src="assets/navmenu.js" defer></script>
+  <style>body { font-family: system-ui, sans-serif; margin: 0; } main { padding: 1rem; }</style>
+</head>
+<body>
+  <nav class="ma-nav" aria-label="Site">
+    <a class="ma-nav-brand" href="/">MindAttic</a>
+    <button class="ma-nav-toggle" type="button" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="ma-nav-list">
+      <li class="ma-nav-item"><a class="ma-nav-link" href="/" aria-current="page">Home</a></li>
+      <li class="ma-nav-item"><a class="ma-nav-link" href="/about">About</a></li>
+      <li class="ma-nav-item"><a class="ma-nav-link" href="/contact">Contact</a></li>
+    </ul>
+  </nav>
+  <main><p>Resize below 720px to see the hamburger collapse.</p></main>
+</body>
+</html>

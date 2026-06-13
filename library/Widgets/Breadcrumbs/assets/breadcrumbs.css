@@ -1,0 +1,35 @@
+/* MindAttic.Ideas.Widget.Breadcrumbs — slug-derived trail. Scoped under .ma-crumbs (MAIL-LAW-6). */
+.ma-crumbs { font-size: .9rem; }
+.ma-crumbs-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+  list-style: none;
+  margin: 0;
+  padding: .5rem 0;
+}
+.ma-crumbs-item {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+/* Separator between crumbs (not before the first). */
+.ma-crumbs-item + .ma-crumbs-item::before {
+  content: "\203A";  /* › */
+  opacity: .5;
+}
+.ma-crumbs-link {
+  color: inherit;
+  opacity: .7;
+  text-decoration: none;
+}
+.ma-crumbs-link:hover,
+.ma-crumbs-link:focus-visible {
+  opacity: 1;
+  text-decoration: underline;
+}
+.ma-crumbs-current {
+  opacity: 1;
+  font-weight: 600;
+}

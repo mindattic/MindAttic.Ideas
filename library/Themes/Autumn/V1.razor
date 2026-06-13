@@ -1,0 +1,15 @@
+@namespace MindAttic.Ideas.Theme.Autumn
+@inherits ThemeBase
+@attribute [Idea(DisplayName = "Autumn")]
+
+@* MindAttic.Ideas.Theme.Autumn.V1 — a self-contained Autumn theme: chrome (theme.css) + ONE @Body hole.
+   All look/feel ships in this theme's own assets/theme.css (served at /_ideas/Theme/autumn/1/), scoped
+   under .theme-autumn so it never leaks into widgets or other themes. *@
+<div class="page theme-autumn">
+    @Body
+</div>
+
+@code {
+    private const string Mount = "/_ideas/Theme/autumn/1";
+    public override IReadOnlyList<string> ThemeCssUrls { get; } = new[] { Mount + "/theme.css" };
+}
