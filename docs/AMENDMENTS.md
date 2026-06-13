@@ -448,4 +448,5 @@ loads `.idea` blobs at runtime, not project references.
 `SeoMeta_Parse_ReturnsNull_ForMalformedJson`, `SeoMeta_Serialize_ReturnsNull_WhenBothFieldsNull`,
 `SeoMeta_Serialize_ReturnsJson_WhenAnyFieldSet`,
 `Save_WithSeoFields_PersistsThroughGetAsync`, `Save_WithNullSeoFields_LeavesJsonNull`.
-Suite: **217 NUnit green**.
+Suite: **224 NUnit green** (7 new tests in `PageAdminServiceTests` +
+3 new in `PageTreeFeatureTests` + 4 new in `ArgParserTests`).

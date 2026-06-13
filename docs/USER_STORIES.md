@@ -12,7 +12,7 @@ updated: 2026-06-09
 > ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test that proves
 > it. Derived from the [`README.md`](../README.md) living feature spec; test tokens name NUnit
 > fixtures in `src/MindAttic.Ideas.Tests`. Build/test evidence: see [BIBLE §6](BIBLE.md#MAI-§6) —
-> `dotnet test` reports **217 passed, 0 failed (2026-06-12)**, plus the [Explicit] SQL Server temporal proof.
+> `dotnet test` reports **224 passed, 0 failed (2026-06-12)**, plus the [Explicit] SQL Server temporal proof.
 >
 > Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages),
 > **Visitor** (reads a rendered page), **Widget-Dev** (builds first-party content in MindAttic.Ideas.Library).
@@ -220,7 +220,7 @@ updated: 2026-06-09
 **Empty — every story is ✅ (2026-06-12, [A24](AMENDMENTS.md#MAI-A24)).** The headline goal is met:
 standalone frontends collapse into Pages with zero-deploy upload (`frontpage` = mindattic.com,
 `personas` = Legion.Frontend), RFC 0001 is fully implemented, and the foundation-era definition of
-done holds (217 NUnit green + the explicit SQL Server temporal proof + live render checks). New work
+done holds (224 NUnit green + the explicit SQL Server temporal proof + live render checks). New work
 enters as new stories.
 
 Shipping record: F6/F8 2026-06-08 · F4/F3 2026-06-08 · F5/A6/A7 2026-06-09 (A21) ·

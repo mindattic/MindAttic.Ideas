@@ -114,7 +114,7 @@ is live. The three kinds derive from one shared root `IdeaBase`; Themes/Widgets 
 - **`src/MindAttic.Ideas.Web`** — the Blazor Web App host: `PageHost` catch-all, `CmsHead` cascade,
   render fork, `/admin`, `/_ideas` route, Vault+Legion wiring; Phase-1 proof content under
   `Components/Library/Theme` (Bootstrap theme only — Widget/Control inline content removed with A19).
-- **`src/MindAttic.Ideas.Tests`** — NUnit suite (217 tests).
+- **`src/MindAttic.Ideas.Tests`** — NUnit suite (224 tests).
 - **`library/`** — first-party widget/theme library (`library/MindAttic.Ideas.Library.slnx`);
   independent of the CMS, references only `src/MindAttic.Ideas.Abstractions`. Merged from the
   former sibling repo ([A23](AMENDMENTS.md#MAI-A23)).
@@ -208,7 +208,7 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 
 **Build/test evidence (2026-06-12):** `dotnet build MindAttic.Ideas.slnx -c Debug` — Build succeeded,
 0 errors (0 CS warnings; pre-existing ASP0006 analyzer notes in Core rendering are tracked, not new).
-`dotnet test src/MindAttic.Ideas.Tests --no-build` → **Passed: 217, Failed: 0, Skipped: 0**, plus the
+`dotnet test src/MindAttic.Ideas.Tests --no-build` → **Passed: 224, Failed: 0, Skipped: 0**, plus the
 [Explicit] SQL Server temporal proof (`PageHistorySqlServerTests`) run against LocalDB — passed.
 **Live render evidence (2026-06-09, attended):** with all 37 library `.idea`s installed, `GET /` →
 302 → `/frontpage`; the rendered HTML contains the mindattic.com recreation (wordmark, tab boards,
@@ -240,7 +240,10 @@ and story-cited.
 - ✅ Library mono-repo consolidation: `library/` merged into this repo ([A23](AMENDMENTS.md#MAI-A23)).
   37 `.idea`s (7 Themes + 30 Widgets); `ma-idea verify` compose-graph green.
 - ✅ Page Properties collapsible panel with SEO Title, SEO Description, Theme picker, Route field
-  ([A24](AMENDMENTS.md#MAI-A24)). 7 new NUnit tests in `PageAdminServiceTests`.
+  ([A24](AMENDMENTS.md#MAI-A24)). 7 new tests in `PageAdminServiceTests`.
+- ✅ `PageTreeFeature` (IPageTree) tested directly (3 tests in `PageTreeFeatureTests`): ordered
+  children, disabled/deleted filtering, unknown-page empty return.
+- ✅ `ArgParser` tested (4 tests in `ArgParserTests`): key-value, flag-only, case-insensitive lookup, empty args.
 
 Every story in [`USER_STORIES.md`](USER_STORIES.md) is ✅; the priority backlog is empty.
 
