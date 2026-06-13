@@ -141,6 +141,25 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             await db.SaveChangesAsync(ct);
         }
 
+        // Ideas brochure — CMS product page explaining the three-primitive model, token grammar,
+        // DNN retrospective, and comparison table. Seeded at /ideas via the IdeasBrochure widget.
+        if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "ideas", ct))
+        {
+            db.Pages.Add(new Page
+            {
+                SiteId = site.Id, Slug = "ideas", Title = "MindAttic.Ideas",
+                SeoTitle = "MindAttic.Ideas — The CMS That Gets Out of the Way",
+                ThemeKey = "cyberspace", ThemeVersion = 1,
+                Kind = PageKind.Data,
+                BodyHtml = "{{ MindAttic.Ideas.Widget.IdeasBrochure }}",
+                BodyTrust = ContentTrust.Author,
+                AuthoredByUserId = "system-seed",
+                IsPublished = true, Enabled = true,
+                CreatedUtc = now, ModifiedUtc = now,
+            });
+            await db.SaveChangesAsync(ct);
+        }
+
         // ChiMesh — solar RAK4631 LoRa / Meshtastic mesh (Hardware theme + ChiMesh widget).
         if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "chimesh", ct))
         {

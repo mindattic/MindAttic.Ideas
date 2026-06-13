@@ -43,5 +43,6 @@
     <Project Path="Widgets/Claudia/MindAttic.Ideas.Widget.Claudia.csproj" />
     <Project Path="Widgets/ChiMesh/MindAttic.Ideas.Widget.ChiMesh.csproj" />
     <Project Path="Widgets/MindAtticFrontpage/MindAttic.Ideas.Widget.MindAtticFrontpage.csproj" />
+    <Project Path="Widgets/IdeasBrochure/MindAttic.Ideas.Widget.IdeasBrochure.csproj" />
   </Folder>
 </Solution>
