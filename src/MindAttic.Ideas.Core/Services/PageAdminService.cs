@@ -80,7 +80,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             Id = p.Id, Slug = p.Slug, Title = p.Title, ThemeKey = p.ThemeKey, ThemeVersion = p.ThemeVersion,
             Kind = p.Kind, BodyHtml = p.BodyHtml, PageCss = p.PageCss, PageJs = p.PageJs,
             IsPublished = p.IsPublished, Enabled = p.Enabled, ParentId = p.ParentId, SortOrder = p.SortOrder,
-            SeoTitle       = p.MetaTags.FirstOrDefault(t => t.Name == "seo.title")?.Content,
+            SeoTitle       = p.SeoTitle,
             SeoDescription = p.MetaTags.FirstOrDefault(t => t.Name == "seo.description")?.Content,
         };
     }
@@ -115,6 +115,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
 
         page.Slug = slug;
         page.Title = model.Title;
+        page.SeoTitle = string.IsNullOrWhiteSpace(model.SeoTitle) ? null : model.SeoTitle.Trim();
         page.ThemeKey = string.IsNullOrWhiteSpace(model.ThemeKey) ? null : model.ThemeKey.Trim();
         page.ThemeVersion = model.ThemeVersion;
         page.Kind = model.Kind;
@@ -143,8 +144,6 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         // RemoveRange (not ExecuteDeleteAsync) keeps compatibility with the InMemory provider in tests.
         var existingTags = await db.PageMetaTags.Where(t => t.PageId == page.Id).ToListAsync(ct);
         db.PageMetaTags.RemoveRange(existingTags);
-        if (!string.IsNullOrWhiteSpace(model.SeoTitle))
-            db.PageMetaTags.Add(new PageMetaTag { PageId = page.Id, Name = "seo.title",       Content = model.SeoTitle.Trim() });
         if (!string.IsNullOrWhiteSpace(model.SeoDescription))
             db.PageMetaTags.Add(new PageMetaTag { PageId = page.Id, Name = "seo.description", Content = model.SeoDescription.Trim() });
         if (db.ChangeTracker.HasChanges())

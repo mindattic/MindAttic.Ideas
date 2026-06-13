@@ -26,7 +26,7 @@
 }
 else if (_context is not null)
 {
-    <PageTitle>@(_context.Page.Meta.GetValueOrDefault("seo.title") ?? _context.Page.Title)</PageTitle>
+    <PageTitle>@(_context.Page.SeoTitle ?? _context.Page.Title)</PageTitle>
     <HeadContent>
         @if (_context.Page.Meta.GetValueOrDefault("seo.description") is { Length: > 0 } desc)
         {
@@ -115,7 +115,7 @@ else if (_context is not null)
 
         var pageCtx = new CmsPageContext
         {
-            PageId = page.Uid, Slug = page.Slug, Title = page.Title,
+            PageId = page.Uid, Slug = page.Slug, Title = page.Title, SeoTitle = page.SeoTitle,
             ThemeKey = page.ThemeKey, ThemeVersion = page.ThemeVersion, Inline = inline,
             Meta = seoDict,
         };

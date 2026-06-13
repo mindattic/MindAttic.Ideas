@@ -47,6 +47,7 @@ public class CmsIncludeParityTests
         public Guid PageId { get; init; } = Guid.NewGuid();
         public string Slug { get; init; } = "demo";
         public string Title => "Demo";
+        public string? SeoTitle => null;
         public string? ThemeKey => null;
         public int? ThemeVersion => null;
         public IInlineMarkup Inline => null!;

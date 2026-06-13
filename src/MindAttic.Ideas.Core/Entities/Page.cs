@@ -37,6 +37,8 @@ public sealed class Page : ContentEntityBase
     /// <summary>Disabled = exists but cannot be served until re-enabled.</summary>
     public bool Enabled { get; set; } = true;
     public int SortOrder { get; set; }
+    /// <summary>Overrides the browser &lt;title&gt; tag. Null = fall back to <see cref="Title"/>.</summary>
+    public string? SeoTitle { get; set; }
 
     public ICollection<PageMetaTag> MetaTags { get; set; } = [];
 

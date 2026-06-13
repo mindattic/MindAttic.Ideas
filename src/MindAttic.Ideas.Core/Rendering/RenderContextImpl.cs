@@ -31,6 +31,7 @@ public sealed class CmsPageContext : IPageContext
     public required Guid PageId { get; init; }
     public required string Slug { get; init; }
     public required string Title { get; init; }
+    public string? SeoTitle { get; init; }
     public string? ThemeKey { get; init; }
     public int? ThemeVersion { get; init; }
     public required IInlineMarkup Inline { get; init; }

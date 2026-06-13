@@ -58,6 +58,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.Property(x => x.Slug).HasMaxLength(400).IsRequired();
             e.Property(x => x.Title).HasMaxLength(400);
             e.Property(x => x.ThemeKey).HasMaxLength(120);
+            e.Property(x => x.SeoTitle).HasMaxLength(400);
             e.Property(x => x.ComponentTypeName).HasMaxLength(512);
             e.Property(x => x.AssemblyName).HasMaxLength(256);
             e.Property(x => x.AuthoredByUserId).HasMaxLength(64);

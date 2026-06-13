@@ -44,6 +44,8 @@ public interface IPageContext
     Guid PageId { get; }
     string Slug { get; }
     string Title { get; }
+    /// <summary>Overrides the browser &lt;title&gt; tag. Null = fall back to <see cref="Title"/>.</summary>
+    string? SeoTitle { get; }
     string? ThemeKey { get; }
     /// <summary>The page's pinned theme version, if it overrides the site default.</summary>
     int? ThemeVersion { get; }
