@@ -97,6 +97,9 @@ public interface IIncludeRenderer
 /// <summary>One child page in the site tree (for nav / the TableOfContents widget).</summary>
 public sealed record ChildPage(string Slug, string Title);
 
+/// <summary>One node in a page sub-tree — carries its own children for recursive rendering.</summary>
+public sealed record ChildPageNode(string Slug, string Title, IReadOnlyList<ChildPageNode> Children);
+
 /// <summary>
 /// Host-provided render seam (resolved via <see cref="IRenderContext.TryGetFeature{T}"/>): the published,
 /// enabled child pages of a page, ordered by sort order. Lets a Widget (e.g. TableOfContents) render the
@@ -107,4 +110,15 @@ public sealed record ChildPage(string Slug, string Title);
 public interface IPageTree
 {
     Task<IReadOnlyList<ChildPage>> ChildrenOfAsync(Guid pageId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns the full sub-tree rooted at <paramref name="pageId"/> (children, grandchildren, …)
+    /// as nested <see cref="ChildPageNode"/> records. Empty when the page has no descendants.
+    /// Default implementation falls back to one level via <see cref="ChildrenOfAsync"/>.
+    /// </summary>
+    async Task<IReadOnlyList<ChildPageNode>> DescendantsTreeAsync(Guid pageId, CancellationToken ct = default)
+    {
+        var flat = await ChildrenOfAsync(pageId, ct);
+        return flat.Select(c => new ChildPageNode(c.Slug, c.Title, Array.Empty<ChildPageNode>())).ToList();
+    }
 }

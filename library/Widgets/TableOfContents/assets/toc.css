@@ -33,3 +33,7 @@
     background: rgba(127, 127, 127, 0.12);
     border-left-color: currentColor;
 }
+
+/* Nested levels — indent and reduce opacity slightly per depth */
+.ma-toc-item > .ma-toc-list { padding-left: 1.1rem; }
+.ma-toc-item > .ma-toc-list .ma-toc-link { font-size: 0.9em; opacity: 0.85; }
