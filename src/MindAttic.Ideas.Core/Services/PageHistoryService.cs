@@ -13,7 +13,8 @@ public sealed record PageHistoryEntry(
     string? ThemeKey, int? ThemeVersion,
     string? BodyHtml, string? PageCss, string? PageJs,
     ContentTrust BodyTrust,
-    DateTime ValidFrom, DateTime ValidTo);
+    DateTime ValidFrom, DateTime ValidTo,
+    string? AuthoredByUserId = null);
 
 /// <summary>
 /// Surfaces the SQL Server temporal history of the <see cref="Page"/> table (wiki-like rollback).
@@ -48,7 +49,8 @@ public sealed class PageHistoryService(IDbContextFactory<CmsDbContext> dbFactory
                 p.ThemeKey, p.ThemeVersion,
                 p.BodyHtml, p.PageCss, p.PageJs, p.BodyTrust,
                 EF.Property<DateTime>(p, "PeriodStart"),
-                EF.Property<DateTime>(p, "PeriodEnd")))
+                EF.Property<DateTime>(p, "PeriodEnd"),
+                p.AuthoredByUserId))
             .ToListAsync(ct);
     }
 

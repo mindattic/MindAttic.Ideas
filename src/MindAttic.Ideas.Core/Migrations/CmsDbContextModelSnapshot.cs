@@ -792,6 +792,13 @@ namespace MindAttic.Ideas.Core.Migrations
                     b.Property<bool>("IsRestricted")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("WorkflowDefinitionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WorkflowState")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -1052,6 +1059,198 @@ namespace MindAttic.Ideas.Core.Migrations
                     b.ToTable("Sites");
                 });
 
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.PageSlugHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AddedByUserId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsVanity")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OldSlug")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<int>("PageId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PageId", "OldSlug")
+                        .IsUnique();
+
+                    b.ToTable("PageSlugHistory");
+                });
+
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.WorkflowDefinition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("InitialState")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("WorkflowDefinitions");
+                });
+
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.WorkflowTransitionDef", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FromState")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("RequiredRole")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ToState")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("WorkflowDefinitionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkflowDefinitionId", "FromState", "ToState")
+                        .IsUnique();
+
+                    b.ToTable("WorkflowTransitionDefs");
+                });
+
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.WidgetPlacementSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModifiedByUserId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("ModifiedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SettingsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SettingsVersion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SlotName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("Uid")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("WidgetRef")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("Uid");
+
+                    b.HasIndex("PageId", "SlotName")
+                        .IsUnique();
+
+                    b.ToTable("WidgetPlacementSettings");
+                });
+
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.WidgetPlacementSettingsHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("PlacementSettingsId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SavedByUserId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("SavedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SettingsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SettingsVersion")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlacementSettingsId", "SettingsVersion")
+                        .IsUnique();
+
+                    b.ToTable("WidgetPlacementSettingsHistory");
+                });
+
             modelBuilder.Entity("MindAttic.Authentication.Entities.AuthPasswordHistory", b =>
                 {
                     b.HasOne("MindAttic.Authentication.Entities.AuthUser", null)
@@ -1114,6 +1313,42 @@ namespace MindAttic.Ideas.Core.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.PageSlugHistory", b =>
+                {
+                    b.HasOne("MindAttic.Ideas.Core.Entities.Page", null)
+                        .WithMany("SlugHistory")
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.WorkflowTransitionDef", b =>
+                {
+                    b.HasOne("MindAttic.Ideas.Core.Entities.WorkflowDefinition", null)
+                        .WithMany("Transitions")
+                        .HasForeignKey("WorkflowDefinitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.WidgetPlacementSettings", b =>
+                {
+                    b.HasOne("MindAttic.Ideas.Core.Entities.Page", null)
+                        .WithMany()
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.WidgetPlacementSettingsHistory", b =>
+                {
+                    b.HasOne("MindAttic.Ideas.Core.Entities.WidgetPlacementSettings", null)
+                        .WithMany("History")
+                        .HasForeignKey("PlacementSettingsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MindAttic.Ideas.Core.Entities.PageMetaTag", b =>
                 {
                     b.HasOne("MindAttic.Ideas.Core.Entities.Page", null)
@@ -1148,6 +1383,18 @@ namespace MindAttic.Ideas.Core.Migrations
                     b.Navigation("RoleAccess");
 
                     b.Navigation("UserAccess");
+
+                    b.Navigation("SlugHistory");
+                });
+
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.WorkflowDefinition", b =>
+                {
+                    b.Navigation("Transitions");
+                });
+
+            modelBuilder.Entity("MindAttic.Ideas.Core.Entities.WidgetPlacementSettings", b =>
+                {
+                    b.Navigation("History");
                 });
 #pragma warning restore 612, 618
         }

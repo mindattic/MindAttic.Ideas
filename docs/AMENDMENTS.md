@@ -450,3 +450,73 @@ loads `.idea` blobs at runtime, not project references.
 `Save_WithSeoFields_PersistsThroughGetAsync`, `Save_WithNullSeoFields_LeavesJsonNull`.
 Suite: **224 NUnit green** (7 new tests in `PageAdminServiceTests` +
 3 new in `PageTreeFeatureTests` + 4 new in `ArgParserTests`).
+
+## MAI-A25 — DNN-parity features: dependency checks, widget settings versioning, content workflow, slug redirect history {#MAI-A25}
+
+**What changed (2026-06-13).** Four features that restore DNN-era capabilities in the .idea model:
+
+### Feature 1 — Manifest dependency checks at install time
+
+`IdeaManifest` gains two new fields: `minHostVersion` (int?, blocks install if the running host engine
+version is below this threshold) and `requires` (string[], same `"Category.key[@n]"` grammar as `uses[]`
+but enforced as a **hard install-time gate**). `ManifestValidator.Validate()` accepts an optional
+`hostEngine` parameter (defaults to `IdeaManifest.HostEngineVersion = 1`) and emits a
+`MIN_HOST_VERSION_UNMET` hard error when `minHostVersion` exceeds it.
+`PackageInstallService.InstallAsync()` walks `requires[]` before persisting any bytes: any missing or
+disabled dependency throws `InstallException("REQUIRES_UNMET: …")` with zero DB writes. This contrasts
+with `uses[]`, which remains advisory-only (raises `AdminInboxMessage` at render time).
+
+**Proof.** `ManifestValidatorTests`: `MinHostVersion_AbsentOrAtHost_IsValid` (×3 cases),
+`MinHostVersion_ExceedsHostEngine_IsHardError`; `PackageInstallServiceTests`:
+`Requires_AllPresent_InstallSucceeds`, `Requires_Missing_ThrowsInstallException_NoRowsWritten`.
+
+### Feature 2 — Host-managed widget instance-settings versioning with rollback
+
+`WidgetPlacementSettings` (PageId, SlotName, WidgetRef, SettingsJson, SettingsVersion, Uid) stores
+per-placement configuration. Every `SaveAsync` call snapshots the current row into
+`WidgetPlacementSettingsHistory` before overwriting, so version history is preserved without temporal
+tables. `RollbackAsync(pageId, slot, version)` restores a snapshot's JSON while advancing the version
+counter (version never decreases). Service: `IWidgetInstanceSettingsService` /
+`WidgetInstanceSettingsService`; DI-registered as `AddScoped`.
+
+**Proof.** `WidgetInstanceSettingsServiceTests` (7 NUnit): `Save_Create_PersistsVersionOne`,
+`Save_Update_BumpsVersionAndWritesHistory`, `Save_MultipleUpdates_AccumulatesHistory`,
+`Rollback_RestoresPreviousSettingsAndBumpsVersion`, `Rollback_UnknownVersion_ReturnsFalse`,
+`GetAsync_UnknownSlot_ReturnsNull`, `GetHistoryAsync_UnknownSlot_ReturnsEmpty`.
+
+### Feature 3 — Named-state content workflow with role-gated transitions
+
+`WorkflowDefinition` (Name, InitialState, IsDefault) + `WorkflowTransitionDef` (FromState, ToState,
+RequiredRole, Label) define named state machines. Pages carry `WorkflowDefinitionId` (nullable FK) and
+`WorkflowState` (nvarchar 64). `WorkflowService.TransitionPageAsync` validates the transition exists,
+checks `ClaimsPrincipal` against `RequiredRole` (Admins bypass all role gates via `MaRoles.Admin`), and
+syncs `Page.IsPublished` (only the state named `"Published"` sets it true; all others clear it). Creating
+a definition with `isDefault: true` atomically demotes the prior default. `IWorkflowService` /
+`WorkflowService`; DI-registered as `AddScoped`. Manifests declare `defaultWorkflow` (string, advisory;
+not yet enforced by the host at install time — future extension point).
+
+**Proof.** `WorkflowServiceTests` (9 NUnit): `CreateDefinition_Persists_WithInitialStateAndTransitions`,
+`CreateDefinition_IsDefault_DemotesPreviousDefault`, `TransitionPage_ValidTransition_ChangesWorkflowState`,
+`TransitionPage_ToPublished_SetsIsPublishedTrue`, `TransitionPage_FromPublishedToDraft_SetsIsPublishedFalse`,
+`TransitionPage_MissingTransition_ReturnsError`, `TransitionPage_InsufficientRole_ReturnsError`,
+`TransitionPage_AdminBypassesRoleGate`, `AssignWorkflow_SetsWorkflowAndInitialState`.
+
+### Feature 4 — Auto-301 slug history and vanity redirects
+
+`PageSlugHistory` (PageId, OldSlug, IsVanity, AddedByUserId, CreatedUtc) records old and vanity slugs.
+`PageAdminService.SaveAsync` automatically writes a `PageSlugHistory` row whenever the slug changes
+(non-vanity, `IsVanity = false`). `SlugRedirectService.CheckRedirectAsync` looks up the old slug and
+returns a `SlugRedirectResult(TargetSlug, StatusCode: 301)` — null when no history row matches, when
+the page is unpublished/disabled, or when the old slug is identical to the current slug (no self-redirect).
+`AddVanityRedirectAsync` is idempotent (duplicate slug is a no-op returning true). `PageHost.razor` calls
+`CheckRedirectAsync` before returning 404 and uses `NavigationManager.NavigateTo` for the redirect.
+`ISlugRedirectService` / `SlugRedirectService`; DI-registered as `AddScoped`.
+
+**Proof.** `SlugRedirectServiceTests` (7 NUnit): `CheckRedirect_NoHistory_ReturnsNull`,
+`CheckRedirect_MatchingHistory_Returns301ToCurrentSlug`, `CheckRedirect_SameSlugInHistory_ReturnsNull`,
+`CheckRedirect_UnpublishedPage_ReturnsNull`, `AddVanityRedirect_WritesIsVanityEntry`,
+`AddVanityRedirect_Idempotent_DoesNotDuplicate`, `AddVanityRedirect_UnknownPage_ReturnsFalse`.
+
+**Schema.** Single migration `20260613200000_AddWorkflowSlugHistoryAndWidgetSettings` creates five tables
+(`WorkflowDefinitions`, `WorkflowTransitionDefs`, `PageSlugHistory`, `WidgetPlacementSettings`,
+`WidgetPlacementSettingsHistory`) and adds `WorkflowDefinitionId` + `WorkflowState` columns to `Pages`.

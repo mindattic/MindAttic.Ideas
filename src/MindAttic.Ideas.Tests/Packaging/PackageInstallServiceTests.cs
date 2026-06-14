@@ -175,4 +175,47 @@ public class PackageInstallServiceTests
         Assert.That(catalog.ResolveTag(ContentKind.Widget, "ui.tooltip", 1).Outcome,
             Is.EqualTo(ContentResolution.Missing));
     }
+
+    private static MemoryStream PackageRequiring(string depRef) =>
+        IdeaTestArchive.Build(new Dictionary<string, string>
+        {
+            ["idea.json"] = ManifestReader.Write(new IdeaManifest
+            {
+                ManifestVersion = 1, Category = "Widget", Kind = "code", Key = "ui.carousel", Version = 1,
+                DisplayName = "Carousel", Sdk = 1, EntryType = "MindAttic.Ideas.Widget.Carousel.V1",
+                AssemblyName = "Carousel", Requires = [depRef],
+            }),
+            ["bin/Carousel.dll"] = "MZ-fake",
+        });
+
+    [Test]
+    public async Task Requires_AllPresent_InstallSucceeds()
+    {
+        var (svc, factory, _, _) = NewService();
+        // Pre-install the dependency.
+        await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Widget"), allowOverride: false);
+
+        // Now install the package that requires it.
+        var plan = await svc.InstallAsync(PackageRequiring("Widget.ui.tooltip@1"), allowOverride: false);
+
+        Assert.That(plan.Action, Is.EqualTo(InstallAction.Install));
+        await using var db = factory.CreateDbContext();
+        Assert.That(await db.InstalledPackages.CountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task Requires_Missing_ThrowsInstallException_NoRowsWritten()
+    {
+        var (svc, factory, _, blobs) = NewService();
+
+        Assert.ThrowsAsync<InstallException>(async () =>
+            await svc.InstallAsync(PackageRequiring("Widget.ui.tooltip@1"), allowOverride: false));
+
+        await using var db = factory.CreateDbContext();
+        Assert.Multiple(() =>
+        {
+            Assert.That(db.InstalledPackages.Count(), Is.EqualTo(0), "no package row written on rejected install");
+            Assert.That(blobs.Saved, Is.Empty, "no bytes persisted on rejected install");
+        });
+    }
 }

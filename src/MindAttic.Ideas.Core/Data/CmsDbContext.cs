@@ -16,6 +16,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
     public DbSet<Site> Sites => Set<Site>();
     public DbSet<Page> Pages => Set<Page>();
     public DbSet<PageMetaTag> PageMetaTags => Set<PageMetaTag>();
+    public DbSet<PageSlugHistory> PageSlugHistory => Set<PageSlugHistory>();
     public DbSet<CmsRole> CmsRoles => Set<CmsRole>();
     public DbSet<CmsUserRole> CmsUserRoles => Set<CmsUserRole>();
     public DbSet<PageRoleAccess> PageRoleAccess => Set<PageRoleAccess>();
@@ -25,6 +26,10 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<SettingEntry> Settings => Set<SettingEntry>();
     public DbSet<AdminInboxMessage> AdminInbox => Set<AdminInboxMessage>();
+    public DbSet<WorkflowDefinition> WorkflowDefinitions => Set<WorkflowDefinition>();
+    public DbSet<WorkflowTransitionDef> WorkflowTransitionDefs => Set<WorkflowTransitionDef>();
+    public DbSet<WidgetPlacementSettings> WidgetPlacementSettings => Set<WidgetPlacementSettings>();
+    public DbSet<WidgetPlacementSettingsHistory> WidgetPlacementSettingsHistory => Set<WidgetPlacementSettingsHistory>();
 
     // MindAttic.Authentication identity tables (auth schema) — IAuthDataContext.
     public DbSet<AuthUser> AuthUsers => Set<AuthUser>();
@@ -69,11 +74,62 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(16);
             e.Property(x => x.BodyTrust).HasConversion<string>().HasMaxLength(16);
             e.Property(x => x.RowVersion).IsRowVersion();
+            e.Property(x => x.WorkflowState).HasMaxLength(64);
             // Self-referencing tree for nav; never cascade-delete a subtree implicitly.
             e.HasOne<Page>().WithMany().HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.NoAction);
             e.HasQueryFilter(x => !x.IsDeleted);
             // Wiki-like history: SQL Server system-versioned temporal table.
             e.ToTable("Pages", t => t.IsTemporal());
+        });
+
+        b.Entity<PageSlugHistory>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.PageId, x.OldSlug }).IsUnique();
+            e.Property(x => x.OldSlug).HasMaxLength(400).IsRequired();
+            e.Property(x => x.AddedByUserId).HasMaxLength(64);
+            e.HasOne<Page>().WithMany(p => p.SlugHistory).HasForeignKey(x => x.PageId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<WorkflowDefinition>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Name).IsUnique();
+            e.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(2000);
+            e.Property(x => x.InitialState).HasMaxLength(64).IsRequired();
+        });
+
+        b.Entity<WorkflowTransitionDef>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.WorkflowDefinitionId, x.FromState, x.ToState }).IsUnique();
+            e.Property(x => x.FromState).HasMaxLength(64).IsRequired();
+            e.Property(x => x.ToState).HasMaxLength(64).IsRequired();
+            e.Property(x => x.RequiredRole).HasMaxLength(100);
+            e.Property(x => x.Label).HasMaxLength(200);
+            e.HasOne<WorkflowDefinition>().WithMany(d => d.Transitions)
+                .HasForeignKey(x => x.WorkflowDefinitionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<WidgetPlacementSettings>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasAlternateKey(x => x.Uid);
+            e.HasIndex(x => new { x.PageId, x.SlotName }).IsUnique();
+            e.Property(x => x.SlotName).HasMaxLength(200).IsRequired();
+            e.Property(x => x.WidgetRef).HasMaxLength(256).IsRequired();
+            e.Property(x => x.ModifiedByUserId).HasMaxLength(64);
+            e.HasOne<Page>().WithMany().HasForeignKey(x => x.PageId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<WidgetPlacementSettingsHistory>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.PlacementSettingsId, x.SettingsVersion }).IsUnique();
+            e.Property(x => x.SavedByUserId).HasMaxLength(64);
+            e.HasOne<WidgetPlacementSettings>().WithMany(s => s.History)
+                .HasForeignKey(x => x.PlacementSettingsId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<PageMetaTag>(e =>

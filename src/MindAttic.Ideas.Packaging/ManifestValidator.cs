@@ -35,6 +35,7 @@ public static partial class ManifestValidator
     public const string DataHasCode = "DATA_HAS_CODE";
     public const string ForbiddenBin = "FORBIDDEN_BIN";
     public const string ShaMismatch = "SHA_MISMATCH";
+    public const string MinHostVersionUnmet = "MIN_HOST_VERSION_UNMET";
 
     [GeneratedRegex(@"^[a-z0-9][a-z0-9._-]{0,119}$")] private static partial Regex KeyPattern();
 
@@ -42,6 +43,7 @@ public static partial class ManifestValidator
         IdeaManifest m,
         IReadOnlyList<string> binEntries,
         int hostSdk = IdeaManifest.HostSdkVersion,
+        int hostEngine = IdeaManifest.HostEngineVersion,
         string? expectedSha = null,
         string? actualSha = null)
     {
@@ -99,6 +101,10 @@ public static partial class ManifestValidator
                 errors.Add(new(ForbiddenBin,
                     $"bin/ ships host/framework assembly '{entry}', which must be host-provided (it cannot ship in a .idea)."));
         }
+
+        if (m.MinHostVersion is int minHost && minHost > hostEngine)
+            errors.Add(new(MinHostVersionUnmet,
+                $"package requires host engine version ≥ {minHost} (this host is v{hostEngine}); upgrade MindAttic.Ideas to install it."));
 
         if (expectedSha is not null && actualSha is not null &&
             !string.Equals(expectedSha, actualSha, StringComparison.OrdinalIgnoreCase))

@@ -14,7 +14,9 @@
 @using MindAttic.Authentication
 @using MindAttic.Ideas.Core.Data
 @using MindAttic.Ideas.Core.Entities
+@using MindAttic.Ideas.Core.Services
 @inject IDbContextFactory<CmsDbContext> DbFactory
+@inject ISlugRedirectService SlugRedirects
 @inject IContentCatalog Catalog
 @inject IServiceProvider Services
 @inject IRenderAlertSink Alerts
@@ -110,6 +112,13 @@ else if (_context is not null)
 
         if (page is null)
         {
+            // Auto-301: before showing 404, check if this slug was renamed and a redirect entry exists.
+            var redirect = await SlugRedirects.CheckRedirectAsync(siteId, slug);
+            if (redirect is not null)
+            {
+                Nav.NavigateTo("/" + redirect.TargetSlug, false);
+                return;
+            }
             _status = Status.NotFound;
             return;
         }

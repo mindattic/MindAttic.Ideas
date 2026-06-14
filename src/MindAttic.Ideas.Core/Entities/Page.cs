@@ -51,4 +51,21 @@ public sealed class Page : ContentEntityBase
 
     public ICollection<PageRoleAccess> RoleAccess { get; set; } = [];
     public ICollection<PageUserAccess> UserAccess { get; set; } = [];
+
+    // ---- Content workflow ----
+    /// <summary>
+    /// FK to <see cref="WorkflowDefinition"/>. Null = site default workflow (or no workflow when no default
+    /// is configured). When set, <see cref="WorkflowService"/> enforces role-gated transitions between states.
+    /// </summary>
+    public int? WorkflowDefinitionId { get; set; }
+
+    /// <summary>
+    /// Current workflow state name (e.g. "Draft", "Published"). Null = legacy behavior — governed by
+    /// <see cref="IsPublished"/> only. Set by <see cref="Services.WorkflowService"/> on each transition.
+    /// Transitioning to a state named "Published" also sets <see cref="IsPublished"/> = true.
+    /// </summary>
+    public string? WorkflowState { get; set; }
+
+    // ---- Slug history ----
+    public ICollection<PageSlugHistory> SlugHistory { get; set; } = [];
 }

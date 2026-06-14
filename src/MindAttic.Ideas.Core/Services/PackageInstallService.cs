@@ -84,6 +84,20 @@ public sealed class PackageInstallService(
 
         var now = DateTime.UtcNow;
 
+        // ---- Declared-REQUIRED dependencies (BLOCKING): every requires[] entry must already be installed
+        // and enabled. Unlike uses[], a missing required dependency is a hard reject — the author explicitly
+        // declared a structural prerequisite, not just a runtime reference. ----
+        foreach (var (depKind, depKey, depVer) in IncludeReferenceParser.ParseUses(manifest.Requires))
+        {
+            var present = await db.ContentDefinitions.AnyAsync(
+                c => c.Kind == depKind && c.Key == depKey && c.Enabled && c.IsActive
+                     && (depVer == null || c.Version == depVer), ct);
+            if (!present)
+                throw new InstallException(
+                    $"REQUIRES_UNMET: required dependency '{depKey}' (kind '{depKind}'{(depVer.HasValue ? $" v{depVer}" : "")}) " +
+                    $"is not installed or not enabled. Install it first before installing '{manifest.Key}'.");
+        }
+
         // Persist the verbatim bytes (the source of truth) and, for a code package, extract bin/ to disk so
         // the ALC-aware resolver can load it. Done only once the install is going to proceed.
         var blobPath = await blobStore.SaveAsync(manifest.Category, manifest.Key, manifest.Version, bytes, ct);

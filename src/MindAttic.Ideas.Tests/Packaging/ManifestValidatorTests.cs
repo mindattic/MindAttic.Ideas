@@ -123,4 +123,28 @@ public class ManifestValidatorTests
         var r = ManifestValidator.Validate(Code(), ["Demo.dll"], expectedSha: "aaaa", actualSha: "bbbb");
         Assert.That(HasError(r, ManifestValidator.ShaMismatch), Is.True);
     }
+
+    [TestCase(null,  true)]
+    [TestCase(0,     true)]
+    [TestCase(1,     true)]   // == HostEngineVersion
+    public void MinHostVersion_AbsentOrAtHost_IsValid(int? minHostVersion, bool expectedValid)
+    {
+        var m = Code() with { MinHostVersion = minHostVersion };
+        var r = ManifestValidator.Validate(m, ["Demo.dll"]);
+        Assert.That(HasError(r, ManifestValidator.MinHostVersionUnmet), Is.EqualTo(!expectedValid));
+    }
+
+    [Test]
+    public void MinHostVersion_ExceedsHostEngine_IsHardError()
+    {
+        var m = Code() with { MinHostVersion = IdeaManifest.HostEngineVersion + 1 };
+        var r = ManifestValidator.Validate(m, ["Demo.dll"]);
+        Assert.Multiple(() =>
+        {
+            Assert.That(r.IsValid, Is.False);
+            Assert.That(HasError(r, ManifestValidator.MinHostVersionUnmet), Is.True);
+            Assert.That(r.HardErrors.Single(e => e.Code == ManifestValidator.MinHostVersionUnmet).Message,
+                Does.Contain("upgrade"));
+        });
+    }
 }

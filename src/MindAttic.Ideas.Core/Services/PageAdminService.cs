@@ -38,6 +38,12 @@ public sealed class PageEditModel
     public List<string> AllowedRoles { get; set; } = [];
     /// <summary>Individual user IDs (ma:uid Guid strings) allowed to view when restricted.</summary>
     public List<string> AllowedUserIds { get; set; } = [];
+
+    // ---- Workflow ----
+    /// <summary>Assigned workflow definition; null = site default or no workflow.</summary>
+    public int? WorkflowDefinitionId { get; set; }
+    /// <summary>Current workflow state name; null = no workflow / governed by IsPublished only.</summary>
+    public string? WorkflowState { get; set; }
 }
 
 public sealed record PageSaveResult(bool Ok, int Id, ContentTrust StampedTrust, string? Error);
@@ -95,6 +101,8 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             IsRestricted   = p.IsRestricted,
             AllowedRoles   = p.RoleAccess.Select(r => r.RoleName).ToList(),
             AllowedUserIds = p.UserAccess.Select(u => u.UserId).ToList(),
+            WorkflowDefinitionId = p.WorkflowDefinitionId,
+            WorkflowState        = p.WorkflowState,
         };
     }
 
@@ -123,6 +131,21 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         {
             var found = await db.Pages.FirstOrDefaultAsync(p => p.Id == model.Id, ct);
             if (found is null) return new PageSaveResult(false, model.Id, default, "Page not found.");
+
+            // Auto-301: record the old slug before overwriting it, so the router can redirect stale links.
+            if (found.Slug != slug && found.Slug is { Length: > 0 })
+            {
+                var alreadyRecorded = await db.PageSlugHistory.AnyAsync(
+                    h => h.PageId == found.Id && h.OldSlug == found.Slug, ct);
+                if (!alreadyRecorded)
+                    db.PageSlugHistory.Add(new PageSlugHistory
+                    {
+                        PageId = found.Id, OldSlug = found.Slug,
+                        IsVanity = false, AddedByUserId = null,
+                        CreatedUtc = now,
+                    });
+            }
+
             page = found;
         }
 
@@ -143,6 +166,8 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.BodyTrust = trust;                 // write-time trust stamp
         page.AuthoredByUserId = authoredBy;
         page.AuthorTrustVersion += 1;           // epoch bump
+        page.WorkflowDefinitionId = model.WorkflowDefinitionId;
+        page.WorkflowState = model.WorkflowState;
         page.ModifiedUtc = now;
 
         try
