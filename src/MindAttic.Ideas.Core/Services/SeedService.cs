@@ -298,30 +298,6 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         </div>
         """;
 
-    // Page CSS rides at the top (cascade tier PAGE, emitted into <head> by CmsHead). Layout is plain
-    // flex; the cover images ARE the .img-* classes (inline base64 data, not files).
-    private const string FrontpageCss =
-        """
-        /* mindattic.com look, recreated. Layout = flex sections; no zones, no layout system. */
-        .fp { display: flex; flex-direction: column; gap: 1.5rem; max-width: 64rem; min-height: 100vh; margin: 0 auto; padding: 1.5rem; }
-        .fp-wordmark { font-family: var(--font-attic, var(--font-outfit, system-ui)); font-size: clamp(2.2rem, 6vw, 3.6rem); letter-spacing: .04em; }
-        .fp-sections { display: flex; flex-direction: column; gap: 2.25rem; }
-        .fp-section { display: flex; flex-direction: column; gap: 1rem; }
-        .fp-section h2 { font-size: 1.3rem; opacity: .9; border-bottom: 1px solid rgba(128,128,128,.3); padding-bottom: .35rem; }
-        .fp-links { display: flex; flex-wrap: wrap; gap: 1.25rem; }
-        .fp-links a { color: inherit; }
-        .fp-books { --ma-gallery-min: 8.5rem; }
-        .fp-books .ma-gallery-tile { display: flex; align-items: flex-end; padding: .6rem; text-decoration: none; color: #fff; }
-        .fp-books .ma-gallery-tile span { font-size: .85rem; line-height: 1.25; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
-        /* Covers as inline base64 image classes (placeholder gradients — paste real cover data here). */
-        .img-book-norp { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNhMDQ1NTMiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMyYjExMTgiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
-        .img-book-vengeance { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM3ZDNhNWUiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxZDBmMWEiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
-        .img-book-palus { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1ZTNhN2QiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxNTBmMWQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
-        .img-book-rime { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzYTVlN2QiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZjE1MWQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
-        .img-book-harvest { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzYTdkNWUiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZjFkMTUiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
-        .img-book-returns { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM3ZDZhM2EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxZDE4MGYiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
-        .img-book-mosaic { background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNDAiIGhlaWdodD0iMzYwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM0NjYzN2QiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxMDE2MWQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2cpIi8+PC9zdmc+'); }
-        """;
 
     // ── The Personas page: MindAttic.Legion.Frontend collapsed into one token (MAI-A22) ──────────
     private const string PersonasBodyHtml =
@@ -337,16 +313,6 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
     private const string PersonasCss =
         """
         .personas { display: flex; flex-direction: column; gap: 1rem; max-width: 64rem; margin: 0 auto; padding: 1.5rem; }
-        """;
-
-    // Page JS rides at the bottom of the body (the page convention). Kept tiny: widgets carry their
-    // own behavior; the page only fills the live copyright year.
-    private const string FrontpageJs =
-        """
-        (function () {
-          var y = document.querySelector('.fp-year');
-          if (y) y.textContent = String(new Date().getFullYear());
-        })();
         """;
 
     // A modern CSS reset (Josh Comeau's custom reset) emitted as cascade tier 0 — everything is reset before

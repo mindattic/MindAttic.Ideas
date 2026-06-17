@@ -88,9 +88,22 @@ UPDATE [InstalledPackages] SET [Category] = 'Widget' WHERE [Category] IN ('Plugi
 UPDATE [ContentDefinitions] SET [Kind] = 'Widget', [Category] = 'Widget'
 WHERE [Origin] = 'Package' AND [Category] IN ('Plugin', 'Component');
 
--- Restore Pages.BodyHtml: Plugin.*/Component.* tokens → Widget.*
-UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.','Widget.') WHERE [BodyHtml] LIKE '%.Plugin.%';
-UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Component.','Widget.') WHERE [BodyHtml] LIKE '%.Component.%';
+-- Restore Pages.BodyHtml Plugin tokens (per-key — mirrors Up(); avoids corrupting prose that contains 'Plugin.')
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.Tooltip','Widget.Tooltip')               WHERE [BodyHtml] LIKE '%Plugin.Tooltip%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.OutfitFont','Widget.OutfitFont')         WHERE [BodyHtml] LIKE '%Plugin.OutfitFont%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.AtticFont','Widget.AtticFont')           WHERE [BodyHtml] LIKE '%Plugin.AtticFont%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.SacredGeometry','Widget.SacredGeometry') WHERE [BodyHtml] LIKE '%Plugin.SacredGeometry%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.Cyberspace','Widget.Cyberspace')         WHERE [BodyHtml] LIKE '%Plugin.Cyberspace%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.NavMenu','Widget.NavMenu')               WHERE [BodyHtml] LIKE '%Plugin.NavMenu%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.Breadcrumbs','Widget.Breadcrumbs')       WHERE [BodyHtml] LIKE '%Plugin.Breadcrumbs%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.Footer','Widget.Footer')                 WHERE [BodyHtml] LIKE '%Plugin.Footer%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.PinFooter','Widget.PinFooter')           WHERE [BodyHtml] LIKE '%Plugin.PinFooter%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.BackToTop','Widget.BackToTop')           WHERE [BodyHtml] LIKE '%Plugin.BackToTop%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.BackHomeM','Widget.BackHomeM')           WHERE [BodyHtml] LIKE '%Plugin.BackHomeM%';
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Plugin.SocialLinks','Widget.SocialLinks')       WHERE [BodyHtml] LIKE '%Plugin.SocialLinks%';
+-- Restore Component tokens (LIKE anchors to {{ delimiter so prose like 'Component.X' is not touched)
+UPDATE [Pages] SET [BodyHtml]=REPLACE([BodyHtml],'Component.','Widget.')
+  WHERE [BodyHtml] LIKE '%{{ Component.%' OR [BodyHtml] LIKE '%{{Component.%';
 
 -- Restore WidgetPlacementSettings.WidgetRef: Plugin.*/Component.* → Widget.*
 UPDATE [WidgetPlacementSettings] SET [WidgetRef]='Widget.'+SUBSTRING([WidgetRef],8,LEN([WidgetRef])) WHERE [WidgetRef] LIKE 'Plugin.%';

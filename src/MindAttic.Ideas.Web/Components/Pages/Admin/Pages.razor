@@ -143,7 +143,7 @@
                         <div class="admin-palette-list">
                             @foreach (var w in Catalog.All.Where(d => d.Kind == ContentKind.Component).OrderBy(d => d.Key).ThenByDescending(d => d.Version))
                             {
-                                var token = "{{Component." + w.Key + ".V" + w.Version + "}}";
+                                var token = "{{ Component." + w.Key + ".V" + w.Version + " }}";
                                 <div class="admin-palette-item">
                                     <code>@token</code>
                                     <span class="admin-sub">@w.DisplayName</span>

@@ -29,6 +29,7 @@ public static partial class ManifestValidator
     public const string NoDisplayName = "NO_DISPLAY_NAME";
     public const string BadKind = "BAD_KIND";
     public const string UnknownCategory = "UNKNOWN_CATEGORY";
+    public const string RetiredCategory = "RETIRED_CATEGORY";
     public const string CodeMissingEntry = "CODE_MISSING_ENTRY";
     public const string CodeMissingBin = "CODE_MISSING_BIN";
     public const string SdkTooNew = "SDK_TOO_NEW";
@@ -68,8 +69,12 @@ public static partial class ManifestValidator
         if (!isData && !isCode)
             errors.Add(new(BadKind, $"kind '{m.Kind}' must be 'data' or 'code'."));
 
-        // Unknown category is a WARNING, not an error — a future ContentKind shouldn't hard-block install.
-        if (!Enum.TryParse<ContentKind>(m.Category, ignoreCase: true, out _))
+        // Retired categories (removed in MAI-A26) are a hard error — they parse to wrong ordinals at runtime.
+        if (string.Equals(m.Category, "Widget", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(m.Category, "Control", StringComparison.OrdinalIgnoreCase))
+            errors.Add(new(RetiredCategory, $"category '{m.Category}' was retired — use Plugin or Component instead."));
+        // Unknown-but-not-retired category is a WARNING — a future ContentKind shouldn't hard-block install.
+        else if (!Enum.TryParse<ContentKind>(m.Category, ignoreCase: true, out _))
             errors.Add(new(UnknownCategory, $"category '{m.Category}' is not a known ContentKind.", IsWarning: true));
 
         if (isCode)

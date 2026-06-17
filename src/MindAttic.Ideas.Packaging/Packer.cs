@@ -64,7 +64,7 @@ public static partial class Packer
         var manifest = new IdeaManifest
         {
             ManifestVersion = 1,
-            Category = identity.Kind,         // the ContentKind name (Page | Plugin | Theme | Component)
+            Category = identity.Category,     // the ContentKind name (Page | Plugin | Theme | Component)
             Kind = "code",                    // this packer packs a compiled citizen
             Key = identity.Key,
             Version = identity.Version,

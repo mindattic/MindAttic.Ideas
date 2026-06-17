@@ -39,6 +39,20 @@ public class ManifestValidatorTests
         });
     }
 
+    [TestCase("Widget")]
+    [TestCase("widget")]
+    [TestCase("Control")]
+    [TestCase("control")]
+    public void RetiredCategory_IsHardError(string retiredCategory)
+    {
+        var r = ManifestValidator.Validate(Code() with { Category = retiredCategory }, ["Demo.dll"]);
+        Assert.Multiple(() =>
+        {
+            Assert.That(r.IsValid, Is.False, "retired category must be a hard error");
+            Assert.That(HasError(r, ManifestValidator.RetiredCategory), Is.True);
+        });
+    }
+
     [TestCase("about", true)]
     [TestCase("ui.tooltip", true)]
     [TestCase("a0-_", true)]

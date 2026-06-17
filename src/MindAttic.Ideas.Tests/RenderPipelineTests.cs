@@ -48,11 +48,16 @@ public class RenderPipelineTests
         return (svc, catalog);
     }
 
-    // PluginBase is in MindAttic.Ideas.Abstractions — always loadable by DefaultTypeResolver in the test process.
-    // We use a fake assembly name "Demo" in the manifest/bin so the validator doesn't reject it as a
-    // host assembly (MindAttic.Ideas.* is on the FORBIDDEN_BIN list). DefaultTypeResolver falls back
-    // to scanning all loaded assemblies by type name, so it still resolves PluginBase at runtime.
-    private static readonly string PluginBaseTypeName = typeof(PluginBase).FullName!;
+    // Concrete Plugin for test manifests. PluginBase is abstract; Activator.CreateInstance (called by
+    // AllAssetsOf when harvesting asset URLs) would throw MemberAccessException on an abstract type.
+    // DefaultTypeResolver scans all loaded assemblies, so it finds TestPlugin in this test assembly even
+    // though the manifest names a fake "Demo" assembly.
+    private sealed class TestPlugin : PluginBase
+    {
+        public override IReadOnlyList<string> StylesheetUrls => [];
+        public override IReadOnlyList<string> ScriptUrls => [];
+    }
+    private static readonly string TestPluginTypeName = typeof(TestPlugin).FullName!;
     private const string FakeAsmName = "Demo";
 
     [Test]
@@ -67,7 +72,7 @@ public class RenderPipelineTests
                 ManifestVersion = 1, Category = "Plugin", Kind = "code",
                 Key = "test.widget", Version = 1,
                 DisplayName = "Test Widget", Sdk = 1,
-                EntryType = PluginBaseTypeName,
+                EntryType = TestPluginTypeName,
                 AssemblyName = FakeAsmName,
             }),
             [$"bin/{FakeAsmName}.dll"] = "MZ-fake",
@@ -114,7 +119,7 @@ public class RenderPipelineTests
             {
                 ManifestVersion = 1, Category = "Plugin", Kind = "code",
                 Key = "known.widget", Version = 1, DisplayName = "Known", Sdk = 1,
-                EntryType = PluginBaseTypeName, AssemblyName = FakeAsmName,
+                EntryType = TestPluginTypeName, AssemblyName = FakeAsmName,
             }),
             [$"bin/{FakeAsmName}.dll"] = "MZ-fake",
         });
