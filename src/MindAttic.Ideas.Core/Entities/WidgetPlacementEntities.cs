@@ -31,6 +31,7 @@ public sealed class WidgetPlacementSettingsHistory
 {
     public int Id { get; set; }
     public int PlacementSettingsId { get; set; }
+    public string WidgetRef { get; set; } = "";
     public string SettingsJson { get; set; } = "{}";
     public int SettingsVersion { get; set; }
     public DateTime SavedUtc { get; set; }

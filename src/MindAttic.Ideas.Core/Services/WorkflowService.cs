@@ -153,7 +153,7 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
         if (page is null) return false;
 
         page.WorkflowDefinitionId = workflowDefinitionId;
-        page.WorkflowState ??= def.InitialState;   // only set if not already in a state
+        page.WorkflowState = def.InitialState;
         page.ModifiedUtc = DateTime.UtcNow;
 
         await db.SaveChangesAsync(ct);

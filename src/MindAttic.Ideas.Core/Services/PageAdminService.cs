@@ -184,7 +184,13 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         }
         catch (DbUpdateException)
         {
-            return new PageSaveResult(false, page.Id, trust, "Could not save — the slug may already be in use.");
+            // Discriminate: was this a slug collision or a concurrent slug-history duplicate insert?
+            await using var check = await dbFactory.CreateDbContextAsync(ct);
+            var slugConflict = await check.Pages.IgnoreQueryFilters()
+                .AnyAsync(p => p.SiteId == siteId && p.Slug == slug && p.Id != model.Id, ct);
+            return new PageSaveResult(false, page.Id, trust, slugConflict
+                ? $"A page with slug '{(slug.Length == 0 ? "(home)" : slug)}' already exists."
+                : "Save failed — please try again.");
         }
 
         // Upsert meta tags — RemoveRange (not ExecuteDeleteAsync) keeps InMemory provider compatible.
@@ -206,7 +212,10 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             db.PageUserAccess.Add(new PageUserAccess { PageId = page.Id, UserId = uid });
 
         if (db.ChangeTracker.HasChanges())
-            await db.SaveChangesAsync(ct);
+        {
+            try { await db.SaveChangesAsync(ct); }
+            catch (DbUpdateException) { /* meta-tag / access-list save failed; the page itself was committed */ }
+        }
 
         return new PageSaveResult(true, page.Id, trust, null);
     }

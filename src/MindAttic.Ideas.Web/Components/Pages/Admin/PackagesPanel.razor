@@ -35,7 +35,7 @@ else
                     <td>V@p.Version</td>
                     <td>@p.DisplayName</td>
                     <td><span title="@p.InstalledUtc.ToString("O")">@p.InstalledUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span></td>
-                    <td><code class="admin-hash">@p.Sha256[..12]…</code></td>
+                    <td><code class="admin-hash">@(p.Sha256.Length >= 12 ? p.Sha256[..12] : p.Sha256)…</code></td>
                     <td>
                         @if (!string.IsNullOrEmpty(p.BlobPath))
                         {

@@ -148,4 +148,42 @@ public class WidgetInstanceSettingsServiceTests
 
         Assert.That(history, Is.Empty);
     }
+
+    [Test]
+    public async Task Rollback_RestoresWidgetRef()
+    {
+        // Regression: rollback only restored SettingsJson, leaving the old WidgetRef in place.
+        var factory = NewFactory();
+        var svc = new WidgetInstanceSettingsService(factory);
+        var pageId = await SeedPageAsync(factory);
+
+        await svc.SaveAsync(pageId, "hero", "Component.hero@1", """{"color":"blue"}""");   // V1 — hero@1
+        await svc.SaveAsync(pageId, "hero", "Component.hero@2", """{"color":"red"}""");    // V2 — upgraded to hero@2
+
+        var ok = await svc.RollbackAsync(pageId, "hero", version: 1);
+
+        var current = await svc.GetAsync(pageId, "hero");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ok, Is.True);
+            Assert.That(current!.WidgetRef, Is.EqualTo("Component.hero@1"), "WidgetRef must also roll back");
+            Assert.That(current.SettingsJson, Does.Contain("blue"));
+        });
+    }
+
+    [Test]
+    public async Task Save_Update_HistoryCaptures_WidgetRef()
+    {
+        // Regression: history snapshots omitted WidgetRef, so rollback had nothing to restore.
+        var factory = NewFactory();
+        var svc = new WidgetInstanceSettingsService(factory);
+        var pageId = await SeedPageAsync(factory);
+
+        await svc.SaveAsync(pageId, "cta", "Plugin.cta@1", """{"text":"Sign up"}""");
+        await svc.SaveAsync(pageId, "cta", "Plugin.cta@2", """{"text":"Get started"}""");
+
+        var history = await svc.GetHistoryAsync(pageId, "cta");
+        Assert.That(history[0].WidgetRef, Is.EqualTo("Plugin.cta@1"),
+            "history snapshot must record the WidgetRef that was active before the save");
+    }
 }

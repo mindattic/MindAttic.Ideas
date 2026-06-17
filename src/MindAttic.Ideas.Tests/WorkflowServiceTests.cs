@@ -222,4 +222,34 @@ public class WorkflowServiceTests
             Assert.That(updated.WorkflowState, Is.EqualTo("Draft"));
         });
     }
+
+    [Test]
+    public async Task AssignWorkflow_ResetsStateEvenWhenPageAlreadyHasState()
+    {
+        // Regression: ??= left old WorkflowState intact when reassigning a different workflow.
+        var factory = NewFactory();
+        var svc = new WorkflowService(factory);
+
+        var defA = await svc.CreateDefinitionAsync("DefA", "Draft");
+        var defB = await svc.CreateDefinitionAsync("DefB", "Review");
+
+        await using var setupDb = factory.CreateDbContext();
+        var page = new CmsPage
+        {
+            Slug = "reassign-page", Title = "Reassign Test",
+            Kind = MindAttic.Ideas.Abstractions.PageKind.Data,
+            BodyTrust = MindAttic.Ideas.Abstractions.ContentTrust.Untrusted,
+            Enabled = true, CreatedUtc = DateTime.UtcNow,
+            WorkflowDefinitionId = defA.Id, WorkflowState = "Published",
+        };
+        setupDb.Pages.Add(page);
+        await setupDb.SaveChangesAsync();
+
+        await svc.AssignWorkflowAsync(page.Id, defB.Id);
+
+        await using var db = factory.CreateDbContext();
+        var updated = await db.Pages.FindAsync(page.Id);
+        Assert.That(updated!.WorkflowState, Is.EqualTo("Review"),
+            "AssignWorkflow must reset state to InitialState of the new definition");
+    }
 }

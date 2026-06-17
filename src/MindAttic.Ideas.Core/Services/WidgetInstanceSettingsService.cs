@@ -71,6 +71,7 @@ public sealed class WidgetInstanceSettingsService(IDbContextFactory<CmsDbContext
         db.WidgetPlacementSettingsHistory.Add(new WidgetPlacementSettingsHistory
         {
             PlacementSettingsId = existing.Id,
+            WidgetRef = existing.WidgetRef,
             SettingsJson = existing.SettingsJson,
             SettingsVersion = existing.SettingsVersion,
             SavedUtc = now,
@@ -122,12 +123,14 @@ public sealed class WidgetInstanceSettingsService(IDbContextFactory<CmsDbContext
         db.WidgetPlacementSettingsHistory.Add(new WidgetPlacementSettingsHistory
         {
             PlacementSettingsId = existing.Id,
+            WidgetRef = existing.WidgetRef,
             SettingsJson = existing.SettingsJson,
             SettingsVersion = existing.SettingsVersion,
             SavedUtc = now,
             SavedByUserId = userId,
         });
 
+        existing.WidgetRef = target.WidgetRef;
         existing.SettingsJson = target.SettingsJson;
         existing.SettingsVersion += 1;
         existing.ModifiedUtc = now;

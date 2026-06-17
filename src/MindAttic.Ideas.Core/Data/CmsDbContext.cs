@@ -127,6 +127,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.PlacementSettingsId, x.SettingsVersion }).IsUnique();
+            e.Property(x => x.WidgetRef).HasMaxLength(256).IsRequired();
             e.Property(x => x.SavedByUserId).HasMaxLength(64);
             e.HasOne<WidgetPlacementSettings>().WithMany(s => s.History)
                 .HasForeignKey(x => x.PlacementSettingsId).OnDelete(DeleteBehavior.Cascade);

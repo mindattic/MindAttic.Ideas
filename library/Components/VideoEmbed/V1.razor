@@ -57,7 +57,14 @@ else if (!string.IsNullOrWhiteSpace(Url))
             return $"https://player.vimeo.com/video/{id}?dnt=1";
         return null;
 
-        static string? Embed(string id) =>
-            string.IsNullOrWhiteSpace(id) ? null : $"https://www.youtube-nocookie.com/embed/{id}";
+        static string? Embed(string id)
+        {
+            // Strip any extra path segments and query strings that could corrupt the embed URL,
+            // then validate the ID is a safe YouTube token (11 alphanumeric/_/- chars).
+            var clean = id.Split('/')[0].Split('?')[0].Split('#')[0];
+            return clean.Length > 0 && System.Text.RegularExpressions.Regex.IsMatch(clean, @"^[A-Za-z0-9_-]{1,20}$")
+                ? $"https://www.youtube-nocookie.com/embed/{clean}"
+                : null;
+        }
     }
 }
