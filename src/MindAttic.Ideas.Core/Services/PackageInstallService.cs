@@ -87,6 +87,11 @@ public sealed class PackageInstallService(
         // ---- Declared-REQUIRED dependencies (BLOCKING): every requires[] entry must already be installed
         // and enabled. Unlike uses[], a missing required dependency is a hard reject — the author explicitly
         // declared a structural prerequisite, not just a runtime reference. ----
+        foreach (var u in manifest.Requires ?? [])
+            if (!IncludeReferenceParser.TryParseUse(u, out _, out _, out _))
+                throw new InstallException(
+                    $"REQUIRES_UNPARSEABLE: requires[] entry '{u}' is not a valid dependency reference " +
+                    $"(expected 'Kind.key' or 'Kind.key@version'). Update the package manifest.");
         foreach (var (depKind, depKey, depVer) in IncludeReferenceParser.ParseUses(manifest.Requires))
         {
             var present = await db.ContentDefinitions.AnyAsync(

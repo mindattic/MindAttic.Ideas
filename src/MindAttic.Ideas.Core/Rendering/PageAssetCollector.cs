@@ -33,10 +33,10 @@ public static class PageAssetCollector
 
         foreach (var (kind, key, version) in refs)
         {
-            // Mirror ContentCatalog.ResolveTag: a pin falls back to latest if that exact version is gone.
-            var desc = version is int v
-                ? (catalog.Find(kind, key, v) ?? catalog.FindLatest(kind, key))
-                : catalog.FindLatest(kind, key);
+            // Mirror ContentCatalog.ResolveTag exactly: a pinned version resolves only to that version;
+            // no fallback to latest (a missing pinned version contributes no head assets, matching the
+            // MissingContent placeholder the renderer shows in the body).
+            var desc = version is int v ? catalog.Find(kind, key, v) : catalog.FindLatest(kind, key);
             if (desc is null) continue;   // missing/disabled — contributes nothing; the renderer alerts, not us
 
             var assets = assetsOf(desc);

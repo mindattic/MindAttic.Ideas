@@ -24,7 +24,8 @@ public sealed record DeleteGuardResult(bool Deleted, bool Blocked, bool Disabled
 /// </summary>
 public readonly record struct PageRef(
     string Slug, string? BodyHtml, string? ThemeKey, int? ThemeVersion, bool Enabled, bool IsPublished,
-    IReadOnlyList<string>? Uses = null);
+    IReadOnlyList<string>? Uses = null,
+    string? ActivePluginsJson = null);
 
 /// <summary>
 /// Admin lifecycle for content definitions: list, enable/disable (with live catalog reload), and
@@ -77,7 +78,7 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
 
         // IgnoreQueryFilters: soft-deleted pages are restorable, so their pinned citizens must be preserved.
         var pageRows = await db.Pages.IgnoreQueryFilters()
-            .Select(p => new { p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished, p.Kind, p.ComponentTypeName })
+            .Select(p => new { p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished, p.Kind, p.ComponentTypeName, p.ActivePluginsJson })
             .ToListAsync(ct);
 
         // A COMPILED (Code) page references Components/Controls through its package manifest uses[], NOT its
@@ -97,7 +98,8 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
         var pages = pageRows.Select(p => new PageRef(
             p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished,
             p.Kind == PageKind.Code && p.ComponentTypeName is not null
-                && usesByType.TryGetValue(p.ComponentTypeName, out var u) ? u : null)).ToList();
+                && usesByType.TryGetValue(p.ComponentTypeName, out var u) ? u : null,
+            p.ActivePluginsJson)).ToList();
 
         // Versions of this key that would REMAIN enabled+live after deleting `version`.
         var otherEnabled = await db.ContentDefinitions
@@ -163,13 +165,17 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
                 var floating = keyMatch && p.ThemeVersion is null && floatingOrphans;
                 blocks = pinned || floating;
             }
-            else // Component / Control: scan the author body AND a compiled page's declared uses[]
+            else // Plugin / Component: scan the author body AND a compiled page's declared uses[]
             {
                 var pinned = IncludeReferenceParser.BodyPinsVersion(p.BodyHtml, kind, key, version)
                              || IncludeReferenceParser.UsesPinsVersion(p.Uses, kind, key, version);
+                // Plugins selected via the Admin checkbox are stored in ActivePluginsJson as floating refs.
+                var activePluginRef = kind == ContentKind.Plugin && p.ActivePluginsJson is { Length: > 0 } apj
+                    && TryDeserializePlugins(apj).Any(r => string.Equals(r, "Plugin." + key, StringComparison.OrdinalIgnoreCase));
                 var floating = floatingOrphans
                                && (IncludeReferenceParser.BodyFloatsKey(p.BodyHtml, kind, key)
-                                   || IncludeReferenceParser.UsesFloatsKey(p.Uses, kind, key));
+                                   || IncludeReferenceParser.UsesFloatsKey(p.Uses, kind, key)
+                                   || activePluginRef);
                 blocks = pinned || floating;
             }
 
@@ -177,5 +183,11 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
         }
 
         return blocking;
+    }
+
+    private static IReadOnlyList<string> TryDeserializePlugins(string json)
+    {
+        try { return JsonSerializer.Deserialize<List<string>>(json) ?? []; }
+        catch { return []; }
     }
 }

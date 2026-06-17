@@ -282,8 +282,12 @@
         var i = sibs.FindIndex(p => p.Id == node.Id);
         var j = i + dir;
         if (i < 0 || j < 0 || j >= sibs.Count) return;
-        await PagesSvc.MoveAsync(sibs[i].Id, sibs[i].ParentId, sibs[j].SortOrder);
-        await PagesSvc.MoveAsync(sibs[j].Id, sibs[j].ParentId, sibs[i].SortOrder);
+        var sortI = sibs[i].SortOrder;
+        var sortJ = sibs[j].SortOrder;
+        // When SortOrders are equal the writes would be no-ops; force a real difference.
+        if (sortI == sortJ) { if (dir > 0) sortJ++; else sortI++; }
+        await PagesSvc.MoveAsync(sibs[i].Id, sibs[i].ParentId, sortJ);
+        await PagesSvc.MoveAsync(sibs[j].Id, sibs[j].ParentId, sortI);
         await Load();
     }
 

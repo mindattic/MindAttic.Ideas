@@ -6,7 +6,8 @@
    assets is on the page, so existing pages render byte-identically). This order lives in exactly ONE place. *@
 @if (!string.IsNullOrWhiteSpace(GlobalCss))
 {
-    <style>@((MarkupString)GlobalCss!)</style>
+    @* Escape any </style sequence so a rogue setting value cannot break out of the style block. *@
+    <style>@((MarkupString)GlobalCss!.Replace("</", "<\\/", StringComparison.OrdinalIgnoreCase))</style>
 }
 @foreach (var url in ThemeGlobalCss)
 {

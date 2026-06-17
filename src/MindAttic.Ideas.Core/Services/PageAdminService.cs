@@ -230,7 +230,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         for (var hops = 0; cursorId is int cid && hops < 256; hops++)
         {
             if (cid == id) return false;
-            cursorId = await db.Pages.Where(p => p.Id == cid).Select(p => p.ParentId).FirstOrDefaultAsync(ct);
+            cursorId = await db.Pages.IgnoreQueryFilters().Where(p => p.Id == cid).Select(p => p.ParentId).FirstOrDefaultAsync(ct);
         }
 
         page.ParentId = parentId;

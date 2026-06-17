@@ -53,7 +53,15 @@ public static class IncludeExpander
                 // Script/style inner content must be emitted raw; untrusted content drops it entirely.
                 case IElement el when el.LocalName is "script" or "style":
                     b.OpenElement(c.Next++, el.LocalName);
-                    foreach (var attr in el.Attributes) b.AddAttribute(c.Next++, attr.Name, attr.Value);
+                    foreach (var attr in el.Attributes)
+                    {
+                        // Strip XSS vectors even on the wrapper element (e.g. <script src=...>, <style onload=...>).
+                        if (ctx.Trust != ContentTrust.Author &&
+                            (attr.Name.StartsWith("on", StringComparison.OrdinalIgnoreCase) ||
+                             attr.Value.TrimStart().StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)))
+                            continue;
+                        b.AddAttribute(c.Next++, attr.Name, attr.Value);
+                    }
                     if (ctx.Trust == ContentTrust.Author) b.AddMarkupContent(c.Next++, el.InnerHtml);
                     b.CloseElement();
                     break;
