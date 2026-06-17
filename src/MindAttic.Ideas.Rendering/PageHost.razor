@@ -88,7 +88,7 @@ else if (_context is not null)
 
     protected override async Task OnParametersSetAsync()
     {
-        var slug = (Slug ?? "").Trim('/');
+        var slug = (Slug ?? "").Trim('/').ToLowerInvariant();
 
         // Reserved prefixes never resolve to a content page (defense in depth; /admin & /_* are also
         // handled by endpoint routing).
@@ -121,7 +121,7 @@ else if (_context is not null)
             var redirect = await SlugRedirects.CheckRedirectAsync(siteId, slug);
             if (redirect is not null)
             {
-                Nav.NavigateTo("/" + redirect.TargetSlug, false);
+                Nav.NavigateTo("/" + redirect.TargetSlug, forceLoad: true);
                 return;
             }
             _status = Status.NotFound;
@@ -192,10 +192,15 @@ else if (_context is not null)
             ThemeKey = page.ThemeKey, ThemeVersion = page.ThemeVersion, Inline = inline,
             Meta = seoDict,
         };
+        var siteSettings = siteId.HasValue
+            ? await db.Settings.Where(s => s.Scope == "Site" && s.ScopeId == siteId)
+                  .ToDictionaryAsync(s => s.Key, s => s.Value)
+            : new Dictionary<string, string?>();
         var siteCtx = new CmsSiteContext
         {
             SiteId = site?.Uid ?? Guid.Empty, Key = site?.Key ?? "default", Host = "",
             DefaultThemeKey = site?.DefaultThemeKey ?? "",
+            SettingReader = key => siteSettings.GetValueOrDefault(key),
         };
         _context = new CmsRenderContext
         {

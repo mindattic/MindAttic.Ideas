@@ -60,7 +60,15 @@ public static class IncludeExpander
 
                 case IElement el:
                     b.OpenElement(c.Next++, el.LocalName);
-                    foreach (var attr in el.Attributes) b.AddAttribute(c.Next++, attr.Name, attr.Value);
+                    foreach (var attr in el.Attributes)
+                    {
+                        // Strip XSS vectors from untrusted content: event handlers and javascript: URIs.
+                        if (ctx.Trust != ContentTrust.Author &&
+                            (attr.Name.StartsWith("on", StringComparison.OrdinalIgnoreCase) ||
+                             attr.Value.TrimStart().StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)))
+                            continue;
+                        b.AddAttribute(c.Next++, attr.Name, attr.Value);
+                    }
                     RenderNodes(b, c, el.ChildNodes, ctx);
                     b.CloseElement();
                     break;

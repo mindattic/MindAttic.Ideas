@@ -75,7 +75,8 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
         if (def is null)
             return new DeleteGuardResult(false, false, false, Array.Empty<string>(), "Content definition not found.");
 
-        var pageRows = await db.Pages
+        // IgnoreQueryFilters: soft-deleted pages are restorable, so their pinned citizens must be preserved.
+        var pageRows = await db.Pages.IgnoreQueryFilters()
             .Select(p => new { p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished, p.Kind, p.ComponentTypeName })
             .ToListAsync(ct);
 

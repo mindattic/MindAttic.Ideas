@@ -100,8 +100,9 @@ public sealed class DiscoveryService(
             catch (JsonException) { /* leave this identity unmapped -> Extra null -> empty head assets */ }
         }
 
-        catalog.Load(all.Where(x => !x.IsShadowed && x.Enabled).Select(x => ToDescriptor(x, LookupManifest(x, manifestByIdentity))));
-        catalog.LoadDisabled(all.Where(x => !x.IsShadowed && !x.Enabled).Select(x => (x.Kind, x.Key, x.Version)));
+        catalog.LoadSnapshot(
+            all.Where(x => !x.IsShadowed && x.Enabled).Select(x => ToDescriptor(x, LookupManifest(x, manifestByIdentity))),
+            all.Where(x => !x.IsShadowed && !x.Enabled).Select(x => (x.Kind, x.Key, x.Version)));
     }
 
     private static IdeaManifest? LookupManifest(

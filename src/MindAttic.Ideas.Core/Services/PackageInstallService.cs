@@ -196,7 +196,15 @@ public sealed class PackageInstallService(
         var siteId = site.Id;
         var slug = seed.Slug.Trim('/');
 
-        var existing = await db.Pages.FirstOrDefaultAsync(p => p.SiteId == siteId && p.Slug == slug, ct);
+        // IgnoreQueryFilters: a previously soft-deleted seeded page must be found and restored, not skipped.
+        var existing = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == siteId && p.Slug == slug, ct);
+        if (existing is { IsDeleted: true })
+        {
+            existing.IsDeleted = false;
+            existing.DeletedUtc = null;
+            existing.ModifiedUtc = now;
+        }
+
         if (existing is null)
         {
             db.Pages.Add(new Page

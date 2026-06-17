@@ -8,32 +8,49 @@ namespace MindAttic.Ideas.Core.Discovery;
 /// </summary>
 public sealed class ContentCatalog(ITypeResolver resolver) : IContentCatalog
 {
-    private volatile IReadOnlyList<ContentDescriptor> _all = Array.Empty<ContentDescriptor>();
-    // Identities that EXIST but are admin-disabled — kept separately so ResolveTag can report Disabled
-    // (vs Missing) without putting them in the enabled snapshot the renderer composes from.
-    private volatile IReadOnlyList<(ContentKind Kind, string Key, int Version)> _disabled =
-        Array.Empty<(ContentKind, string, int)>();
+    // Single volatile reference so Load+LoadDisabled appear atomic to concurrent readers.
+    private sealed record CatalogSnapshot(
+        IReadOnlyList<ContentDescriptor> All,
+        IReadOnlyList<(ContentKind Kind, string Key, int Version)> Disabled)
+    {
+        internal static readonly CatalogSnapshot Empty = new([], []);
+    }
 
-    /// <summary>Replace the enabled-winners snapshot atomically.</summary>
-    public void Load(IEnumerable<ContentDescriptor> descriptors) => _all = descriptors.ToArray();
+    private volatile CatalogSnapshot _snapshot = CatalogSnapshot.Empty;
 
-    /// <summary>Replace the disabled-identity snapshot atomically (drives Disabled vs Missing).</summary>
-    public void LoadDisabled(IEnumerable<(ContentKind Kind, string Key, int Version)> disabled) => _disabled = disabled.ToArray();
+    /// <summary>Replace the enabled-winners snapshot. Prefer <see cref="LoadSnapshot"/> to avoid a torn-state window.</summary>
+    public void Load(IEnumerable<ContentDescriptor> descriptors) =>
+        _snapshot = _snapshot with { All = descriptors.ToArray() };
 
-    public IReadOnlyCollection<ContentDescriptor> All => _all;
+    /// <summary>Replace the disabled-identity snapshot. Prefer <see cref="LoadSnapshot"/> to avoid a torn-state window.</summary>
+    public void LoadDisabled(IEnumerable<(ContentKind Kind, string Key, int Version)> disabled) =>
+        _snapshot = _snapshot with { Disabled = disabled.ToArray() };
+
+    /// <summary>Replace both snapshots in a single atomic volatile write — eliminates the Disabled→Missing torn-state window.</summary>
+    public void LoadSnapshot(
+        IEnumerable<ContentDescriptor> enabled,
+        IEnumerable<(ContentKind Kind, string Key, int Version)> disabled) =>
+        _snapshot = new(enabled.ToArray(), disabled.ToArray());
+
+    public IReadOnlyCollection<ContentDescriptor> All => _snapshot.All;
 
     public ContentDescriptor? Find(ContentKind kind, string key, int version) =>
-        _all.FirstOrDefault(d => d.Kind == kind && d.Key == key && d.Version == version);
+        _snapshot.All.FirstOrDefault(d => d.Kind == kind && d.Key == key && d.Version == version);
 
     public ContentDescriptor? FindLatest(ContentKind kind, string key) =>
-        _all.Where(d => d.Kind == kind && d.Key == key).MaxBy(d => d.Version);
+        _snapshot.All.Where(d => d.Kind == kind && d.Key == key).MaxBy(d => d.Version);
 
     public Type? ResolveType(ContentDescriptor descriptor) => resolver.Resolve(descriptor);
 
-    /// <summary>Override the default: report Disabled when an enabled winner is absent but the identity is known-disabled.</summary>
+    /// <summary>
+    /// Version-aware resolution: a pinned version is resolved exactly or reported Disabled/Missing — never
+    /// silently promoted to the latest enabled version. A floating reference (version == null) resolves to
+    /// the latest enabled version as before.
+    /// </summary>
     public ResolvedContent ResolveTag(ContentKind kind, string key, int? version)
     {
-        var desc = version is int v ? (Find(kind, key, v) ?? FindLatest(kind, key)) : FindLatest(kind, key);
+        var snap = _snapshot;   // single read — consistent enabled+disabled pair
+        var desc = version is int v ? Find(kind, key, v) : FindLatest(kind, key);
         if (desc is not null)
         {
             var type = ResolveType(desc);
@@ -43,8 +60,8 @@ public sealed class ContentCatalog(ITypeResolver resolver) : IContentCatalog
         }
 
         var known = version is int pinned
-            ? _disabled.Any(d => d.Kind == kind && d.Key == key && d.Version == pinned)
-            : _disabled.Any(d => d.Kind == kind && d.Key == key);
+            ? snap.Disabled.Any(d => d.Kind == kind && d.Key == key && d.Version == pinned)
+            : snap.Disabled.Any(d => d.Kind == kind && d.Key == key);
         return new ResolvedContent(known ? ContentResolution.Disabled : ContentResolution.Missing, null, null);
     }
 }
