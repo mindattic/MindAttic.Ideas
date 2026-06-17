@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
+using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;  // alias: MindAttic's ComponentBase wins the bare name (MAI-A26, MAI-A10)
 
 namespace MindAttic.Ideas.Abstractions;
 
@@ -11,7 +12,7 @@ namespace MindAttic.Ideas.Abstractions;
 // ============================================================================================
 
 /// <summary>The shared root. Everything an .idea contains derives (transitively) from this.</summary>
-public abstract class IdeaBase : ComponentBase
+public abstract class IdeaBase : BlazorComponentBase
 {
     /// <summary>The render context for this placement (provided by the host via a cascade).</summary>
     [CascadingParameter] protected IRenderContext Context { get; set; } = default!;
@@ -54,38 +55,34 @@ public abstract class ThemeBase : IdeaBase
     public virtual string? BodyPreludeHtml => null;
 }
 
-// ---- Widget (a composable UI unit you add to a page; can nest other widgets recursively) ----
+// ---- Plugin (site-wide .idea: activates a behavior/capability across the whole page) ----
 
 /// <summary>
-/// Base for a Widget: a composable unit you add to a page. At its simplest it switches ON a capability
-/// by loading assets page-wide — e.g. dropping <c>MindAttic.Ideas.Widget.Tooltip.V11</c> loads tooltip
-/// css/js so ANY element with <c>data-tooltip</c>/<c>data-tt</c> shows a tooltip on hover. At its richest
-/// it renders a full interactive UI that itself nests other widgets (via <c>CmsInclude</c>) to any depth.
-/// By default it renders no markup of its own — it emits its <see cref="StylesheetUrls"/> as
-/// &lt;link&gt; and <see cref="ScriptUrls"/> as &lt;script&gt;. Such asset-only activators are normally
-/// code-only classes (no markup) so they inherit this asset-emitting render; override only to add markup.
+/// Base for a Plugin: a site-wide .idea that activates a behavior or capability across the entire
+/// rendered page without occupying a specific token position. Plugins are selected per-page via the
+/// Admin Page Properties Plugin checkbox list; they may also be injected inline via
+/// <c>{{Plugin.X}}</c> for one-off pages (non-canonical). e.g. dropping
+/// <c>MindAttic.Ideas.Plugin.Tooltip.V1</c> loads tooltip css/js so ANY element with
+/// <c>data-tooltip</c>/<c>data-tt</c> shows a tooltip on hover.
 ///
-/// CONFIGURABLE LIKE PROPS: a Widget is a real Blazor component, so it can declare typed
-/// <c>[Parameter]</c> properties (the React-prop / Angular-@Input analog) that include-tag attributes
-/// bind to — e.g. <c>&lt;MindAttic.Ideas.Widget.Foo variant="dark" delay="200"/&gt;</c>. Any attribute
-/// that doesn't match a declared parameter lands in <see cref="Attributes"/> instead of erroring, so a
-/// placement can spread arbitrary config to tune look/feel/behavior.
+/// By default renders no markup — emits <see cref="StylesheetUrls"/> as &lt;link&gt; and
+/// <see cref="ScriptUrls"/> as &lt;script&gt;. Override <c>BuildRenderTree</c> to add markup.
+/// Declare typed <c>[Parameter]</c> properties for configuration; unmatched attributes land in
+/// <see cref="Attributes"/>.
 /// </summary>
-public abstract class WidgetBase : IdeaBase
+public abstract class PluginBase : IdeaBase
 {
     /// <summary>
-    /// Config attributes from the include tag that don't match a typed <c>[Parameter]</c> property — the
-    /// per-placement "props" bag. Lets a Widget be configured for a specific look/feel/behavior without
-    /// declaring every knob up front (declare the important ones as typed <c>[Parameter]</c>s; the rest
-    /// land here). Never throws on an unknown attribute.
+    /// Config attributes from the include tag that don't match a typed <c>[Parameter]</c> property.
+    /// Never throws on an unknown attribute.
     /// </summary>
     [Parameter(CaptureUnmatchedValues = true)]
     public IDictionary<string, object>? Attributes { get; set; }
 
-    /// <summary>Stylesheets this capability needs (jsDelivr or host-relative). Emitted once.</summary>
+    /// <summary>Stylesheets this plugin needs (jsDelivr or host-relative). Emitted once.</summary>
     public virtual IReadOnlyList<string> StylesheetUrls => Array.Empty<string>();
 
-    /// <summary>Scripts this capability needs (the behavior engine, e.g. tooltip.js). Emitted once.</summary>
+    /// <summary>Scripts this plugin needs (the behavior engine). Emitted once.</summary>
     public virtual IReadOnlyList<string> ScriptUrls => Array.Empty<string>();
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
@@ -107,4 +104,54 @@ public abstract class WidgetBase : IdeaBase
     }
 }
 
-// ---- (Control kind REMOVED pre-1.0 — MAI-A19. Author atomic UI as a Widget; WidgetBase covers it.) ----
+// ---- Component (inline-placed .idea: renders at the {{Component.X}} token position; can nest) ----
+
+/// <summary>
+/// Base for a Component: an inline-placed .idea that renders at the exact
+/// <c>{{Component.X}}</c> token position in the page body. Components can nest other Components,
+/// enabling composite UIs — e.g. <c>MindAttic.Ideas.Component.TabControl</c> nests
+/// <c>Component.TabButtonContainer</c>, <c>Component.TabButton</c> instances,
+/// <c>Component.TabPageContainer</c>, and <c>Component.TabPage</c> instances (each of which may
+/// contain <c>Component.Textbox</c> or other children). Declare sub-component dependencies with
+/// <c>[Uses]</c>/<c>uses[]</c>.
+///
+/// NOTE: <c>ComponentBase</c> here is <c>MindAttic.Ideas.Abstractions.ComponentBase</c>, NOT Blazor's
+/// <c>Microsoft.AspNetCore.Components.ComponentBase</c> — the MindAttic kind wins the bare name.
+/// Blazor's base is aliased as <c>BlazorComponentBase</c> in this file (see MAI-A26, MAI-A10).
+/// </summary>
+public abstract class ComponentBase : IdeaBase
+{
+    /// <summary>
+    /// Config attributes from the include tag that don't match a typed <c>[Parameter]</c> property.
+    /// Never throws on an unknown attribute.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IDictionary<string, object>? Attributes { get; set; }
+
+    /// <summary>Stylesheets this component needs (jsDelivr or host-relative). Emitted once.</summary>
+    public virtual IReadOnlyList<string> StylesheetUrls => Array.Empty<string>();
+
+    /// <summary>Scripts this component needs. Emitted once.</summary>
+    public virtual IReadOnlyList<string> ScriptUrls => Array.Empty<string>();
+
+    protected override void BuildRenderTree(RenderTreeBuilder builder)
+    {
+        var seq = 0;
+        foreach (var css in StylesheetUrls)
+        {
+            builder.OpenElement(seq++, "link");
+            builder.AddAttribute(seq++, "rel", "stylesheet");
+            builder.AddAttribute(seq++, "href", css);
+            builder.CloseElement();
+        }
+        foreach (var js in ScriptUrls)
+        {
+            builder.OpenElement(seq++, "script");
+            builder.AddAttribute(seq++, "src", js);
+            builder.CloseElement();
+        }
+    }
+}
+
+// ---- (Widget kind RETIRED — MAI-A26: split into Plugin=1 and Component=4. WidgetBase deleted.) ----
+// ---- (Control kind REMOVED pre-1.0 — MAI-A19. Author atomic UI as a Component; ordinal 3 reserved.) ----

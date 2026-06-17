@@ -17,8 +17,8 @@ public class UsesDeclarationTests
     [Test]
     public void TryParseUse_BareKey_FloatsToLatest()
     {
-        Assert.That(IncludeReferenceParser.TryParseUse("Widget.tooltip", out var k, out var key, out var v), Is.True);
-        Assert.That((k, key, v), Is.EqualTo((ContentKind.Widget, "tooltip", (int?)null)));
+        Assert.That(IncludeReferenceParser.TryParseUse("Plugin.tooltip", out var k, out var key, out var v), Is.True);
+        Assert.That((k, key, v), Is.EqualTo((ContentKind.Plugin, "tooltip", (int?)null)));
     }
 
     [Test]
@@ -53,11 +53,11 @@ public class UsesDeclarationTests
     {
         var tooltip = new ContentDescriptor
         {
-            Kind = ContentKind.Widget, Key = "tooltip", Version = 1, DisplayName = "Tooltip",
+            Kind = ContentKind.Plugin, Key = "tooltip", Version = 1, DisplayName = "Tooltip",
             Origin = ContentOrigin.Package,
         };
         var catalog = new FakeCatalog([tooltip]);
-        var refs = IncludeReferenceParser.ParseUses(new[] { "Widget.tooltip" });
+        var refs = IncludeReferenceParser.ParseUses(new[] { "Plugin.tooltip" });
 
         var head = PageAssetCollector.Collect(refs, catalog, _ => new CitizenAssets(["tooltip.css"], ["tooltip.js"]));
 
@@ -75,11 +75,11 @@ public class UsesDeclarationTests
     {
         var codePage = new PageRef(
             Slug: "hello-world", BodyHtml: null, ThemeKey: "cyberspace", ThemeVersion: 1,
-            Enabled: true, IsPublished: true, Uses: new[] { "Widget.tooltip@1" });
+            Enabled: true, IsPublished: true, Uses: new[] { "Plugin.tooltip@1" });
 
         // Another enabled version of tooltip remains, so a pin (not a float-orphan) is what must block.
         var blocking = ContentLifecycleService.FindBlockingPages(
-            ContentKind.Widget, "tooltip", 1, new[] { codePage }, otherEnabledVersions: new[] { 2 });
+            ContentKind.Plugin, "tooltip", 1, new[] { codePage }, otherEnabledVersions: new[] { 2 });
 
         Assert.That(blocking, Is.EqualTo(new[] { "hello-world" }));
     }
@@ -89,12 +89,12 @@ public class UsesDeclarationTests
     {
         var codePage = new PageRef(
             Slug: "hello-world", BodyHtml: null, ThemeKey: null, ThemeVersion: null,
-            Enabled: true, IsPublished: true, Uses: new[] { "Widget.tooltip" }); // floats to latest
+            Enabled: true, IsPublished: true, Uses: new[] { "Plugin.tooltip" }); // floats to latest
 
         var orphaned = ContentLifecycleService.FindBlockingPages(
-            ContentKind.Widget, "tooltip", 1, new[] { codePage }, otherEnabledVersions: Array.Empty<int>());
+            ContentKind.Plugin, "tooltip", 1, new[] { codePage }, otherEnabledVersions: Array.Empty<int>());
         var safe = ContentLifecycleService.FindBlockingPages(
-            ContentKind.Widget, "tooltip", 1, new[] { codePage }, otherEnabledVersions: new[] { 2 });
+            ContentKind.Plugin, "tooltip", 1, new[] { codePage }, otherEnabledVersions: new[] { 2 });
 
         Assert.Multiple(() =>
         {

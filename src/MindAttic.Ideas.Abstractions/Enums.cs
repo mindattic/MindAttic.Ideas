@@ -9,18 +9,17 @@ namespace MindAttic.Ideas.Abstractions;
 
 /// <summary>
 /// The content kinds. The kind is determined by which base a type derives from
-/// (<see cref="PageBase"/> / <see cref="ThemeBase"/> / <see cref="WidgetBase"/>).
+/// (<see cref="PageBase"/> / <see cref="PluginBase"/> / <see cref="ThemeBase"/> / <see cref="ComponentBase"/>).
 /// "Idea" is the package format (<c>.idea</c>) and the shared base
 /// (<see cref="IdeaBase"/>), never a kind. New kinds may be APPENDED here without a breaking change.
 /// </summary>
 public enum ContentKind
 {
     Page = 0,
-    Widget = 1,      // a composable UI widget (e.g. Tooltip, Frontpage) — can nest other widgets recursively
+    Plugin = 1,      // site-wide .idea: activates a behavior/capability across the whole page (MAI-A26)
     Theme = 2,
-    // Control = 3 was REMOVED pre-1.0 (MAI-A19) — atomic UI is authored as a Widget. This is the lone
-    // exception to the append-only rule above, taken before any external package shipped. The next new
-    // kind appends at 4 — NEVER reuse ordinal 3.
+    // Control = 3 was REMOVED pre-1.0 (MAI-A19) — atomic UI is authored as a Component. NEVER reuse ordinal 3.
+    Component = 4,   // inline-placed .idea: renders at the {{Component.X}} token position; can nest (MAI-A26)
 }
 
 /// <summary>How a Page renders. A Page row carries exactly one of these.</summary>

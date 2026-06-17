@@ -5,14 +5,14 @@ pool, **one** database hosts *many* pages — so a project like `MindAttic.Front
 `MindAttic.Legion.Frontend` no longer needs a whole web app just to serve essentially one page.
 
 You ship capability by **uploading or CLI'ing a `.idea` file** (a plain zip). The CMS reads whether
-it's a **Page**, **Widget**, or **Theme**, registers it, and it's live — no redeploy,
-no app-pool restart. Widgets and Themes are **globally scoped**, so any Page composes
+it's a **Page**, **Plugin**, **Component**, or **Theme**, registers it, and it's live — no redeploy,
+no app-pool restart. Plugins, Components, and Themes are **globally available**, so any Page composes
 them by dropping a tag:
 
 ```razor
 <MindAttic.Ideas.Theme.Cyberspace.V1 />
-<MindAttic.Ideas.Widget.Tooltip />        @* no version = latest *@
-<MindAttic.Ideas.Widget.Textbox.V1 />
+<MindAttic.Ideas.Plugin.Tooltip />        @* no version = latest *@
+<MindAttic.Ideas.Component.Textbox.V1 />
 ```
 
 > **Status:** Phase 0/1 foundation **built and verified end-to-end**. This README is the **living
@@ -28,27 +28,28 @@ them by dropping a tag:
 
 ## The one mental model
 
-**A Page is free-form. A Theme wraps it. Widgets drop into it. Inline JS/CSS/HTML is yours.**
+**A Page is free-form. A Theme wraps it. Plugins and Components drop into it. Inline JS/CSS/HTML is yours.**
 
 There are **no zones, panes, slots, or grids** — DotNetNuke's clunky fixed-layout model is explicitly
 rejected. You author a page however you like and place content exactly where you want it in your markup.
-The unit you install is a `.idea` zip; the things it contains are one of three **content kinds**.
+The unit you install is a `.idea` zip; the things it contains are one of four **content kinds**.
 
 | Kind | What it is | Base type | Example tag |
 |---|---|---|---|
 | **Page** | A free-form page (inline HTML/CSS/JS) that picks a Theme and drops tags | `PageBase` | `MindAttic.Ideas.Page.LegionFrontpage.V2` |
-| **Widget** | A composable unit — from a pure capability activator (loads js/css) up to a full interactive UI | `WidgetBase` | `MindAttic.Ideas.Widget.Tooltip.V11` |
+| **Plugin** | A site-wide capability activator (loads js/css across the whole page; selected in Page Properties) | `PluginBase` | `MindAttic.Ideas.Plugin.Tooltip.V1` |
+| **Component** | An inline-placed UI unit dropped at a `{{Component.X}}` token position | `ComponentBase` | `MindAttic.Ideas.Component.Textbox.V1` |
 | **Theme** | A layout (chrome + one `@Body` hole) + a CSS bundle | `ThemeBase` | `MindAttic.Ideas.Theme.Cyberspace.V4` |
 
 All three derive from a shared root, **`IdeaBase`**. "Idea" names that shared base and the `.idea`
 package format (and the `/_ideas/...` asset route) — it is **never** a content kind. New kinds can be
 **appended** to the set later without breaking anything.
 
-> **Widget range.** A Widget spans from a pure *capability activator* (dropping
-> `<MindAttic.Ideas.Widget.Tooltip />` loads the tooltip engine so that thereafter **any** element with
-> `data-tooltip`/`data-tt` shows a tooltip on hover — renders no markup of its own) up to a full
-> interactive UI like `MindAttic.Ideas.Widget.Textbox` that renders an actual `<input>` and can itself
-> nest other Widgets. Atomic placed UI (formerly "Control") is now just a Widget.
+> **Plugin vs Component.** A Plugin is a site-wide *capability activator* (dropping
+> `<MindAttic.Ideas.Plugin.Tooltip />` loads the tooltip engine so that thereafter **any** element with
+> `data-tooltip`/`data-tt` shows a tooltip on hover — renders no markup of its own). A Component is
+> inline-placed at a specific `{{Component.X}}` token position and renders actual markup (e.g.
+> `MindAttic.Ideas.Component.Textbox` renders an `<input>`). Both can nest other citizens via `[Uses]`.
 
 ### Two ways to author a Page — one render path
 - **Data page** (zero deploy): free-form `BodyHtml` / `PageCss` / `PageJs` stored in the DB. Interactivity
@@ -68,7 +69,7 @@ never a schema change.
 <MindAttic.Ideas.{ContentKind}.{Name}.{Version} />
 ```
 
-- **`{ContentKind}`** — `Page` · `Widget` · `Theme`.
+- **`{ContentKind}`** — `Page` · `Plugin` · `Component` · `Theme`.
 - **`{Name}`** — the content's name (`Cyberspace`, `Tooltip`, `TabControl`, …).
 - **`{Version}`** — **optional**, uppercase `V{n}`:
   - omitted → **latest** enabled version &nbsp;·&nbsp; `.Latest` → **latest** (explicit) &nbsp;·&nbsp; `.V3` → **pins** version 3.
@@ -238,7 +239,7 @@ MindAttic.Ideas reuses the ecosystem's shared infrastructure:
 ```
 MindAttic.Ideas.slnx                 # CMS engine
 ├─ src/
-│  ├─ MindAttic.Ideas.Abstractions   # the frozen SDK: IdeaBase + PageBase/WidgetBase/ThemeBase,
+│  ├─ MindAttic.Ideas.Abstractions   # the frozen SDK: IdeaBase + PageBase/PluginBase/ThemeBase/ComponentBase,
 │  │                                  #   [Idea], IRenderContext, discovery/catalog seams.
 │  │                                  #   refs ONLY Microsoft.AspNetCore.Components + System.Text.Json.
 │  ├─ MindAttic.Ideas.Core           # EF entities, CmsDbContext (SQL Server, temporal Pages), convention
@@ -251,10 +252,11 @@ MindAttic.Ideas.slnx                 # CMS engine
 ├─ tools/  codex.ps1                 # Codex doctor + digest
 ├─ docs/   BIBLE.md + AMENDMENTS.md (A1..A24) · FOUNDATION_ADR.md (deliberation) · IMPLEMENTATION_PLAN.md
 │
-library/MindAttic.Ideas.Library.slnx # first-party widget/theme library (build-independent of CMS)
-├─ Themes/   # 7 themes (Cyberspace, …)
-└─ Widgets/  # 30 widgets (LegionPersonas, SacredGeometry, Tooltip, Tabs, Gallery, …)
-             # packed to dist/*.idea → copied to src/MindAttic.Ideas.Web/library/ at pack time
+library/MindAttic.Ideas.Library.slnx # first-party plugin/component/theme library (build-independent of CMS)
+├─ Themes/     # 8 themes (Cyberspace, …)
+├─ Plugins/    # 12 plugins (Tooltip, NavMenu, AtticFont, …)
+└─ Components/ # 23 components (LegionPersonas, Textbox, Tabs, Gallery, …)
+               # packed to dist/*.idea → copied to src/MindAttic.Ideas.Web/library/ at pack time
 ```
 
 **Hot-load 📋.** New `.idea` packages load into a **collectible `AssemblyLoadContext`** with no app-pool
@@ -268,7 +270,7 @@ only — never Interactive WebAssembly (a hard .NET boundary).
 ## Feature checklist
 
 ### Foundation (Phase 0/1) — ✅ built & verified end-to-end
-- ✅ `Abstractions` SDK (frozen v1: `IdeaBase` + `PageBase`/`WidgetBase`/`ThemeBase`, `[Idea]`, `IRenderContext`, seams)
+- ✅ `Abstractions` SDK (frozen v1: `IdeaBase` + `PageBase`/`PluginBase`/`ThemeBase`/`ComponentBase`, `[Idea]`, `IRenderContext`, seams)
 - ✅ `Core` EF model (one initial migration, reserved columns, temporal `Pages`) + ported auth/seed
 - ✅ `CompiledContentSource` convention discovery + persisted catalog + type resolver
 - ✅ `FreeFormPage` + `<MindAttic.Ideas.…>` include expander (AngleSharp) + missing-content placeholder
@@ -309,16 +311,16 @@ only — never Interactive WebAssembly (a hard .NET boundary).
   load + unification mechanics are NUnit-verified; ⚠️ **end-to-end render of a real packed `.idea` through
   the running host is not yet verified** (needs an attended run)
 - ✅ `PageAssetCollector` (pure, Core) + `<CmsHead>` binding: a page's package-citizen css/scripts are
-  cascade-ordered, deduped, and hoisted into `<head>` (band: Global → Theme → **Widget** → Page →
+  cascade-ordered, deduped, and hoisted into `<head>` (band: Global → Theme → **Plugin/Component** → Page →
   inline), fed by a no-schema manifest→`ContentDescriptor.Extra` data path at catalog reload
 - ✅ `/_ideas/{category}/{key}/{version}/…` asset route serves a package's extracted `wwwroot/`
   (category-qualified to disambiguate kinds; path-traversal guarded). Install extracts `wwwroot/` too, and
   `PackageAssetsOf` prefixes the collected `<head>` URLs with the citizen's `AssetMount`
-- ✅ Compiled-citizen asset harvest (`Activator` on `WidgetBase`) — `PageAssets.AllAssetsOf` hoists
+- ✅ Compiled-citizen asset harvest (`Activator` on `PluginBase`/`ComponentBase`) — `PageAssets.AllAssetsOf` hoists
   declared `StylesheetUrls`/`ScriptUrls` via the same `PageAssetCollector` delegate (NUnit-verified)
 - ✅ Official content in the first-party library (`library/` in this repo, A23): `MindAttic.Frontpage`
   → `frontpage` Data page (A21); `MindAttic.Legion.Frontend` → `personas` Data page (A22).
-  37 `.idea`s: 7 Themes + 30 Widgets
+  43 `.idea`s: 8 Themes + 12 Plugins + 23 Components ([MAIL-A6](library/docs/AMENDMENTS.md#MAIL-A6))
 
 ---
 

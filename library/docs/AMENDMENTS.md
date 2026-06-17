@@ -4,7 +4,7 @@ project: MindAttic.Ideas.Library
 code: MAIL
 layer: amendments
 status: living
-updated: 2026-06-07
+updated: 2026-06-16
 ---
 
 # MindAttic.Ideas.Library — Amendments (append-only; amendment wins over the bible)
@@ -43,7 +43,7 @@ primitives that must not carry markup). MAI-A19 tracked this decision in the CMS
 
 **Impact on §4.1.** The solution count is **7 Themes, 11 Widgets, 0 Controls** (not "7 Themes, 10 Widgets,
 1 Control" as previously stated). Bible §4.1 updated accordingly. No breaking change: the `.idea`
-artifact key/version and mount path are identical (`widget.textbox`, V1, `/_ideas/Widget/textbox/1`).
+artifact key/version and mount path are identical (`textbox`, V1, `/_ideas/Component/textbox/1`). ([MAIL-A6](AMENDMENTS.md#MAIL-A6) reclassified this as Component.)
 
 ## MAIL-A3 — The baseline widget set (supersedes §4.1 "7 Themes, 11 Widgets") {#MAIL-A3}
 
@@ -88,8 +88,8 @@ Page records later") was **deleted**. The rule itself stands — Pages are CMS d
   live `mindattic.com/index.htm` by the CMS repo's `tools/import-frontpage.ps1` (MAI-A21). The
   authoritative source is the real site's single file, not a parked Blazor port — so the frozen
   `MindAtticFrontpage` copy can never be the porting source again.
-- LegionPersonas already lives on as the compiled **`Widget.LegionPersonas`** `.idea`
-  ([widget.legionpersonas](data/components.json)); a page that wants it drops the token.
+- LegionPersonas already lives on as the compiled **`Component.LegionPersonas`** `.idea`
+  ([component.legionpersonas](data/components.json)); a page that wants it drops the token.
 - History is preserved in git (this deletion is one commit; the sources remain retrievable at any
   prior ref). Nothing in the solution referenced the tree (`*.csproj.wip`, never in `.slnx`).
 
@@ -114,5 +114,69 @@ TabBoard's empty `PROJECT_IMAGES` map became the `TabBoard.images` registry; eac
 idempotence guard + a DOM-swap re-init adapter (Blazor hosts replace the prerendered DOM). The
 frontpage page record drops the corresponding inline CSS/JS and places three `{{tokens}}` instead —
 its PageJs keeps only CONTENT (synopses, URLs, tabify converters); Theme + fonts + effects continue
-to come from the installed Theme.Cyberspace / Widget.AtticFont / Widget.OutfitFont /
-Widget.Cyberspace `.idea`s.
+to come from the installed Theme.Cyberspace / Plugin.AtticFont / Plugin.OutfitFont /
+Plugin.Cyberspace `.idea`s. ([MAIL-A6](AMENDMENTS.md#MAIL-A6) reclassified `pinfooter` as Plugin, `tabboard` and `websnapshot` as Components.)
+
+## MAIL-A6 — Widget kind split into Plugin and Component (follows MAI-A26) {#MAIL-A6}
+
+**What changed (2026-06-16).** All Widget `.idea`s are reclassified as either **Plugin** (site-wide)
+or **Component** (inline-placed), per [MAI-A26](../../docs/AMENDMENTS.md#MAI-A26).
+
+**Classification.**
+
+Plugins (12 — activate behavior across the whole page; selected via Admin Page Properties):
+
+| Key | Assembly |
+|---|---|
+| `tooltip` | MindAttic.Ideas.Plugin.Tooltip |
+| `outfitfont` | MindAttic.Ideas.Plugin.OutfitFont |
+| `atticfont` | MindAttic.Ideas.Plugin.AtticFont |
+| `sacredgeometry` | MindAttic.Ideas.Plugin.SacredGeometry |
+| `cyberspace` | MindAttic.Ideas.Plugin.Cyberspace |
+| `navmenu` | MindAttic.Ideas.Plugin.NavMenu |
+| `breadcrumbs` | MindAttic.Ideas.Plugin.Breadcrumbs |
+| `footer` | MindAttic.Ideas.Plugin.Footer |
+| `pinfooter` | MindAttic.Ideas.Plugin.PinFooter |
+| `backtotop` | MindAttic.Ideas.Plugin.BackToTop |
+| `backhomem` | MindAttic.Ideas.Plugin.BackHomeM |
+| `sociallinks` | MindAttic.Ideas.Plugin.SocialLinks |
+
+Components (23 — render at a specific `{{Component.X}}` token position):
+
+| Key | Assembly |
+|---|---|
+| `textbox` | MindAttic.Ideas.Component.Textbox |
+| `card` | MindAttic.Ideas.Component.Card |
+| `accordion` | MindAttic.Ideas.Component.Accordion |
+| `tabs` | MindAttic.Ideas.Component.Tabs |
+| `tabboard` | MindAttic.Ideas.Component.TabBoard |
+| `gallery` | MindAttic.Ideas.Component.Gallery |
+| `carousel` | MindAttic.Ideas.Component.Carousel |
+| `callout` | MindAttic.Ideas.Component.Callout |
+| `codeblock` | MindAttic.Ideas.Component.CodeBlock |
+| `videoembed` | MindAttic.Ideas.Component.VideoEmbed |
+| `contactform` | MindAttic.Ideas.Component.ContactForm |
+| `modalpopup` | MindAttic.Ideas.Component.ModalPopup |
+| `hero` | MindAttic.Ideas.Component.Hero |
+| `hardwarehero` | MindAttic.Ideas.Component.HardwareHero |
+| `tableofcontents` | MindAttic.Ideas.Component.TableOfContents |
+| `legionpersonas` | MindAttic.Ideas.Component.LegionPersonas |
+| `ideasbrochure` | MindAttic.Ideas.Component.IdeasBrochure |
+| `helloworld` | MindAttic.Ideas.Component.HelloWorld |
+| `websnapshot` | MindAttic.Ideas.Component.WebSnapshot |
+| `claudia` | MindAttic.Ideas.Component.Claudia |
+| `chimesh` | MindAttic.Ideas.Component.ChiMesh |
+| `mindatticfrontpage` | MindAttic.Ideas.Component.MindAtticFrontpage |
+| `frontpage` | MindAttic.Ideas.Component.Frontpage |
+
+**Structural changes.** `library/Widgets/` folder → `library/Plugins/` and `library/Components/`.
+Every csproj renames from `MindAttic.Ideas.Widget.{Key}` to `MindAttic.Ideas.Plugin.{Key}` or
+`MindAttic.Ideas.Component.{Key}`. Every `V1.cs`/`V1.razor` changes from `@inherits WidgetBase` to
+`@inherits PluginBase` or `@inherits ComponentBase` (with `@using ComponentBase =
+MindAttic.Ideas.Abstractions.ComponentBase` in `_Imports.razor` to alias Blazor's base). The
+`components.json` catalog is updated with the new `kind` values.
+
+**Solution count.** **8 Themes + 12 Plugins + 23 Components = 43 `.idea`s.**
+
+> *Supersedes MAIL-A1 (Widget vocabulary) and MAIL-A2 (Textbox as Widget); the Plugin/Component
+> classification is the current vocabulary.*

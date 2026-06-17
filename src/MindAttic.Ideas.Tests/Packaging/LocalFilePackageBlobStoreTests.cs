@@ -20,8 +20,8 @@ public class LocalFilePackageBlobStoreTests
         var store = new LocalFilePackageBlobStore(_root);
         var bytes = Encoding.UTF8.GetBytes("idea-package-bytes");
 
-        var blobPath = await store.SaveAsync("Widget", "ui.tooltip", 3, bytes);
-        Assert.That(blobPath, Is.EqualTo("Widget/ui.tooltip/3.idea"));
+        var blobPath = await store.SaveAsync("Plugin", "ui.tooltip", 3, bytes);
+        Assert.That(blobPath, Is.EqualTo("Plugin/ui.tooltip/3.idea"));
 
         Assert.That(await store.ExistsAsync(blobPath), Is.True);
         await using var s = await store.OpenAsync(blobPath);
@@ -35,8 +35,8 @@ public class LocalFilePackageBlobStoreTests
     public async Task Open_MissingBlob_ReturnsNull()
     {
         var store = new LocalFilePackageBlobStore(_root);
-        Assert.That(await store.OpenAsync("Widget/none/1.idea"), Is.Null);
-        Assert.That(await store.ExistsAsync("Widget/none/1.idea"), Is.False);
+        Assert.That(await store.OpenAsync("Plugin/none/1.idea"), Is.Null);
+        Assert.That(await store.ExistsAsync("Plugin/none/1.idea"), Is.False);
     }
 
     [Test]

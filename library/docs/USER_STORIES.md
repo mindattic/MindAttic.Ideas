@@ -17,9 +17,9 @@ updated: 2026-06-09
 
 ## Epic A — Authoring a component
 
-- **MAIL-US-A1 ✅** As a component author, I can add a Theme/Widget/Control as a tiny RCL and have its
+- **MAIL-US-A1 ✅** As a component author, I can add a Theme/Plugin/Component as a tiny RCL and have its
   identity come from convention (namespace tail = key, `V{n}` = version), so no per-project key/version
-  config exists. *Given a new project under `Themes/`/`Widgets/`/`Controls/`, When I build it, Then it
+  config exists. *Given a new project under `Themes/`/`Plugins/`/`Components/`, When I build it, Then it
   compiles against Abstractions alone and is identified by convention.* *(verified by
   `dotnet build -c Release MindAttic.Ideas.Library.slnx` → 0/0; identity convention documented at
   [MAIL-LAW-2](BIBLE.md#MAIL-LAW-2).)*
@@ -35,9 +35,9 @@ updated: 2026-06-09
   ([MAIL-A3](AMENDMENTS.md#MAIL-A3)): NavMenu, Breadcrumbs, Hero, Card, Accordion, Tabs (incl. the
   mindattic.com tab-board variant), Gallery (incl. linked books-grid + lightbox), Carousel, Callout,
   CodeBlock, VideoEmbed, ContactForm, SocialLinks, BackToTop, Footer (pin-when-short). *Given the 15
-  baseline projects, When the solution builds and each packs, Then 15 `dist/*.idea` exist and every widget
+  baseline projects, When the solution builds and each packs, Then 15 `dist/*.idea` exist and every Plugin/Component
   carries a raw-HTML `demo.html` proving the bundle stands alone.* *(build + pack verified 2026-06-09
-  — `dotnet build -c Release` 0/0 and 33 artifacts in `dist/`; 🟡 until the per-widget demos and a live
+  — `dotnet build -c Release` 0/0 and 43 artifacts in `dist/`; 🟡 until the per-Plugin/Component demos and a live
   CMS render are observed per [MAIL-§8](BIBLE.md#MAIL-§8).)*
 
 ## Epic B — The one bundle, three consumers
@@ -52,27 +52,27 @@ updated: 2026-06-09
   construction — not independently observed here.)*
 - **MAIL-US-B3 ✅** As the CMS, I can upload a packed `.idea` and serve its bundle under
   the component mount. *Given a packed artifact in [`dist/`](../dist), When the CMS installs it, Then the
-  bundle is served at the mount.* *(verified by an observed live run 2026-06-09: all 33 `dist/*.idea` installed through the
-  CMS startup library path and the rendered frontpage served `/_ideas/Widget/tabs/1/tabs.css`,
-  `/_ideas/Theme/cyberspace/1/theme.css`, … with HTTP 200 — see MAI BIBLE §6 live-render evidence.)*
+  bundle is served at the mount.* *(verified by an observed live run 2026-06-09: all 43 `dist/*.idea` installed through the
+  CMS startup library path and the rendered frontpage served `/_ideas/Component/tabs/1/tabs.css`,
+  `/_ideas/Theme/cyberspace/1/theme.css`, … with HTTP 200 — see MAI BIBLE §6 live-render evidence. Repacked to 43 after [MAIL-A6](AMENDMENTS.md#MAIL-A6).)*
 
 ## Epic C — Composition by string id
 
-- **MAIL-US-C1 ✅** As a Theme author, I can compose installed Widgets by string key without a project
-  reference, so themes stay decoupled. *Given `theme.cyberspace` with `[Uses(Widget,"outfitfont",1)]`…
-  `[Uses(Widget,"cyberspace",1)]` and matching `<CmsInclude>`, When it builds, Then it carries only its own
+- **MAIL-US-C1 ✅** As a Theme author, I can compose installed Plugins by string key without a project
+  reference, so themes stay decoupled. *Given `theme.cyberspace` with `[Uses(ContentKind.Plugin,"outfitfont",1)]`…
+  `[Uses(ContentKind.Plugin,"cyberspace",1)]` and matching `<CmsInclude>`, When it builds, Then it carries only its own
   chrome and pulls the rest by id.* *(verified by the clean build of `Themes/Cyberspace`; edges recorded on
-  [theme.cyberspace](data/components.json).)*
-- **MAIL-US-C2 ✅** As a Widget author, I can compose other Widgets by id (Frontpage→tooltip,
-  LegionPersonas→sacredgeometry). *Given those `[Uses]` declarations, When the widgets build, Then the
+  [theme.cyberspace](data/components.json). Updated by [MAIL-A6](AMENDMENTS.md#MAIL-A6).)*
+- **MAIL-US-C2 ✅** As a Component author, I can compose other citizens by id (Frontpage→tooltip,
+  LegionPersonas→sacredgeometry). *Given those `[Uses]` declarations, When the components build, Then the
   edges resolve by id only.* *(verified by the clean solution build; edges on
-  [widget.frontpage](data/components.json) and [widget.legionpersonas](data/components.json).)*
+  [component.frontpage](data/components.json) and [component.legionpersonas](data/components.json). Updated by [MAIL-A6](AMENDMENTS.md#MAIL-A6).)*
 
 ## Epic D — Catalog & lifecycle
 
 - **MAIL-US-D1 ✅** As a maintainer, I can read one catalog of every shipped component (key, kind, version,
   assembly, artifact, composition). *Given [`components.json`](data/components.json), When I open it, Then
-  all 36 components are enumerated and validate against their schema.* *(verified by
+  all 43 (8 Themes + 12 Plugins + 23 Components) are enumerated and validate against their schema.* *(verified by
   `tools/codex.ps1 doctor` schema + id-uniqueness checks.)*
 - **MAIL-US-D2 ✅** As a maintainer, every component versions by whole numbers only. *Given `<Version>` and
   the `V{n}` class, When I inspect any component, Then the version is a whole number.* *(verified by
@@ -80,8 +80,8 @@ updated: 2026-06-09
   [HOUSE-LAW-1](../../MindAttic.HouseRules.md).)*
 - **MAIL-US-D3 ✅** As a maintainer, I can re-`pack` any component into a fresh `.idea`. *Given a built DLL
   + `assets/`, When I run the pack command, Then a `dist/*.idea` is produced.* *(verified by the pack re-run 2026-06-09: the 15
-  baseline widgets were packed via `ma-idea pack --wwwroot assets` and `ma-idea verify ./dist` reports
-  "OK — every declared dependency resolves" across all 33 artifacts.)*
+  baseline Plugins/Components were packed via `ma-idea pack --wwwroot assets` and `ma-idea verify ./dist` reports
+  "OK — every declared dependency resolves" across all 43 artifacts.)*
 
 ## Epic E — Pages stay records
 
@@ -90,7 +90,7 @@ updated: 2026-06-09
   and absence from `.slnx`, When the solution builds, Then nothing under `Pages/_wip` compiles or packs.")*
   **Cut 2026-06-09 by [MAIL-A4](AMENDMENTS.md#MAIL-A4):** the parked sources are no longer applicable —
   the frontpage is assembled verbatim from mindattic.com's `index.htm` into a Data page, and
-  LegionPersonas ships as `Widget.LegionPersonas`. The `Pages/` tree was deleted; history stays in git.
+  LegionPersonas ships as `Component.LegionPersonas`. The `Pages/` tree was deleted; history stays in git.
   [MAIL-LAW-8](BIBLE.md#MAIL-LAW-8) (pages are DB records, never `.idea`s) is unchanged.
 
 ## Priority backlog
@@ -98,7 +98,7 @@ updated: 2026-06-09
 1. **MAIL-US-B2** — a standalone-Blazor-app smoke harness ([RFC 0001](rfc/0001-component-test-harness.md))
    — the remaining ⬜ test gap in [MAIL-§6](BIBLE.md#MAIL-§6). (D3's pack round-trip and B3's
    install/serve were proven 2026-06-09.)
-2. **MAIL-US-A4** — observe the 15 baseline-widget demos interactively (build/pack already proven).
+2. **MAIL-US-A4** — observe the 15 baseline Plugin/Component demos interactively (build/pack already proven).
 
 ### Audit log
 

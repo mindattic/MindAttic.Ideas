@@ -64,7 +64,7 @@ public static partial class Packer
         var manifest = new IdeaManifest
         {
             ManifestVersion = 1,
-            Category = identity.Kind,         // the ContentKind name (Page | Widget | Theme | Control)
+            Category = identity.Kind,         // the ContentKind name (Page | Plugin | Theme | Component)
             Kind = "code",                    // this packer packs a compiled citizen
             Key = identity.Key,
             Version = identity.Version,
@@ -115,8 +115,15 @@ public static partial class Packer
         string Key, string DisplayName, string Kind, string Category, int Version,
         int SdkVersion, string EntryType, string RenderMode, string Scope, IReadOnlyList<string> Uses);
 
-    // ContentKind ordinal -> name (Page=0, Widget=1, Theme=2; Control=3 removed pre-1.0 per MAI-A19 — never reuse 3).
-    private static readonly string[] KindNames = { "Page", "Widget", "Theme" };
+    // ContentKind ordinal -> name (Page=0, Plugin=1, Theme=2; Control=3 reserved MAI-A19 — never reuse; Component=4 MAI-A26).
+    private static readonly Dictionary<int, string> KindNames = new()
+    {
+        [0] = "Page",
+        [1] = "Plugin",
+        [2] = "Theme",
+        // ordinal 3 reserved — never reuse (MAI-A19)
+        [4] = "Component",
+    };
 
     private static Identity ResolveIdentity(Assembly asm, int? versionOverride)
     {
@@ -143,7 +150,7 @@ public static partial class Packer
         if (segs.Length < 4)
             throw new PackException($"namespace '{ns}' is too shallow; expected MindAttic.Ideas.<Kind>.<Key>.");
 
-        var kind = segs[2];                             // Page | Theme | Widget | Control
+        var kind = segs[2];                             // Page | Plugin | Theme | Component
         var key = string.Join('.', segs.Skip(3)).ToLowerInvariant();   // frontpage
         var convVersion = int.Parse(VersionClass().Match(type.Name).Groups[1].Value);
 
@@ -194,7 +201,7 @@ public static partial class Packer
             if (args.Count < 2 || args[1].Value is not string key || string.IsNullOrWhiteSpace(key)) continue;
 
             var ordinal = Convert.ToInt32(args[0].Value);
-            var kindName = ordinal >= 0 && ordinal < KindNames.Length ? KindNames[ordinal] : ordinal.ToString();
+            var kindName = KindNames.TryGetValue(ordinal, out var kn) ? kn : ordinal.ToString();
             var version = args.Count >= 3 ? Convert.ToInt32(args[2].Value) : 0;
             uses.Add(version > 0 ? $"{kindName}.{key.ToLowerInvariant()}@{version}" : $"{kindName}.{key.ToLowerInvariant()}");
         }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.RenderTree;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Rendering;
+using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;
 
 namespace MindAttic.Ideas.Tests;
 
@@ -17,7 +18,7 @@ public class IncludeAttributeCoercionTests
 {
     public enum Flavor { Plain, Spicy }
 
-    private sealed class TypedWidget : ComponentBase
+    private sealed class TypedWidget : BlazorComponentBase
     {
         [Parameter] public bool Flag { get; set; }
         [Parameter] public int Count { get; set; }
@@ -59,7 +60,7 @@ public class IncludeAttributeCoercionTests
         var builder = new RenderTreeBuilder();
         var seq = 0;
         IncludeExpander.Expand(builder, ref seq,
-            "{{ MindAttic.Ideas.Widget.Typed flag=true count=42 ratio=1.5 maybecount=7 mode=Spicy text=\"hi\" data-extra=\"raw\" }}",
+            "{{ MindAttic.Ideas.Plugin.Typed flag=true count=42 ratio=1.5 maybecount=7 mode=Spicy text=\"hi\" data-extra=\"raw\" }}",
             new TypedCatalog(), new PassGate(), ContentTrust.Author);
 
         var attrs = ComponentAttributes(builder);

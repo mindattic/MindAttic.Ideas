@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!-- HardwareHero component. Common props + Abstractions come from ../../Directory.Build.props.
+       CSS-only activator: assets/hardware-hero.css ships all .hw-* structural classes shared by
+       hardware project page components (Claudia, ChiMesh, etc.). No StaticWebAssets — assets/ is packed
+       as the .idea wwwroot and served at /_ideas/Component/hardwarehero/1/. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+</Project>

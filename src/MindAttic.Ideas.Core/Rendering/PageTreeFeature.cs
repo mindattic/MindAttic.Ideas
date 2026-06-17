@@ -7,8 +7,8 @@ namespace MindAttic.Ideas.Core.Rendering;
 /// <summary>
 /// Host implementation of <see cref="IPageTree"/>: returns the published, enabled, non-deleted child
 /// pages of a page (by its <see cref="Entities.ContentEntityBase.Uid"/>), ordered by SortOrder then Title.
-/// Resolved by a Widget via <see cref="IRenderContext.TryGetFeature{T}"/>; the TableOfContents widget uses
-/// it to render the current page's children — or nothing when there are none. Never throws into a render.
+/// Resolved by a Component via <see cref="IRenderContext.TryGetFeature{T}"/>; the TableOfContents component
+/// uses it to render the current page's children — or nothing when there are none. Never throws into a render.
 /// </summary>
 public sealed class PageTreeFeature(IDbContextFactory<CmsDbContext> factory) : IPageTree
 {

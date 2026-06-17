@@ -67,7 +67,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
                 SiteId = site.Id, Slug = "frontpage", Title = "MindAttic",
                 ThemeKey = "cyberspace", ThemeVersion = 1,
                 Kind = PageKind.Data,
-                BodyHtml = FrontpageWidgetToken,
+                BodyHtml = FrontpageComponentToken,
                 BodyTrust = ContentTrust.Author,
                 AuthoredByUserId = "system-seed",
                 IsPublished = true, Enabled = true,
@@ -85,7 +85,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             front.Kind = PageKind.Data;
             front.ComponentTypeName = null;
             front.AssemblyName = null;
-            front.BodyHtml = FrontpageWidgetToken;
+            front.BodyHtml = FrontpageComponentToken;
             front.PageCss = null;
             front.PageJs = null;
             front.BodyTrust = ContentTrust.Author;
@@ -97,7 +97,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         {
             // Migrate the stock inline HTML/CSS/JS data page to the self-contained widget token.
             // The widget carries all CSS (.maf-*) and JS (IIFE) internally.
-            front.BodyHtml = FrontpageWidgetToken;
+            front.BodyHtml = FrontpageComponentToken;
             front.PageCss = null;
             front.PageJs = null;
             front.ModifiedUtc = now;
@@ -105,7 +105,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         }
 
         // Personas page — MindAttic.Legion.Frontend collapsed into a Data page (MAI-A22): the
-        // persona gallery ships as the LegionPersonas Widget .idea, so the standalone Blazor app
+        // persona gallery ships as the LegionPersonas Component .idea, so the standalone Blazor app
         // reduces to one token through the theme. Upsert by (SiteId, Slug); never clobber.
         if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "personas", ct))
         {
@@ -132,7 +132,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
                 SiteId = site.Id, Slug = "claudia", Title = "Claudia",
                 ThemeKey = "hardware", ThemeVersion = 1,
                 Kind = PageKind.Data,
-                BodyHtml = "{{ MindAttic.Ideas.Widget.Claudia }}",
+                BodyHtml = "{{ MindAttic.Ideas.Component.Claudia }}",
                 BodyTrust = ContentTrust.Author,
                 AuthoredByUserId = "system-seed",
                 IsPublished = true, Enabled = true,
@@ -151,7 +151,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
                 SeoTitle = "MindAttic.Ideas — The CMS That Gets Out of the Way",
                 ThemeKey = "cyberspace", ThemeVersion = 1,
                 Kind = PageKind.Data,
-                BodyHtml = "{{ MindAttic.Ideas.Widget.IdeasBrochure }}",
+                BodyHtml = "{{ MindAttic.Ideas.Component.IdeasBrochure }}",
                 BodyTrust = ContentTrust.Author,
                 AuthoredByUserId = "system-seed",
                 IsPublished = true, Enabled = true,
@@ -168,7 +168,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
                 SiteId = site.Id, Slug = "chimesh", Title = "ChiMesh",
                 ThemeKey = "hardware", ThemeVersion = 1,
                 Kind = PageKind.Data,
-                BodyHtml = "{{ MindAttic.Ideas.Widget.ChiMesh }}",
+                BodyHtml = "{{ MindAttic.Ideas.Component.ChiMesh }}",
                 BodyTrust = ContentTrust.Author,
                 AuthoredByUserId = "system-seed",
                 IsPublished = true, Enabled = true,
@@ -205,27 +205,27 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
           <h1>MindAttic.Ideas</h1>
           <p>This page is data — free-form HTML rendered through the Cyberspace theme.</p>
 
-          <p>A <strong>Widget</strong> switches on a capability (it loads the tooltip engine), so any
+          <p>A <strong>Plugin</strong> switches on a capability (it loads the tooltip engine), so any
              element with <code>data-tooltip</code> works. No version = latest:</p>
-          {{ MindAttic.Ideas.Widget.Tooltip }}
+          {{ MindAttic.Ideas.Plugin.Tooltip }}
           <p><button type="button" data-tooltip="Composed from MindAttic.UiUx — latest version.">Hover me</button></p>
 
-          <p>A <strong>Control</strong> is an atomic element placed by token (attributes flow through):</p>
-          <p>{{ MindAttic.Ideas.Widget.Textbox placeholder="Type here…" }}</p>
+          <p>A <strong>Component</strong> is an atomic element placed by token (attributes flow through):</p>
+          <p>{{ MindAttic.Ideas.Component.Textbox placeholder="Type here…" }}</p>
         </div>
         """;
 
-    // The self-contained frontpage widget token — no PageCss or PageJs needed; the widget carries both.
-    private const string FrontpageWidgetToken = "{{ MindAttic.Ideas.Widget.MindAtticFrontpage }}";
+    // The self-contained frontpage component token — no PageCss or PageJs needed; the component carries both.
+    private const string FrontpageComponentToken = "{{ MindAttic.Ideas.Component.MindAtticFrontpage }}";
 
     // ── The Frontpage (legacy inline form, kept for migration recognition only) ────────────────────
     // Recognised in the else-if branch above so an existing DB row using this exact body is migrated
-    // to the widget token in place. Not used for new installs.
+    // to the component token in place. Not used for new installs.
     private const string FrontpageBodyHtml =
         """
-        {{ MindAttic.Ideas.Widget.Tabs }}
-        {{ MindAttic.Ideas.Widget.Gallery }}
-        {{ MindAttic.Ideas.Widget.Footer }}
+        {{ MindAttic.Ideas.Component.Tabs }}
+        {{ MindAttic.Ideas.Component.Gallery }}
+        {{ MindAttic.Ideas.Plugin.Footer }}
 
         <div class="fp">
           <header class="fp-header">
@@ -330,7 +330,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
           <h1>Legion Personas</h1>
           <p>Browse MindAttic.Legion's psychometrically-scored personas, each with a generated
              abstract-art portrait — the whole former standalone frontend, as one widget.</p>
-          {{ MindAttic.Ideas.Widget.LegionPersonas }}
+          {{ MindAttic.Ideas.Component.LegionPersonas }}
         </main>
         """;
 

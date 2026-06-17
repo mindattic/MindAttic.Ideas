@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Data;
@@ -38,6 +39,10 @@ public sealed class PageEditModel
     public List<string> AllowedRoles { get; set; } = [];
     /// <summary>Individual user IDs (ma:uid Guid strings) allowed to view when restricted.</summary>
     public List<string> AllowedUserIds { get; set; } = [];
+
+    // ---- Plugins ----
+    /// <summary>Plugin ref strings active for this page (e.g. "Plugin.tooltip", "Plugin.navmenu@1").</summary>
+    public List<string> ActivePlugins { get; set; } = [];
 
     // ---- Workflow ----
     /// <summary>Assigned workflow definition; null = site default or no workflow.</summary>
@@ -103,6 +108,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             AllowedUserIds = p.UserAccess.Select(u => u.UserId).ToList(),
             WorkflowDefinitionId = p.WorkflowDefinitionId,
             WorkflowState        = p.WorkflowState,
+            ActivePlugins        = DeserializePlugins(p.ActivePluginsJson),
         };
     }
 
@@ -166,6 +172,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.BodyTrust = trust;                 // write-time trust stamp
         page.AuthoredByUserId = authoredBy;
         page.AuthorTrustVersion += 1;           // epoch bump
+        page.ActivePluginsJson = SerializePlugins(model.ActivePlugins);
         page.WorkflowDefinitionId = model.WorkflowDefinitionId;
         page.WorkflowState = model.WorkflowState;
         page.ModifiedUtc = now;
@@ -230,6 +237,16 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.ModifiedUtc = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         return true;
+    }
+
+    private static string? SerializePlugins(List<string> plugins) =>
+        plugins is { Count: > 0 } ? JsonSerializer.Serialize(plugins) : null;
+
+    public static List<string> DeserializePlugins(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+        try { return JsonSerializer.Deserialize<List<string>>(json) ?? []; }
+        catch { return []; }
     }
 
     private async Task<bool> FlagAsync(int id, CancellationToken ct, Action<Page> mutate)

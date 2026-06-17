@@ -18,7 +18,7 @@ namespace MindAttic.Ideas.Tests;
 /// automatable portion of MAI-US-F5/A6; the Blazor-host HTTP layer still needs an attended run.
 ///
 /// The test uses <see cref="DefaultTypeResolver"/> so that a type already in the test process
-/// (WidgetBase, reachable by CLR name) resolves without ALC extraction — proving that the
+/// (PluginBase, reachable by CLR name) resolves without ALC extraction — proving that the
 /// install → discovery → catalog → include-expander chain works end-to-end.
 /// </summary>
 [TestFixture]
@@ -48,26 +48,26 @@ public class RenderPipelineTests
         return (svc, catalog);
     }
 
-    // WidgetBase is in MindAttic.Ideas.Abstractions — always loadable by DefaultTypeResolver in the test process.
+    // PluginBase is in MindAttic.Ideas.Abstractions — always loadable by DefaultTypeResolver in the test process.
     // We use a fake assembly name "Demo" in the manifest/bin so the validator doesn't reject it as a
     // host assembly (MindAttic.Ideas.* is on the FORBIDDEN_BIN list). DefaultTypeResolver falls back
-    // to scanning all loaded assemblies by type name, so it still resolves WidgetBase at runtime.
-    private static readonly string WidgetBaseTypeName = typeof(WidgetBase).FullName!;
+    // to scanning all loaded assemblies by type name, so it still resolves PluginBase at runtime.
+    private static readonly string PluginBaseTypeName = typeof(PluginBase).FullName!;
     private const string FakeAsmName = "Demo";
 
     [Test]
     public async Task Install_ThenReload_ThenExpand_ProducesResolvedFrame()
     {
-        // Arrange: package whose EntryType is WidgetBase (resolvable by DefaultTypeResolver)
+        // Arrange: package whose EntryType is PluginBase (resolvable by DefaultTypeResolver)
         var (svc, catalog) = BuildPipeline();
         var archive = IdeaTestArchive.Build(new Dictionary<string, string>
         {
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
             {
-                ManifestVersion = 1, Category = "Widget", Kind = "code",
+                ManifestVersion = 1, Category = "Plugin", Kind = "code",
                 Key = "test.widget", Version = 1,
                 DisplayName = "Test Widget", Sdk = 1,
-                EntryType = WidgetBaseTypeName,
+                EntryType = PluginBaseTypeName,
                 AssemblyName = FakeAsmName,
             }),
             [$"bin/{FakeAsmName}.dll"] = "MZ-fake",
@@ -77,14 +77,14 @@ public class RenderPipelineTests
         var plan = await svc.InstallAsync(archive, allowOverride: false);
 
         // Catalog should now have the descriptor
-        var desc = catalog.FindLatest(ContentKind.Widget, "test.widget");
+        var desc = catalog.FindLatest(ContentKind.Plugin, "test.widget");
         Assert.That(desc, Is.Not.Null, "catalog should contain the installed widget");
 
         // IncludeExpander should produce a Component frame, not a Missing placeholder
         var builder = new RenderTreeBuilder();
         var seq = 0;
         IncludeExpander.Expand(builder, ref seq,
-            "{{Widget.test.widget.V1}}",
+            "{{Plugin.test.widget.V1}}",
             catalog, new PassGate(), ContentTrust.Author);
 
         var frames = builder.GetFrames();
@@ -112,9 +112,9 @@ public class RenderPipelineTests
         {
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
             {
-                ManifestVersion = 1, Category = "Widget", Kind = "code",
+                ManifestVersion = 1, Category = "Plugin", Kind = "code",
                 Key = "known.widget", Version = 1, DisplayName = "Known", Sdk = 1,
-                EntryType = WidgetBaseTypeName, AssemblyName = FakeAsmName,
+                EntryType = PluginBaseTypeName, AssemblyName = FakeAsmName,
             }),
             [$"bin/{FakeAsmName}.dll"] = "MZ-fake",
         });
@@ -124,7 +124,7 @@ public class RenderPipelineTests
         var builder = new RenderTreeBuilder();
         var seq = 0;
         IncludeExpander.Expand(builder, ref seq,
-            "{{Widget.not.installed.V1}}",
+            "{{Plugin.not.installed.V1}}",
             catalog, new PassGate(), ContentTrust.Author);
 
         var frames = builder.GetFrames();

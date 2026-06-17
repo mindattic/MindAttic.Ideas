@@ -52,6 +52,10 @@ else if (_context is not null)
     </HeadContent>
 
     <CascadingValue Value="_context" IsFixed="true">
+        @foreach (var pt in _pluginTypes)
+        {
+            <DynamicComponent Type="pt" />
+        }
         @if (_themeType is not null)
         {
             <DynamicComponent Type="_themeType" Parameters="_themeParams" />
@@ -74,6 +78,7 @@ else if (_context is not null)
     private Type? _themeType;
     private Type _bodyType = typeof(FreeFormPage);
     private IDictionary<string, object>? _themeParams;
+    private IReadOnlyList<Type> _pluginTypes = [];
     private string? _globalCss;
     private IReadOnlyList<string> _themeGlobalCss = Array.Empty<string>();
     private IReadOnlyList<string> _themeCss = Array.Empty<string>();
@@ -261,6 +266,27 @@ else if (_context is not null)
             _themeScripts = meta.ScriptUrls;
         }
 
+        // Resolve active plugins (selected via Admin Page Properties). Each plugin is a PluginBase citizen
+        // that renders site-wide behavior before the body/theme; unresolved refs degrade to a warning in
+        // Admin Inbox, never a crash. Inline {{Plugin.X}} tokens in BodyHtml are handled by IIncludeRenderer.
+        var pluginRefs = PageAdminService.DeserializePlugins(page.ActivePluginsJson);
+        var pluginTypeList = new List<Type>(pluginRefs.Count);
+        foreach (var pRef in pluginRefs)
+        {
+            var parsed = IncludeReferenceParser.ParseUses([pRef]);
+            foreach (var (pk, pkey, pver) in parsed)
+            {
+                var pRes = Catalog.ResolveTag(pk, pkey, pver);
+                if (pRes.Outcome == ContentResolution.Resolved && pRes.Type is not null)
+                    pluginTypeList.Add(pRes.Type);
+                else
+                {
+                    try { Alerts.RaiseMissing(pk, pkey, pver, page.Uid, page.Slug); } catch { }
+                }
+            }
+        }
+        _pluginTypes = pluginTypeList;
+
         // Hoist + dedupe the head assets of the PACKAGE citizens this page includes (the no-schema
         // manifest->Extra data path feeds PageAssets.PackageAssetsOf; the collector + path are NUnit-tested
         // in Core). A DATA page's references come from its BodyHtml include tags; a CODE page has no BodyHtml,
@@ -268,6 +294,8 @@ else if (_context is not null)
         // descriptor's Extra at reload). Both feed the SAME collector, so the head never disagrees with the
         // body about which citizen/version is on the page. Empty unless a citizen with assets is referenced.
         var refs = new List<(ContentKind, string, int?)>(IncludeReferenceParser.Parse(page.BodyHtml));
+        // Include active plugins in the asset collection so their css/js are hoisted too.
+        refs.AddRange(IncludeReferenceParser.ParseUses(pluginRefs));
         if (page.Kind == PageKind.Code && page.ComponentTypeName is not null)
         {
             var pageDesc = Catalog.All.FirstOrDefault(d => d.Kind == ContentKind.Page

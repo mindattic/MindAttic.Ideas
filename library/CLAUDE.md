@@ -40,7 +40,7 @@ powershell -ExecutionPolicy Bypass -File tools\codex.ps1 digest   # regenerate d
 
 ## Build & pack
 
-- Build one component: `dotnet build -c Release Widgets/HelloWorld` (or any `Themes/…`, `Controls/…`).
+- Build one citizen: `dotnet build -c Release Components/HelloWorld` (or `Plugins/…`, `Themes/…`).
 - Build everything: `dotnet build -c Release MindAttic.Ideas.Library.slnx`.
 - Pack a `.idea`: see the command in [README.md](README.md). Frozen page source under `Pages/_wip/` is **not**
   built or packed.

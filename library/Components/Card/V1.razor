@@ -1,0 +1,70 @@
+﻿@namespace MindAttic.Ideas.Component.Card
+@inherits ComponentBase
+@attribute [Idea(DisplayName = "Card")]
+
+@* MindAttic.Ideas.Component.Card.V1 — a content card: optional image, title, text, optional link
+   (linked cards are fully clickable). The image follows the page-authoring convention that images
+   live as inline base64 CSS classes in the page's CSS — pass that class via imageclass= (image=
+   also accepts a URL/data: URI). Drop several tokens inside <div class="ma-cards"> (a grid helper
+   this widget's css ships) for a responsive card row:
+   {{ MindAttic.Ideas.Component.Card title="Docs" text="Read the guides" href="/docs" imageclass="img-docs" }} *@
+<link rel="stylesheet" href="/_ideas/Component/card/1/card.css" />
+@if (string.IsNullOrWhiteSpace(Href))
+{
+    <article class="ma-card">@Inner</article>
+}
+else
+{
+    <a class="ma-card ma-card-link" href="@Href">@Inner</a>
+}
+
+@code {
+    /// <summary>Card heading.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Body text (plain text; for rich bodies write free-form HTML around the card).</summary>
+    [Parameter] public string? Text { get; set; }
+
+    /// <summary>A page CSS class carrying the base64 background-image (the authoring convention).</summary>
+    [Parameter] public string? ImageClass { get; set; }
+
+    /// <summary>Optional image URL or data: URI (alternative to ImageClass).</summary>
+    [Parameter] public string? Image { get; set; }
+
+    /// <summary>Optional link target — makes the whole card clickable.</summary>
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>Optional small footer line (e.g. a date or category).</summary>
+    [Parameter] public string? Footer { get; set; }
+
+    // Single quotes are not HTML-encoded by Blazor, so escape them to keep Image inside the url('…') string.
+    private string? BackgroundStyle => string.IsNullOrWhiteSpace(Image)
+        ? null
+        : $"background-image: url('{Image.Replace("'", "%27")}');";
+
+    private RenderFragment Inner => @<text>
+        @if (!string.IsNullOrWhiteSpace(ImageClass))
+        {
+            <div class="ma-card-image @ImageClass" role="img" aria-label="@(Title ?? "")"></div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Image))
+        {
+            <div class="ma-card-image" role="img" aria-label="@(Title ?? "")"
+                 style="@BackgroundStyle"></div>
+        }
+        <div class="ma-card-body">
+            @if (!string.IsNullOrWhiteSpace(Title))
+            {
+                <h3 class="ma-card-title">@Title</h3>
+            }
+            @if (!string.IsNullOrWhiteSpace(Text))
+            {
+                <p class="ma-card-text">@Text</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(Footer))
+            {
+                <div class="ma-card-footer">@Footer</div>
+            }
+        </div>
+    </text>;
+}

@@ -6,7 +6,7 @@ namespace MindAttic.Ideas.Tests.Rendering;
 
 /// <summary>
 /// Unit-tests for <see cref="PageAssets.AllAssetsOf"/>: the unified delegate that harvests assets from
-/// both package citizens (manifest → Extra) and compiled widgets (Activator instantiation).
+/// both package citizens (manifest → Extra) and compiled plugins/components (Activator instantiation).
 /// </summary>
 [TestFixture]
 public class PageAssetsTests
@@ -19,21 +19,21 @@ public class PageAssetsTests
         public Type? ResolveType(ContentDescriptor descriptor) => type;
     }
 
-    private sealed class StubWidget : WidgetBase
+    private sealed class StubPlugin : PluginBase
     {
         public override IReadOnlyList<string> StylesheetUrls => ["tooltip.css"];
         public override IReadOnlyList<string> ScriptUrls => ["tooltip.js"];
     }
 
     [Test]
-    public void CompiledWidget_AllAssetsOf_HarvestsViaActivator()
+    public void CompiledPlugin_AllAssetsOf_HarvestsViaActivator()
     {
         var desc = new ContentDescriptor
         {
-            Kind = ContentKind.Widget, Key = "tooltip", Version = 1, DisplayName = "Tooltip",
+            Kind = ContentKind.Plugin, Key = "tooltip", Version = 1, DisplayName = "Tooltip",
             Origin = ContentOrigin.Compiled, Strategy = RenderStrategy.ClrType,
         };
-        var assets = PageAssets.AllAssetsOf(desc, new FakeCatalog(typeof(StubWidget)));
+        var assets = PageAssets.AllAssetsOf(desc, new FakeCatalog(typeof(StubPlugin)));
 
         Assert.Multiple(() =>
         {
@@ -43,11 +43,11 @@ public class PageAssetsTests
     }
 
     [Test]
-    public void CompiledWidget_UnresolvableType_ReturnsEmpty()
+    public void CompiledPlugin_UnresolvableType_ReturnsEmpty()
     {
         var desc = new ContentDescriptor
         {
-            Kind = ContentKind.Widget, Key = "gone", Version = 1, DisplayName = "Gone",
+            Kind = ContentKind.Plugin, Key = "gone", Version = 1, DisplayName = "Gone",
             Origin = ContentOrigin.Compiled, Strategy = RenderStrategy.ClrType,
         };
         var assets = PageAssets.AllAssetsOf(desc, new FakeCatalog(null));
@@ -60,16 +60,16 @@ public class PageAssetsTests
     }
 
     [Test]
-    public void PackageWidget_AllAssetsOf_DelegatesToMountedManifestAssets()
+    public void PackagePlugin_AllAssetsOf_DelegatesToMountedManifestAssets()
     {
-        const string mount = "/_ideas/Widget/tooltip/1";
+        const string mount = "/_ideas/Plugin/tooltip/1";
         var desc = new ContentDescriptor
         {
-            Kind = ContentKind.Widget, Key = "tooltip", Version = 1, DisplayName = "Tooltip",
+            Kind = ContentKind.Plugin, Key = "tooltip", Version = 1, DisplayName = "Tooltip",
             Origin = ContentOrigin.Package, AssetMount = mount,
             Extra = ManifestAssetPacker.PackExtra(new IdeaManifest
             {
-                Category = "Widget", Kind = "code", Key = "tooltip", Version = 1,
+                Category = "Plugin", Kind = "code", Key = "tooltip", Version = 1,
                 DisplayName = "Tooltip",
                 Css = ["tooltip.css"], Scripts = ["tooltip.js"], Uses = [],
             }),

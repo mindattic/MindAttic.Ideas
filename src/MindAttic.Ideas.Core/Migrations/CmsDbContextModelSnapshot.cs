@@ -748,6 +748,9 @@ namespace MindAttic.Ideas.Core.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ActivePluginsJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("AssemblyName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");

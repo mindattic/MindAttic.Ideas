@@ -28,25 +28,25 @@ namespace MindAttic.Ideas.Tests;
 [TestFixture]
 public class SeededPageRenderTests
 {
-    // Floating widget tokens used by the frontpage. SeedBodyTokens_ParseToWidgetKind_FloatingVersion
-    // uses these to verify the token parser handles each format correctly, independent of the seed.
-    private const string SeedTabsToken = "{{ MindAttic.Ideas.Widget.Tabs }}";
-    private const string SeedGalleryToken = "{{ MindAttic.Ideas.Widget.Gallery }}";
-    private const string SeedFooterToken = "{{ MindAttic.Ideas.Widget.Footer }}";
+    // Sample floating tokens (no .Vn suffix) to verify the parser handles each kind correctly.
+    private const string SeedTabsToken    = "{{ MindAttic.Ideas.Component.Tabs }}";
+    private const string SeedGalleryToken = "{{ MindAttic.Ideas.Component.Gallery }}";
+    private const string SeedFooterToken  = "{{ MindAttic.Ideas.Plugin.Footer }}";
 
-    [TestCase(SeedTabsToken, "tabs")]
-    [TestCase(SeedGalleryToken, "gallery")]
-    [TestCase(SeedFooterToken, "footer")]
-    public void SeedBodyTokens_ParseToWidgetKind_FloatingVersion(string seedToken, string expectedKey)
+    [TestCase(SeedTabsToken,    "tabs",    ContentKind.Component)]
+    [TestCase(SeedGalleryToken, "gallery", ContentKind.Component)]
+    [TestCase(SeedFooterToken,  "footer",  ContentKind.Plugin)]
+    public void SeedBodyTokens_ParseToCorrectKind_FloatingVersion(
+        string seedToken, string expectedKey, ContentKind expectedKind)
     {
         var refs = IncludeReferenceParser.Parse(seedToken);
 
         Assert.That(refs, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(refs[0].Kind,    Is.EqualTo(ContentKind.Widget));
+            Assert.That(refs[0].Kind,    Is.EqualTo(expectedKind));
             Assert.That(refs[0].Key,     Is.EqualTo(expectedKey));
-            Assert.That(refs[0].Version, Is.Null, "seed tokens float to latest — no version pin");
+            Assert.That(refs[0].Version, Is.Null, "floating tokens have no version pin");
         });
     }
 
@@ -68,7 +68,7 @@ public class SeededPageRenderTests
             Assert.That(front.IsPublished && front.Enabled, Is.True);
             Assert.That(refs.Select(r => (r.Kind, r.Key, r.Version)), Is.EquivalentTo(new[]
             {
-                (ContentKind.Widget, "mindatticfrontpage", (int?)null),
+                (ContentKind.Component, "mindatticfrontpage", (int?)null),
             }));
         });
     }
@@ -91,7 +91,7 @@ public class SeededPageRenderTests
             Assert.That(personas.IsPublished && personas.Enabled, Is.True);
             Assert.That(refs.Select(r => (r.Kind, r.Key, r.Version)), Is.EquivalentTo(new[]
             {
-                (ContentKind.Widget, "legionpersonas", (int?)null),
+                (ContentKind.Component, "legionpersonas", (int?)null),
             }));
         });
     }
@@ -144,7 +144,7 @@ public class SeededPageRenderTests
             {
                 Assert.That(front.Kind, Is.EqualTo(PageKind.Data), "stock compiled frontpage migrates to Data");
                 Assert.That(front.ComponentTypeName, Is.Null);
-                Assert.That(front.BodyHtml, Is.EqualTo("{{ MindAttic.Ideas.Widget.MindAtticFrontpage }}"));
+                Assert.That(front.BodyHtml, Is.EqualTo("{{ MindAttic.Ideas.Component.MindAtticFrontpage }}"));
                 Assert.That(custom.Kind, Is.EqualTo(PageKind.Code), "admin page is never clobbered");
                 Assert.That(custom.ComponentTypeName, Is.EqualTo("My.Custom.Page.V1"));
             });
@@ -195,26 +195,26 @@ public class SeededPageRenderTests
     }
 
     [Test]
-    public async Task SeedBody_InstalledTabsWidget_ExpandsToResolvedFrame()
+    public async Task SeedBody_InstalledTabsComponent_ExpandsToResolvedFrame()
     {
-        // Proves the full pipeline for the A6 scenario: install a widget with key "tabs"
-        // (matching the seed body's Tabs token), then verify IncludeExpander resolves it.
+        // Proves the full pipeline for the A6 scenario: install a component with key "tabs"
+        // (matching the seed body's Component.Tabs token), then verify IncludeExpander resolves it.
         var (svc, catalog) = BuildPipeline();
 
         var archive = IdeaTestArchive.Build(new Dictionary<string, string>
         {
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
             {
-                ManifestVersion = 1, Category = "Widget", Kind = "code",
+                ManifestVersion = 1, Category = "Component", Kind = "code",
                 Key = "tabs", Version = 1, DisplayName = "Tabs", Sdk = 1,
-                EntryType    = typeof(WidgetBase).FullName!,
-                AssemblyName = "Demo",    // non-host fake; DefaultTypeResolver finds WidgetBase via scan
+                EntryType    = typeof(MindAttic.Ideas.Abstractions.ComponentBase).FullName!,
+                AssemblyName = "Demo",    // non-host fake; DefaultTypeResolver finds ComponentBase via scan
             }),
             ["bin/Demo.dll"] = "MZ-fake",
         });
         await svc.InstallAsync(archive, allowOverride: false);
 
-        // The floating token "{{ MindAttic.Ideas.Widget.Tabs }}" (no .VN = float to latest).
+        // The floating token "{{ MindAttic.Ideas.Component.Tabs }}" (no .VN = float to latest).
         var builder = new RenderTreeBuilder();
         var seq = 0;
         IncludeExpander.Expand(builder, ref seq, SeedTabsToken, catalog, new PassGate(), ContentTrust.Author);
@@ -243,13 +243,13 @@ public class SeededPageRenderTests
           <h1>MindAttic.Ideas</h1>
           <p>This page is data — free-form HTML rendered through the Cyberspace theme.</p>
 
-          <p>A <strong>Widget</strong> switches on a capability (it loads the tooltip engine), so any
+          <p>A <strong>Plugin</strong> switches on a capability (it loads the tooltip engine), so any
              element with <code>data-tooltip</code> works. No version = latest:</p>
-          {{ MindAttic.Ideas.Widget.Tooltip }}
+          {{ MindAttic.Ideas.Plugin.Tooltip }}
           <p><button type="button" data-tooltip="Composed from MindAttic.UiUx — latest version.">Hover me</button></p>
 
-          <p>A <strong>Control</strong> is an atomic element placed by token (attributes flow through):</p>
-          <p>{{ MindAttic.Ideas.Widget.Textbox placeholder="Type here…" }}</p>
+          <p>A <strong>Component</strong> is an atomic element placed by token (attributes flow through):</p>
+          <p>{{ MindAttic.Ideas.Component.Textbox placeholder="Type here…" }}</p>
         </div>
         """;
 

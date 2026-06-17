@@ -17,7 +17,7 @@ public sealed record IdeaManifest
     /// <summary>Schema version of <c>idea.json</c>. The host refuses a manifest newer than it understands.</summary>
     [JsonPropertyName("manifestVersion")] public int ManifestVersion { get; init; } = 1;
 
-    /// <summary>The <see cref="MindAttic.Ideas.Abstractions.ContentKind"/> name: Page | Widget | Theme | Control.</summary>
+    /// <summary>The <see cref="MindAttic.Ideas.Abstractions.ContentKind"/> name: Page | Plugin | Theme | Component.</summary>
     [JsonPropertyName("category")] public string Category { get; init; } = "";
 
     /// <summary><c>data</c> (free-form author content, no assembly) or <c>code</c> (a compiled citizen in bin/).</summary>
@@ -56,7 +56,7 @@ public sealed record IdeaManifest
     /// <summary>
     /// Citizens this COMPILED page/theme references BY STRING ID at runtime (via <c>CmsInclude</c>) but
     /// does NOT bundle — entries are <c>"&lt;Kind&gt;.&lt;key&gt;[@&lt;version&gt;]"</c>, e.g.
-    /// <c>"Widget.tooltip"</c>, <c>"Control.textbox@1"</c>. The packer derives these from
+    /// <c>"Plugin.tooltip"</c>, <c>"Component.textbox@1"</c>. The packer derives these from
     /// <c>[Uses]</c>. The host hoists their css/js into <c>&lt;head&gt;</c>, warns if one is not installed,
     /// and reference-guards them against deletion. Omitted version = float to latest.
     /// </summary>
@@ -74,7 +74,7 @@ public sealed record IdeaManifest
     /// <summary>
     /// Other installed packages this package REQUIRES to be installed and enabled before installation succeeds.
     /// Entries use <c>"Category.key"</c> or <c>"Category.key@version"</c> format, e.g.
-    /// <c>"Widget.tooltip"</c>, <c>"Widget.tooltip@1"</c>. A missing required dependency is a hard install-time
+    /// <c>"Plugin.tooltip"</c>, <c>"Plugin.tooltip@1"</c>. A missing required dependency is a hard install-time
     /// rejection (unlike <see cref="Uses"/>, which is advisory). Parse with
     /// <c>IncludeReferenceParser.ParseUses</c>.
     /// </summary>

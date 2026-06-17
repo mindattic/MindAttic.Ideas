@@ -2,10 +2,10 @@
 # Page row (BodyHtml / PageCss / PageJs). The REUSABLE ENGINES live in Library .idea widgets the
 # page composes by token; the page keeps only its own chrome and CONTENT:
 #
-#   {{ MindAttic.Ideas.Widget.TabBoard }}     tab-board engine  (mindattic-tabs-css + board script)
-#   {{ MindAttic.Ideas.Widget.PinFooter }}    .pin-when-short footer (UiUx PINFOOTER bundle)
-#   {{ MindAttic.Ideas.Widget.WebSnapshot }}  .web-snapshot viewer (UiUx WEBSNAPSHOT bundle)
-#   Theme.Cyberspace + Widget.AtticFont/OutfitFont/Cyberspace supply theme, fonts, and effects.
+#   {{ MindAttic.Ideas.Component.TabBoard alwaysShowTabPage=true }}  tab-board engine  (mindattic-tabs-css + board script)
+#   {{ MindAttic.Ideas.Plugin.PinFooter }}    .pin-when-short footer (UiUx PINFOOTER bundle)
+#   {{ MindAttic.Ideas.Component.WebSnapshot }}  .web-snapshot viewer (UiUx WEBSNAPSHOT bundle)
+#   Theme.Cyberspace + Plugin.AtticFont/OutfitFont/Cyberspace supply theme, fonts, and effects.
 #
 # Verbatim line ranges copied from index.htm:
 #   PageCss  = the page's own <style> (S2 tokens incl. base64 logo/bg, S4 a11y, S5 reset,
@@ -47,9 +47,9 @@ $css = @(
 ) -join "`n"
 
 $tokens = @'
-{{ MindAttic.Ideas.Widget.TabBoard alwaysShowTabPage=true }}
-{{ MindAttic.Ideas.Widget.PinFooter }}
-{{ MindAttic.Ideas.Widget.WebSnapshot }}
+{{ MindAttic.Ideas.Component.TabBoard alwaysShowTabPage=true }}
+{{ MindAttic.Ideas.Plugin.PinFooter }}
+{{ MindAttic.Ideas.Component.WebSnapshot }}
 
 '@
 $body = $tokens + ((Slice 2351 2806) + "`n" + (Slice 3302 3338)).Replace(

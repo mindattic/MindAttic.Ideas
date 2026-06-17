@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using MindAttic.Ideas.Abstractions;
+using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;
 
 namespace MindAttic.Ideas.Core.Rendering;
 
@@ -9,7 +10,7 @@ namespace MindAttic.Ideas.Core.Rendering;
 /// RFC 0001 "clickable upload-to-fix": the placeholder is a LINK to the admin upload surface with
 /// the missing reference carried in the query, so an admin fixes the page by uploading the
 /// .idea it names — no hunting required.</summary>
-public sealed class MissingContent : ComponentBase
+public sealed class MissingContent : BlazorComponentBase
 {
     [Parameter] public string Key { get; set; } = "";
 

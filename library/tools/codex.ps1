@@ -121,7 +121,8 @@ function Invoke-Doctor {
     if ([int]$anchors[$id] -gt 1) { Add-Err "anchors: id '#$id' defined $($anchors[$id]) times (must be unique)" }
   }
   foreach ($r in $refs) {
-    $isLocal = [string]::IsNullOrEmpty($r.Path) -or ($r.Path -match '\.md$')
+    $isCrossRepo = $r.Path -match '^\.\.[/\\]\.\.'  # ../../ = outside library tree; skip anchor check
+    $isLocal = -not $isCrossRepo -and ($r.Path -match '\.md$' -or [string]::IsNullOrEmpty($r.Path))
     if ($isLocal -and -not $anchors.ContainsKey($r.Frag)) {
       Add-Err "cross-ref: $($r.File) links to anchor '#$($r.Frag)' which has no matching definition"
     }
@@ -161,7 +162,7 @@ function Invoke-Doctor {
         }
         foreach ($tm in [regex]::Matches($joined, '`([^`]+)`')) {
           $tok = $tm.Groups[1].Value
-          if ($tok -match '^(Themes|Widgets|Controls|Pages|dist|docs|tools)[\\/]\S+$') {
+          if ($tok -match '^(Themes|Plugins|Components|Pages|dist|docs|tools)[\\/]\S+$') {
             $candidate = Join-Path $RepoRoot ($tok -replace '/', '\')
             if (-not (Test-Path $candidate)) { Add-Warn "stories: $sid cites path '$tok' not found on disk (best-effort)" }
           }
@@ -190,7 +191,7 @@ function Invoke-Doctor {
     }
     foreach ($m in [regex]::Matches($bibleText, '`([^`]+)`')) {
       $tok = $m.Groups[1].Value
-      if ($tok -match '^(Themes|Widgets|Controls|Pages|dist|docs|tools)[\\/]' -and $tok -notmatch '\s') {
+      if ($tok -match '^(Themes|Plugins|Components|Pages|dist|docs|tools)[\\/]' -and $tok -notmatch '\s') {
         $candidate = Join-Path $RepoRoot ($tok -replace '/', '\')
         if (-not (Test-Path $candidate)) { Add-Warn "bible: backticked path '$tok' not found on disk (best-effort)" }
       }
@@ -233,7 +234,7 @@ function Test-ComponentCatalog {
     Add-Warn "data: $File has no 'components' array -- skipping catalog checks"; return
   }
   $ids   = New-Object System.Collections.Hashtable
-  $valid = @('Theme', 'Widget', 'Control')
+  $valid = @('Theme', 'Plugin', 'Component')  # MAIL-A6: Widget/Control retired
   foreach ($c in $Obj.components) {
     $names = $c.PSObject.Properties.Name
     foreach ($req in @('id', 'key', 'kind', 'version', 'displayName', 'assembly', 'artifact')) {
@@ -241,7 +242,7 @@ function Test-ComponentCatalog {
     }
     if ($names -contains 'id') {
       if ($ids.ContainsKey($c.id)) { Add-Err "data: $File duplicate entity id '$($c.id)'" } else { $ids[$c.id] = 1 }
-      if ($c.id -notmatch '^(theme|widget|control)\.[a-z0-9]+$') { Add-Err "data: $File id '$($c.id)' not '<kind>.<key>'" }
+      if ($c.id -notmatch '^(theme|plugin|component)\.[a-z0-9]+$') { Add-Err "data: $File id '$($c.id)' not '<kind>.<key>'" }
     }
     if (($names -contains 'kind') -and ($valid -notcontains $c.kind)) {
       Add-Err "data: $File component '$($c.id)' kind '$($c.kind)' invalid"

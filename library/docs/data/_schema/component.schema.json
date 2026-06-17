@@ -20,8 +20,8 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Stable entity id, '<kind>.<key>' (kind lowercased).",
-          "pattern": "^(theme|widget|control)\\.[a-z0-9]+$"
+          "description": "Stable entity id, '<kind>.<key>' (kind lowercased). Plugin/Component from MAIL-A6.",
+          "pattern": "^(theme|plugin|component)\\.[a-z0-9]+$"
         },
         "key": {
           "type": "string",
@@ -30,7 +30,7 @@
         },
         "kind": {
           "type": "string",
-          "enum": ["Theme", "Widget", "Control"]
+          "enum": ["Theme", "Plugin", "Component"]
         },
         "version": {
           "type": "integer",
@@ -44,17 +44,17 @@
         "assembly": {
           "type": "string",
           "description": "The one DLL the .idea packs.",
-          "pattern": "^MindAttic\\.Ideas\\.(Theme|Widget|Control)\\.[A-Za-z0-9]+$"
+          "pattern": "^MindAttic\\.Ideas\\.(Theme|Plugin|Component)\\.[A-Za-z0-9]+$"
         },
         "artifact": {
           "type": "string",
           "description": "Packed .idea filename under dist/.",
-          "pattern": "^MindAttic\\.Ideas\\.(Theme|Widget|Control)\\.[A-Za-z0-9]+\\.V[0-9]+\\.idea$"
+          "pattern": "^MindAttic\\.Ideas\\.(Theme|Plugin|Component)\\.[A-Za-z0-9]+\\.V[0-9]+\\.idea$"
         },
         "mount": {
           "type": "string",
           "description": "Static-asset mount path, when the component ships assets.",
-          "pattern": "^/_ideas/(Theme|Widget|Control)/[a-z0-9]+/[0-9]+$"
+          "pattern": "^/_ideas/(Theme|Plugin|Component)/[a-z0-9]+/[0-9]+$"
         },
         "interactive": {
           "type": "boolean",

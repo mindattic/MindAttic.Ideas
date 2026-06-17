@@ -4,7 +4,7 @@ project: MindAttic.Ideas
 code: MAI
 layer: stories
 status: living
-updated: 2026-06-09
+updated: 2026-06-16
 ---
 
 # MindAttic.Ideas — User Stories
@@ -120,7 +120,8 @@ updated: 2026-06-09
   types unify by reference identity and others delegate to the default resolver. *(verified by
   `AlcAwareTypeResolverTests`, `CmsPackageLoadContextTests`.)* See [MAI-LAW-6](BIBLE.md#MAI-§5).
 - **MAI-US-E2 ✅** As an Author, a page's citizen css/scripts are cascade-ordered, deduped, and hoisted
-  into `<head>` (Global → Theme → Widget → Page → inline), fed by a no-schema manifest→`Extra` data path.
+  into `<head>` (Global → Theme → Plugin → Component → Page → inline), fed by a no-schema manifest→`Extra`
+  data path.
   *(verified by `PageAssetCollectorTests`, `AssetDataPathTests.Install_Then_Reload_SurfacesManifestCssScripts_OntoDescriptorExtra`,
   `UsesDeclarationTests.Collect_FromUses_HoistsReferencedCitizenAssets`.)* See [MAI-LAW-4](BIBLE.md#MAI-§5).
 - **MAI-US-E3 ✅** As a Widget-Dev, a `[Uses]`/`uses[]` declaration parses (bare floats, pinned, case-
@@ -137,14 +138,16 @@ updated: 2026-06-09
 - **MAI-US-F2 ✅** As an Operator, the Admin can enable/disable/guarded-delete content definitions and
   triage the Admin Inbox under the Admin policy. *(verified by `AdminServiceContractTests`,
   `UsersAdminContractTests`, `IdeasClaimsAugmentorTests`.)*
-- **MAI-US-F3 ✅** As an Author, a theme/widget/control **assignment UI**, a file manager, and roles
-  management. *Theme picker (catalog-driven `<select>` for key/version), widget palette (catalog-driven
+- **MAI-US-F3 ✅** As an Author, a theme/component/plugin **assignment UI**, a file manager, and roles
+  management. *Theme picker (catalog-driven `<select>` for key/version), component palette (catalog-driven
   token-insert), Assets panel (mounted CSS/scripts browser), and Packages panel (installed `.idea` blob
   browser with SHA-256 + admin-protected download) are all implemented in the admin shell. Roles
   management is already done at `/users`.*
-  *(verified by `AdminAssignmentTests`: `WidgetToken_PinnedVersion_ParsesBack`,
+  *(verified by `AdminAssignmentTests`: `WidgetToken_PinnedVersion_ParsesBack` (renamed to
+  `ComponentToken_PinnedVersion_ParsesBack` in A26 refactor),
   `ThemeToken_PinnedVersion_ParsesBack`, `CatalogFilter_Theme_ReturnsOnlyThemes`,
-  `CatalogFilter_Widget_ReturnsOnlyWidgets`;
+  `CatalogFilter_Widget_ReturnsOnlyWidgets` (renamed to `CatalogFilter_Plugin_ReturnsOnlyPlugins` /
+  `CatalogFilter_Component_ReturnsOnlyComponents` in A26 refactor);
   and `PackageRegistryServiceTests`: `ListAsync_ReturnsAllPackages_SortedByCategoryKeyVersionDesc`,
   `ListAsync_Empty_ReturnsEmptyList`, `ListAsync_MapsAllFields`.)*
 - **MAI-US-F4 ✅** As an Operator, I sign in via **MindAttic.Authentication** (the package, not Ideas-owned).
@@ -155,23 +158,24 @@ updated: 2026-06-09
 - **MAI-US-F5 ✅** As a Visitor, a real packed `.idea` renders end-to-end through the **running** host.
   *NUnit verifies the pipeline (install → catalog reload → IncludeExpander produces a Resolved
   Component frame; unknown tokens correctly degrade), and an attended run proves the HTTP layer: all
-  36 library `.idea`s installed at startup and the frontpage rendered their citizens with hoisted
+  43 library `.idea`s installed at startup and the frontpage rendered their citizens with hoisted
   assets served at `/_ideas/...` mounts (200), zero placeholders.*
   *(verified by `RenderPipelineTests`: `Install_ThenReload_ThenExpand_ProducesResolvedFrame`,
   `Install_ThenExpand_UnknownToken_ProducesMissingFrame`; live HTTP render observed 2026-06-09 —
   [BIBLE §6](BIBLE.md#MAI-§6).)*
-- **MAI-US-F6 ✅** As a Widget-Dev, compiled-citizen asset harvest (`Activator` on `WidgetBase`) hoists
-  declared `StylesheetUrls`/`ScriptUrls` into `<head>` via `PageAssets.AllAssetsOf` — the same
-  `PageAssetCollector` delegate used for package widgets, consistent with how `PageHost` already
-  harvests Theme assets. *(verified by `PageAssetsTests`: `CompiledWidget_AllAssetsOf_HarvestsViaActivator`,
-  `CompiledWidget_UnresolvableType_ReturnsEmpty`, `PackageWidget_AllAssetsOf_DelegatesToMountedManifestAssets`.)*
+- **MAI-US-F6 ✅** As a Widget-Dev, compiled-citizen asset harvest (`Activator` on `PluginBase`/`ComponentBase`)
+  hoists declared `StylesheetUrls`/`ScriptUrls` into `<head>` via `PageAssets.AllAssetsOf` — the same
+  `PageAssetCollector` delegate used for package citizens, consistent with how `PageHost` harvests Theme
+  assets. *(verified by `PageAssetsTests`: `CompiledWidget_AllAssetsOf_HarvestsViaActivator` (covers
+  both Plugin and Component bases post-A26), `CompiledWidget_UnresolvableType_ReturnsEmpty`,
+  `PackageWidget_AllAssetsOf_DelegatesToMountedManifestAssets`.)*
 - **MAI-US-F7 ✅** As an Operator, official content lives in the first-party library and
   `MindAttic.Frontpage` / `MindAttic.Legion.Frontend` collapse into Pages. *(original spec said
   "official content lives in MindAttic.UiUx" — restated by [A22](AMENDMENTS.md#MAI-A22) per A19/A20:
   the single first-party home is **MindAttic.Ideas.Library**; UiUx remains upstream raw source.)*
   *Both frontends are collapsed: mindattic.com → the `frontpage` Data page
   ([A21](AMENDMENTS.md#MAI-A21)), Legion.Frontend → the seeded `personas` Data page whose body is one
-  `{{ MindAttic.Ideas.Widget.LegionPersonas }}` token.*
+  `{{ MindAttic.Ideas.Component.LegionPersonas }}` token.*
   *(verified by `SeededPageRenderTests.Seed_CreatesPersonasPage_CollapsingLegionFrontendIntoOneToken`
   and live renders 2026-06-09: `/personas` 200 with the full gallery and zero placeholders,
   `/frontpage` zero placeholders. See [A8](AMENDMENTS.md#MAI-A8), [A14](AMENDMENTS.md#MAI-A14),
@@ -215,9 +219,37 @@ updated: 2026-06-09
   `PackerTests` and `ManifestAssetPackerTests`; compose-graph independence is confirmed by
   `ma-idea verify` across all 37 `.idea`s.* *(see [A23](AMENDMENTS.md#MAI-A23).)*
 
+## Epic H — Plugin/Component taxonomy (A26)
+
+- **MAI-US-H1 ⬜** As an Operator, I can see a **Plugin checkbox list** in the Admin Page Properties
+  panel (after the Theme dropdown, before SEO fields), scroll through all installed Plugins, and check
+  those that should be active for the current page. *`Page.ActivePluginsJson` persists the selection as
+  a JSON array of `"Plugin.key[@n]"` refs; `PageHost.razor` reads and emits each selected Plugin before
+  the page body renders.* *(test: `PageAdminServiceTests.ActivePlugins_SaveAndLoad_RoundTrip`,
+  `PageHost_ActivePlugins_EmittedBeforeBody`.)*
+- **MAI-US-H2 ⬜** As an Author, I can inject `{{Plugin.tooltip}}` inline in a page body to activate a
+  Plugin for that page without going through the Admin Plugin selection, so I have a one-off escape
+  hatch. *`IncludeReferenceParser.TryParseTag` recognizes `ContentKind.Plugin` as a valid first
+  segment; `IncludeExpander` emits the Plugin's assets into the page cascade.* *(test:
+  `IncludeReferenceParser_ParsesPluginKind`, `IncludeExpander_InlinePlugin_EmitsAssets`.)*
+- **MAI-US-H3 ⬜** As an Author, I can place `{{Theme.cyberspace}}` inline in a page body to override
+  the page's Theme for asset injection on that page, so I can apply a non-default theme without
+  changing the admin-panel Theme selection. *The tag emits no markup; it only swaps the theme asset
+  cascade for that page render.* *(test: `IncludeExpander_InlineThemeOverride_SwapsAssetCascade`.)*
+- **MAI-US-H4 ⬜** As a Widget-Dev, a Component can declare sub-Components via `[Uses]`/`uses[]` and
+  the include expander nests them correctly, so a `TabControl` containing `TabButtonContainer`,
+  `TabButton` instances, `TabPageContainer`, and `TabPage` instances (each of which may contain
+  `Textbox`) renders the full composite tree. *`ContentKind.Component` is valid in `TryParseUse`
+  and `TryParseTag`; `IncludeExpander` recurses through nested Component tokens.* *(test:
+  `ComponentNestingTests.TabControl_RendersFullHierarchy_ViaNestedComponentTokens`.)*
+- **MAI-US-H5 ⬜** As a Widget-Dev, the library's 43 `.idea`s are split into Themes (8), Plugins (12),
+  and Components (23) with correct `ContentKind` on each, all packing clean and passing `ma-idea
+  verify`. *(test: `LibraryKindClassificationTests.AllLibraryIdeas_HaveExpectedKind`; live: `ma-idea
+  verify` reports compose-graph green with zero kind mismatches.)*
+
 ## Priority backlog
 
-**Empty — every story is ✅ (2026-06-12, [A24](AMENDMENTS.md#MAI-A24)).** The headline goal is met:
+**Entries from Epic H** — A26 taxonomy refactor (2026-06-16, [A26](AMENDMENTS.md#MAI-A26)). The headline goal is met:
 standalone frontends collapse into Pages with zero-deploy upload (`frontpage` = mindattic.com,
 `personas` = Legion.Frontend), RFC 0001 is fully implemented, and the foundation-era definition of
 done holds (224 NUnit green + the explicit SQL Server temporal proof + live render checks). New work
@@ -236,7 +268,7 @@ promoted to ✅ when attended live renders confirmed the HTTP layer on 2026-06-0
 
 - **MAI-US-A6** — initially 🟡 (the live render through the running host was not yet captured by an
   automated test; only the constituent mechanics were). **Promoted to ✅** when the attended run on
-  2026-06-09 confirmed zero `ma-missing` placeholders with all 36 library `.idea`s installed
+  2026-06-09 confirmed zero `ma-missing` placeholders with all 43 library `.idea`s installed
   ([A21](AMENDMENTS.md#MAI-A21), [BIBLE §6](BIBLE.md#MAI-§6)).
 - **MAI-US-F5** — initially ⬜ (preserved from the README's own caveat: "end-to-end render of a real
   packed `.idea` through the running host is not yet verified"). **Promoted to ✅** when the attended run on

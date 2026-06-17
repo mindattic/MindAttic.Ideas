@@ -1,7 +1,7 @@
 # MindAttic.Ideas.Library
 
 The **first-party library of `.idea` components** for [MindAttic.Ideas](../MindAttic.Ideas) — one home
-for every Theme and Widget that ships *with* the CMS, instead of one git repo per piece.
+for every Theme, Plugin, and Component that ships *with* the CMS, instead of one git repo per piece.
 
 This repo is **separate from the CMS host**. The CMS (`MindAttic.Ideas`) is standalone and never references
 anything here — it only installs the packed `.idea` files as **optional** content. The only thing these
@@ -23,11 +23,13 @@ Three packagings of one thing — not three projects. No duplication, no cross-r
 ## Layout
 
 ```
-Themes/      Cyberspace, Light, Dark, Spring, Summer, Autumn, Winter
-Widgets/     MindAttic-specific: OutfitFont, AtticFont, SacredGeometry, Tooltip, BackHomeM,
-             TableOfContents, Cyberspace (effects), LegionPersonas, Frontpage, HelloWorld, Textbox
-             Baseline set (MAIL-A3): NavMenu, Breadcrumbs, Hero, Card, Accordion, Tabs, Gallery,
-             Carousel, Callout, CodeBlock, VideoEmbed, ContactForm, SocialLinks, BackToTop, Footer
+Themes/      Cyberspace, Light, Dark, Spring, Summer, Autumn, Winter, Hardware  (8)
+Plugins/     OutfitFont, AtticFont, SacredGeometry, Tooltip, BackHomeM, Cyberspace (effects),
+             NavMenu, Breadcrumbs, Footer, PinFooter, BackToTop, SocialLinks  (12)
+Components/  HelloWorld, Textbox, Hero, HardwareHero, Card, Accordion, Tabs, TabBoard, Gallery,
+             Carousel, Callout, CodeBlock, VideoEmbed, ContactForm, ModalPopup, TableOfContents,
+             LegionPersonas, IdeasBrochure, Frontpage, MindAtticFrontpage, ChiMesh, Claudia,
+             WebSnapshot  (23)
 dist/        packed *.idea — the CMS seeds these as optional installable content
              (no Pages/ — pages are CMS DB records, MAIL-LAW-8; the parked _wip sources were
               deleted as no longer applicable, MAIL-A4)

@@ -17,6 +17,12 @@ public sealed class Page : ContentEntityBase
     public string? ThemeKey { get; set; }            // page override; else the site default
     public int? ThemeVersion { get; set; }           // pinned whole-number theme version
 
+    /// <summary>
+    /// JSON array of plugin ref strings selected for this page (e.g. <c>["Plugin.tooltip","Plugin.navmenu@1"]</c>).
+    /// Null = no plugins selected. Serialized/deserialized by PageAdminService; rendered by PageHost before body.
+    /// </summary>
+    public string? ActivePluginsJson { get; set; }
+
     public PageKind Kind { get; set; }               // the discriminator
 
     // ---- Data page (null for Code pages): the free-form author content ----

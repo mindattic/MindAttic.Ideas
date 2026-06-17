@@ -37,10 +37,10 @@ public class PackageRegistryServiceTests
         await using (var db = factory.CreateDbContext())
         {
             db.InstalledPackages.AddRange(
-                Pkg("Widget", "gallery", 1),
+                Pkg("Plugin", "gallery", 1),
                 Pkg("Theme",  "dark",    2),
                 Pkg("Theme",  "dark",    1),
-                Pkg("Widget", "tooltip", 1));
+                Pkg("Plugin", "tooltip", 1));
             await db.SaveChangesAsync();
         }
 
@@ -48,10 +48,10 @@ public class PackageRegistryServiceTests
 
         Assert.That(result.Select(p => (p.Category, p.Key, p.Version)), Is.EqualTo(new[]
         {
+            ("Plugin", "gallery", 1),
+            ("Plugin", "tooltip", 1),
             ("Theme",  "dark",    2),
             ("Theme",  "dark",    1),
-            ("Widget", "gallery", 1),
-            ("Widget", "tooltip", 1),
         }));
     }
 
@@ -71,8 +71,8 @@ public class PackageRegistryServiceTests
         {
             db.InstalledPackages.Add(new InstalledPackage
             {
-                Category = "Widget", Key = "ui.tooltip", Version = 3,
-                DisplayName = "Tooltip", BlobPath = "Widget/ui.tooltip/3.idea",
+                Category = "Plugin", Key = "ui.tooltip", Version = 3,
+                DisplayName = "Tooltip", BlobPath = "Plugin/ui.tooltip/3.idea",
                 Sha256 = new string('f', 64), IsActiveVersion = true, Enabled = false,
                 InstalledUtc = installed,
             });
@@ -83,11 +83,11 @@ public class PackageRegistryServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(p.Category,       Is.EqualTo("Widget"));
+            Assert.That(p.Category,       Is.EqualTo("Plugin"));
             Assert.That(p.Key,            Is.EqualTo("ui.tooltip"));
             Assert.That(p.Version,        Is.EqualTo(3));
             Assert.That(p.DisplayName,    Is.EqualTo("Tooltip"));
-            Assert.That(p.BlobPath,       Is.EqualTo("Widget/ui.tooltip/3.idea"));
+            Assert.That(p.BlobPath,       Is.EqualTo("Plugin/ui.tooltip/3.idea"));
             Assert.That(p.IsActiveVersion, Is.True);
             Assert.That(p.Enabled,        Is.False);
             Assert.That(p.Sha256,         Is.EqualTo(new string('f', 64)));

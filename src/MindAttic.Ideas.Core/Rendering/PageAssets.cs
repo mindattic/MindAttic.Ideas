@@ -66,12 +66,12 @@ public static class PageAssets
     }
 
     /// <summary>
-    /// Unified adapter: package citizens → manifest css/scripts (mounted); compiled widgets →
+    /// Unified adapter: package citizens → manifest css/scripts (mounted); compiled Plugin/Component →
     /// instantiated via <see cref="Activator"/> to read their declared
-    /// <see cref="WidgetBase.StylesheetUrls"/>/<see cref="WidgetBase.ScriptUrls"/> (the same pattern
+    /// <see cref="PluginBase.StylesheetUrls"/>/<see cref="PluginBase.ScriptUrls"/> (the same pattern
     /// <c>PageHost</c> uses for Theme harvest). Pass this as the <c>assetsOf</c> delegate to
-    /// <see cref="PageAssetCollector.Collect"/> so compiled widget assets are hoisted into
-    /// <c>&lt;head&gt;</c> alongside package widget assets.
+    /// <see cref="PageAssetCollector.Collect"/> so compiled citizen assets are hoisted into
+    /// <c>&lt;head&gt;</c> alongside package citizen assets.
     /// </summary>
     public static CitizenAssets AllAssetsOf(ContentDescriptor d, IContentCatalog catalog)
     {
@@ -79,7 +79,10 @@ public static class PageAssets
             return PackageAssetsOf(d);
         var type = catalog.ResolveType(d);
         if (type is null) return new([], []);
-        return Activator.CreateInstance(type) is WidgetBase w ? new(w.StylesheetUrls, w.ScriptUrls) : new([], []);
+        var instance = Activator.CreateInstance(type);
+        if (instance is PluginBase p) return new(p.StylesheetUrls, p.ScriptUrls);
+        if (instance is ComponentBase c) return new(c.StylesheetUrls, c.ScriptUrls);
+        return new([], []);
     }
 
     // Prefix a relative asset path with the package's mount; leave already-absolute (or unmounted) paths as-is.

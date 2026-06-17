@@ -4,7 +4,7 @@ project: MindAttic.Ideas
 code: MAI
 layer: amendments
 status: living
-updated: 2026-06-09
+updated: 2026-06-16
 ---
 
 # MindAttic.Ideas — Amendments (append-only; amendment wins over the bible)
@@ -12,7 +12,7 @@ updated: 2026-06-09
 These directives were finalized **after** the Legion deliberation produced
 [`FOUNDATION_ADR.md`](FOUNDATION_ADR.md). Where an amendment conflicts with the ADR or with
 [`BIBLE.md`](BIBLE.md), **the amendment wins** and the bible/ADR are to be read as patched here. All
-are part of the ratifiable foundation. IDs `A1..A19` are stable; never rewrite an amendment, only
+are part of the ratifiable foundation. IDs are stable; never rewrite an amendment, only
 supersede it with a new one.
 
 > **Migration note (2026-06-07):** this file is the Codex L1 home of the former
@@ -372,10 +372,10 @@ and is editable in Monaco with zero deploys.
 - **MAI-US-F7 is complete.** Both standalone frontends are collapsed into Pages:
   `MindAttic.Frontpage` → the `frontpage` Data page (mindattic.com recreated verbatim, A21), and
   `MindAttic.Legion.Frontend` → the seeded **`personas`** Data page, whose whole body is one token —
-  `{{ MindAttic.Ideas.Widget.LegionPersonas }}` — through the Cyberspace theme. Verified live:
+  `{{ MindAttic.Ideas.Component.LegionPersonas }}` — through the Cyberspace theme. Verified live:
   `/personas` renders the full gallery with zero placeholders. "Official content lives in
   MindAttic.UiUx" is restated per A19/A20 reality: **MindAttic.Ideas.Library is the single home of
-  first-party `.idea` content** (36 components); UiUx remains an upstream raw-source repo and is no
+  first-party `.idea` content** (43 components — 8 Themes + 12 Plugins + 23 Components per [A26](AMENDMENTS.md#MAI-A26)); UiUx remains an upstream raw-source repo and is no
   longer on the Ideas critical path.
 - **RFC 0001 is fully implemented** (marked `status: implemented`):
   - *Typed-attribute coercion* — a `{{token}}` attribute matching a declared typed `[Parameter]` on
@@ -416,8 +416,8 @@ and can be deleted. The two halves of the project are now:
   ~3 lines.
 - **`library/.gitignore`** covers library-specific build artifacts (`**/artifacts/`,
   `Themes/**/dist/`, `Widgets/**/dist/`, `/dist/`).
-- The CMS Web host ships **37** first-party `.idea` files in `src/MindAttic.Ideas.Web/library/`
-  (7 Themes + 30 Widgets) — verified by `ma-idea verify` (compose-graph green).
+- The CMS Web host ships **43** first-party `.idea` files in `src/MindAttic.Ideas.Web/library/`
+  (8 Themes + 12 Plugins + 23 Components — MAIL-A6) — verified by `ma-idea verify` (compose-graph green).
 
 **Why.** Single-repo maintenance: git history, issues, PRs, and CI stay unified while the engine
 and the library remain build-independent. No external reference change is needed because the CMS
@@ -520,3 +520,84 @@ the page is unpublished/disabled, or when the old slug is identical to the curre
 **Schema.** Single migration `20260613200000_AddWorkflowSlugHistoryAndWidgetSettings` creates five tables
 (`WorkflowDefinitions`, `WorkflowTransitionDefs`, `PageSlugHistory`, `WidgetPlacementSettings`,
 `WidgetPlacementSettingsHistory`) and adds `WorkflowDefinitionId` + `WorkflowState` columns to `Pages`.
+
+## MAI-A26 — Widget kind split into Plugin (site-wide) and Component (inline-placed) {#MAI-A26}
+
+**What changed (2026-06-16).** The single `Widget` kind (ordinal 1) conflated two fundamentally
+different scoping semantics. Widget is retired and replaced by two distinct kinds:
+
+- **Plugin** (ordinal **1**, frozen ordinal preserved — name-only change, exactly as A17 and A18 did):
+  a site-wide `.idea` that *activates* a behavior or capability across the entire rendered page without
+  occupying a specific token position. Examples: Tooltip (global `data-tooltip` behavior), OutfitFont
+  (loads a font family globally), NavMenu (renders site-wide navigation), SacredGeometry (global
+  background animation). Plugins are selected per-page via the Admin Page Properties **Plugin checkbox
+  list** (see below). Base: **`PluginBase`**.
+- **Component** (ordinal **4**, new — ordinal 3 remains reserved per A19, never reused): an
+  inline-placed `.idea` that renders at the exact `{{Component.X}}` token position in the page body.
+  Components can nest other Components, enabling composite UIs — e.g., `Component.TabControl` contains
+  `Component.TabButtonContainer`, a list of `Component.TabButton` instances, a
+  `Component.TabPageContainer`, and a list of `Component.TabPage` instances; each `TabPage` may contain
+  `Component.Textbox` or other children. Sub-component dependencies declared via `[Uses]`/`uses[]`. Base:
+  **`ComponentBase`** (see alias note below).
+
+**The four kinds are now `ContentKind { Page=0, Plugin=1, Theme=2, Component=4 }`** under `IdeaBase`
+(`PageBase` / `PluginBase` / `ThemeBase` / `ComponentBase`). `WidgetBase` is deleted.
+
+**`ComponentBase` namespace alias.** Introducing `ComponentBase` in Abstractions restores the name
+collision with Blazor's `Microsoft.AspNetCore.Components.ComponentBase` (dissolved by A17, now
+returning). Per the standing rule in A10 (the rule survives even though A10 is otherwise superseded):
+the MindAttic kind wins the bare name. Blazor's base is aliased:
+
+```csharp
+using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;
+public abstract class IdeaBase : BlazorComponentBase { … }
+public abstract class ComponentBase : IdeaBase { … }   // MindAttic's
+```
+
+The Web project's `_Imports.razor` also adds
+`@using ComponentBase = MindAttic.Ideas.Abstractions.ComponentBase` so `@inherits ComponentBase`
+resolves to MindAttic's in all Razor files.
+
+**Admin Page Properties panel.** The collapsible properties panel (A24) gains a **Plugin selection
+section** — a checkbox list with a vertical scrollbar — inserted between the Theme dropdown and the SEO
+fields. Each checkbox corresponds to an installed, enabled Plugin; checking it activates that Plugin for
+the page. The selection is persisted as `Page.ActivePluginsJson` (a new nullable JSON column: an array of
+`"Plugin.key[@n]"` strings, e.g. `["Plugin.tooltip", "Plugin.navmenu.V1"]`). `PageHost.razor` reads this
+column and emits each selected Plugin's include in the render pipeline alongside the Theme's assets,
+before the page body renders.
+
+**Inline override tags (non-canonical path).** Two inline token forms let authors escape the normal
+admin-selection paths when needed:
+- `{{Plugin.tooltip}}` anywhere in `BodyHtml` activates that Plugin even if it is absent from
+  `ActivePluginsJson` — useful for a one-off page-level opt-in. Not the recommended path.
+- `{{Theme.cyberspace}}` anywhere in `BodyHtml` overrides the page's Theme for asset injection on that
+  page (the tag itself renders no markup; only the asset cascade changes). Allows per-page theme overrides
+  without touching the admin properties panel.
+
+Both forms follow the existing `IncludeReferenceParser` grammar (first segment must be a valid
+`ContentKind` member name); they are recognized automatically once Plugin and Component are valid enum
+members.
+
+**Library reclassification.** All existing Widgets in `library/` are reclassified as Plugin or Component.
+Classification criterion: *does the widget activate a behavior across the whole page (Plugin) or does it
+render at a specific lexical position (Component)?*
+
+- **Plugins** (site-wide): `tooltip`, `outfitfont`, `atticfont`, `sacredgeometry`, `cyberspace` (widget),
+  `navmenu`, `breadcrumbs`, `footer`, `pinfooter`, `backtotop`, `backhomem`, `sociallinks`
+- **Components** (inline-placed): `textbox`, `card`, `accordion`, `tabs`, `tabboard`, `gallery`,
+  `carousel`, `callout`, `codeblock`, `videoembed`, `contactform`, `modalpopup`, `hero`, `hardwarehero`,
+  `tableofcontents`, `legionpersonas`, `ideasbrochure`, `helloworld`, `websnapshot`, `claudia`, `chimesh`,
+  `mindatticfrontpage`, `frontpage`
+
+Namespaces and asset mounts change accordingly: `MindAttic.Ideas.Plugin.{Key}` /
+`/_ideas/Plugin/{key}/{version}` and `MindAttic.Ideas.Component.{Key}` /
+`/_ideas/Component/{key}/{version}`.
+
+**Data migration** `AddPluginComponentKindSplit` (forward-only, `Down` is no-op):
+1. Adds `ActivePluginsJson nvarchar(max) NULL` to `Pages`.
+2. Renames `"Widget"` → `"Plugin"` or `"Component"` in `ContentDefinitions.Kind`/`Category` and
+   `InstalledPackages.Category` per the classification table above.
+3. Rewrites `MindAttic.Ideas.Widget.{key}` → `MindAttic.Ideas.Plugin.{key}` or
+   `MindAttic.Ideas.Component.{key}` in `Pages.BodyHtml` per the classification table.
+4. Rewrites `"Widget."` prefix → `"Plugin."` or `"Component."` in `WidgetPlacementSettings.WidgetRef`
+   per the classification table.

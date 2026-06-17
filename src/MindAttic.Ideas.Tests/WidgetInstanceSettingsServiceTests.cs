@@ -42,7 +42,7 @@ public class WidgetInstanceSettingsServiceTests
         var svc = new WidgetInstanceSettingsService(factory);
         var pageId = await SeedPageAsync(factory);
 
-        var result = await svc.SaveAsync(pageId, "hero", "Widget.hero@1", """{"color":"blue"}""", "admin");
+        var result = await svc.SaveAsync(pageId, "hero", "Plugin.hero@1", """{"color":"blue"}""", "admin");
 
         Assert.Multiple(() =>
         {
@@ -59,8 +59,8 @@ public class WidgetInstanceSettingsServiceTests
         var svc = new WidgetInstanceSettingsService(factory);
         var pageId = await SeedPageAsync(factory);
 
-        await svc.SaveAsync(pageId, "hero", "Widget.hero@1", """{"color":"blue"}""");
-        var v2 = await svc.SaveAsync(pageId, "hero", "Widget.hero@1", """{"color":"red"}""", "editor");
+        await svc.SaveAsync(pageId, "hero", "Plugin.hero@1", """{"color":"blue"}""");
+        var v2 = await svc.SaveAsync(pageId, "hero", "Plugin.hero@1", """{"color":"red"}""", "editor");
 
         Assert.That(v2.SettingsVersion, Is.EqualTo(2));
 
@@ -77,9 +77,9 @@ public class WidgetInstanceSettingsServiceTests
         var svc = new WidgetInstanceSettingsService(factory);
         var pageId = await SeedPageAsync(factory);
 
-        await svc.SaveAsync(pageId, "hero", "Widget.hero@1", """{"v":1}""");
-        await svc.SaveAsync(pageId, "hero", "Widget.hero@1", """{"v":2}""");
-        await svc.SaveAsync(pageId, "hero", "Widget.hero@1", """{"v":3}""");
+        await svc.SaveAsync(pageId, "hero", "Plugin.hero@1", """{"v":1}""");
+        await svc.SaveAsync(pageId, "hero", "Plugin.hero@1", """{"v":2}""");
+        await svc.SaveAsync(pageId, "hero", "Plugin.hero@1", """{"v":3}""");
 
         var current = await svc.GetAsync(pageId, "hero");
         var history = await svc.GetHistoryAsync(pageId, "hero");
@@ -98,8 +98,8 @@ public class WidgetInstanceSettingsServiceTests
         var svc = new WidgetInstanceSettingsService(factory);
         var pageId = await SeedPageAsync(factory);
 
-        await svc.SaveAsync(pageId, "hero", "Widget.hero@1", """{"color":"blue"}""");   // V1
-        await svc.SaveAsync(pageId, "hero", "Widget.hero@1", """{"color":"red"}""");    // V2
+        await svc.SaveAsync(pageId, "hero", "Plugin.hero@1", """{"color":"blue"}""");   // V1
+        await svc.SaveAsync(pageId, "hero", "Plugin.hero@1", """{"color":"red"}""");    // V2
 
         var ok = await svc.RollbackAsync(pageId, "hero", version: 1);
 
@@ -118,7 +118,7 @@ public class WidgetInstanceSettingsServiceTests
         var factory = NewFactory();
         var svc = new WidgetInstanceSettingsService(factory);
         var pageId = await SeedPageAsync(factory);
-        await svc.SaveAsync(pageId, "hero", "Widget.hero@1", "{}");
+        await svc.SaveAsync(pageId, "hero", "Plugin.hero@1", "{}");
 
         var ok = await svc.RollbackAsync(pageId, "hero", version: 99);
 

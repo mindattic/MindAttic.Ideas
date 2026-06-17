@@ -6,8 +6,8 @@
 //
 // Prereqs: the CMS is running (see e2e/README.md) and CYPRESS_ADMIN_PASSWORD is set. The uploaded fixture
 // is the Tooltip plugin packed from MindAttic.Ideas.Library (copied to cypress/fixtures by the README step).
-describe("admin: upload a widget and reference it from a page", () => {
-  const slug = "e2e-widget-demo";
+describe("admin: upload a plugin and reference it from a page", () => {
+  const slug = "e2e-plugin-demo";
   const tag = "{{ MindAttic.Ideas.Plugin.Tooltip }}";
 
   beforeEach(() => cy.loginAsAdmin());

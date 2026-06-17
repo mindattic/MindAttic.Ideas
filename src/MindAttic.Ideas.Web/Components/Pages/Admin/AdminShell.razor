@@ -11,7 +11,7 @@
    route, so they share this circuit.
 
    ISOLATION: the whole shell is wrapped in <div class="ma-admin">. The admin deliberately lives
-   OUTSIDE the Theme/Widget (.idea) world — no installed package CSS/JS (nor the host css.global
+   OUTSIDE the Theme/Plugin/Component (.idea) world — no installed package CSS/JS (nor the host css.global
    setting) is ever linked on /admin (PageHost, the only thing that hoists .idea assets, refuses
    /admin slugs), and .ma-admin re-establishes an explicit baseline so nothing can bleed in. A
    broken/hostile .idea therefore can never make the admin unusable. (See Admin -> Attributions
