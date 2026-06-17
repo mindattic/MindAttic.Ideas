@@ -157,7 +157,8 @@ public sealed class PackageInstallService(
             && archive.ReadPageSeed() is { Slug.Length: > 0 } seed)
         {
             await ApplyPageSeedAsync(db, pkg, manifest, seed, now, ct);
-            await db.SaveChangesAsync(ct);
+            try { await db.SaveChangesAsync(ct); }
+            catch (DbUpdateException) { /* idempotent — slug already occupied by another package or admin page */ }
         }
 
         // ---- Declared-dependency advisory (NON-blocking): a uses[] id with no installed+enabled definition.
@@ -221,9 +222,9 @@ public sealed class PackageInstallService(
         if (!owned && existing.SourcePackageId is int ownerId)
         {
             var owner = await db.InstalledPackages.FirstOrDefaultAsync(p => p.Id == ownerId, ct);
-            owned = owner is not null
-                && string.Equals(owner.Category, manifest.Category, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(owner.Key, manifest.Key, StringComparison.Ordinal);
+            owned = owner is null   // prior owner row deleted → adopt
+                || (string.Equals(owner.Category, manifest.Category, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(owner.Key, manifest.Key, StringComparison.Ordinal));
         }
 
         // Update only package-owned fields; admin-owned (Enabled, Slug, SortOrder, IsPublished) are preserved.

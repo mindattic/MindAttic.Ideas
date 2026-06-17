@@ -274,7 +274,7 @@
         if (dragId is int id) { await PagesSvc.MoveAsync(id, null, NextSortFor(null)); dragId = null; await Load(); }
     }
 
-    // Reorder within siblings: normalise sibling order to indices, swapping the node with its neighbour.
+    // Reorder within siblings: swap the SortOrder values of the two pages being swapped.
     private async Task Nudge(PageSummary node, int dir)
     {
         var sibs = (pages ?? Array.Empty<PageSummary>())
@@ -282,11 +282,8 @@
         var i = sibs.FindIndex(p => p.Id == node.Id);
         var j = i + dir;
         if (i < 0 || j < 0 || j >= sibs.Count) return;
-        for (var k = 0; k < sibs.Count; k++)
-        {
-            var target = k == i ? j : k == j ? i : k;
-            await PagesSvc.MoveAsync(sibs[k].Id, sibs[k].ParentId, target);
-        }
+        await PagesSvc.MoveAsync(sibs[i].Id, sibs[i].ParentId, sibs[j].SortOrder);
+        await PagesSvc.MoveAsync(sibs[j].Id, sibs[j].ParentId, sibs[i].SortOrder);
         await Load();
     }
 
@@ -351,7 +348,7 @@
     private void TogglePlugin(string pluginRef, bool add)
     {
         if (editing is null) return;
-        if (add) { if (!editing.ActivePlugins.Contains(pluginRef)) editing.ActivePlugins.Add(pluginRef); }
+        if (add) { if (!editing.ActivePlugins.Any(r => string.Equals(r, pluginRef, StringComparison.OrdinalIgnoreCase))) editing.ActivePlugins.Add(pluginRef); }
         else editing.ActivePlugins.RemoveAll(r => r.StartsWith(pluginRef.Split('@')[0], StringComparison.OrdinalIgnoreCase));
     }
 

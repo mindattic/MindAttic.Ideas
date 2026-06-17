@@ -81,7 +81,9 @@
                 buffer.Position = 0;
 
                 var plan = await Installer.InstallAsync(buffer, allowOverride);
-                var ok = plan.Action is InstallAction.Install or InstallAction.NoOpAlreadyInstalled;
+                var ok = plan.Action is InstallAction.Install
+                             or InstallAction.NoOpAlreadyInstalled
+                             or InstallAction.RequiresOverrideConfirmation;
                 var detail = plan.Reason is { Length: > 0 } reason ? $"{plan.Action} ({reason})" : plan.Action.ToString();
                 results.Add(new Result(file.Name, ok, detail));
             }

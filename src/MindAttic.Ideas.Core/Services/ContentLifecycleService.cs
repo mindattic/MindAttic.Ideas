@@ -113,7 +113,8 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
     public async Task<DeleteGuardResult> DeleteAsync(ContentKind kind, string key, int version, CancellationToken ct = default)
     {
         var guard = await CanDeleteAsync(kind, key, version, ct);
-        if (guard.Message == "Content definition not found." || guard.Blocked) return guard;
+        if (guard.Blocked) return guard;
+        // Note: "not found" is handled by the re-query below (def is null → return guard at line ~122).
 
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         var def = await db.ContentDefinitions

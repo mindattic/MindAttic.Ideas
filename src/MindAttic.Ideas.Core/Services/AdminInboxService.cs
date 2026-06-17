@@ -34,16 +34,16 @@ public sealed class AdminInboxService(IDbContextFactory<CmsDbContext> dbFactory)
             var existing = await db.AdminInbox.FirstOrDefaultAsync(m => m.DedupKey == dedupKey, ct);
             if (existing is not null)
             {
-                if (existing.Status == "Resolved")
+                if (existing.Status is "Resolved" or "Read")
                 {
-                    // The problem recurred after being marked resolved — reopen it.
+                    // Problem recurred after being resolved or dismissed — reopen so admin sees it again.
                     existing.Status = "New";
                     existing.ResolvedUtc = null;
                     existing.Body = body;
                     existing.CreatedUtc = DateTime.UtcNow;
                     await db.SaveChangesAsync(ct);
                 }
-                return; // not resolved -> collapse the repeat (no duplicate row)
+                return; // still "New" -> collapse the repeat (no duplicate row)
             }
 
             db.AdminInbox.Add(new AdminInboxMessage

@@ -49,7 +49,8 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         // Migrate a stock seeded home page to soft-disabled (HOUSE-LAW-2: never hard-delete); an
         // admin-edited body is left untouched (and stays reachable should the forward be re-pointed).
         var home = await db.Pages.FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "", ct);
-        if (home is not null && home.BodyHtml == LegacyHomeBodyHtml && home.Enabled)
+        static string NormEol(string? s) => s?.Replace("\r\n", "\n") ?? "";
+        if (home is not null && NormEol(home.BodyHtml) == NormEol(LegacyHomeBodyHtml) && home.Enabled)
         {
             home.Enabled = false;
             home.ModifiedUtc = now;

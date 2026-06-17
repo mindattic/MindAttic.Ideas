@@ -14,7 +14,8 @@ public sealed record PageHistoryEntry(
     string? BodyHtml, string? PageCss, string? PageJs,
     ContentTrust BodyTrust,
     DateTime ValidFrom, DateTime ValidTo,
-    string? AuthoredByUserId = null);
+    string? AuthoredByUserId = null,
+    string? WorkflowState = null);
 
 /// <summary>
 /// Surfaces the SQL Server temporal history of the <see cref="Page"/> table (wiki-like rollback).
@@ -50,7 +51,7 @@ public sealed class PageHistoryService(IDbContextFactory<CmsDbContext> dbFactory
                 p.BodyHtml, p.PageCss, p.PageJs, p.BodyTrust,
                 EF.Property<DateTime>(p, "PeriodStart"),
                 EF.Property<DateTime>(p, "PeriodEnd"),
-                p.AuthoredByUserId))
+                p.AuthoredByUserId, p.WorkflowState))
             .ToListAsync(ct);
     }
 
@@ -68,6 +69,7 @@ public sealed class PageHistoryService(IDbContextFactory<CmsDbContext> dbFactory
         page.PageJs = snapshot.PageJs;
         page.IsPublished = snapshot.IsPublished;
         page.Enabled = snapshot.Enabled;
+        page.WorkflowState = snapshot.WorkflowState;
 
         // Re-stamp trust from the restoring user's claims (MAI-LAW-5): the restore is a write.
         var (trust, authoredBy) = PageAuthoring.Stamp(user);

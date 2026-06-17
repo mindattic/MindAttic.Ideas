@@ -62,13 +62,14 @@ public sealed class SlugRedirectService(IDbContextFactory<CmsDbContext> dbFactor
 
         if (!await db.Pages.AnyAsync(p => p.Id == pageId, ct)) return false;
 
+        var normalizedSlug = vanitySlug.Trim('/').ToLowerInvariant();
         // Idempotent: do nothing if this (pageId, oldSlug) already exists.
-        if (await db.PageSlugHistory.AnyAsync(h => h.PageId == pageId && h.OldSlug == vanitySlug, ct))
+        if (await db.PageSlugHistory.AnyAsync(h => h.PageId == pageId && h.OldSlug == normalizedSlug, ct))
             return true;
 
         db.PageSlugHistory.Add(new PageSlugHistory
         {
-            PageId = pageId, OldSlug = vanitySlug.Trim('/').ToLowerInvariant(),
+            PageId = pageId, OldSlug = normalizedSlug,
             IsVanity = true, AddedByUserId = userId, CreatedUtc = DateTime.UtcNow,
         });
         await db.SaveChangesAsync(ct);

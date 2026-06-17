@@ -79,9 +79,13 @@ public static class PageAssets
             return PackageAssetsOf(d);
         var type = catalog.ResolveType(d);
         if (type is null) return new([], []);
-        var instance = Activator.CreateInstance(type);
-        if (instance is PluginBase p) return new(p.StylesheetUrls, p.ScriptUrls);
-        if (instance is ComponentBase c) return new(c.StylesheetUrls, c.ScriptUrls);
+        try
+        {
+            var instance = Activator.CreateInstance(type);
+            if (instance is PluginBase p) return new(p.StylesheetUrls, p.ScriptUrls);
+            if (instance is ComponentBase c) return new(c.StylesheetUrls, c.ScriptUrls);
+        }
+        catch { /* abstract type or DI-only constructor — contribute no assets */ }
         return new([], []);
     }
 

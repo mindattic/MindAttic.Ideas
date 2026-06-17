@@ -140,19 +140,19 @@ else if (_context is not null)
                 return;
             }
 
-            var userRole = user.FindFirstValue(ClaimTypes.Role);
+            var userRoles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var userId = user.FindFirstValue("ma:uid");
 
             // Admins always have access.
-            bool hasAccess = userRole == MaRoles.Admin;
+            bool hasAccess = userRoles.Contains(MaRoles.Admin);
 
             if (!hasAccess)
             {
                 var allowedRoles = await db.PageRoleAccess.Where(x => x.PageId == page.Id)
                     .Select(x => x.RoleName).ToListAsync();
 
-                // Auth role match.
-                if (userRole is not null && allowedRoles.Contains(userRole))
+                // Auth role match (all role claims, case-insensitive).
+                if (allowedRoles.Any(r => userRoles.Contains(r)))
                     hasAccess = true;
 
                 // CMS role match.
@@ -162,7 +162,7 @@ else if (_context is not null)
                         .Where(ur => ur.UserId == userId)
                         .Join(db.CmsRoles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
                         .ToListAsync();
-                    hasAccess = cmsRoleNames.Any(r => allowedRoles.Contains(r));
+                    hasAccess = cmsRoleNames.Any(r => allowedRoles.Contains(r, StringComparer.OrdinalIgnoreCase));
                 }
 
                 // Per-user access.
@@ -232,12 +232,12 @@ else if (_context is not null)
             _bodyType = typeof(FreeFormPage);
         }
 
-        // Theme: page override -> site default -> bootstrap fallback.
+        // Theme: page override -> site default -> null (floating/latest).
         var themeKey = page.ThemeKey ?? site?.DefaultThemeKey;
-        var themeVersion = page.ThemeVersion ?? site?.DefaultThemeVersion ?? 1;
+        var themeVersion = page.ThemeVersion ?? site?.DefaultThemeVersion;
         if (!string.IsNullOrWhiteSpace(themeKey))
         {
-            var themeRes = Catalog.ResolveTag(ContentKind.Theme, themeKey!, page.ThemeVersion);
+            var themeRes = Catalog.ResolveTag(ContentKind.Theme, themeKey!, themeVersion);
             if (themeRes.Outcome == ContentResolution.Resolved)
             {
                 _themeType = themeRes.Type;
@@ -251,9 +251,9 @@ else if (_context is not null)
                 try
                 {
                     if (themeRes.Outcome == ContentResolution.Disabled)
-                        Alerts.RaiseDisabled(ContentKind.Theme, themeKey!, page.ThemeVersion, page.Uid, page.Slug);
+                        Alerts.RaiseDisabled(ContentKind.Theme, themeKey!, themeVersion, page.Uid, page.Slug);
                     else
-                        Alerts.RaiseMissing(ContentKind.Theme, themeKey!, page.ThemeVersion, page.Uid, page.Slug);
+                        Alerts.RaiseMissing(ContentKind.Theme, themeKey!, themeVersion, page.Uid, page.Slug);
                 }
                 catch { /* alerting never breaks a render */ }
             }

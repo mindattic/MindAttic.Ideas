@@ -124,15 +124,18 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
         if (transition.RequiredRole is { Length: > 0 } role)
         {
             // Admins always pass.
-            var userRole = user.FindFirstValue(ClaimTypes.Role);
             var cmsUserRoles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToHashSet(StringComparer.OrdinalIgnoreCase);
             if (!cmsUserRoles.Contains(MaRoles.Admin) && !cmsUserRoles.Contains(role))
                 return (false, $"Transition to '{toState}' requires the '{role}' role.");
         }
 
         page.WorkflowState = toState;
-        // Published/unpublished sync: a state named "Published" (case-insensitive) sets IsPublished.
-        page.IsPublished = string.Equals(toState, "Published", StringComparison.OrdinalIgnoreCase);
+        // Published/unpublished sync: entering "Published" publishes; leaving it unpublishes.
+        // Transitions between non-publishing states leave IsPublished unchanged.
+        if (string.Equals(toState, "Published", StringComparison.OrdinalIgnoreCase))
+            page.IsPublished = true;
+        else if (string.Equals(fromState, "Published", StringComparison.OrdinalIgnoreCase))
+            page.IsPublished = false;
         page.ModifiedUtc = DateTime.UtcNow;
 
         await db.SaveChangesAsync(ct);

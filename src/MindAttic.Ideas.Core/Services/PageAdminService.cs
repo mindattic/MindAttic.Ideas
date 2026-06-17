@@ -121,7 +121,8 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         var siteId = site?.Id;
 
         // Slug uniqueness pre-check (friendly error before the DB unique index fires).
-        if (await db.Pages.AnyAsync(p => p.SiteId == siteId && p.Slug == slug && p.Id != model.Id, ct))
+        // IgnoreQueryFilters: the unique index covers ALL rows including soft-deleted, so the pre-check must too.
+        if (await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.SiteId == siteId && p.Slug == slug && p.Id != model.Id, ct))
             return new PageSaveResult(false, model.Id, default, $"A page with slug '{(slug.Length == 0 ? "(home)" : slug)}' already exists.");
 
         var (trust, authoredBy) = PageAuthoring.Stamp(author);
