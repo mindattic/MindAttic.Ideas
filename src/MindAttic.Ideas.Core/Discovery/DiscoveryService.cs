@@ -19,6 +19,9 @@ public sealed class DiscoveryService(
     IEnumerable<ICmsContentSource> sources,
     ContentCatalog catalog)
 {
+    // Serializes concurrent ReloadCatalogAsync calls so IsShadowed writes and LoadSnapshot
+    // never interleave across two parallel admin enable/disable operations.
+    private readonly SemaphoreSlim _reloadLock = new(1, 1);
     public async Task RunAsync(CancellationToken ct = default)
     {
         var discovered = sources
@@ -76,6 +79,9 @@ public sealed class DiscoveryService(
     /// </summary>
     public async Task ReloadCatalogAsync(CancellationToken ct = default)
     {
+        await _reloadLock.WaitAsync(ct);
+        try
+        {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
 
         // Collision resolution: within a (Kind,Key,Version) the highest Priority active row wins; the
@@ -106,6 +112,11 @@ public sealed class DiscoveryService(
         catalog.LoadSnapshot(
             all.Where(x => !x.IsShadowed && x.Enabled).Select(x => ToDescriptor(x, LookupManifest(x, manifestByIdentity))),
             all.Where(x => !x.IsShadowed && !x.Enabled).Select(x => (x.Kind, x.Key, x.Version)));
+        }
+        finally
+        {
+            _reloadLock.Release();
+        }
     }
 
     private static IdeaManifest? LookupManifest(

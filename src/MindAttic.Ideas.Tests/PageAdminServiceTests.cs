@@ -40,6 +40,34 @@ public class PageAdminServiceTests
         return new PageAdminService(factory);
     }
 
+    private static async Task<(PageAdminService Svc, InMemoryFactory Factory)> NewServiceWithFactoryAsync()
+    {
+        var factory = new InMemoryFactory("page_" + Guid.NewGuid().ToString("N"));
+        await using (var db = factory.CreateDbContext())
+        {
+            db.Sites.Add(new Site { Key = "default", Name = "Default", IsDefault = true, CreatedUtc = DateTime.UtcNow });
+            await db.SaveChangesAsync();
+        }
+        return (new PageAdminService(factory), factory);
+    }
+
+    private static async Task<int> InsertSoftDeletedPageAsync(InMemoryFactory factory, string slug = "deleted-page")
+    {
+        await using var db = factory.CreateDbContext();
+        var site = db.Sites.First();
+        var page = new MindAttic.Ideas.Core.Entities.Page
+        {
+            SiteId = site.Id, Slug = slug, Title = "Deleted Page",
+            Kind = PageKind.Data, BodyTrust = ContentTrust.Untrusted,
+            IsPublished = true, Enabled = true,
+            IsDeleted = true, DeletedUtc = DateTime.UtcNow,
+            CreatedUtc = DateTime.UtcNow,
+        };
+        db.Pages.Add(page);
+        await db.SaveChangesAsync();
+        return page.Id;
+    }
+
     [Test]
     public async Task Save_WithAuthorClaim_StampsAuthorTrust_AndCapturesAuthor()
     {
@@ -309,5 +337,62 @@ public class PageAdminServiceTests
             Assert.That(loaded.WorkflowState, Is.Null,
                 "SetPublishedAsync(false) must clear WorkflowState when it was \"Published\"");
         });
+    }
+
+    [Test]
+    public async Task GetAsync_SoftDeletedPage_ReturnsModel()
+    {
+        // Regression: GetAsync used the default EF filter (!IsDeleted), so an admin who navigated to a
+        // soft-deleted page's edit URL received a null model and could not inspect or recover the page.
+        // IgnoreQueryFilters() allows the admin layer to always load any page by id.
+        var (svc, factory) = await NewServiceWithFactoryAsync();
+        var id = await InsertSoftDeletedPageAsync(factory, "gone-page");
+
+        var model = await svc.GetAsync(id);
+
+        Assert.That(model, Is.Not.Null, "GetAsync must return the model even for a soft-deleted page");
+        Assert.That(model!.Slug, Is.EqualTo("gone-page"));
+    }
+
+    [Test]
+    public async Task SetEnabled_SoftDeletedPage_Succeeds()
+    {
+        // Regression: FlagAsync used the default EF filter; calling SetEnabledAsync on a soft-deleted page
+        // returned false (not found) instead of succeeding, making it impossible to re-enable a page before
+        // undeleting it. IgnoreQueryFilters() fixes the lookup.
+        var (svc, factory) = await NewServiceWithFactoryAsync();
+        var id = await InsertSoftDeletedPageAsync(factory, "disabled-deleted");
+
+        var ok = await svc.SetEnabledAsync(id, false);
+
+        Assert.That(ok, Is.True, "SetEnabledAsync must succeed on a soft-deleted page");
+    }
+
+    [Test]
+    public async Task SetPublished_SoftDeletedPage_Succeeds()
+    {
+        // Regression: SetPublishedAsync used the default EF filter; calling it on a soft-deleted page
+        // returned false (not found). IgnoreQueryFilters() allows the admin to update any page by id.
+        var (svc, factory) = await NewServiceWithFactoryAsync();
+        var id = await InsertSoftDeletedPageAsync(factory, "pub-deleted");
+
+        var ok = await svc.SetPublishedAsync(id, false);
+
+        Assert.That(ok, Is.True, "SetPublishedAsync must succeed on a soft-deleted page");
+    }
+
+    [Test]
+    public async Task Move_SoftDeletedPage_Succeeds()
+    {
+        // Regression: MoveAsync used the default EF filter for the target page lookup (the cycle-guard walk
+        // already used IgnoreQueryFilters but the initial page fetch did not). Moving a soft-deleted page —
+        // e.g. to re-parent it before restoring — silently returned false. IgnoreQueryFilters() fixes it.
+        var (svc, factory) = await NewServiceWithFactoryAsync();
+        var parent = await svc.SaveAsync(new PageEditModel { Slug = "parent", Title = "Parent" }, Author(true));
+        var id = await InsertSoftDeletedPageAsync(factory, "move-deleted");
+
+        var ok = await svc.MoveAsync(id, parent.Id, sortOrder: 5);
+
+        Assert.That(ok, Is.True, "MoveAsync must succeed on a soft-deleted page");
     }
 }

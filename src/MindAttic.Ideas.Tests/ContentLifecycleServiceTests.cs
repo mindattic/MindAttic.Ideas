@@ -273,4 +273,34 @@ public class ContentLifecycleServiceTests
         Assert.That(catalog.ResolveTag(ContentKind.Theme, "cyberspace", 1).Outcome,
             Is.EqualTo(ContentResolution.Disabled));   // disabled identity is now known-disabled, not Missing
     }
+
+    [Test]
+    public async Task ReloadCatalogAsync_ConcurrentCalls_DoNotThrowOrDeadlock()
+    {
+        // Regression: ReloadCatalogAsync had no serialization lock; two concurrent admin enable/disable
+        // operations could interleave their IsShadowed writes and LoadSnapshot calls, producing a torn
+        // catalog or a DbUpdateConcurrencyException. The SemaphoreSlim(1,1) serializes all reloads.
+        var factory = new InMemoryFactory("lc_concur_" + Guid.NewGuid().ToString("N"));
+        await using (var db = factory.CreateDbContext())
+        {
+            db.ContentDefinitions.Add(new CmsContentDefinition
+            {
+                Kind = ContentKind.Plugin, Key = "concurrent", Version = 1,
+                Origin = ContentOrigin.Compiled, DisplayName = "Concurrent",
+                Priority = 100, Enabled = true, IsActive = true, IsShadowed = false,
+                DiscoveredUtc = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var catalog = new ContentCatalog(new NullResolver());
+        var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
+
+        // Two concurrent reloads: the SemaphoreSlim queues one behind the other — neither should throw.
+        await Task.WhenAll(discovery.ReloadCatalogAsync(), discovery.ReloadCatalogAsync());
+
+        // Both calls completed: the descriptor must still be present in the catalog.
+        Assert.That(catalog.All.Any(d => d.Key == "concurrent"), Is.True,
+            "concurrent ReloadCatalogAsync calls must not corrupt the catalog");
+    }
 }

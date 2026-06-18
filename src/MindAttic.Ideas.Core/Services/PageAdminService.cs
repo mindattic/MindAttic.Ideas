@@ -98,7 +98,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
     public async Task<PageEditModel?> GetAsync(int id, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var p = await db.Pages.AsNoTracking()
+        var p = await db.Pages.AsNoTracking().IgnoreQueryFilters()
             .Include(x => x.MetaTags).Include(x => x.RoleAccess).Include(x => x.UserAccess)
             .FirstOrDefaultAsync(x => x.Id == id, ct);
         if (p is null) return null;
@@ -268,7 +268,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
     public async Task<bool> SetPublishedAsync(int id, bool published, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id, ct);
+        var page = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == id, ct);
         if (page is null) return false;
         page.IsPublished = published;
         // Keep WorkflowState in sync: publishing forces state = "Published"; unpublishing clears it only
@@ -290,7 +290,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
     {
         if (parentId == id) return false;   // a page cannot be its own parent
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id, ct);
+        var page = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == id, ct);
         if (page is null) return false;
 
         // Cycle guard: walk up from the proposed parent — if we reach `id`, the move would make the page
@@ -338,7 +338,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
     private async Task<bool> FlagAsync(int id, CancellationToken ct, Action<Page> mutate)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id, ct);
+        var page = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == id, ct);
         if (page is null) return false;
         mutate(page);
         page.ModifiedUtc = DateTime.UtcNow;

@@ -367,4 +367,59 @@ public class WorkflowServiceTests
         Assert.That(updated!.WorkflowState, Is.EqualTo("Review"),
             "AssignWorkflow must reset state to InitialState of the new definition");
     }
+
+    [Test]
+    public async Task TransitionPage_SoftDeletedPage_FindsPage_DoesNotReturnNotFound()
+    {
+        // Regression: TransitionPageAsync used the default EF filter and returned "Page not found" for
+        // soft-deleted pages, even though an admin may need to manage workflow state during recovery.
+        // IgnoreQueryFilters() ensures the admin layer can always resolve a page by id.
+        var factory = NewFactory();
+        var (svc, defId, _) = await SetupEditorialWorkflowAsync(factory);
+
+        // Insert a soft-deleted page manually so it is invisible to the default filter.
+        await using var setup = factory.CreateDbContext();
+        var page = new CmsPage
+        {
+            Slug = "soft-deleted", Title = "Soft Deleted",
+            Kind = MindAttic.Ideas.Abstractions.PageKind.Data,
+            BodyTrust = MindAttic.Ideas.Abstractions.ContentTrust.Untrusted,
+            WorkflowDefinitionId = defId, WorkflowState = "Draft",
+            IsPublished = false, Enabled = true,
+            IsDeleted = true, DeletedUtc = DateTime.UtcNow, CreatedUtc = DateTime.UtcNow,
+        };
+        setup.Pages.Add(page);
+        await setup.SaveChangesAsync();
+
+        var (ok, err) = await svc.TransitionPageAsync(page.Id, "Review", Editor());
+
+        Assert.That(err, Is.Not.EqualTo("Page not found."),
+            "soft-deleted page must be found; 'Page not found' is only correct for a truly absent id");
+        Assert.That(ok, Is.True, err);
+    }
+
+    [Test]
+    public async Task AssignWorkflow_SoftDeletedPage_Succeeds()
+    {
+        // Regression: AssignWorkflowAsync used the default EF filter and returned false for soft-deleted
+        // pages. IgnoreQueryFilters() ensures the admin can assign a workflow to any page by id.
+        var factory = NewFactory();
+        var svc = new WorkflowService(factory);
+        var def = await svc.CreateDefinitionAsync("Simple", "Draft");
+
+        await using var setup = factory.CreateDbContext();
+        var page = new CmsPage
+        {
+            Slug = "del-wf-page", Title = "Del WF",
+            Kind = MindAttic.Ideas.Abstractions.PageKind.Data,
+            BodyTrust = MindAttic.Ideas.Abstractions.ContentTrust.Untrusted,
+            Enabled = true, IsDeleted = true, DeletedUtc = DateTime.UtcNow, CreatedUtc = DateTime.UtcNow,
+        };
+        setup.Pages.Add(page);
+        await setup.SaveChangesAsync();
+
+        var ok = await svc.AssignWorkflowAsync(page.Id, def.Id);
+
+        Assert.That(ok, Is.True, "AssignWorkflowAsync must succeed for a soft-deleted page");
+    }
 }

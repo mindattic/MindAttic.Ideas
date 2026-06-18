@@ -101,7 +101,7 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
 
-        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == pageId, ct);
+        var page = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == pageId, ct);
         if (page is null) return (false, "Page not found.");
 
         // Resolve the active workflow definition for this page.
@@ -154,7 +154,7 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
         var def = await db.WorkflowDefinitions.FirstOrDefaultAsync(d => d.Id == workflowDefinitionId, ct);
         if (def is null) return false;
 
-        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == pageId, ct);
+        var page = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == pageId, ct);
         if (page is null) return false;
 
         page.WorkflowDefinitionId = workflowDefinitionId;

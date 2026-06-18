@@ -62,7 +62,7 @@ public sealed class PageHistoryService(IDbContextFactory<CmsDbContext> dbFactory
     public async Task<bool> RestoreAsync(PageHistoryEntry snapshot, ClaimsPrincipal user, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == snapshot.PageId, ct);
+        var page = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == snapshot.PageId, ct);
         if (page is null) return false;
 
         page.Title = snapshot.Title;

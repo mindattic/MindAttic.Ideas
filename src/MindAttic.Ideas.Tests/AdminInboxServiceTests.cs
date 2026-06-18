@@ -118,4 +118,31 @@ public class AdminInboxServiceTests
 
         Assert.That(result, Is.True, "MarkReadAsync on an already-Resolved message must return true (idempotent)");
     }
+
+    [Test]
+    public async Task ResolveAsync_AlreadyResolved_IsIdempotent_AndPreservesOriginalTimestamp()
+    {
+        // Regression: ResolveAsync had no idempotency guard; a second call re-wrote ResolvedUtc to
+        // DateTime.UtcNow, silently losing the original resolution timestamp. Now the first call wins
+        // and subsequent calls return true without modifying the row.
+        var svc = NewService();
+        await svc.RaiseAsync("Warning", "System", "subject", "body", "key:resolve-idempotent");
+        var id = (await svc.ListAsync())[0].Id;
+
+        var first = await svc.ResolveAsync(id);
+        var rowAfterFirst = (await svc.ListAsync())[0];
+        var timestampAfterFirst = rowAfterFirst.ResolvedUtc;
+
+        await Task.Delay(1);   // ensure clock advances if the guard is missing
+        var second = await svc.ResolveAsync(id);
+        var rowAfterSecond = (await svc.ListAsync())[0];
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(first, Is.True);
+            Assert.That(second, Is.True, "second ResolveAsync on already-Resolved must return true (idempotent)");
+            Assert.That(rowAfterSecond.ResolvedUtc, Is.EqualTo(timestampAfterFirst),
+                "ResolvedUtc must not be overwritten by a repeated Resolve call");
+        });
+    }
 }

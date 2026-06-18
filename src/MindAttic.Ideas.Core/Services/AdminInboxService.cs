@@ -105,6 +105,7 @@ public sealed class AdminInboxService(IDbContextFactory<CmsDbContext> dbFactory)
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         var m = await db.AdminInbox.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (m is null) return false;
+        if (m.Status == "Resolved") return true;   // already done — idempotent success
         m.Status = "Resolved";
         m.ResolvedUtc = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);

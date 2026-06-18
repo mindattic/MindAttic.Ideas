@@ -139,4 +139,21 @@ public class SeedOnInstallTests
         var page = await verify.Pages.SingleAsync(p => p.Slug == "hello-world");
         Assert.That(page.ComponentTypeName, Is.EqualTo("Other.V1"), "a slug owned by another package must not be clobbered");
     }
+
+    [Test]
+    public async Task Install_MixedCaseSlugInSeed_IsStoredLowercase()
+    {
+        // Regression: ApplyPageSeedAsync did Trim('/') but not ToLowerInvariant(), so a manifest with
+        // slug "Hello-World" stored "Hello-World" in the DB, which would then fail the slug-uniqueness
+        // pre-check (or worse, return a 404 on lowercase-canonical URLs).
+        var (svc, factory) = NewService("seed_" + Guid.NewGuid().ToString("N"));
+        await SeedDefaultSiteAsync(factory);
+
+        await svc.InstallAsync(PagePackage(1, slug: "Hello-World"), allowOverride: false);
+
+        await using var db = factory.CreateDbContext();
+        var page = await db.Pages.SingleAsync();
+        Assert.That(page.Slug, Is.EqualTo("hello-world"),
+            "seed slug must be normalized to lowercase regardless of manifest casing");
+    }
 }

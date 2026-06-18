@@ -224,4 +224,39 @@ public class PageHistoryServiceTests
             Assert.That(restored.IsPublished, Is.True, "WorkflowState=Published must override IsPublished to true");
         });
     }
+
+    [Test]
+    public async Task RestoreAsync_SoftDeletedPage_Succeeds()
+    {
+        // Regression: RestoreAsync used the default EF filter and returned false when the target page was
+        // soft-deleted, making it impossible to restore a page's content as part of an undelete flow.
+        // IgnoreQueryFilters() ensures a snapshot can always be applied to any page by id.
+        var factory = NewFactory();
+
+        // Insert a soft-deleted page directly — cannot use SeedPageAsync because that inserts a live row.
+        await using (var setup = factory.CreateDbContext())
+        {
+            setup.Pages.Add(new CmsPage
+            {
+                Slug = "soft-del", Title = "Soft Deleted", Kind = PageKind.Data,
+                BodyHtml = "<p>current</p>", IsPublished = true, Enabled = true,
+                IsDeleted = true, DeletedUtc = DateTime.UtcNow,
+                BodyTrust = ContentTrust.Untrusted, CreatedUtc = DateTime.UtcNow,
+            });
+            await setup.SaveChangesAsync();
+        }
+
+        await using var dbForId = factory.CreateDbContext();
+        var pageId = await dbForId.Pages.IgnoreQueryFilters()
+            .Where(p => p.Slug == "soft-del").Select(p => p.Id).SingleAsync();
+
+        var snapshot = new PageHistoryEntry(
+            pageId, "soft-del", "Restored Title", false, true, PageKind.Data,
+            null, null, "<p>restored</p>", null, null, ContentTrust.Untrusted,
+            DateTime.UtcNow.AddHours(-1), DateTime.UtcNow);
+
+        var ok = await new PageHistoryService(factory).RestoreAsync(snapshot, new ClaimsPrincipal());
+
+        Assert.That(ok, Is.True, "RestoreAsync must succeed even when the target page is soft-deleted");
+    }
 }

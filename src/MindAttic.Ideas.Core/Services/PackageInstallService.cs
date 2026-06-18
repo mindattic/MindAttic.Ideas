@@ -208,7 +208,7 @@ public sealed class PackageInstallService(
             : await db.Sites.FirstOrDefaultAsync(s => s.IsDefault, ct) ?? await db.Sites.FirstOrDefaultAsync(ct);
         if (site is null) return;   // nothing to attach to yet — skip rather than invent a site
         var siteId = site.Id;
-        var slug = seed.Slug.Trim('/');
+        var slug = seed.Slug.Trim('/').ToLowerInvariant();
 
         // IgnoreQueryFilters: must see soft-deleted rows to avoid a duplicate-slug INSERT on re-install.
         var existing = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == siteId && p.Slug == slug, ct);
