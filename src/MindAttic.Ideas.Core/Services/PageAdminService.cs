@@ -74,6 +74,12 @@ public interface IPageAdminService
     /// that would make a page its own ancestor (cycle guard), so the tree can never become malformed.
     /// </summary>
     Task<bool> MoveAsync(int id, int? parentId, int sortOrder, CancellationToken ct = default);
+
+    /// <summary>
+    /// Atomically swap the SortOrder of two pages in a single transaction.
+    /// Both pages must exist; returns false if either is not found.
+    /// </summary>
+    Task<bool> SwapSortOrderAsync(int idA, int sortA, int idB, int sortB, CancellationToken ct = default);
 }
 
 public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) : IPageAdminService
@@ -245,6 +251,22 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.ParentId = parentId;
         page.SortOrder = sortOrder;
         page.ModifiedUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> SwapSortOrderAsync(int idA, int sortA, int idB, int sortB, CancellationToken ct = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
+        var pageA = await db.Pages.FirstOrDefaultAsync(p => p.Id == idA, ct);
+        var pageB = await db.Pages.FirstOrDefaultAsync(p => p.Id == idB, ct);
+        if (pageA is null || pageB is null) return false;
+
+        var now = DateTime.UtcNow;
+        pageA.SortOrder = sortA;
+        pageA.ModifiedUtc = now;
+        pageB.SortOrder = sortB;
+        pageB.ModifiedUtc = now;
         await db.SaveChangesAsync(ct);
         return true;
     }

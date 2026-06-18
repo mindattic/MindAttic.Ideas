@@ -211,4 +211,69 @@ public class RenderGuardTests
             Assert.That(disabled, Is.EqualTo(0));
         });
     }
+
+    // ---- XSS sanitization (Bugs: <script src> passthrough and data:/vbscript: URI passthrough) ----
+
+    private static IReadOnlyList<(string Name, object? Value)> AttributesForElement(
+        string html, string elementName, ContentTrust trust)
+    {
+        var catalog = new FakeCatalog { Outcome = ContentResolution.Missing };
+        var sink = new RecordingSink();
+        var builder = new RenderTreeBuilder();
+        builder.OpenElement(0, "div");
+        var seq = 1;
+        IncludeExpander.Expand(builder, ref seq, html, catalog, new PassGate(), trust, sink, Guid.NewGuid(), "test");
+        builder.CloseElement();
+
+        var frames = builder.GetFrames();
+        var result = new List<(string, object?)>();
+        bool inTarget = false;
+        for (var i = 0; i < frames.Count; i++)
+        {
+            var f = frames.Array[i];
+            if (f.FrameType == RenderTreeFrameType.Element)
+                inTarget = string.Equals(f.ElementName, elementName, StringComparison.OrdinalIgnoreCase);
+            else if (inTarget && f.FrameType == RenderTreeFrameType.Attribute)
+                result.Add((f.AttributeName, f.AttributeValue));
+        }
+        return result;
+    }
+
+    [Test]
+    public void Untrusted_ScriptSrc_IsStripped_ToPreventExternalScriptLoad()
+    {
+        const string html = """<script src="https://evil.example/xss.js"></script>""";
+        var attrs = AttributesForElement(html, "script", ContentTrust.Untrusted);
+        Assert.That(attrs.Select(a => a.Name), Does.Not.Contain("src"),
+            "untrusted <script src=...> must be stripped");
+    }
+
+    [Test]
+    public void Author_ScriptSrc_IsPreserved()
+    {
+        const string html = """<script src="https://cdn.example/lib.js"></script>""";
+        var attrs = AttributesForElement(html, "script", ContentTrust.Author);
+        Assert.That(attrs.Select(a => a.Name), Contains.Item("src"),
+            "author-trusted <script src=...> must be preserved");
+    }
+
+    [Test]
+    public void Untrusted_DataUriOnAnchor_IsStripped()
+    {
+        const string html = """<a href="data:text/html,<script>alert(1)</script>">click</a>""";
+        var attrs = AttributesForElement(html, "a", ContentTrust.Untrusted);
+        Assert.That(attrs.Where(a => a.Name == "href").Select(a => a.Value?.ToString()),
+            Is.Empty.Or.All.Not.StartWith("data:"),
+            "data: URI in untrusted href must be stripped");
+    }
+
+    [Test]
+    public void Untrusted_JavascriptUriOnAnchor_IsStripped()
+    {
+        const string html = """<a href="javascript:alert(1)">click</a>""";
+        var attrs = AttributesForElement(html, "a", ContentTrust.Untrusted);
+        Assert.That(attrs.Where(a => a.Name == "href").Select(a => a.Value?.ToString()),
+            Is.Empty.Or.All.Not.StartWith("javascript:"),
+            "javascript: URI in untrusted href must be stripped");
+    }
 }

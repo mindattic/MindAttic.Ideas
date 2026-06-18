@@ -25,7 +25,8 @@ public sealed record DeleteGuardResult(bool Deleted, bool Blocked, bool Disabled
 public readonly record struct PageRef(
     string Slug, string? BodyHtml, string? ThemeKey, int? ThemeVersion, bool Enabled, bool IsPublished,
     IReadOnlyList<string>? Uses = null,
-    string? ActivePluginsJson = null);
+    string? ActivePluginsJson = null,
+    bool IsDeleted = false);
 
 /// <summary>
 /// Admin lifecycle for content definitions: list, enable/disable (with live catalog reload), and
@@ -76,9 +77,10 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
         if (def is null)
             return new DeleteGuardResult(false, false, false, Array.Empty<string>(), "Content definition not found.");
 
-        // IgnoreQueryFilters: soft-deleted pages are restorable, so their pinned citizens must be preserved.
+        // IgnoreQueryFilters: we need IsDeleted so we can skip soft-deleted pages in FindBlockingPages
+        // (soft-deleted pages are not live references even if their flags were not cleared on delete).
         var pageRows = await db.Pages.IgnoreQueryFilters()
-            .Select(p => new { p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished, p.Kind, p.ComponentTypeName, p.ActivePluginsJson })
+            .Select(p => new { p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished, p.Kind, p.ComponentTypeName, p.ActivePluginsJson, p.IsDeleted })
             .ToListAsync(ct);
 
         // A COMPILED (Code) page references Components/Controls through its package manifest uses[], NOT its
@@ -99,7 +101,7 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
             p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished,
             p.Kind == PageKind.Code && p.ComponentTypeName is not null
                 && usesByType.TryGetValue(p.ComponentTypeName, out var u) ? u : null,
-            p.ActivePluginsJson)).ToList();
+            p.ActivePluginsJson, p.IsDeleted)).ToList();
 
         // Versions of this key that would REMAIN enabled+live after deleting `version`.
         var otherEnabled = await db.ContentDefinitions
@@ -155,7 +157,7 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
 
         foreach (var p in pages)
         {
-            if (!p.Enabled || !p.IsPublished) continue; // disabled/unpublished pages aren't live references
+            if (p.IsDeleted || !p.Enabled || !p.IsPublished) continue;
 
             bool blocks;
             if (kind == ContentKind.Theme)
@@ -165,17 +167,20 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
                 var floating = keyMatch && p.ThemeVersion is null && floatingOrphans;
                 blocks = pinned || floating;
             }
-            else // Plugin / Component: scan the author body AND a compiled page's declared uses[]
+            else // Plugin / Component: scan BodyHtml, compiled uses[], AND the per-page plugin selection
             {
+                var activePlugins = kind == ContentKind.Plugin && p.ActivePluginsJson is { Length: > 0 } apj
+                    ? TryDeserializePlugins(apj) : null;
                 var pinned = IncludeReferenceParser.BodyPinsVersion(p.BodyHtml, kind, key, version)
-                             || IncludeReferenceParser.UsesPinsVersion(p.Uses, kind, key, version);
-                // Plugins selected via the Admin checkbox are stored in ActivePluginsJson as floating refs.
-                var activePluginRef = kind == ContentKind.Plugin && p.ActivePluginsJson is { Length: > 0 } apj
-                    && TryDeserializePlugins(apj).Any(r => string.Equals(r, "Plugin." + key, StringComparison.OrdinalIgnoreCase));
+                             || IncludeReferenceParser.UsesPinsVersion(p.Uses, kind, key, version)
+                             // Versioned plugin refs in ActivePluginsJson (e.g. "Plugin.navmenu@1") must also block.
+                             || IncludeReferenceParser.UsesPinsVersion(activePlugins, kind, key, version);
+                var activePluginFloating = activePlugins is not null
+                    && activePlugins.Any(r => string.Equals(r, "Plugin." + key, StringComparison.OrdinalIgnoreCase));
                 var floating = floatingOrphans
                                && (IncludeReferenceParser.BodyFloatsKey(p.BodyHtml, kind, key)
                                    || IncludeReferenceParser.UsesFloatsKey(p.Uses, kind, key)
-                                   || activePluginRef);
+                                   || activePluginFloating);
                 blocks = pinned || floating;
             }
 

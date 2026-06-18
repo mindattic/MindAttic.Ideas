@@ -145,6 +145,35 @@ public class PageAdminServiceTests
     }
 
     [Test]
+    public async Task SwapSortOrder_UpdatesBothPagesInOneCall()
+    {
+        // Regression: Nudge called MoveAsync twice in separate DbContexts; if the second call failed
+        // the sort order was torn. SwapSortOrderAsync does both in one SaveChangesAsync.
+        var svc = await NewServiceAsync();
+        var a = await svc.SaveAsync(new PageEditModel { Slug = "page-a", Title = "A", SortOrder = 0 }, Author(true));
+        var b = await svc.SaveAsync(new PageEditModel { Slug = "page-b", Title = "B", SortOrder = 1 }, Author(true));
+
+        var ok = await svc.SwapSortOrderAsync(a.Id, 1, b.Id, 0);
+
+        Assert.That(ok, Is.True);
+        var list = await svc.ListAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(list.Single(p => p.Id == a.Id).SortOrder, Is.EqualTo(1));
+            Assert.That(list.Single(p => p.Id == b.Id).SortOrder, Is.EqualTo(0));
+        });
+    }
+
+    [Test]
+    public async Task SwapSortOrder_MissingPage_ReturnsFalse()
+    {
+        var svc = await NewServiceAsync();
+        var a = await svc.SaveAsync(new PageEditModel { Slug = "only-page", Title = "A" }, Author(true));
+        var ok = await svc.SwapSortOrderAsync(a.Id, 1, 99999, 0);
+        Assert.That(ok, Is.False);
+    }
+
+    [Test]
     public async Task Save_WithNullSeoFields_ReturnsNullOnLoad()
     {
         var svc = await NewServiceAsync();

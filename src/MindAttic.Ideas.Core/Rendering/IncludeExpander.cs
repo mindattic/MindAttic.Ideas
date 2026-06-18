@@ -55,10 +55,12 @@ public static class IncludeExpander
                     b.OpenElement(c.Next++, el.LocalName);
                     foreach (var attr in el.Attributes)
                     {
-                        // Strip XSS vectors even on the wrapper element (e.g. <script src=...>, <style onload=...>).
+                        // Strip XSS vectors from untrusted <script>/<style>: event handlers, unsafe-scheme URIs,
+                        // and <script src> which would load an arbitrary external script file.
                         if (ctx.Trust != ContentTrust.Author &&
                             (attr.Name.StartsWith("on", StringComparison.OrdinalIgnoreCase) ||
-                             attr.Value.TrimStart().StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)))
+                             (el.LocalName is "script" && string.Equals(attr.Name, "src", StringComparison.OrdinalIgnoreCase)) ||
+                             IsUnsafeUri(attr.Value)))
                             continue;
                         b.AddAttribute(c.Next++, attr.Name, attr.Value);
                     }
@@ -70,10 +72,11 @@ public static class IncludeExpander
                     b.OpenElement(c.Next++, el.LocalName);
                     foreach (var attr in el.Attributes)
                     {
-                        // Strip XSS vectors from untrusted content: event handlers and javascript: URIs.
+                        // Strip XSS vectors from untrusted content: event handlers and unsafe-scheme URIs
+                        // (javascript:, data:, vbscript: — all executable when navigated by the browser).
                         if (ctx.Trust != ContentTrust.Author &&
                             (attr.Name.StartsWith("on", StringComparison.OrdinalIgnoreCase) ||
-                             attr.Value.TrimStart().StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)))
+                             IsUnsafeUri(attr.Value)))
                             continue;
                         b.AddAttribute(c.Next++, attr.Name, attr.Value);
                     }
@@ -172,6 +175,14 @@ public static class IncludeExpander
                 alerts?.RaiseMissing(kind, key, version, pageId, slug);
                 break;
         }
+    }
+
+    private static bool IsUnsafeUri(string value)
+    {
+        var v = value.TrimStart();
+        return v.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)
+            || v.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
+            || v.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool HasChildContent(Type type)

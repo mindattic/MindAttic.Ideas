@@ -154,6 +154,10 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
 
         page.WorkflowDefinitionId = workflowDefinitionId;
         page.WorkflowState = def.InitialState;
+        // Published/unpublished sync: assigning a workflow always resets to InitialState.
+        // If that state is not "Published", the page must not remain live.
+        if (!string.Equals(def.InitialState, "Published", StringComparison.OrdinalIgnoreCase))
+            page.IsPublished = false;
         page.ModifiedUtc = DateTime.UtcNow;
 
         await db.SaveChangesAsync(ct);

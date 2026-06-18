@@ -132,6 +132,33 @@ public class PageHistoryServiceTests
     }
 
     [Test]
+    public async Task RestoreAsync_RestoresMissingFields_SeoTitle_ActivePlugins_IsRestricted_Kind()
+    {
+        // Regression: RestoreAsync omitted SeoTitle, ActivePluginsJson, IsRestricted, and Kind,
+        // so reverting a snapshot left those fields at their current (post-edit) values.
+        var factory = NewFactory();
+        var page = await SeedPageAsync(factory);
+        var snapshot = new PageHistoryEntry(
+            page.Id, "about", "Old Title", true, true, PageKind.Code,
+            null, null, "<p>body</p>", null, null, ContentTrust.Untrusted,
+            DateTime.UtcNow.AddHours(-2), DateTime.UtcNow.AddHours(-1),
+            SeoTitle: "Old SEO", ActivePluginsJson: """["Plugin.nav"]""", IsRestricted: true);
+
+        var ok = await new PageHistoryService(factory).RestoreAsync(snapshot, new ClaimsPrincipal());
+
+        await using var verify = factory.CreateDbContext();
+        var restored = await verify.Pages.FindAsync(page.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(ok, Is.True);
+            Assert.That(restored!.Kind, Is.EqualTo(PageKind.Code), "Kind must be restored");
+            Assert.That(restored.SeoTitle, Is.EqualTo("Old SEO"), "SeoTitle must be restored");
+            Assert.That(restored.ActivePluginsJson, Is.EqualTo("""["Plugin.nav"]"""), "ActivePluginsJson must be restored");
+            Assert.That(restored.IsRestricted, Is.True, "IsRestricted must be restored");
+        });
+    }
+
+    [Test]
     public void GetHistoryAsync_RequiresSqlServer_ThrowsOnInMemoryDb()
     {
         // GetHistoryAsync uses EF Core TemporalAll() which only works with SQL Server temporal

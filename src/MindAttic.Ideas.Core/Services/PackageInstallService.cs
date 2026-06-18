@@ -201,14 +201,8 @@ public sealed class PackageInstallService(
         var siteId = site.Id;
         var slug = seed.Slug.Trim('/');
 
-        // IgnoreQueryFilters: a previously soft-deleted seeded page must be found and restored, not skipped.
+        // IgnoreQueryFilters: must see soft-deleted rows to avoid a duplicate-slug INSERT on re-install.
         var existing = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == siteId && p.Slug == slug, ct);
-        if (existing is { IsDeleted: true })
-        {
-            existing.IsDeleted = false;
-            existing.DeletedUtc = null;
-            existing.ModifiedUtc = now;
-        }
 
         if (existing is null)
         {
@@ -241,8 +235,14 @@ public sealed class PackageInstallService(
         }
 
         // Update only package-owned fields; admin-owned (Enabled, Slug, SortOrder, IsPublished) are preserved.
+        // Ownership is confirmed before undeleting to avoid reinstating a page that a different package owns.
         if (owned)
         {
+            if (existing.IsDeleted)
+            {
+                existing.IsDeleted = false;
+                existing.DeletedUtc = null;
+            }
             existing.Kind = PageKind.Code;
             existing.ComponentTypeName = manifest.EntryType;     // V1 → V2 re-point = the upgrade path
             existing.AssemblyName = manifest.AssemblyName;

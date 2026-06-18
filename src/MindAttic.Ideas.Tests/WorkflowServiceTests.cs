@@ -224,6 +224,37 @@ public class WorkflowServiceTests
     }
 
     [Test]
+    public async Task AssignWorkflow_UnpublishesPageWhenInitialStateIsNotPublished()
+    {
+        // Regression: AssignWorkflowAsync reset WorkflowState but did not clear IsPublished,
+        // leaving a published page live even though it was now in "Draft" initial state.
+        var factory = NewFactory();
+        var svc = new WorkflowService(factory);
+        var def = await svc.CreateDefinitionAsync("Draft-first", "Draft");
+
+        await using var setupDb = factory.CreateDbContext();
+        var page = new CmsPage
+        {
+            Slug = "live-page", Title = "Live",
+            Kind = MindAttic.Ideas.Abstractions.PageKind.Data,
+            BodyTrust = MindAttic.Ideas.Abstractions.ContentTrust.Untrusted,
+            IsPublished = true, Enabled = true, CreatedUtc = DateTime.UtcNow,
+        };
+        setupDb.Pages.Add(page);
+        await setupDb.SaveChangesAsync();
+
+        await svc.AssignWorkflowAsync(page.Id, def.Id);
+
+        await using var db = factory.CreateDbContext();
+        var updated = await db.Pages.FindAsync(page.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(updated!.WorkflowState, Is.EqualTo("Draft"));
+            Assert.That(updated.IsPublished, Is.False, "non-Published initial state must unpublish the page");
+        });
+    }
+
+    [Test]
     public async Task AssignWorkflow_ResetsStateEvenWhenPageAlreadyHasState()
     {
         // Regression: ??= left old WorkflowState intact when reassigning a different workflow.

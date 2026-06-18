@@ -53,6 +53,49 @@ public class ContentLifecycleServiceTests
     }
 
     [Test]
+    public void SoftDeletedPage_DoesNotBlockCitizenDeletion()
+    {
+        // Regression: IsDeleted pages still had Enabled=true+IsPublished=true after SoftDeleteAsync,
+        // so they fell through the guard and falsely blocked citizen deletion.
+        var pages = new[]
+        {
+            new PageRef("removed", "{{Plugin.Tooltip.V11}}", null, null, Enabled: true, IsPublished: true, IsDeleted: true),
+        };
+        Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "tooltip", 11, pages, Array.Empty<int>()),
+            Is.Empty, "soft-deleted pages must not block citizen deletion");
+    }
+
+    [Test]
+    public void ActivePluginsJson_VersionedPin_BlocksDeletion()
+    {
+        // Regression: only floating refs in ActivePluginsJson were guarded; versioned pins like
+        // "Plugin.navmenu@1" were missed, allowing deletion of a citizen still actively used.
+        var pages = new[]
+        {
+            new PageRef("home", null, null, null, Enabled: true, IsPublished: true,
+                ActivePluginsJson: """["Plugin.navmenu@1"]"""),
+        };
+        Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "navmenu", 1, pages, Array.Empty<int>()),
+            Is.EquivalentTo(new[] { "home" }), "versioned plugin pin in ActivePluginsJson must block deletion");
+    }
+
+    [Test]
+    public void ActivePluginsJson_FloatingRef_BlocksOnlyWhenOrphaning()
+    {
+        var pages = new[]
+        {
+            new PageRef("p", null, null, null, Enabled: true, IsPublished: true,
+                ActivePluginsJson: """["Plugin.navmenu"]"""),
+        };
+        // Last version → orphan → blocked.
+        Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "navmenu", 1, pages, Array.Empty<int>()),
+            Is.EquivalentTo(new[] { "p" }));
+        // Another version remains → float moves there → allowed.
+        Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "navmenu", 1, pages, new[] { 2 }),
+            Is.Empty);
+    }
+
+    [Test]
     public void ThemePin_Blocks_AndThemeFloatFollowsOrphanRule()
     {
         var pinned = new[] { Pub("a", themeKey: "cyberspace", themeVer: 1) };

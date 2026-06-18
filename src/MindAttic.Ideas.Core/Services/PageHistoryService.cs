@@ -15,7 +15,10 @@ public sealed record PageHistoryEntry(
     ContentTrust BodyTrust,
     DateTime ValidFrom, DateTime ValidTo,
     string? AuthoredByUserId = null,
-    string? WorkflowState = null);
+    string? WorkflowState = null,
+    string? SeoTitle = null,
+    string? ActivePluginsJson = null,
+    bool IsRestricted = false);
 
 /// <summary>
 /// Surfaces the SQL Server temporal history of the <see cref="Page"/> table (wiki-like rollback).
@@ -51,7 +54,8 @@ public sealed class PageHistoryService(IDbContextFactory<CmsDbContext> dbFactory
                 p.BodyHtml, p.PageCss, p.PageJs, p.BodyTrust,
                 EF.Property<DateTime>(p, "PeriodStart"),
                 EF.Property<DateTime>(p, "PeriodEnd"),
-                p.AuthoredByUserId, p.WorkflowState))
+                p.AuthoredByUserId, p.WorkflowState,
+                p.SeoTitle, p.ActivePluginsJson, p.IsRestricted))
             .ToListAsync(ct);
     }
 
@@ -62,6 +66,7 @@ public sealed class PageHistoryService(IDbContextFactory<CmsDbContext> dbFactory
         if (page is null) return false;
 
         page.Title = snapshot.Title;
+        page.Kind = snapshot.Kind;
         page.ThemeKey = snapshot.ThemeKey;
         page.ThemeVersion = snapshot.ThemeVersion;
         page.BodyHtml = snapshot.BodyHtml;
@@ -70,6 +75,9 @@ public sealed class PageHistoryService(IDbContextFactory<CmsDbContext> dbFactory
         page.IsPublished = snapshot.IsPublished;
         page.Enabled = snapshot.Enabled;
         page.WorkflowState = snapshot.WorkflowState;
+        page.SeoTitle = snapshot.SeoTitle;
+        page.ActivePluginsJson = snapshot.ActivePluginsJson;
+        page.IsRestricted = snapshot.IsRestricted;
 
         // Re-stamp trust from the restoring user's claims (MAI-LAW-5): the restore is a write.
         var (trust, authoredBy) = PageAuthoring.Stamp(user);
