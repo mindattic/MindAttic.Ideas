@@ -102,4 +102,20 @@ public class AdminInboxServiceTests
             Assert.That(all[0].Body, Is.EqualTo("updated body"), "body must be refreshed on still-New repeats");
         });
     }
+
+    [Test]
+    public async Task MarkRead_AlreadyResolved_ReturnsTrueIdempotent()
+    {
+        // Regression: MarkReadAsync returned false for already-Resolved messages, making it impossible
+        // for callers to distinguish "not found" (a real error) from "already done" (a no-op success).
+        // Idempotent success is the correct contract: calling MarkRead on a resolved message is harmless.
+        var svc = NewService();
+        await svc.RaiseAsync("Info", "System", "subject", "body", "key:idempotent");
+        var id = (await svc.ListAsync())[0].Id;
+        await svc.ResolveAsync(id);  // transition to Resolved
+
+        var result = await svc.MarkReadAsync(id);
+
+        Assert.That(result, Is.True, "MarkReadAsync on an already-Resolved message must return true (idempotent)");
+    }
 }

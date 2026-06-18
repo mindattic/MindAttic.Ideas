@@ -103,11 +103,8 @@ public sealed class PackageInstallService(
                     $"is not installed or not enabled. Install it first before installing '{manifest.Key}'.");
         }
 
-        // Persist the verbatim bytes (the source of truth) and, for a code package, extract bin/ to disk so
-        // the ALC-aware resolver can load it. Done only once the install is going to proceed.
+        // Persist the verbatim bytes (content-addressed path, safe to save before the DB row).
         var blobPath = await blobStore.SaveAsync(manifest.Category, manifest.Key, manifest.Version, bytes, ct);
-        if (string.Equals(manifest.Kind, "code", StringComparison.Ordinal))
-            extractor.Extract(archive, manifest.Category, manifest.Key, manifest.Version);
 
         // ---- Registry row (idempotent upsert by the unique (Category,Key,Version)). ----
         var pkg = installedRows.FirstOrDefault(p => p.Version == manifest.Version)
@@ -162,6 +159,11 @@ public sealed class PackageInstallService(
                 $"{manifest.Category}/{manifest.Key} v{manifest.Version} was installed by a concurrent request.",
                 MakeActiveVersion: false, []);
         }
+
+        // Extract bin/ only after the DB row is committed so a concurrent-install race that returns
+        // NoOpAlreadyInstalled above never leaves orphaned bin/ directories on disk.
+        if (string.Equals(manifest.Kind, "code", StringComparison.Ordinal))
+            extractor.Extract(archive, manifest.Category, manifest.Key, manifest.Version);
 
         // ---- Seed-on-install: a Page (code) package may carry data/page.json to make itself routable on
         // upload (idempotent by (SiteId, Slug); never clobbers a row another package or an admin owns). ----

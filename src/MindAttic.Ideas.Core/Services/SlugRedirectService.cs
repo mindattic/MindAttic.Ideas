@@ -34,6 +34,9 @@ public sealed class SlugRedirectService(IDbContextFactory<CmsDbContext> dbFactor
 {
     public async Task<SlugRedirectResult?> CheckRedirectAsync(int? siteId, string slug, CancellationToken ct = default)
     {
+        // Normalize before the DB compare: OldSlug values are always stored lowercase, so a mixed-case
+        // incoming path (e.g. /About instead of /about) would otherwise miss the redirect row.
+        slug = slug.Trim('/').ToLowerInvariant();
         await using var db = await dbFactory.CreateDbContextAsync(ct);
 
         // Find a history record whose page still exists, is published, enabled, and belongs to the same site.

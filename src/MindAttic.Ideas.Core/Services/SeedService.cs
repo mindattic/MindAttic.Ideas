@@ -48,7 +48,10 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         // The bare route ("" slug) no longer renders a page — PageHost forwards it to the Frontpage.
         // Migrate a stock seeded home page to soft-disabled (HOUSE-LAW-2: never hard-delete); an
         // admin-edited body is left untouched (and stays reachable should the forward be re-pointed).
-        var home = await db.Pages.FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "", ct);
+        // IgnoreQueryFilters: soft-deleted pages are still visible in the (SiteId,Slug) unique index.
+        // Without this, a lookup would return null, the code would INSERT, and EF would throw a
+        // DbUpdateException when the unique constraint blocks the duplicate slug.
+        var home = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "", ct);
         static string NormEol(string? s) => s?.Replace("\r\n", "\n") ?? "";
         if (home is not null && NormEol(home.BodyHtml) == NormEol(LegacyHomeBodyHtml) && home.Enabled)
         {
@@ -60,7 +63,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         // Front page — the mindattic.com look recreated as a DATA page: minimal free-form markup,
         // reusable widgets (Tabs board, Gallery, Footer), layout by plain flex (no layout system),
         // images as inline base64 CSS classes, page CSS at the top and page JS at the bottom.
-        var front = await db.Pages.FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "frontpage", ct);
+        var front = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "frontpage", ct);
         if (front is null)
         {
             db.Pages.Add(new Page
@@ -108,7 +111,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         // Personas page — MindAttic.Legion.Frontend collapsed into a Data page (MAI-A22): the
         // persona gallery ships as the LegionPersonas Component .idea, so the standalone Blazor app
         // reduces to one token through the theme. Upsert by (SiteId, Slug); never clobber.
-        if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "personas", ct))
+        if (!await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.SiteId == site.Id && p.Slug == "personas", ct))
         {
             db.Pages.Add(new Page
             {
@@ -126,7 +129,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         }
 
         // Claudia — Pi Zero 2 WH + WonderEcho smart speaker (Hardware theme + Claudia widget).
-        if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "claudia", ct))
+        if (!await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.SiteId == site.Id && p.Slug == "claudia", ct))
         {
             db.Pages.Add(new Page
             {
@@ -144,7 +147,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
 
         // Ideas brochure — CMS product page explaining the three-primitive model, token grammar,
         // DNN retrospective, and comparison table. Seeded at /ideas via the IdeasBrochure widget.
-        if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "ideas", ct))
+        if (!await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.SiteId == site.Id && p.Slug == "ideas", ct))
         {
             db.Pages.Add(new Page
             {
@@ -162,7 +165,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         }
 
         // ChiMesh — solar RAK4631 LoRa / Meshtastic mesh (Hardware theme + ChiMesh widget).
-        if (!await db.Pages.AnyAsync(p => p.SiteId == site.Id && p.Slug == "chimesh", ct))
+        if (!await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.SiteId == site.Id && p.Slug == "chimesh", ct))
         {
             db.Pages.Add(new Page
             {

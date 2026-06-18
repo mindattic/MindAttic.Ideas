@@ -197,6 +197,11 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.ActivePluginsJson = SerializePlugins(model.ActivePlugins);
         page.WorkflowDefinitionId = model.WorkflowDefinitionId;
         page.WorkflowState = model.WorkflowState;
+        // Sync IsPublished from WorkflowState so the invariant WorkflowState=="Published" ↔ IsPublished
+        // is maintained even when the UI model submits contradictory values (e.g. WorkflowState="Draft"
+        // with IsPublished=true).  Null WorkflowState means "no workflow" and model.IsPublished governs.
+        if (model.WorkflowState is not null)
+            page.IsPublished = string.Equals(model.WorkflowState, "Published", StringComparison.OrdinalIgnoreCase);
         page.ModifiedUtc = now;
 
         try
@@ -250,13 +255,32 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
                     }
                     catch { /* best effort */ }
                 }
+                // Page content was saved but meta/ACL were not — return partial success so the caller
+                // can surface a warning rather than silently losing SEO and access-control edits.
+                return new PageSaveResult(true, page.Id, trust,
+                    "SEO and access-control settings could not be saved — please save the page again.");
             }
         }
 
         return new PageSaveResult(true, page.Id, trust, null);
     }
 
-    public async Task<bool> SetPublishedAsync(int id, bool published, CancellationToken ct = default) => await FlagAsync(id, ct, p => p.IsPublished = published);
+    public async Task<bool> SetPublishedAsync(int id, bool published, CancellationToken ct = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
+        var page = await db.Pages.FirstOrDefaultAsync(p => p.Id == id, ct);
+        if (page is null) return false;
+        page.IsPublished = published;
+        // Keep WorkflowState in sync: publishing forces state = "Published"; unpublishing clears it only
+        // if it was "Published" (so a "Review"-state page unpublished stays "Review" for the workflow).
+        if (published)
+            page.WorkflowState = "Published";
+        else if (string.Equals(page.WorkflowState, "Published", StringComparison.OrdinalIgnoreCase))
+            page.WorkflowState = null;
+        page.ModifiedUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
     public async Task<bool> SetEnabledAsync(int id, bool enabled, CancellationToken ct = default) => await FlagAsync(id, ct, p => p.Enabled = enabled);
 
     public async Task<bool> SoftDeleteAsync(int id, CancellationToken ct = default) =>

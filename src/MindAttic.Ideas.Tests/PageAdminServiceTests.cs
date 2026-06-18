@@ -238,4 +238,76 @@ public class PageAdminServiceTests
         Assert.That(loaded!.SeoTitle, Is.Null);
         Assert.That(loaded.SeoDescription, Is.Null);
     }
+
+    [Test]
+    public async Task Save_WorkflowStateDraft_OverridesIsPublishedTrue()
+    {
+        // Regression: SaveAsync wrote WorkflowState and IsPublished independently, so a form submission
+        // with WorkflowState="Draft" and IsPublished=true persisted both as-is, violating the invariant
+        // WorkflowState=="Published" ↔ IsPublished. Now WorkflowState drives IsPublished when non-null.
+        var svc = await NewServiceAsync();
+        var created = await svc.SaveAsync(
+            new PageEditModel { Slug = "wf-test", Title = "WF", IsPublished = false }, Author(true));
+
+        var updated = await svc.SaveAsync(new PageEditModel
+        {
+            Id = created.Id, Slug = "wf-test", Title = "WF",
+            WorkflowState = "Draft",
+            IsPublished = true,   // contradicts WorkflowState — the service must ignore this
+        }, Author(true));
+
+        Assert.That(updated.Ok, Is.True);
+        var loaded = await svc.GetAsync(created.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded!.WorkflowState, Is.EqualTo("Draft"));
+            Assert.That(loaded.IsPublished, Is.False, "WorkflowState=Draft must override IsPublished to false");
+        });
+    }
+
+    [Test]
+    public async Task SetPublished_True_SyncsWorkflowStateToPublished()
+    {
+        // Regression: SetPublishedAsync called FlagAsync(p => p.IsPublished = published) which did not
+        // touch WorkflowState, leaving it as e.g. "Draft" even after the admin toggled the page live.
+        var svc = await NewServiceAsync();
+        var created = await svc.SaveAsync(new PageEditModel
+        {
+            Slug = "pub-sync", Title = "Pub Sync", WorkflowState = "Draft", IsPublished = false,
+        }, Author(true));
+
+        var ok = await svc.SetPublishedAsync(created.Id, true);
+
+        Assert.That(ok, Is.True);
+        var loaded = await svc.GetAsync(created.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded!.IsPublished, Is.True);
+            Assert.That(loaded.WorkflowState, Is.EqualTo("Published"),
+                "SetPublishedAsync(true) must set WorkflowState to \"Published\"");
+        });
+    }
+
+    [Test]
+    public async Task SetPublished_False_ClearsWorkflowStateWhenWasPublished()
+    {
+        // Counterpart: SetPublishedAsync(false) must clear WorkflowState when it was "Published", so the
+        // invariant WorkflowState=="Published" ↔ IsPublished is maintained.
+        var svc = await NewServiceAsync();
+        var created = await svc.SaveAsync(new PageEditModel
+        {
+            Slug = "unpub-sync", Title = "Unpub Sync", WorkflowState = "Published", IsPublished = true,
+        }, Author(true));
+
+        var ok = await svc.SetPublishedAsync(created.Id, false);
+
+        Assert.That(ok, Is.True);
+        var loaded = await svc.GetAsync(created.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(loaded!.IsPublished, Is.False);
+            Assert.That(loaded.WorkflowState, Is.Null,
+                "SetPublishedAsync(false) must clear WorkflowState when it was \"Published\"");
+        });
+    }
 }

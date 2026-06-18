@@ -210,4 +210,31 @@ public class SlugRedirectServiceTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.TargetSlug, Is.EqualTo("about-us"), "target slug must be normalized to lowercase");
     }
+
+    [Test]
+    public async Task CheckRedirect_MixedCaseIncomingSlug_StillMatchesLowercaseStoredHistory()
+    {
+        // Regression: CheckRedirectAsync compared the raw incoming slug directly against OldSlug rows
+        // (always stored lowercase), so mixed-case requests missed the redirect match.  The fix
+        // lowercases the slug before the DB query.
+        var factory = NewFactory();
+        var svc = new SlugRedirectService(factory);
+        var pageId = await SeedPublishedPageAsync(factory, "about");
+
+        await using var db = factory.CreateDbContext();
+        db.PageSlugHistory.Add(new PageSlugHistory
+        {
+            PageId = pageId, OldSlug = "old-about", IsVanity = false, CreatedUtc = DateTime.UtcNow,
+        });
+        await db.SaveChangesAsync();
+
+        // Request arrives with mixed-case path; stored history has lowercase "old-about".
+        var result = await svc.CheckRedirectAsync(null, "OLD-ABOUT");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Is.Not.Null, "mixed-case incoming slug must match lowercase history entry");
+            Assert.That(result!.TargetSlug, Is.EqualTo("about"));
+        });
+    }
 }

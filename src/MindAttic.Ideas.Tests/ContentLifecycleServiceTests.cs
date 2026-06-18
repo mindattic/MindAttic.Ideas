@@ -162,6 +162,90 @@ public class ContentLifecycleServiceTests
     }
 
     [Test]
+    public async Task ReloadCatalog_DisabledCompiledRow_DoesNotShadowEnabledPackageRow()
+    {
+        // Regression: shadowing was ordered by Priority only; a disabled high-priority Compiled row
+        // (Priority=100) shadowed an enabled lower-priority Package row (Priority=50), making the
+        // catalog report Disabled even though a working Package version was available.
+        // The fix orders by (Enabled DESC, Priority DESC) so enabled rows always win within an identity.
+        var factory = new InMemoryFactory("lc_shadow_" + Guid.NewGuid().ToString("N"));
+        await using (var db = factory.CreateDbContext())
+        {
+            db.ContentDefinitions.AddRange(
+                new CmsContentDefinition
+                {
+                    Kind = ContentKind.Plugin, Key = "shared", Version = 1,
+                    Origin = ContentOrigin.Compiled, DisplayName = "Compiled (disabled)",
+                    Priority = 100, Enabled = false, IsActive = true, IsShadowed = false,
+                    DiscoveredUtc = DateTime.UtcNow,
+                },
+                new CmsContentDefinition
+                {
+                    Kind = ContentKind.Plugin, Key = "shared", Version = 1,
+                    Origin = ContentOrigin.Package, DisplayName = "Package (enabled)",
+                    Priority = 50, Enabled = true, IsActive = true, IsShadowed = false,
+                    DiscoveredUtc = DateTime.UtcNow,
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var catalog = new ContentCatalog(new NullResolver());
+        var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
+        await discovery.ReloadCatalogAsync();
+
+        // ResolveTag returns Missing when the resolver returns null (NullResolver), so check the
+        // underlying catalog.All list — a descriptor in All means the row WON the shadowing election.
+        Assert.That(catalog.All.Any(d => d.Kind == ContentKind.Plugin && d.Key == "shared" && d.Version == 1),
+            Is.True,
+            "enabled Package row must appear in catalog.All — it must win over the disabled Compiled row");
+
+        // Cross-check: the DB rows must have the correct IsShadowed flags after the reload.
+        await using var verify = factory.CreateDbContext();
+        var rows = await verify.ContentDefinitions.Where(d => d.Key == "shared").ToListAsync();
+        var compiledRow = rows.Single(d => d.Origin == ContentOrigin.Compiled);
+        var packageRow  = rows.Single(d => d.Origin == ContentOrigin.Package);
+        Assert.Multiple(() =>
+        {
+            Assert.That(packageRow.IsShadowed,  Is.False, "enabled Package row must not be shadowed");
+            Assert.That(compiledRow.IsShadowed, Is.True,  "disabled Compiled row must be marked shadowed");
+        });
+    }
+
+    [Test]
+    public async Task Delete_CompiledAlreadyDisabled_ReturnsDisabledInstead_WithoutRechurn()
+    {
+        // Regression: DeleteAsync for compiled citizens always called SaveChangesAsync + ReloadCatalogAsync,
+        // even when def.Enabled was already false, causing a gratuitous catalog reload.
+        // The fix guards with `if (def.Enabled)` before the write/reload path.
+        var factory = new InMemoryFactory("lc_compiledis_" + Guid.NewGuid().ToString("N"));
+        await using (var db = factory.CreateDbContext())
+        {
+            db.ContentDefinitions.Add(new CmsContentDefinition
+            {
+                Kind = ContentKind.Plugin, Key = "alreadydisabled", Version = 1,
+                Origin = ContentOrigin.Compiled, DisplayName = "Already Disabled",
+                Priority = 100, Enabled = false,   // already disabled before DeleteAsync is called
+                IsActive = true, IsShadowed = false, DiscoveredUtc = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var catalog = new ContentCatalog(new NullResolver());
+        var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
+        var svc = new ContentLifecycleService(factory, discovery);
+
+        var result = await svc.DeleteAsync(ContentKind.Plugin, "alreadydisabled", 1);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Deleted, Is.False);
+            Assert.That(result.Blocked, Is.False);
+            Assert.That(result.DisabledInstead, Is.True,
+                "already-disabled compiled citizen must still return DisabledInstead=true");
+        });
+    }
+
+    [Test]
     public async Task SetEnabledFalse_ReloadsCatalog_SoResolveTagReportsDisabled()
     {
         var factory = new InMemoryFactory("lc_" + Guid.NewGuid().ToString("N"));

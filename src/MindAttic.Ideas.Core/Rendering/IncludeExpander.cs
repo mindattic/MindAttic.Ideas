@@ -65,11 +65,13 @@ public static class IncludeExpander
                     b.OpenElement(c.Next++, el.LocalName);
                     foreach (var attr in el.Attributes)
                     {
-                        // Strip XSS vectors from untrusted content: event handlers and unsafe-scheme URIs
-                        // (javascript:, data:, vbscript: — all executable when navigated by the browser).
+                        // Strip XSS vectors from untrusted content: event handlers, and unsafe-scheme
+                        // URIs on URL-bearing attributes only. data-* custom attributes whose values
+                        // start with "data:" (e.g. data-payload="data:…") are safe and must not be
+                        // filtered — they are application data, not navigation targets.
                         if (ctx.Trust != ContentTrust.Author &&
                             (attr.Name.StartsWith("on", StringComparison.OrdinalIgnoreCase) ||
-                             IsUnsafeUri(attr.Value)))
+                             (UrlAttributes.Contains(attr.Name) && IsUnsafeUri(attr.Value))))
                             continue;
                         b.AddAttribute(c.Next++, attr.Name, attr.Value);
                     }
@@ -169,6 +171,12 @@ public static class IncludeExpander
                 break;
         }
     }
+
+    // Attributes whose values are treated as URLs — IsUnsafeUri is only applied to these.
+    // data-* attributes (e.g. data-type="data:application/json") must NOT be filtered here because
+    // the "data:" prefix in their VALUE is not a navigation URI; it is safe application data.
+    private static readonly HashSet<string> UrlAttributes = new(StringComparer.OrdinalIgnoreCase)
+        { "href", "src", "action", "formaction", "data", "poster", "cite", "xlink:href", "background" };
 
     private static bool IsUnsafeUri(string value)
     {

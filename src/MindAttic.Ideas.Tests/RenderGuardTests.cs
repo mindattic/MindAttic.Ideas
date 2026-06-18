@@ -278,6 +278,24 @@ public class RenderGuardTests
     }
 
     [Test]
+    public void Untrusted_DataAttributeWithDataUriValue_IsPreserved()
+    {
+        // Regression: IsUnsafeUri was applied to ALL attribute values; a data-* attribute whose value
+        // starts with "data:" (e.g. data-payload="data:application/json,{}") was silently stripped
+        // even though it is safe application data, not a navigation URI.
+        // The fix restricts IsUnsafeUri to URL-bearing attributes (href, src, action, …) only.
+        const string html = """<div data-type="data:application/json" data-config="data:text/plain,ok">x</div>""";
+        var attrs = AttributesForElement(html, "div", ContentTrust.Untrusted);
+        Assert.Multiple(() =>
+        {
+            Assert.That(attrs.Any(a => a.Name == "data-type"), Is.True,
+                "data-type=\"data:…\" must be preserved for untrusted content");
+            Assert.That(attrs.Any(a => a.Name == "data-config"), Is.True,
+                "data-config=\"data:…\" must be preserved for untrusted content");
+        });
+    }
+
+    [Test]
     public void Untrusted_ScriptElement_IsDroppedEntirely()
     {
         // Regression: untrusted <script> was emitted as an empty open/close pair even though inner HTML

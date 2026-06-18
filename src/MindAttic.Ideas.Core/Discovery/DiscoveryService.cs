@@ -83,7 +83,10 @@ public sealed class DiscoveryService(
         var all = await db.ContentDefinitions.Where(x => x.IsActive).ToListAsync(ct);
         foreach (var grp in all.GroupBy(x => (x.Kind, x.Key, x.Version)))
         {
-            var ordered = grp.OrderByDescending(x => x.Priority).ToList();
+            // Enabled rows always beat disabled rows of the same identity — an admin who explicitly
+            // disabled a high-priority Compiled citizen should not have it shadow an enabled Package row.
+            var ordered = grp.OrderByDescending(x => x.Enabled ? 1 : 0)
+                             .ThenByDescending(x => x.Priority).ToList();
             for (var i = 0; i < ordered.Count; i++)
                 ordered[i].IsShadowed = i != 0;
         }
