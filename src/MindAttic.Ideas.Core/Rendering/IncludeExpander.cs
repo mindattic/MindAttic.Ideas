@@ -50,21 +50,14 @@ public static class IncludeExpander
         {
             switch (node)
             {
-                // Script/style inner content must be emitted raw; untrusted content drops it entirely.
+                // Script/style: author content is emitted as-is; untrusted content drops the entire element —
+                // an empty <script></script> with attributes (e.g. nonce="…") is still an XSS vector surface.
                 case IElement el when el.LocalName is "script" or "style":
+                    if (ctx.Trust != ContentTrust.Author) break;   // untrusted: drop the whole element
                     b.OpenElement(c.Next++, el.LocalName);
                     foreach (var attr in el.Attributes)
-                    {
-                        // Strip XSS vectors from untrusted <script>/<style>: event handlers, unsafe-scheme URIs,
-                        // and <script src> which would load an arbitrary external script file.
-                        if (ctx.Trust != ContentTrust.Author &&
-                            (attr.Name.StartsWith("on", StringComparison.OrdinalIgnoreCase) ||
-                             (el.LocalName is "script" && string.Equals(attr.Name, "src", StringComparison.OrdinalIgnoreCase)) ||
-                             IsUnsafeUri(attr.Value)))
-                            continue;
                         b.AddAttribute(c.Next++, attr.Name, attr.Value);
-                    }
-                    if (ctx.Trust == ContentTrust.Author) b.AddMarkupContent(c.Next++, el.InnerHtml);
+                    b.AddMarkupContent(c.Next++, el.InnerHtml);
                     b.CloseElement();
                     break;
 

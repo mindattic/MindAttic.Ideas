@@ -276,4 +276,33 @@ public class RenderGuardTests
             Is.Empty.Or.All.Not.StartWith("javascript:"),
             "javascript: URI in untrusted href must be stripped");
     }
+
+    [Test]
+    public void Untrusted_ScriptElement_IsDroppedEntirely()
+    {
+        // Regression: untrusted <script> was emitted as an empty open/close pair even though inner HTML
+        // was dropped; an empty <script nonce="..."></script> is still an XSS attack surface.
+        // Now the entire element is omitted from the render tree for untrusted content.
+        const string html = """<script nonce="abc">alert(1)</script>""";
+
+        var catalog = new FakeCatalog { Outcome = ContentResolution.Missing };
+        var builder = new RenderTreeBuilder();
+        var seq = 1;
+        IncludeExpander.Expand(builder, ref seq, html, catalog, new PassGate(), ContentTrust.Untrusted,
+            pageId: Guid.NewGuid(), slug: "test");
+
+        var frames = builder.GetFrames();
+        var scriptFound = false;
+        for (var i = 0; i < frames.Count; i++)
+        {
+            var f = frames.Array[i];
+            if (f.FrameType == RenderTreeFrameType.Element &&
+                string.Equals(f.ElementName, "script", StringComparison.OrdinalIgnoreCase))
+            {
+                scriptFound = true;
+                break;
+            }
+        }
+        Assert.That(scriptFound, Is.False, "untrusted <script> element must be omitted entirely from the render tree");
+    }
 }

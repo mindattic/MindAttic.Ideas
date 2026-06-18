@@ -75,6 +75,10 @@ public sealed class PageHistoryService(IDbContextFactory<CmsDbContext> dbFactory
         page.IsPublished = snapshot.IsPublished;
         page.Enabled = snapshot.Enabled;
         page.WorkflowState = snapshot.WorkflowState;
+        // Keep IsPublished in sync with the restored WorkflowState so the invariant
+        // WorkflowState == "Published" ↔ IsPublished == true is maintained after restore.
+        if (snapshot.WorkflowState is not null)
+            page.IsPublished = string.Equals(snapshot.WorkflowState, "Published", StringComparison.OrdinalIgnoreCase);
         page.SeoTitle = snapshot.SeoTitle;
         page.ActivePluginsJson = snapshot.ActivePluginsJson;
         page.IsRestricted = snapshot.IsRestricted;

@@ -180,4 +180,34 @@ public class SlugRedirectServiceTests
         var history = await svc.GetHistoryAsync(pageId);
         Assert.That(history, Is.Empty, "no history entry created for the page's own current slug");
     }
+
+    [Test]
+    public async Task CheckRedirect_LegacyMixedCaseSlug_ReturnsNormalizedTarget()
+    {
+        // Regression: CheckRedirectAsync returned match.Slug verbatim; a legacy page with a mixed-case
+        // slug in the DB produced a non-lowercase 301 target, breaking URL canonicalization.
+        var factory = NewFactory();
+        var svc = new SlugRedirectService(factory);
+
+        await using var setup = factory.CreateDbContext();
+        var page = new CmsPage
+        {
+            // Stored with mixed case — simulates a legacy row written before slug normalisation was enforced.
+            Slug = "About-Us", Title = "About", Kind = PageKind.Data,
+            BodyTrust = ContentTrust.Untrusted,
+            IsPublished = true, Enabled = true, CreatedUtc = DateTime.UtcNow,
+        };
+        setup.Pages.Add(page);
+        await setup.SaveChangesAsync();
+        setup.PageSlugHistory.Add(new PageSlugHistory
+        {
+            PageId = page.Id, OldSlug = "old-about", IsVanity = false, CreatedUtc = DateTime.UtcNow,
+        });
+        await setup.SaveChangesAsync();
+
+        var result = await svc.CheckRedirectAsync(null, "old-about");
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.TargetSlug, Is.EqualTo("about-us"), "target slug must be normalized to lowercase");
+    }
 }

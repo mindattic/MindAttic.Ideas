@@ -114,7 +114,10 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
             .FirstOrDefaultAsync(d => d.Id == defId, ct);
         if (def is null) return (false, "Workflow definition not found.");
 
-        var fromState = page.WorkflowState ?? def.InitialState;
+        // WorkflowState may be null on a published page (e.g. cleared via a direct save). Derive the
+        // effective from-state from IsPublished so "Published → Draft" transitions still work.
+        var fromState = page.WorkflowState
+            ?? (page.IsPublished ? "Published" : def.InitialState);
         var transition = def.Transitions.FirstOrDefault(t =>
             string.Equals(t.FromState, fromState, StringComparison.OrdinalIgnoreCase) &&
             string.Equals(t.ToState, toState, StringComparison.OrdinalIgnoreCase));
@@ -156,10 +159,9 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
 
         page.WorkflowDefinitionId = workflowDefinitionId;
         page.WorkflowState = def.InitialState;
-        // Published/unpublished sync: assigning a workflow always resets to InitialState.
-        // If that state is not "Published", the page must not remain live.
-        if (!string.Equals(def.InitialState, "Published", StringComparison.OrdinalIgnoreCase))
-            page.IsPublished = false;
+        // Published/unpublished sync: derive IsPublished from InitialState in both directions so
+        // a "Published" initial state also publishes the page (not just non-Published unpublishes).
+        page.IsPublished = string.Equals(def.InitialState, "Published", StringComparison.OrdinalIgnoreCase);
         page.ModifiedUtc = DateTime.UtcNow;
 
         await db.SaveChangesAsync(ct);

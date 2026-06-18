@@ -166,4 +166,62 @@ public class PageHistoryServiceTests
         var svc = new PageHistoryService(NewFactory());
         Assert.ThrowsAsync<InvalidOperationException>(() => svc.GetHistoryAsync(1));
     }
+
+    [Test]
+    public async Task RestoreAsync_WorkflowStateDraft_OverridesIsPublishedToFalse()
+    {
+        // Regression: RestoreAsync applied snapshot.IsPublished and snapshot.WorkflowState independently;
+        // restoring a snapshot with WorkflowState="Draft" but IsPublished=true produced an inconsistent page.
+        // Now WorkflowState drives IsPublished when non-null.
+        var factory = NewFactory();
+        var page = await SeedPageAsync(factory);   // IsPublished = true
+
+        var snapshot = new PageHistoryEntry(
+            page.Id, "about", "Old", IsPublished: true, Enabled: true, PageKind.Data,
+            null, null, "<p>x</p>", null, null, ContentTrust.Untrusted,
+            DateTime.UtcNow.AddHours(-2), DateTime.UtcNow.AddHours(-1),
+            WorkflowState: "Draft");
+
+        await new PageHistoryService(factory).RestoreAsync(snapshot, new ClaimsPrincipal());
+
+        await using var verify = factory.CreateDbContext();
+        var restored = await verify.Pages.FindAsync(page.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(restored!.WorkflowState, Is.EqualTo("Draft"));
+            Assert.That(restored.IsPublished, Is.False, "WorkflowState=Draft must override IsPublished to false");
+        });
+    }
+
+    [Test]
+    public async Task RestoreAsync_WorkflowStatePublished_OverridesIsPublishedToTrue()
+    {
+        // Counterpart: WorkflowState="Published" must force IsPublished=true even if snapshot.IsPublished=false.
+        var factory = NewFactory();
+        var page = await SeedPageAsync(factory);
+
+        // Unpublish so we can verify the restore drives it back to published via WorkflowState.
+        await using (var unpublish = factory.CreateDbContext())
+        {
+            var row = await unpublish.Pages.FindAsync(page.Id);
+            row!.IsPublished = false;
+            await unpublish.SaveChangesAsync();
+        }
+
+        var snapshot = new PageHistoryEntry(
+            page.Id, "about", "Old", IsPublished: false, Enabled: true, PageKind.Data,
+            null, null, "<p>x</p>", null, null, ContentTrust.Untrusted,
+            DateTime.UtcNow.AddHours(-2), DateTime.UtcNow.AddHours(-1),
+            WorkflowState: "Published");
+
+        await new PageHistoryService(factory).RestoreAsync(snapshot, new ClaimsPrincipal());
+
+        await using var verify = factory.CreateDbContext();
+        var restored = await verify.Pages.FindAsync(page.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(restored!.WorkflowState, Is.EqualTo("Published"));
+            Assert.That(restored.IsPublished, Is.True, "WorkflowState=Published must override IsPublished to true");
+        });
+    }
 }

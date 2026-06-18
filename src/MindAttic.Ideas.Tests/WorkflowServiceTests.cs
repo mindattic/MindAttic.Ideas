@@ -268,6 +268,77 @@ public class WorkflowServiceTests
     }
 
     [Test]
+    public async Task AssignWorkflow_PublishedInitialState_PublishesPage()
+    {
+        // Regression: AssignWorkflowAsync only cleared IsPublished for non-"Published" initial states;
+        // it never SET IsPublished when InitialState WAS "Published", leaving an unpublished page unpublished
+        // even after assignment to a workflow that starts in the published state.
+        var factory = NewFactory();
+        var svc = new WorkflowService(factory);
+        var def = await svc.CreateDefinitionAsync("Publish-first", "Published");
+
+        await using var setupDb = factory.CreateDbContext();
+        var page = new CmsPage
+        {
+            Slug = "draft-page", Title = "Draft",
+            Kind = MindAttic.Ideas.Abstractions.PageKind.Data,
+            BodyTrust = MindAttic.Ideas.Abstractions.ContentTrust.Untrusted,
+            IsPublished = false, Enabled = true, CreatedUtc = DateTime.UtcNow,
+        };
+        setupDb.Pages.Add(page);
+        await setupDb.SaveChangesAsync();
+
+        await svc.AssignWorkflowAsync(page.Id, def.Id);
+
+        await using var db = factory.CreateDbContext();
+        var updated = await db.Pages.FindAsync(page.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(updated!.WorkflowState, Is.EqualTo("Published"));
+            Assert.That(updated.IsPublished, Is.True, "Published initial state must publish the page");
+        });
+    }
+
+    [Test]
+    public async Task TransitionPage_NullWorkflowStateOnPublishedPage_DerivesFromIsPublished()
+    {
+        // Regression: TransitionPageAsync used page.WorkflowState ?? def.InitialState as from-state, so a
+        // page with WorkflowState=null and IsPublished=true derived "Draft" (the initial state) as from-state,
+        // making it impossible to transition via "Published" → "Draft" on such a page.
+        var factory = NewFactory();
+        var svc = new WorkflowService(factory);
+
+        var def = await svc.CreateDefinitionAsync("Test", "Draft", isDefault: true);
+        await svc.AddTransitionAsync(def.Id, "Draft", "Published");
+        await svc.AddTransitionAsync(def.Id, "Published", "Draft", label: "Revert");
+
+        await using var setupDb = factory.CreateDbContext();
+        var page = new CmsPage
+        {
+            Slug = "null-state-page", Title = "Null State",
+            Kind = MindAttic.Ideas.Abstractions.PageKind.Data,
+            BodyTrust = MindAttic.Ideas.Abstractions.ContentTrust.Untrusted,
+            WorkflowDefinitionId = def.Id,
+            WorkflowState = null,   // null state but page is live — cleared by a direct SaveAsync
+            IsPublished = true, Enabled = true, CreatedUtc = DateTime.UtcNow,
+        };
+        setupDb.Pages.Add(page);
+        await setupDb.SaveChangesAsync();
+
+        var (ok, err) = await svc.TransitionPageAsync(page.Id, "Draft", Admin());
+
+        Assert.That(ok, Is.True, err ?? "transition must succeed when from-state is derived from IsPublished");
+
+        await using var db = factory.CreateDbContext();
+        var updated = await db.Pages.FindAsync(page.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(updated!.WorkflowState, Is.EqualTo("Draft"));
+            Assert.That(updated.IsPublished, Is.False, "transitioning away from Published must clear IsPublished");
+        });
+    }
+
+    [Test]
     public async Task AssignWorkflow_ResetsStateEvenWhenPageAlreadyHasState()
     {
         // Regression: ??= left old WorkflowState intact when reassigning a different workflow.

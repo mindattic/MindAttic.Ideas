@@ -50,10 +50,15 @@ public sealed class PageTreeFeature(IDbContextFactory<CmsDbContext> factory) : I
 
             var byParent = all.GroupBy(p => p.ParentId).ToDictionary(g => g.Key, g => g.ToList());
 
+            // visited guards against parent cycles written outside the app; without it a cycle causes StackOverflow.
+            var visited = new HashSet<int> { root.Id };
             IReadOnlyList<ChildPageNode> BuildNodes(int parentId)
             {
                 if (!byParent.TryGetValue(parentId, out var kids)) return Array.Empty<ChildPageNode>();
-                return kids.Select(k => new ChildPageNode(k.Slug, k.Title, BuildNodes(k.Id))).ToList();
+                return kids
+                    .Where(k => visited.Add(k.Id))
+                    .Select(k => new ChildPageNode(k.Slug, k.Title, BuildNodes(k.Id)))
+                    .ToList();
             }
 
             return BuildNodes(root.Id);

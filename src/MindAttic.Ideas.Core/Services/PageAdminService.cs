@@ -148,7 +148,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             // Auto-301: record the old slug before overwriting it, so the router can redirect stale links.
             // The empty-string guard is intentionally absent: renaming the home page (slug="") must also
             // produce a history entry so the old "/" can redirect to the new slug.
-            if (found.Slug != slug)
+            if (!string.Equals(found.Slug, slug, StringComparison.OrdinalIgnoreCase))
             {
                 var alreadyRecorded = await db.PageSlugHistory.AnyAsync(
                     h => h.PageId == found.Id && h.OldSlug == found.Slug, ct);
@@ -235,7 +235,22 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         if (db.ChangeTracker.HasChanges())
         {
             try { await db.SaveChangesAsync(ct); }
-            catch (DbUpdateException) { /* meta-tag / access-list save failed; the page itself was committed */ }
+            catch (DbUpdateException)
+            {
+                // meta-tag / access-list save failed; the page itself was already committed.
+                // If the page is restricted but the ACL rows failed to persist, no user would be able to
+                // view it — roll back IsRestricted so the page stays accessible rather than silently locked.
+                if (page.IsRestricted)
+                {
+                    try
+                    {
+                        await using var fix = await dbFactory.CreateDbContextAsync(ct);
+                        var row = await fix.Pages.FirstOrDefaultAsync(p => p.Id == page.Id, ct);
+                        if (row is not null) { row.IsRestricted = false; await fix.SaveChangesAsync(ct); }
+                    }
+                    catch { /* best effort */ }
+                }
+            }
         }
 
         return new PageSaveResult(true, page.Id, trust, null);

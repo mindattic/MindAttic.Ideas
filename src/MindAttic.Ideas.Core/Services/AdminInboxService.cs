@@ -43,6 +43,12 @@ public sealed class AdminInboxService(IDbContextFactory<CmsDbContext> dbFactory)
                     existing.CreatedUtc = DateTime.UtcNow;
                     await db.SaveChangesAsync(ct);
                 }
+                else if (existing.Body != body)
+                {
+                    // Still "New" but the body may reference a different page/slug now — keep it current.
+                    existing.Body = body;
+                    await db.SaveChangesAsync(ct);
+                }
                 return; // still "New" -> collapse the repeat (no duplicate row)
             }
 

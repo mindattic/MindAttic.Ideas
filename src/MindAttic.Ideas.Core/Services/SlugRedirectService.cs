@@ -53,7 +53,7 @@ public sealed class SlugRedirectService(IDbContextFactory<CmsDbContext> dbFactor
 
         if (match is null) return null;
         if (string.Equals(match.Slug, slug, StringComparison.OrdinalIgnoreCase)) return null; // same slug, no redirect needed
-        return new SlugRedirectResult(match.Slug, 301);
+        return new SlugRedirectResult(match.Slug.ToLowerInvariant(), 301);
     }
 
     public async Task<bool> AddVanityRedirectAsync(int pageId, string vanitySlug, string? userId = null, CancellationToken ct = default)

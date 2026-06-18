@@ -85,4 +85,21 @@ public class AdminInboxServiceTests
 
         Assert.That(await svc.UnreadCountAsync(), Is.EqualTo(1));
     }
+
+    [Test]
+    public async Task RaiseAsync_SameDedupKey_StillNew_RefreshesBody()
+    {
+        // Regression: when collapsing a repeat of a still-"New" message, Body was never updated, so
+        // the first-ever page slug was permanently shown even if the problem moved to a different page.
+        var svc = NewService();
+        await svc.RaiseAsync("Warning", "Render", "Missing plugin", "first body", "render:missing:plugin:nav");
+        await svc.RaiseAsync("Warning", "Render", "Missing plugin", "updated body", "render:missing:plugin:nav");
+
+        var all = await svc.ListAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(all, Has.Count.EqualTo(1), "still one row");
+            Assert.That(all[0].Body, Is.EqualTo("updated body"), "body must be refreshed on still-New repeats");
+        });
+    }
 }
