@@ -146,7 +146,9 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             if (found is null) return new PageSaveResult(false, model.Id, default, "Page not found.");
 
             // Auto-301: record the old slug before overwriting it, so the router can redirect stale links.
-            if (found.Slug != slug && found.Slug is { Length: > 0 })
+            // The empty-string guard is intentionally absent: renaming the home page (slug="") must also
+            // produce a history entry so the old "/" can redirect to the new slug.
+            if (found.Slug != slug)
             {
                 var alreadyRecorded = await db.PageSlugHistory.AnyAsync(
                     h => h.PageId == found.Id && h.OldSlug == found.Slug, ct);
@@ -174,7 +176,20 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.IsPublished = model.IsPublished;
         page.Enabled = model.Enabled;
         page.IsRestricted = model.IsRestricted;
-        page.ParentId = model.ParentId == model.Id ? null : model.ParentId;   // never self-parent
+        // Cycle guard: walk up from the proposed parent; if we reach model.Id the move would form a
+        // cycle. Mirrors the same walk in MoveAsync. Existing pages only (model.Id == 0 = new page).
+        var safeParentId = model.ParentId == model.Id ? null : model.ParentId;
+        if (safeParentId.HasValue && model.Id != 0)
+        {
+            var cursorId = safeParentId;
+            for (var hops = 0; cursorId is int cid && hops < 256; hops++)
+            {
+                if (cid == model.Id) { safeParentId = null; break; }
+                cursorId = await db.Pages.IgnoreQueryFilters()
+                    .Where(p => p.Id == cid).Select(p => p.ParentId).FirstOrDefaultAsync(ct);
+            }
+        }
+        page.ParentId = safeParentId;
         page.SortOrder = model.SortOrder;
         page.BodyTrust = trust;                 // write-time trust stamp
         page.AuthoredByUserId = authoredBy;

@@ -174,6 +174,54 @@ public class PageAdminServiceTests
     }
 
     [Test]
+    public async Task Save_HomePageRename_RecordsSlugHistory()
+    {
+        // Regression: SaveAsync skipped slug-history when found.Slug was "" (home page),
+        // so renaming "/" → "/about" left no redirect and caused a 404 on the old root URL.
+        var dbName = "page_" + Guid.NewGuid().ToString("N");
+        var factory = new InMemoryFactory(dbName);
+        await using (var setup = factory.CreateDbContext())
+        {
+            setup.Sites.Add(new Site { Key = "default", Name = "Default", IsDefault = true, CreatedUtc = DateTime.UtcNow });
+            await setup.SaveChangesAsync();
+        }
+        var pageSvc = new PageAdminService(factory);
+        var slugSvc = new SlugRedirectService(factory);
+
+        var r = await pageSvc.SaveAsync(new PageEditModel { Slug = "", Title = "Home" }, Author(true));
+        Assert.That(r.Ok, Is.True, "create home page");
+
+        var renamed = await pageSvc.SaveAsync(new PageEditModel { Id = r.Id, Slug = "about", Title = "Home" }, Author(true));
+        Assert.That(renamed.Ok, Is.True, "rename succeeds");
+
+        // A PageSlugHistory row for old slug "" must now exist so the router can redirect it.
+        var history = await slugSvc.GetHistoryAsync(r.Id);
+        Assert.That(history, Is.Not.Empty, "slug history must contain an entry for the old home slug");
+        Assert.That(history.Any(h => h.OldSlug == ""), Is.True, "old home slug (empty string) must be recorded");
+    }
+
+    [Test]
+    public async Task Save_CycleViaParentId_IsPreventedSilently()
+    {
+        // Regression: SaveAsync only guarded direct self-parent (A→A), not ancestor cycles (A→B when B is
+        // under A). MoveAsync had the cycle guard; SaveAsync did not.
+        var svc = await NewServiceAsync();
+        var a = await svc.SaveAsync(new PageEditModel { Slug = "a", Title = "A" }, Author(true));
+        var b = await svc.SaveAsync(new PageEditModel { Slug = "b", Title = "B" }, Author(true));
+
+        // Establish A→B hierarchy via MoveAsync (which has the cycle guard).
+        await svc.MoveAsync(b.Id, a.Id, sortOrder: 0);
+
+        // Now try to set A's parent to B via SaveAsync — this would create A→B→A.
+        var saved = await svc.SaveAsync(
+            new PageEditModel { Id = a.Id, Slug = "a", Title = "A", ParentId = b.Id }, Author(true));
+
+        Assert.That(saved.Ok, Is.True, "save succeeds but cycle is silently cleared");
+        var summary = (await svc.ListAsync()).Single(p => p.Id == a.Id);
+        Assert.That(summary.ParentId, Is.Null, "cycle is silently cleared to null");
+    }
+
+    [Test]
     public async Task Save_WithNullSeoFields_ReturnsNullOnLoad()
     {
         var svc = await NewServiceAsync();

@@ -154,7 +154,14 @@ public sealed class PackageInstallService(
         def.AllowOverride = allowOverride;
         def.DiscoveredUtc = now;
 
-        await db.SaveChangesAsync(ct);   // pkg.Id is now generated, so the seed can stamp SourcePackageId.
+        try { await db.SaveChangesAsync(ct); }   // pkg.Id is now generated, so the seed can stamp SourcePackageId.
+        catch (DbUpdateException)
+        {
+            // Concurrent install of the same (Category,Key,Version) raced past the NoOp check above.
+            return new InstallPlan(InstallAction.NoOpAlreadyInstalled,
+                $"{manifest.Category}/{manifest.Key} v{manifest.Version} was installed by a concurrent request.",
+                MakeActiveVersion: false, []);
+        }
 
         // ---- Seed-on-install: a Page (code) package may carry data/page.json to make itself routable on
         // upload (idempotent by (SiteId, Slug); never clobbers a row another package or an admin owns). ----

@@ -4,6 +4,7 @@ using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Entities;
 using MindAttic.Ideas.Core.Services;
+using CmsPage = MindAttic.Ideas.Core.Entities.Page;
 
 namespace MindAttic.Ideas.Tests;
 
@@ -121,6 +122,43 @@ public class ContentLifecycleServiceTests
     private sealed class NullResolver : ITypeResolver
     {
         public Type? Resolve(ContentDescriptor descriptor) => null;
+    }
+
+    [Test]
+    public async Task DeleteAsync_WithBlockingPage_ReturnsBLockedWithoutPreCallToCanDelete()
+    {
+        // Regression: DeleteAsync used to call CanDeleteAsync in a separate DbContext, leaving a TOCTOU
+        // window. Now both the guard check and the delete run in one context.
+        var factory = new InMemoryFactory("lc_del_" + Guid.NewGuid().ToString("N"));
+        await using (var db = factory.CreateDbContext())
+        {
+            db.ContentDefinitions.Add(new CmsContentDefinition
+            {
+                Kind = ContentKind.Plugin, Key = "myplugin", Version = 1,
+                Origin = ContentOrigin.Package, DisplayName = "My Plugin",
+                Enabled = true, IsActive = true, IsShadowed = false, DiscoveredUtc = DateTime.UtcNow,
+            });
+            db.Pages.Add(new CmsPage
+            {
+                Slug = "home", Title = "Home",
+                Kind = PageKind.Data, BodyHtml = "{{Plugin.myplugin.V1}}",
+                BodyTrust = ContentTrust.Untrusted, Enabled = true, IsPublished = true,
+                CreatedUtc = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var catalog = new ContentCatalog(new NullResolver());
+        var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
+        var svc = new ContentLifecycleService(factory, discovery);
+
+        var result = await svc.DeleteAsync(ContentKind.Plugin, "myplugin", 1);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Blocked, Is.True, "DeleteAsync must block when a page pins the version");
+            Assert.That(result.PinnedBy, Contains.Item("home"));
+        });
     }
 
     [Test]

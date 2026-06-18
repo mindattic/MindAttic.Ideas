@@ -163,4 +163,21 @@ public class SlugRedirectServiceTests
 
         Assert.That(ok, Is.False);
     }
+
+    [Test]
+    public async Task AddVanityRedirect_CurrentSlug_IsNoOpWithNoHistoryEntry()
+    {
+        // Regression: AddVanityRedirectAsync only checked PageSlugHistory for idempotency; it did not
+        // check whether vanitySlug == page.Slug (the live slug), so it wrote a confusing history row
+        // that pointed a page's own slug back at itself.
+        var factory = NewFactory();
+        var svc = new SlugRedirectService(factory);
+        var pageId = await SeedPublishedPageAsync(factory, "about");
+
+        var ok = await svc.AddVanityRedirectAsync(pageId, "about");
+
+        Assert.That(ok, Is.True, "same-as-current returns true (success, nothing to do)");
+        var history = await svc.GetHistoryAsync(pageId);
+        Assert.That(history, Is.Empty, "no history entry created for the page's own current slug");
+    }
 }

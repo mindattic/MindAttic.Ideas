@@ -63,9 +63,9 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         if (isDefault)
         {
-            // Demote any existing default.
-            var prev = await db.WorkflowDefinitions.FirstOrDefaultAsync(d => d.IsDefault, ct);
-            if (prev is not null) prev.IsDefault = false;
+            // Demote ALL existing defaults (ToListAsync handles the edge case of pre-existing multiples).
+            var priors = await db.WorkflowDefinitions.Where(d => d.IsDefault).ToListAsync(ct);
+            foreach (var prior in priors) prior.IsDefault = false;
         }
 
         var def = new WorkflowDefinition
@@ -83,6 +83,8 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
         string? requiredRole = null, string? label = null, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
+        if (!await db.WorkflowDefinitions.AnyAsync(d => d.Id == definitionId, ct))
+            throw new InvalidOperationException($"Workflow definition {definitionId} not found.");
         var t = new WorkflowTransitionDef
         {
             WorkflowDefinitionId = definitionId,

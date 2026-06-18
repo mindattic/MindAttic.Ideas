@@ -117,19 +117,46 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
 
     public async Task<DeleteGuardResult> DeleteAsync(ContentKind kind, string key, int version, CancellationToken ct = default)
     {
-        var guard = await CanDeleteAsync(kind, key, version, ct);
-        if (guard.Blocked) return guard;
-        // Note: "not found" is handled by the re-query below (def is null → return guard at line ~122).
-
+        // Guard and delete share one context to eliminate the TOCTOU window that arises when
+        // CanDeleteAsync runs in its own context (disposed before the delete context opens).
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         var def = await db.ContentDefinitions
             .FirstOrDefaultAsync(d => d.Kind == kind && d.Key == key && d.Version == version, ct);
         if (def is null)
             return new DeleteGuardResult(false, false, false, Array.Empty<string>(), "Content definition not found.");
 
+        var pageRows = await db.Pages.IgnoreQueryFilters()
+            .Select(p => new { p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished, p.Kind, p.ComponentTypeName, p.ActivePluginsJson, p.IsDeleted })
+            .ToListAsync(ct);
+
+        var usesByType = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var pkg in await db.InstalledPackages.Where(p => p.Enabled && p.Category == "Page").ToListAsync(ct))
+        {
+            try
+            {
+                var m = ManifestReader.Read(pkg.ManifestJson);
+                if (!string.IsNullOrEmpty(m.EntryType)) usesByType[m.EntryType!] = m.Uses;
+            }
+            catch (JsonException) { }
+        }
+
+        var pages = pageRows.Select(p => new PageRef(
+            p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished,
+            p.Kind == PageKind.Code && p.ComponentTypeName is not null
+                && usesByType.TryGetValue(p.ComponentTypeName, out var u) ? u : null,
+            p.ActivePluginsJson, p.IsDeleted)).ToList();
+
+        var otherEnabled = await db.ContentDefinitions
+            .Where(d => d.Kind == kind && d.Key == key && d.Version != version && d.Enabled && d.IsActive && !d.IsShadowed)
+            .Select(d => d.Version)
+            .ToListAsync(ct);
+
+        var blocking = FindBlockingPages(kind, key, version, pages, otherEnabled);
+        if (blocking.Count > 0)
+            return new DeleteGuardResult(false, true, false, blocking, $"Blocked: {blocking.Count} page(s) still use this version.");
+
         if (def.Origin == ContentOrigin.Compiled)
         {
-            // Hard delete would be undone by the next discovery pass — disable instead.
             def.Enabled = false;
             await db.SaveChangesAsync(ct);
             await discovery.ReloadCatalogAsync(ct);
@@ -137,7 +164,7 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
                 "Compiled content can't be removed (discovery would re-add it); it was disabled instead.");
         }
 
-        db.ContentDefinitions.Remove(def);   // Package origin: safe to truly remove (Phase 5)
+        db.ContentDefinitions.Remove(def);
         await db.SaveChangesAsync(ct);
         await discovery.ReloadCatalogAsync(ct);
         return new DeleteGuardResult(true, false, false, Array.Empty<string>(), null);

@@ -60,9 +60,15 @@ public sealed class SlugRedirectService(IDbContextFactory<CmsDbContext> dbFactor
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
 
-        if (!await db.Pages.AnyAsync(p => p.Id == pageId, ct)) return false;
-
         var normalizedSlug = vanitySlug.Trim('/').ToLowerInvariant();
+
+        var currentSlug = await db.Pages.Where(p => p.Id == pageId).Select(p => (string?)p.Slug).FirstOrDefaultAsync(ct);
+        if (currentSlug is null) return false;
+
+        // Adding a vanity alias that matches the page's own current slug is a no-op — the slug is live
+        // already and adding a history entry for it creates a confusing orphaned redirect row.
+        if (string.Equals(currentSlug, normalizedSlug, StringComparison.OrdinalIgnoreCase)) return true;
+
         // Idempotent: do nothing if this (pageId, oldSlug) already exists.
         if (await db.PageSlugHistory.AnyAsync(h => h.PageId == pageId && h.OldSlug == normalizedSlug, ct))
             return true;

@@ -255,6 +255,19 @@ public class WorkflowServiceTests
     }
 
     [Test]
+    public async Task AddTransition_UnknownDefinitionId_ThrowsInvalidOperation()
+    {
+        // Regression: AddTransitionAsync silently inserted a dangling WorkflowTransitionDef row when
+        // definitionId did not exist. On SQL Server this produced an FK violation; on InMemory it was
+        // silently swallowed. Now both providers get an InvalidOperationException.
+        var factory = NewFactory();
+        var svc = new WorkflowService(factory);
+
+        Assert.ThrowsAsync<InvalidOperationException>(() =>
+            svc.AddTransitionAsync(9999, "Draft", "Published"));
+    }
+
+    [Test]
     public async Task AssignWorkflow_ResetsStateEvenWhenPageAlreadyHasState()
     {
         // Regression: ??= left old WorkflowState intact when reassigning a different workflow.
