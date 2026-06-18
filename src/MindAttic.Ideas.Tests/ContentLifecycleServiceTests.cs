@@ -275,6 +275,36 @@ public class ContentLifecycleServiceTests
     }
 
     [Test]
+    public void LoadSnapshot_SetsEnabledAndDisabledAtomically()
+    {
+        // Regression: ContentCatalog exposed public Load() and LoadDisabled() methods that updated the
+        // snapshot separately. A concurrent reader between the two calls would see a torn state — the
+        // enabled list updated but the disabled list still stale (or vice versa), making a known-disabled
+        // identity appear as Missing instead of Disabled. Both methods are now internal; LoadSnapshot is
+        // the sole public write path and atomically replaces both halves in one volatile write.
+        var catalog = new ContentCatalog(new NullResolver());
+        var enabledDesc = new ContentDescriptor
+        {
+            Kind = ContentKind.Plugin, Key = "active", Version = 1,
+            DisplayName = "Active", Category = "Plugin", Origin = ContentOrigin.Compiled,
+        };
+
+        catalog.LoadSnapshot(
+            enabled: [enabledDesc],
+            disabled: [(ContentKind.Plugin, "disabled-key", 1)]);
+
+        // Enabled winner resolves to Missing (no CLR type via NullResolver) — not Disabled.
+        Assert.That(catalog.ResolveTag(ContentKind.Plugin, "active", 1).Outcome,
+            Is.Not.EqualTo(ContentResolution.Disabled),
+            "enabled identity must not be reported as Disabled after LoadSnapshot");
+
+        // Disabled identity resolves to Disabled — both halves are set atomically.
+        Assert.That(catalog.ResolveTag(ContentKind.Plugin, "disabled-key", 1).Outcome,
+            Is.EqualTo(ContentResolution.Disabled),
+            "disabled identity must be reported as Disabled after a single LoadSnapshot call");
+    }
+
+    [Test]
     public async Task ReloadCatalogAsync_ConcurrentCalls_DoNotThrowOrDeadlock()
     {
         // Regression: ReloadCatalogAsync had no serialization lock; two concurrent admin enable/disable

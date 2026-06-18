@@ -19,11 +19,11 @@ public sealed class ContentCatalog(ITypeResolver resolver) : IContentCatalog
     private volatile CatalogSnapshot _snapshot = CatalogSnapshot.Empty;
 
     /// <summary>Replace the enabled-winners snapshot. Prefer <see cref="LoadSnapshot"/> to avoid a torn-state window.</summary>
-    public void Load(IEnumerable<ContentDescriptor> descriptors) =>
+    internal void Load(IEnumerable<ContentDescriptor> descriptors) =>
         _snapshot = _snapshot with { All = descriptors.ToArray() };
 
     /// <summary>Replace the disabled-identity snapshot. Prefer <see cref="LoadSnapshot"/> to avoid a torn-state window.</summary>
-    public void LoadDisabled(IEnumerable<(ContentKind Kind, string Key, int Version)> disabled) =>
+    internal void LoadDisabled(IEnumerable<(ContentKind Kind, string Key, int Version)> disabled) =>
         _snapshot = _snapshot with { Disabled = disabled.ToArray() };
 
     /// <summary>Replace both snapshots in a single atomic volatile write — eliminates the Disabled→Missing torn-state window.</summary>

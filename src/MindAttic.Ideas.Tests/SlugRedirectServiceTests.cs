@@ -237,4 +237,32 @@ public class SlugRedirectServiceTests
             Assert.That(result!.TargetSlug, Is.EqualTo("about"));
         });
     }
+
+    [Test]
+    public async Task AddVanityRedirect_SoftDeletedPage_ReturnsTrueAndRecordsEntry()
+    {
+        // Regression: AddVanityRedirectAsync used the default EF filter (no IgnoreQueryFilters) on the
+        // page-slug lookup, so it returned false for any soft-deleted page, making it impossible for an
+        // admin to set up a vanity alias before restoring the page.
+        var factory = NewFactory();
+        var svc = new SlugRedirectService(factory);
+
+        await using var setup = factory.CreateDbContext();
+        var page = new CmsPage
+        {
+            Slug = "archived", Title = "Archived", Kind = PageKind.Data,
+            BodyTrust = ContentTrust.Untrusted,
+            IsPublished = false, Enabled = false,
+            IsDeleted = true, DeletedUtc = DateTime.UtcNow, CreatedUtc = DateTime.UtcNow,
+        };
+        setup.Pages.Add(page);
+        await setup.SaveChangesAsync();
+
+        var ok = await svc.AddVanityRedirectAsync(page.Id, "legacy-archived", "admin");
+
+        Assert.That(ok, Is.True, "AddVanityRedirectAsync must succeed even for a soft-deleted page");
+        var history = await svc.GetHistoryAsync(page.Id);
+        Assert.That(history, Has.Count.EqualTo(1), "vanity history entry must be recorded");
+        Assert.That(history[0].OldSlug, Is.EqualTo("legacy-archived"));
+    }
 }

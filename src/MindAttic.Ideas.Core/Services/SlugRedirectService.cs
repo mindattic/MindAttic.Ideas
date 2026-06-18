@@ -65,7 +65,7 @@ public sealed class SlugRedirectService(IDbContextFactory<CmsDbContext> dbFactor
 
         var normalizedSlug = vanitySlug.Trim('/').ToLowerInvariant();
 
-        var currentSlug = await db.Pages.Where(p => p.Id == pageId).Select(p => (string?)p.Slug).FirstOrDefaultAsync(ct);
+        var currentSlug = await db.Pages.IgnoreQueryFilters().Where(p => p.Id == pageId).Select(p => (string?)p.Slug).FirstOrDefaultAsync(ct);
         if (currentSlug is null) return false;
 
         // Adding a vanity alias that matches the page's own current slug is a no-op — the slug is live

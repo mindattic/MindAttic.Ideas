@@ -39,6 +39,9 @@ public sealed class AdminInboxService(IDbContextFactory<CmsDbContext> dbFactory)
                     // Problem recurred after being resolved or dismissed — reopen so admin sees it again.
                     existing.Status = "New";
                     existing.ResolvedUtc = null;
+                    existing.Severity = severity;
+                    existing.Category = category;
+                    existing.Subject = subject;
                     existing.Body = body;
                     existing.CreatedUtc = DateTime.UtcNow;
                     await db.SaveChangesAsync(ct);

@@ -399,6 +399,29 @@ public class WorkflowServiceTests
     }
 
     [Test]
+    public async Task AddTransitionAsync_DuplicateStates_IsIdempotent_NoExtraRow()
+    {
+        // Regression: AddTransitionAsync had no dedup check on (WorkflowDefinitionId, FromState, ToState),
+        // so calling it twice with the same states created two rows. TransitionPageAsync then used
+        // FirstOrDefault on the loaded Transitions collection — the result was non-deterministic (DB
+        // ordering) and the second row was orphaned, confusing admin UIs that list all transitions.
+        // Now the method returns the existing row without inserting a duplicate.
+        var factory = NewFactory();
+        var svc = new WorkflowService(factory);
+        var def = await svc.CreateDefinitionAsync("Dedup", "Draft");
+
+        var first = await svc.AddTransitionAsync(def.Id, "Draft", "Published", requiredRole: "Editor");
+        var second = await svc.AddTransitionAsync(def.Id, "Draft", "Published", requiredRole: "Admin");
+
+        // The second call must return the existing row (same Id), not a new one.
+        Assert.That(second.Id, Is.EqualTo(first.Id), "duplicate AddTransition must return the existing row");
+        await using var db = factory.CreateDbContext();
+        var count = await db.WorkflowTransitionDefs
+            .CountAsync(t => t.WorkflowDefinitionId == def.Id && t.FromState == "Draft" && t.ToState == "Published");
+        Assert.That(count, Is.EqualTo(1), "exactly one transition row must exist after two identical AddTransition calls");
+    }
+
+    [Test]
     public async Task AssignWorkflow_SoftDeletedPage_Succeeds()
     {
         // Regression: AssignWorkflowAsync used the default EF filter and returned false for soft-deleted

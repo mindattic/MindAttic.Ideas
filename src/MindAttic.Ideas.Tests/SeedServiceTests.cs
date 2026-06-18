@@ -68,6 +68,52 @@ public class SeedServiceTests
     }
 
     [Test]
+    public async Task SeedAsync_SoftDeletedPageWithLegacyTag_IsMigrated()
+    {
+        // Regression: the legacy-tag-upgrade query (BodyHtml.Contains "<MindAttic.Ideas.") used the
+        // default EF filter (no IgnoreQueryFilters), so soft-deleted pages with old include tags were
+        // silently skipped. After undelete such pages still used the retired XML tag format, causing
+        // render failures. IgnoreQueryFilters ensures every page gets migrated regardless of IsDeleted.
+        var factory = new InMemoryFactory("seed_legacytag_" + Guid.NewGuid().ToString("N"));
+        int siteId;
+        await using (var setup = factory.CreateDbContext())
+        {
+            var site = new Site
+            {
+                Key = "default", Name = "Test", HostBindings = "",
+                DefaultThemeKey = "cyberspace", DefaultThemeVersion = 1,
+                IsDefault = true, CreatedUtc = DateTime.UtcNow,
+            };
+            setup.Sites.Add(site);
+            await setup.SaveChangesAsync();
+            siteId = site.Id;
+
+            // Insert a soft-deleted page with a legacy XML include tag.
+            setup.Pages.Add(new CmsPage
+            {
+                SiteId = siteId, Slug = "legacy-deleted", Title = "Legacy Deleted",
+                Kind = PageKind.Data,
+                BodyHtml = "<p><MindAttic.Ideas.Component.Textbox /></p>",
+                BodyTrust = ContentTrust.Untrusted,
+                IsPublished = false, Enabled = false,
+                IsDeleted = true, DeletedUtc = DateTime.UtcNow,
+                CreatedUtc = DateTime.UtcNow,
+            });
+            await setup.SaveChangesAsync();
+        }
+
+        await new SeedService(factory).SeedAsync();
+
+        await using var verify = factory.CreateDbContext();
+        var page = await verify.Pages.IgnoreQueryFilters()
+            .SingleAsync(p => p.SiteId == siteId && p.Slug == "legacy-deleted");
+        Assert.That(page.BodyHtml, Does.Not.Contain("<MindAttic.Ideas."),
+            "legacy XML tag must be migrated to {{ }} token grammar even for soft-deleted pages");
+        Assert.That(page.BodyHtml, Does.Contain("{{"),
+            "migrated body must use the {{ }} token grammar");
+    }
+
+    [Test]
     public async Task SeedAsync_FreshDb_CreatesExpectedSeedPages()
     {
         // Smoke test: a fresh DB gets the expected seeded pages from SeedAsync.

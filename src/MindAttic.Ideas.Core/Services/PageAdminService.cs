@@ -142,7 +142,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         }
         else
         {
-            var found = await db.Pages.FirstOrDefaultAsync(p => p.Id == model.Id, ct);
+            var found = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == model.Id, ct);
             if (found is null) return new PageSaveResult(false, model.Id, default, "Page not found.");
 
             // Auto-301: record the old slug before overwriting it, so the router can redirect stale links.
@@ -150,12 +150,13 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             // produce a history entry so the old "/" can redirect to the new slug.
             if (!string.Equals(found.Slug, slug, StringComparison.OrdinalIgnoreCase))
             {
+                var oldSlug = found.Slug.ToLowerInvariant();
                 var alreadyRecorded = await db.PageSlugHistory.AnyAsync(
-                    h => h.PageId == found.Id && h.OldSlug == found.Slug, ct);
+                    h => h.PageId == found.Id && h.OldSlug == oldSlug, ct);
                 if (!alreadyRecorded)
                     db.PageSlugHistory.Add(new PageSlugHistory
                     {
-                        PageId = found.Id, OldSlug = found.Slug,
+                        PageId = found.Id, OldSlug = oldSlug,
                         IsVanity = false, AddedByUserId = null,
                         CreatedUtc = now,
                     });
@@ -250,7 +251,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
                     try
                     {
                         await using var fix = await dbFactory.CreateDbContextAsync(ct);
-                        var row = await fix.Pages.FirstOrDefaultAsync(p => p.Id == page.Id, ct);
+                        var row = await fix.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == page.Id, ct);
                         if (row is not null) { row.IsRestricted = false; await fix.SaveChangesAsync(ct); }
                     }
                     catch { /* best effort */ }

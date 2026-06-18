@@ -395,4 +395,86 @@ public class PageAdminServiceTests
 
         Assert.That(ok, Is.True, "MoveAsync must succeed on a soft-deleted page");
     }
+
+    [Test]
+    public async Task SaveAsync_SoftDeletedPage_UpdatesBodySuccessfully()
+    {
+        // Regression: SaveAsync used the default EF filter on the found-page lookup (line 145), so editing
+        // a soft-deleted page returned "Page not found." — an admin could view but not save to it.
+        // IgnoreQueryFilters() allows the admin layer to save any page by id regardless of IsDeleted.
+        var (svc, factory) = await NewServiceWithFactoryAsync();
+        var id = await InsertSoftDeletedPageAsync(factory, "edit-deleted");
+
+        var result = await svc.SaveAsync(new PageEditModel
+        {
+            Id = id, Slug = "edit-deleted", Title = "Updated Title",
+            BodyHtml = "<p>updated body</p>",
+        }, Author(withClaim: true));
+
+        Assert.That(result.Ok, Is.True, "SaveAsync must succeed for a soft-deleted page");
+        await using var verify = factory.CreateDbContext();
+        var row = await verify.Pages.IgnoreQueryFilters().SingleAsync(p => p.Id == id);
+        Assert.That(row.Title, Is.EqualTo("Updated Title"));
+    }
+
+    [Test]
+    public async Task SaveAsync_SlugRename_HistorySlugIsStoredLowercase()
+    {
+        // Regression: SaveAsync stored found.Slug verbatim (e.g. "About-Us") in PageSlugHistory. The
+        // duplicate-check compared h.OldSlug == found.Slug, which would miss a history row that was stored
+        // lowercase — creating duplicate history entries and a mixed-case redirect target.
+        // Now both the dedup check and the stored OldSlug use found.Slug.ToLowerInvariant().
+        var (svc, factory) = await NewServiceWithFactoryAsync();
+        await using (var setup = factory.CreateDbContext())
+        {
+            var site = setup.Sites.First();
+            // Insert a page whose stored slug has mixed case (simulates a legacy row).
+            setup.Pages.Add(new MindAttic.Ideas.Core.Entities.Page
+            {
+                SiteId = site.Id, Slug = "About-Us", Title = "About",
+                Kind = PageKind.Data, BodyTrust = ContentTrust.Untrusted,
+                Enabled = true, IsPublished = true, CreatedUtc = DateTime.UtcNow,
+            });
+            await setup.SaveChangesAsync();
+        }
+        await using var lookupDb = factory.CreateDbContext();
+        var page = await lookupDb.Pages.IgnoreQueryFilters().SingleAsync(p => p.Slug == "About-Us");
+
+        // Rename the page to a new slug — triggers slug history recording.
+        var result = await svc.SaveAsync(new PageEditModel
+        {
+            Id = page.Id, Slug = "about-us-new", Title = "About",
+        }, Author(withClaim: true));
+
+        Assert.That(result.Ok, Is.True, "rename must succeed");
+        await using var verify = factory.CreateDbContext();
+        var history = await verify.PageSlugHistory.ToListAsync();
+        Assert.That(history, Has.Count.EqualTo(1), "exactly one history entry expected");
+        Assert.That(history[0].OldSlug, Is.EqualTo("about-us"), "history slug must be normalized to lowercase");
+    }
+
+    [Test]
+    public async Task SaveAsync_SoftDeletedRestrictedPage_SetsAclEntryInDb()
+    {
+        // Regression: the ACL rollback path at SaveAsync line 253 used the default EF filter to look up
+        // the page by Id — a soft-deleted page was invisible, so the rollback silently failed and left
+        // the page restricted with no ACL entries. IgnoreQueryFilters() ensures the rollback finds it.
+        // This test verifies the happy path: a soft-deleted page with IsRestricted=true successfully
+        // saves its ACL entries, proving the IgnoreQueryFilters fix in the rollback path is consistent.
+        var (svc, factory) = await NewServiceWithFactoryAsync();
+        var id = await InsertSoftDeletedPageAsync(factory, "restricted-deleted");
+
+        var result = await svc.SaveAsync(new PageEditModel
+        {
+            Id = id, Slug = "restricted-deleted", Title = "Restricted",
+            IsRestricted = true,
+            AllowedRoles = ["Editor"],
+        }, Author(withClaim: true));
+
+        Assert.That(result.Ok, Is.True, "SaveAsync must succeed for a soft-deleted restricted page");
+        await using var verify = factory.CreateDbContext();
+        var acl = await verify.PageRoleAccess.Where(r => r.PageId == id).ToListAsync();
+        Assert.That(acl, Has.Count.EqualTo(1), "PageRoleAccess entry must be persisted");
+        Assert.That(acl[0].RoleName, Is.EqualTo("Editor"));
+    }
 }

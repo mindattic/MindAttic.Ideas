@@ -278,6 +278,7 @@ public sealed class PackageInstallService(
             c => c.Origin == ContentOrigin.Package && c.Kind == kind && c.Key == key && c.Version == version, ct);
         if (def is not null) def.Enabled = false;
 
+        if (pkg is null && def is null) return;
         await db.SaveChangesAsync(ct);
         await discovery.ReloadCatalogAsync(ct);
     }

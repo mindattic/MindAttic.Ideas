@@ -31,7 +31,7 @@ public sealed class CmsRoleService(IDbContextFactory<CmsDbContext> dbFactory) : 
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         var cmsNames = await db.CmsRoles.AsNoTracking().OrderBy(r => r.Name).Select(r => r.Name).ToListAsync(ct);
         // Built-in auth roles first, then CMS-defined roles.
-        return new[] { "User", MaRoles.Admin }.Concat(cmsNames).Distinct().ToList();
+        return new[] { "User", MaRoles.Admin }.Concat(cmsNames).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public async Task<(bool Ok, string? Error)> CreateRoleAsync(string name, string? description = null, CancellationToken ct = default)

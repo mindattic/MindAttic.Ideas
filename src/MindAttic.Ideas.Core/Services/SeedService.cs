@@ -184,7 +184,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         // One-time data upgrade: rewrite any data page still using the retired <MindAttic.Ideas.…/> include
         // tags to the {{ … }} token grammar. Idempotent — the filter excludes already-converted bodies, so
         // this is a no-op once the cutover is done. (SQL has no regex, so the rewrite is done here in code.)
-        var legacy = await db.Pages
+        var legacy = await db.Pages.IgnoreQueryFilters()
             .Where(p => p.BodyHtml != null && p.BodyHtml.Contains("<MindAttic.Ideas."))
             .ToListAsync(ct);
         var upgraded = 0;

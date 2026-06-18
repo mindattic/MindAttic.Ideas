@@ -85,6 +85,12 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         if (!await db.WorkflowDefinitions.AnyAsync(d => d.Id == definitionId, ct))
             throw new InvalidOperationException($"Workflow definition {definitionId} not found.");
+        // Idempotent: if (definitionId, fromState, toState) already exists, return it without a duplicate row.
+        var existing = await db.WorkflowTransitionDefs.FirstOrDefaultAsync(
+            t => t.WorkflowDefinitionId == definitionId
+                 && t.FromState == fromState
+                 && t.ToState == toState, ct);
+        if (existing is not null) return existing;
         var t = new WorkflowTransitionDef
         {
             WorkflowDefinitionId = definitionId,

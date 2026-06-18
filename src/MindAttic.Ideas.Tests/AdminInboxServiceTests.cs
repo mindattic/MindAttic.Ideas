@@ -120,6 +120,32 @@ public class AdminInboxServiceTests
     }
 
     [Test]
+    public async Task RaiseAsync_ReopenAfterResolve_UpdatesSeverityCategoryAndSubject()
+    {
+        // Regression: the reopen path (status Resolved/Read → New) updated Status, Body, and CreatedUtc
+        // but NOT Severity, Category, or Subject. An escalated recurrence (e.g. Warning→Error) would be
+        // silently stored with the old, lower Severity, hiding the escalation from the admin.
+        var svc = NewService();
+        await svc.RaiseAsync("Warning", "Render", "Old Subject", "old body", "key:reopen-fields");
+        var id = (await svc.ListAsync())[0].Id;
+        await svc.ResolveAsync(id);
+
+        // Reopen with escalated severity, different category, and new subject.
+        await svc.RaiseAsync("Error", "System", "New Subject", "new body", "key:reopen-fields");
+
+        var all = await svc.ListAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(all, Has.Count.EqualTo(1), "still one row (reopened, not duplicated)");
+            Assert.That(all[0].Status, Is.EqualTo("New"), "status must be reopened to New");
+            Assert.That(all[0].Severity, Is.EqualTo("Error"), "Severity must be updated on reopen");
+            Assert.That(all[0].Category, Is.EqualTo("System"), "Category must be updated on reopen");
+            Assert.That(all[0].Subject, Is.EqualTo("New Subject"), "Subject must be updated on reopen");
+            Assert.That(all[0].Body, Is.EqualTo("new body"), "Body must be updated on reopen");
+        });
+    }
+
+    [Test]
     public async Task ResolveAsync_AlreadyResolved_IsIdempotent_AndPreservesOriginalTimestamp()
     {
         // Regression: ResolveAsync had no idempotency guard; a second call re-wrote ResolvedUtc to

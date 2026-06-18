@@ -176,6 +176,29 @@ public class PackageInstallServiceTests
             Is.EqualTo(ContentResolution.Missing));
     }
 
+    [Test]
+    public async Task DisableAsync_NotFoundPackageAndDef_IsNoOp_NothingModified()
+    {
+        // Regression: DisableAsync called SaveChangesAsync and ReloadCatalogAsync unconditionally — even
+        // when both the InstalledPackage row and the CmsContentDefinition row were not found. This caused
+        // a spurious catalog reload (and a DB round-trip) for every disable call against a non-existent
+        // key. The guard `if (pkg is null && def is null) return;` makes the no-op truly zero-cost.
+        var (svc, factory, catalog, _) = NewService();
+        // Pre-fill catalog with a real entry so we can verify it stays untouched.
+        await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin"), allowOverride: false);
+        var snapshotBefore = catalog.All.ToList();
+
+        // Disable a key that doesn't exist — must complete without throwing and without modifying DB.
+        Assert.DoesNotThrowAsync(() => svc.DisableAsync("Plugin", "nonexistent", 99));
+
+        // Catalog still has the original entry; no stray rows were written.
+        Assert.That(catalog.All.Count, Is.EqualTo(snapshotBefore.Count),
+            "catalog must be unmodified after a no-op DisableAsync call");
+        await using var db = factory.CreateDbContext();
+        Assert.That(db.InstalledPackages.Count(), Is.EqualTo(1), "only the pre-existing package row exists");
+        Assert.That(db.ContentDefinitions.Count(), Is.EqualTo(1), "only the pre-existing definition row exists");
+    }
+
     private static MemoryStream PackageRequiring(string depRef) =>
         IdeaTestArchive.Build(new Dictionary<string, string>
         {
