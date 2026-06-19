@@ -1,49 +1,78 @@
 # MindAttic.Ideas.Library
 
-The **first-party library of `.idea` components** for [MindAttic.Ideas](../MindAttic.Ideas) — one home
-for every Theme, Plugin, and Component that ships *with* the CMS, instead of one git repo per piece.
+The **first-party library of `.idea` citizens** for [MindAttic.Ideas](../README.md) — one repo for every
+Theme, Plugin, and Component that ships with the CMS.
 
-This repo is **separate from the CMS host**. The CMS (`MindAttic.Ideas`) is standalone and never references
-anything here — it only installs the packed `.idea` files as **optional** content. The only thing these
-projects compile against is the frozen `MindAttic.Ideas.Abstractions` SDK in the sibling CMS repo.
+The CMS never references this library at compile time. It only installs the packed `.idea` files as
+optional content. Each project here compiles against the frozen `MindAttic.Ideas.Abstractions` SDK only.
 
 ## The one rule: the asset bundle is the single source of truth
 
-Each component **owns its assets** (js/css/html) in its own `assets/` folder — copied here once, never
-staged from another repo. That single bundle serves all three consumers:
+Each citizen **owns its assets** in its own `assets/` folder. That bundle serves all three consumers:
 
-| Consumer | Takes the bundle as… |
+| Consumer | Uses the bundle as… |
 |---|---|
-| **Raw `.html` pages** | links `assets/*.css` / `assets/*.js` directly (see each component's `assets/demo.html`) |
-| **Standalone Blazor apps** (IdiotProof, …) | references the component RCL, or links the same `assets/` |
+| **Raw `.html` pages** | links `assets/*.css` / `assets/*.js` directly (see each `assets/demo.html`) |
+| **Standalone Blazor apps** | references the component RCL, or links the same `assets/` |
 | **The MindAttic.Ideas CMS** | uploads the packed `.idea` (assets bundled into `wwwroot/`) |
 
-Three packagings of one thing — not three projects. No duplication, no cross-repo coupling.
+Three packagings of one thing — not three projects.
 
 ## Layout
 
 ```
-Themes/      Cyberspace, Light, Dark, Spring, Summer, Autumn, Winter, Hardware  (8)
-Plugins/     OutfitFont, AtticFont, SacredGeometry, Tooltip, BackHomeM, Cyberspace (effects),
-             NavMenu, Breadcrumbs, Footer, PinFooter, BackToTop, SocialLinks  (12)
-Components/  HelloWorld, Textbox, Hero, HardwareHero, Card, Accordion, Tabs, TabBoard, Gallery,
-             Carousel, Callout, CodeBlock, VideoEmbed, ContactForm, ModalPopup, TableOfContents,
-             LegionPersonas, IdeasBrochure, Frontpage, MindAtticFrontpage, ChiMesh, Claudia,
-             WebSnapshot  (23)
-dist/        packed *.idea — the CMS seeds these as optional installable content
-             (no Pages/ — pages are CMS DB records, MAIL-LAW-8; the parked _wip sources were
-              deleted as no longer applicable, MAIL-A4)
+library/
+  Themes/      Cyberspace, Light, Dark, Spring, Summer, Autumn, Winter, Hardware  (8)
+  Plugins/     Tooltip, OutfitFont, AtticFont, SacredGeometry, Cyberspace,
+               NavMenu, Breadcrumbs, Footer, PinFooter, BackToTop, BackHomeM,
+               SocialLinks  (12)
+  Components/  HelloWorld, Textbox, Card, Accordion, Tabs, TabBoard, Gallery,
+               Carousel, Callout, CodeBlock, VideoEmbed, ContactForm, ModalPopup,
+               Hero, HardwareHero, TableOfContents, LegionPersonas, IdeasBrochure,
+               WebSnapshot, Claudia, ChiMesh, MindAtticFrontpage, Frontpage  (23)
+  dist/        packed *.idea — seeded into the CMS on startup as optional content
 ```
 
-Each component is its own small project (so each `.idea` is independently versioned and uploadable).
-Common build settings + the Abstractions reference live once in `Directory.Build.props`.
+**43 `.idea`s total** (MAIL-A6). Each project is its own small csproj so each `.idea` is independently
+versioned and uploadable. Common build settings + the Abstractions reference live once in
+`Directory.Build.props`.
 
-## Build & pack a component
+## Build & pack
+
+Build one citizen:
 
 ```pwsh
-dotnet build -c Release Themes/Cyberspace
+dotnet build -c Release Plugins/Tooltip
+```
+
+Build everything:
+
+```pwsh
+dotnet build -c Release MindAttic.Ideas.Library.slnx
+```
+
+Pack a citizen to `dist/` (SDK CLI is in the sibling CMS repo):
+
+```pwsh
 dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- pack `
-  --assembly Themes/Cyberspace/bin/Release/net10.0/MindAttic.Ideas.Theme.Cyberspace.dll `
+  --assembly Plugins/Tooltip/bin/Release/net10.0/MindAttic.Ideas.Plugin.Tooltip.dll `
   --out ./dist `
+  --wwwroot Plugins/Tooltip/assets `
   --refs ../MindAttic.Ideas/src/MindAttic.Ideas.Abstractions/bin/Debug/net10.0
 ```
+
+Then inspect or verify:
+
+```pwsh
+dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- inspect ./dist/MindAttic.Ideas.Plugin.Tooltip.V1.idea
+dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- verify ./dist
+```
+
+See [`docs/AUTHORING.md`](../docs/AUTHORING.md) for the full authoring guide (adding a new citizen, composing,
+uploading).
+
+## Codex docs
+
+- [`docs/BIBLE.md`](docs/BIBLE.md) — L0 source of truth (architecture, laws)
+- [`docs/AMENDMENTS.md`](docs/AMENDMENTS.md) — L1 append-only change log (amendment wins over the bible)
+- [`docs/USER_STORIES.md`](docs/USER_STORIES.md) — L2 test-cited stories

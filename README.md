@@ -90,17 +90,17 @@ enhance"**:
 
 - You **never mutate** `Cyberspace.V1`. You ship `Cyberspace.V2` **alongside** it; versions coexist.
 - A tag may **pin** (`.V1`) when you care, or **float to latest** (no version / `.Latest`) when you don't
-  — so composing a `TabWidget` + `TabButton` + `TabPage` doesn't make you juggle versions.
+  — so composing a `Tabs` + `TabBoard` + `Accordion` doesn't make you juggle versions.
 
 ### Lifecycle & integrity rules 📋 *(data model ✅; enforcement with Phase-2 admin)*
 - **A page must never be invalid.** At render, a missing/disabled reference degrades to a visible
   placeholder + fires an **Admin Inbox** alert — never a crash.
-- **Disabled = a version that exists but can't be used until re-enabled** (Page, Widget, Theme).
+- **Disabled = a version that exists but can't be used until re-enabled** (Page, Plugin, Component, Theme).
 - **Delete is version-specific and reference-guarded:** you can't delete `Tooltip.V11` while any page
   pins it. Shipping `V12` doesn't free `V11` — each page must first be migrated (`.V11`→`.V12`) until
   nothing references `V11`. A floating (`latest`) reference is fine as long as *some* enabled version remains.
 - **Wiki-like history** via SQL Server **temporal (system-versioned) tables**: every Page version records
-  which Widget/Theme versions it carried, so you can inspect — and roll back to — any prior state.
+  which Plugin/Component/Theme versions it carried, so you can inspect — and roll back to — any prior state.
 
 ---
 
@@ -111,7 +111,7 @@ in the CMS. Its body is exactly one token — the rest is free-form markup:
 
 ```html
 <!-- Data page body.  Theme is set in Page Properties (ThemeKey = "cyberspace") — not a tag. -->
-<MindAttic.Ideas.Widget.SacredGeometry />     <!-- capability activator: loads the geometry engine -->
+<MindAttic.Ideas.Plugin.SacredGeometry />     <!-- capability activator: loads the geometry engine -->
 
 <div class="legion-layout">
   <aside class="filters"><!-- inline HTML/JS: the left-hand filters --></aside>
@@ -126,12 +126,12 @@ in the CMS. Its body is exactly one token — the rest is free-form markup:
 
 > **Theme is a Page Property, not a token.** In the admin Page Properties panel you pick a Theme
 > from a dropdown (`ThemeKey` / `ThemeVersion` DB columns); the include expander never sees a
-> `<MindAttic.Ideas.Theme.…>` tag in the body. The body is free-form widget composition only.
+> `<MindAttic.Ideas.Theme.…>` tag in the body. The body is free-form Plugin/Component composition only.
 
 - **Theme** (`Cyberspace`) is wired via the Page Properties dropdown — supplies the chrome.
-- **Widget** (`SacredGeometry`) is a capability activator — loads the geometry engine page-wide.
+- **Plugin** (`SacredGeometry`) is a capability activator — loads the geometry engine page-wide.
 - **Inline JS/CSS/HTML** handles filters, pagination, and the modal popup — no compiled code.
-- The modal is a great **future Widget `.idea`** candidate: extract once, reuse everywhere.
+- The modal is a great **future Component `.idea`** candidate: extract once, reuse everywhere.
 
 This single page (plus its seed) replaces an entire deployed web app. Verified live 2026-06-09:
 `/personas` renders the full gallery with zero `ma-missing` placeholders.
@@ -145,7 +145,7 @@ A `.idea` is **a plain zip**. Its only required member is `idea.json`. The six-f
 ```jsonc
 {
   "manifestVersion": 1,            // schema of this file (host-gated integer)
-  "category": "Widget",            // Page | Widget | Theme   (WHAT it is)
+  "category": "Plugin",            // Page | Plugin | Component | Theme   (WHAT it is)
   "kind": "data",                  // data | code             (HOW it renders)
   "key": "tooltip",                // stable identity, never the CLR type name
   "version": 1,                    // whole-number content version (pins + asset URL segment)
@@ -221,7 +221,7 @@ MindAttic.Ideas reuses the ecosystem's shared infrastructure:
   is a hard per-app trust boundary (no cross-app SSO). **Supersedes** the interim BCrypt auth in Core; the
   `Cms.AuthorRawMarkup` claim rides on its principal. Adopted once the package ships (AMENDMENTS **A16**).
 - **[MindAttic.UiUx](https://github.com/mindattic/MindAttic.UiUx)** — the **single canonical source** for
-  all official Widgets and Themes. UiUx has **no build**: one source distributed as **many
+  all official Plugins, Components, and Themes. UiUx has **no build**: one source distributed as **many
   wrappers/exports**:
 
   ```
