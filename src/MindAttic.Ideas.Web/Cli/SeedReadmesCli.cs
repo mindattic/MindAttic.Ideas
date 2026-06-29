@@ -19,15 +19,35 @@ public static class SeedReadmesCli
 
     static readonly ProjectDef[] Projects =
     [
-        new("ideas",         "MindAttic Ideas",     @"D:\Projects\MindAttic\MindAttic.Ideas\README.md"),
-        new("idiotproof",    "IdiotProof",          @"D:\Projects\MindAttic\IdiotProof\README.md"),
-        new("vault",         "MindAttic Vault",     @"D:\Projects\MindAttic\MindAttic.Vault\README.md"),
-        new("legion",        "MindAttic Legion",    @"D:\Projects\MindAttic\MindAttic.Legion\README.md"),
-        new("thinktank",     "ThinkTank",           @"D:\Projects\MindAttic\ThinkTank\README.md"),
-        new("tutor",         "Tutor",               @"D:\Projects\MindAttic\Tutor\README.md"),
-        new("taxrate",       "TaxRateCollector",    @"D:\Projects\MindAttic\TaxRateCollector\README.md"),
-        new("psst",          "MindAttic Psst",      @"D:\Projects\MindAttic\MindAttic.Psst\README.md"),
-        new("streetsamurai", "StreetSamurai",       @"D:\Projects\MindAttic\StreetSamurai\README.md"),
+        // ---- Original 9 ----
+        new("ideas",            "MindAttic Ideas",        @"D:\Projects\MindAttic\MindAttic.Ideas\README.md"),
+        new("idiotproof",       "IdiotProof",             @"D:\Projects\MindAttic\IdiotProof\README.md"),
+        new("vault",            "MindAttic Vault",        @"D:\Projects\MindAttic\MindAttic.Vault\README.md"),
+        new("legion",           "MindAttic Legion",       @"D:\Projects\MindAttic\MindAttic.Legion\README.md"),
+        new("thinktank",        "ThinkTank",              @"D:\Projects\MindAttic\ThinkTank\README.md"),
+        new("tutor",            "Tutor",                  @"D:\Projects\MindAttic\Tutor\README.md"),
+        new("taxrate",          "TaxRateCollector",       @"D:\Projects\MindAttic\TaxRateCollector\README.md"),
+        new("psst",             "MindAttic Psst",         @"D:\Projects\MindAttic\MindAttic.Psst\README.md"),
+        new("streetsamurai",    "StreetSamurai",          @"D:\Projects\MindAttic\StreetSamurai\README.md"),
+        // ---- New projects ----
+        new("bugoutbag",        "BugOutBag",              @"D:\Projects\MindAttic\BugOutBag\Readme.md"),
+        new("chimesh",          "ChiMesh",                @"D:\Projects\MindAttic\ChiMesh\Readme.md"),
+        new("claudia",          "Claudia",                @"D:\Projects\MindAttic\Claudia\Readme.md"),
+        new("cursory",          "Cursory",                @"D:\Projects\MindAttic\Cursory\Readme.md"),
+        new("fractionsofacent", "FractionsOfACent",       @"D:\Projects\MindAttic\FractionsOfACent\Readme.md"),
+        new("gridgame2026",     "GridGame 2026",          @"D:\Projects\MindAttic\GridGame2026\Readme.md"),
+        new("hyperspace",       "Hyperspace",             @"D:\Projects\MindAttic\Hyperspace\Readme.md"),
+        new("mediabutler",      "MediaButler",            @"D:\Projects\MindAttic\MediaButler\Readme.md"),
+        new("authentication",   "MindAttic Authentication", @"D:\Projects\MindAttic\MindAttic.Authentication\Readme.md"),
+        new("mindattic-com",    "mindattic.com",          @"D:\Projects\MindAttic\mindattic.com\Readme.md"),
+        new("deploy",           "MindAttic Deploy",       @"D:\Projects\MindAttic\MindAttic.Deploy\Readme.md"),
+        new("helpers",          "MindAttic Helpers",      @"D:\Projects\MindAttic\MindAttic.Helpers\Readme.md"),
+        new("launcher",         "MindAttic Launcher",     @"D:\Projects\MindAttic\MindAttic.Launcher\Readme.md"),
+        new("mobile",           "MindAttic Mobile",       @"D:\Projects\MindAttic\MindAttic.Mobile\Readme.md"),
+        new("uiux",             "MindAttic UiUx",         @"D:\Projects\MindAttic\MindAttic.UiUx\Readme.md"),
+        new("mindatticcares-com", "mindatticcares.com",   @"D:\Projects\MindAttic\mindatticcares.com\Readme.md"),
+        new("ryandebraal-com",  "ryandebraal.com",        @"D:\Projects\MindAttic\ryandebraal.com\Readme.md"),
+        new("skindeep",         "SkinDeep",               @"D:\Projects\MindAttic\SkinDeep\Readme.md"),
     ];
 
     static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
