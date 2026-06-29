@@ -4,32 +4,46 @@
 @using Microsoft.AspNetCore.Components.Forms
 
 @* Static render + native form POST. user-circle.js handles toggle/submit. No auth-service calls —
-   reads the ClaimsPrincipal only. Shows nothing when unauthenticated. *@
+   reads the ClaimsPrincipal only. Shows nothing when unauthenticated.
+   ShowProfileCircle=false renders a compact inline name + sign-out link without the avatar circle. *@
 <AuthorizeView>
     <Authorized Context="ctx">
         @{
             var name = ctx.User.Identity?.Name ?? "User";
             var role = ctx.User.IsInRole("Admin") ? "Admin" : "";
         }
-        <div class="uc-root" data-uc-click="@ClickAction" style="--uc-size:@(Size)px">
-            <button type="button" class="uc-btn" aria-haspopup="true" aria-label="User menu for @name">
-                @if (!string.IsNullOrEmpty(Icon))
-                {
-                    @((MarkupString)Icon)
-                }
-                else
-                {
-                    @Initials(name)
-                }
-            </button>
-            <div class="uc-menu">
-                <div class="uc-name">@name@(role == "" ? "" : $" ({role})")</div>
-                <form class="uc-logout-form" method="post" action="/_ma-auth/logout">
-                    <AntiforgeryToken />
-                    <button type="submit" class="uc-logout">Sign out</button>
-                </form>
+        @if (ShowProfileCircle)
+        {
+            <div class="uc-root" data-uc-click="@ClickAction" style="--uc-size:@(Size)px">
+                <button type="button" class="uc-btn" aria-haspopup="true" aria-label="User menu for @name">
+                    @if (!string.IsNullOrEmpty(Icon))
+                    {
+                        @((MarkupString)Icon)
+                    }
+                    else
+                    {
+                        @Initials(name)
+                    }
+                </button>
+                <div class="uc-menu">
+                    <div class="uc-name">@name@(role == "" ? "" : $" ({role})")</div>
+                    <form class="uc-logout-form" method="post" action="/_ma-auth/logout">
+                        <AntiforgeryToken />
+                        <button type="submit" class="uc-logout">Sign out</button>
+                    </form>
+                </div>
             </div>
-        </div>
+        }
+        else
+        {
+            <span style="display:inline-block;font-size:.85rem;color:#9aa3af;">
+                @name@(role == "" ? "" : $" ({role})")
+                <form style="display:inline;margin:0;" method="post" action="/_ma-auth/logout">
+                    <AntiforgeryToken />
+                    <button type="submit" style="background:none;border:none;color:#9aa3af;font-size:.85rem;cursor:pointer;padding:0 0 0 .4rem;font:inherit;">Sign out</button>
+                </form>
+            </span>
+        }
     </Authorized>
 </AuthorizeView>
 
@@ -40,6 +54,8 @@
     [Parameter] public string? Icon { get; set; }
     /// <summary>"menu" (toggle dropdown, default) or "logout" (click circle = sign out).</summary>
     [Parameter] public string ClickAction { get; set; } = "menu";
+    /// <summary>When false, renders a compact inline name + sign-out link without the avatar circle. Default false.</summary>
+    [Parameter] public bool ShowProfileCircle { get; set; } = false;
 
     private static string Initials(string name)
     {

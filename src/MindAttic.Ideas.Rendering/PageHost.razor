@@ -6,6 +6,7 @@
     IRenderContext cascade + RenderFragment body it builds internally never serialize. (Future perf
     refinement: per-island render mode for purely-static pages — needs a serializable cascade first.) *@
 @rendermode InteractiveServer
+@implements IDisposable
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components
@@ -21,9 +22,25 @@
 @inject IServiceProvider Services
 @inject IRenderAlertSink Alerts
 @inject NavigationManager Nav
+@inject PersistentComponentState AppState
 
 @* The single, permanent render entry point for free-form pages. No zones. Resolution is by
    (SiteId, Slug) data lookup, never per-page routing — so a runtime-loaded type renders unchanged. *@
+
+@* HeadContent is always rendered. CSS fields are pre-populated via PersistentComponentState so the
+   interactive circuit's first render restores the SSR head rather than blanking it. *@
+<HeadContent>
+    @if (_context is not null && _context.Page.Meta.GetValueOrDefault("seo.description") is { Length: > 0 } desc)
+    {
+        <meta name="description" content="@desc" />
+    }
+    <CmsHead GlobalCss="@_globalCss"
+             ThemeGlobalCss="@_themeGlobalCss"
+             ThemeCss="@_themeCss"
+             ThemeScripts="@_themeScripts"
+             ComponentCss="@_componentCss"
+             ComponentScripts="@_componentScripts" />
+</HeadContent>
 
 @if (_status == Status.NotFound)
 {
@@ -38,18 +55,6 @@ else if (_status == Status.Forbidden)
 else if (_context is not null)
 {
     <PageTitle>@(_context.Page.SeoTitle ?? _context.Page.Title)</PageTitle>
-    <HeadContent>
-        @if (_context.Page.Meta.GetValueOrDefault("seo.description") is { Length: > 0 } desc)
-        {
-            <meta name="description" content="@desc" />
-        }
-        <CmsHead GlobalCss="@_globalCss"
-                 ThemeGlobalCss="@_themeGlobalCss"
-                 ThemeCss="@_themeCss"
-                 ThemeScripts="@_themeScripts"
-                 ComponentCss="@_componentCss"
-                 ComponentScripts="@_componentScripts" />
-    </HeadContent>
 
     <CascadingValue Value="_context" IsFixed="true">
         @foreach (var pt in _pluginTypes)
@@ -85,6 +90,41 @@ else if (_context is not null)
     private IReadOnlyList<string> _themeScripts = Array.Empty<string>();
     private IReadOnlyList<string> _componentCss = Array.Empty<string>();
     private IReadOnlyList<string> _componentScripts = Array.Empty<string>();
+
+    private PersistingComponentStateSubscription _persistSub;
+
+    // Restore CSS state saved during SSR prerender so the first interactive render
+    // has the head already populated, preventing the layout shift.
+    protected override void OnInitialized()
+    {
+        _persistSub = AppState.RegisterOnPersisting(PersistHeadState);
+
+        if (AppState.TryTakeFromJson<string[]>("ph-css", out var css) && css is not null)
+            _componentCss = css;
+        if (AppState.TryTakeFromJson<string[]>("ph-scripts", out var scripts) && scripts is not null)
+            _componentScripts = scripts;
+        if (AppState.TryTakeFromJson<string[]>("ph-theme-css", out var tcss) && tcss is not null)
+            _themeCss = tcss;
+        if (AppState.TryTakeFromJson<string[]>("ph-theme-global-css", out var tgcss) && tgcss is not null)
+            _themeGlobalCss = tgcss;
+        if (AppState.TryTakeFromJson<string[]>("ph-theme-scripts", out var tscripts) && tscripts is not null)
+            _themeScripts = tscripts;
+        if (AppState.TryTakeFromJson<string?>("ph-global-css", out var gcss))
+            _globalCss = gcss;
+    }
+
+    private Task PersistHeadState()
+    {
+        AppState.PersistAsJson("ph-css", _componentCss.ToArray());
+        AppState.PersistAsJson("ph-scripts", _componentScripts.ToArray());
+        AppState.PersistAsJson("ph-theme-css", _themeCss.ToArray());
+        AppState.PersistAsJson("ph-theme-global-css", _themeGlobalCss.ToArray());
+        AppState.PersistAsJson("ph-theme-scripts", _themeScripts.ToArray());
+        AppState.PersistAsJson("ph-global-css", _globalCss);
+        return Task.CompletedTask;
+    }
+
+    public void Dispose() => _persistSub.Dispose();
 
     protected override async Task OnParametersSetAsync()
     {

@@ -5,13 +5,13 @@
 @* Auth chrome — AuthorizeView-gated, so anonymous CMS visitors see nothing. UserCircle (upper-right)
    gives sign-out; the admin User-Management link sits beside it; UserTimeout arms the 30-min idle
    auto-logout only when authenticated. *@
-<div style="position:fixed;top:.75rem;right:.75rem;z-index:1100;display:flex;align-items:center;gap:.75rem;">
+<div style="display:inline-block;">
     <AuthorizeView Policy="@MaPolicies.Admin">
         @* One entry point: the tabbed admin shell (Page Management / Idea Library / Upload Idea /
            Settings / Attributions). *@
         <a href="/admin" style="color:#9aa3af;font-size:.85rem;text-decoration:none;">Admin</a>
     </AuthorizeView>
-    <UserCircle />
+    <UserCircle ShowProfileCircle="false" />
 </div>
 <UserTimeout />
 
