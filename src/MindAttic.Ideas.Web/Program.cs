@@ -214,18 +214,25 @@ if (installIdx >= 0)
     Environment.Exit(0);
 }
 
-// ---- CLI mode: --seed-hyperspace ------------------------------------------------------------
-if (args.Contains("--seed-hyperspace"))
+// ---- CLI mode: --seed <target> --------------------------------------------------------------
+// dotnet run --project src/MindAttic.Ideas.Web -- --seed from-html [--dry-run]
+// dotnet run --project src/MindAttic.Ideas.Web -- --seed from-md   [--dry-run]
+var seedIdx = Array.IndexOf(args, "--seed");
+if (seedIdx >= 0)
 {
+    var seedTarget = seedIdx + 1 < args.Length ? args[seedIdx + 1] : null;
     using var cliScope = app.Services.CreateScope();
-    Environment.Exit(await SeedHyperspaceCli.RunAsync(args, app.Services));
-}
-
-// ---- CLI mode: --seed-readmes ---------------------------------------------------------------
-if (args.Contains("--seed-readmes"))
-{
-    using var cliScope = app.Services.CreateScope();
-    Environment.Exit(await SeedReadmesCli.RunAsync(args, app.Services));
+    int exitCode;
+    if (seedTarget == "from-html")
+        exitCode = await SeedFromHtmlCli.RunAsync(args, app.Services);
+    else if (seedTarget == "from-md")
+        exitCode = await SeedReadmesCli.RunAsync(args, app.Services);
+    else
+    {
+        Console.Error.WriteLine($"[seed] Unknown target: '{seedTarget}'. Use 'from-html' or 'from-md'.");
+        exitCode = 1;
+    }
+    Environment.Exit(exitCode);
 }
 
 app.Run();
