@@ -8,6 +8,7 @@ using MindAttic.Ideas.Core.DependencyInjection;
 using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Entities;
 using MindAttic.Ideas.Core.Services;
+using MindAttic.Ideas.Web.Cli;
 using MindAttic.Ideas.Web.Components;
 using MindAttic.Ideas.Web.Services;
 using MindAttic.Legion;
@@ -193,5 +194,12 @@ app.MapRazorComponents<App>()
 
 // MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
 app.MapMindAtticAuthEndpoints();
+
+// ---- CLI mode: --seed-readmes ---------------------------------------------------------------
+if (args.Contains("--seed-readmes"))
+{
+    using var cliScope = app.Services.CreateScope();
+    Environment.Exit(await SeedReadmesCli.RunAsync(args, app.Services));
+}
 
 app.Run();
