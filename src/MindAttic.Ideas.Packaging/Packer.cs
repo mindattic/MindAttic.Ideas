@@ -76,6 +76,8 @@ public static partial class Packer
             Scope = identity.Scope,
             Uses = identity.Uses,
             Assets = assets,
+            Css = assets.Where(a => a.EndsWith(".css", StringComparison.OrdinalIgnoreCase)).ToList(),
+            Scripts = assets.Where(a => a.EndsWith(".js", StringComparison.OrdinalIgnoreCase)).ToList(),
             DependsOn = binFiles
                 .Select(f => Path.GetFileNameWithoutExtension(f))
                 .Where(n => !string.Equals(n, asm.GetName().Name, StringComparison.OrdinalIgnoreCase))
