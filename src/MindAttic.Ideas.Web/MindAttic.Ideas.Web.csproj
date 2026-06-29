@@ -10,7 +10,7 @@
   <ItemGroup>
     <!-- Ecosystem citizens (local feed): credentials + LLM/voting + auth. -->
     <PackageReference Include="MindAttic.Vault" Version="1.0.0" />
-    <PackageReference Include="MindAttic.Legion" Version="5.0.0" />
+    <PackageReference Include="MindAttic.Legion" Version="7.0.0" />
     <PackageReference Include="MindAttic.Authentication" Version="1.0.0" />
     <!-- DEBUG only: reference the auth lib as SOURCE so the dev-login bypass (MA_DEV_AUTH, defined
          only in the lib's Debug build) is present at runtime; MSBuild prefers the project output over
