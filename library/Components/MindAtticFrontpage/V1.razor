@@ -4,10 +4,9 @@
 @attribute [Uses(ContentKind.Component, "gallery", 1)]
 @attribute [Uses(ContentKind.Plugin, "footer", 1)]
 
-@* MindAttic.Ideas.Component.MindAtticFrontpage.V1 — the mindattic.com look as a self-contained widget.
-   CSS is scoped under .maf-* and served from assets/maf.css. The copyright-year script runs as a
-   scoped IIFE so it cannot touch system globals. Composes: Tabs (tab-board engine), Gallery (grid
-   layout), Footer (pin-to-bottom behavior) — all activated by CmsInclude, no ProjectReference. *@
+@* MindAttic.Ideas.Component.MindAtticFrontpage.V1
+   Content is owned as ComponentMetadata JSON (IComponentMetadataStore seam). Falls back to
+   built-in defaults on first render; admin can initialize + edit via the JSON panel in Edit mode. *@
 <CmsInclude Ref="MindAttic.Ideas.Component.Tabs.V1" />
 <CmsInclude Ref="MindAttic.Ideas.Component.Gallery.V1" />
 <CmsInclude Ref="MindAttic.Ideas.Plugin.Footer.V1" />
@@ -16,77 +15,236 @@
 
 <div class="maf">
     <header class="maf-header">
-        <h1 class="maf-wordmark">MindAttic</h1>
+        <h1 class="maf-wordmark">@settings.Wordmark</h1>
     </header>
 
     <main class="maf-sections">
-        <section class="maf-section">
-            <h2>Portfolio</h2>
-            <nav class="maf-links" aria-label="Portfolio">
-                <a href="https://ryandebraal.com" target="_blank" rel="noopener noreferrer">ryandebraal.com</a>
-                <a href="https://github.com/mindattic" target="_blank" rel="noopener noreferrer">github.com/mindattic</a>
-                <a href="https://mindatticcares.com" target="_blank" rel="noopener noreferrer">MindAttic Cares</a>
-            </nav>
-        </section>
+        @foreach (var section in settings.Sections)
+        {
+            <section class="maf-section">
+                <h2>@section.Title</h2>
 
-        <section class="maf-section">
-            <h2>Software</h2>
-            <div class="ma-tabs ma-tabs-board" data-closed>
-                <section data-title="Ciao-ChatGpt-Bonjour-Claude"><p>JavaScript migration tool exporting full ChatGPT conversation history into Claude Projects via the Anthropic API.</p><p><a href="https://github.com/mindattic/Ciao-ChatGpt-Bonjour-Claude" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="Cursory"><p>Repository on GitHub — see source for details.</p><p><a href="https://github.com/mindattic/Cursory" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="GridGame2026"><p>Unity tactical grid RPG — 2D sprites on a 3D board, drag-and-slide hero movement, pincer-attack combat, Grandia-style timeline.</p><p><a href="https://github.com/mindattic/GridGame2026" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="IdiotProof"><p>Automated stock trading platform — .NET Blazor Server + a console Monitor evaluating active strategies 24/7, scripted by the IdiotScript fluent DSL.</p><p><a href="https://github.com/mindattic/IdiotProof" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="MediaButler"><p>Media library organizer — point it at a folder of messy downloads and it renames, tags, and files everything into place.</p><p><a href="https://github.com/mindattic/MediaButler" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="mindatticcares.com"><p>Repository on GitHub — see source for details.</p><p><a href="https://github.com/mindattic/mindatticcares.com" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="ryandebraal.com"><p>Single-file HTML resume — one hand-authored index.htm, vanilla HTML/CSS/JS, no build step, 15 themes.</p><p><a href="https://github.com/mindattic/ryandebraal.com" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="StreetSamurai"><p>Blazor Server app for authoring long-form fiction — SQL Server canon with vector embeddings and a directional entity graph.</p><p><a href="https://github.com/mindattic/StreetSamurai" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="TaxRateCollector"><p>US sales-tax rate database for 14,000+ jurisdictions — Blazor Server, EF Core, SQL Server, each rate linked to its source.</p><p><a href="https://github.com/mindattic/TaxRateCollector" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="ThinkTank"><p>.NET MAUI + Blazor desktop app for multi-LLM conversations across 11 providers.</p><p><a href="https://github.com/mindattic/ThinkTank" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="Tutor"><p>Converts books and documents (PDF, EPUB, DOCX, …) into structured courses via a multi-LLM pipeline.</p><p><a href="https://github.com/mindattic/Tutor" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="MindAttic.Console"><p>C# CLI for MindAttic orchestration.</p><p><a href="https://github.com/mindattic/MindAttic.Console" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="MindAttic.Helpers"><p>Repository on GitHub — see source for details.</p><p><a href="https://github.com/mindattic/MindAttic.Helpers" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="MindAttic.Legion"><p>.NET library + CLI for multi-LLM consensus — one unified client across 11 providers.</p><p><a href="https://github.com/mindattic/MindAttic.Legion" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="MindAttic.Legion.Frontend"><p>Browse Legion's 1024 psychometrically-scored personas, each with a generated abstract-art portrait. Blazor Server.</p><p><a href="https://github.com/mindattic/MindAttic.Legion.Frontend" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="MindAttic.Psst"><p>CLI notifier for long-running commands — on exit it plays a sound and sends an SMS with the result.</p><p><a href="https://github.com/mindattic/MindAttic.Psst" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="MindAttic.UiUx"><p>Shared front-end assets for MindAttic sites — ships the Console Background effects suite (17 animated backgrounds).</p><p><a href="https://github.com/mindattic/MindAttic.UiUx" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="MindAttic.Vault"><p>Credentials and per-app settings — a unified IConfiguration-backed pipeline over User Secrets, env vars, and Azure.</p><p><a href="https://github.com/mindattic/MindAttic.Vault" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-            </div>
-        </section>
-
-        <section class="maf-section">
-            <h2>Hardware</h2>
-            <div class="ma-tabs ma-tabs-board" data-closed>
-                <section data-title="ChiMesh"><p>Chicago LoRa Meshtastic mesh — three solar-powered RAK4631 nodes in IP65 enclosures proving multi-hop routing.</p><p><a href="https://github.com/mindattic/ChiMesh" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-                <section data-title="Claudia"><p>DIY Claude-powered voice assistant on a Raspberry Pi Zero 2 W + PiSugar Whisplay HAT — build guide, parts catalog, installer.</p><p><a href="https://github.com/mindattic/Claudia" target="_blank" rel="noopener noreferrer">Open</a></p></section>
-            </div>
-        </section>
-
-        <section class="maf-section">
-            <h2>Writing</h2>
-            <div class="ma-gallery maf-books">
-                <a class="ma-gallery-tile maf-book-norp" href="https://www.amazon.com/dp/B0G4NS2WZL" target="_blank" rel="noopener noreferrer"><span>Melody Valkyrie: Huntress of Norp</span></a>
-                <a class="ma-gallery-tile maf-book-vengeance" href="https://www.amazon.com/dp/B0G4NPLWJY" target="_blank" rel="noopener noreferrer"><span>Melody Valkyrie: Harbinger of Vengeance</span></a>
-                <a class="ma-gallery-tile maf-book-palus" href="https://www.amazon.com/dp/B0G4NPLKW9" target="_blank" rel="noopener noreferrer"><span>Melody Valkyrie: Harvestman of Palus</span></a>
-                <a class="ma-gallery-tile maf-book-rime" href="https://www.amazon.com/dp/B0GDYXD6H1" target="_blank" rel="noopener noreferrer"><span>The Rime of Aurora Roe</span></a>
-                <a class="ma-gallery-tile maf-book-harvest" href="https://www.amazon.com/dp/B0GDYXBYFP" target="_blank" rel="noopener noreferrer"><span>Aurora Roe: Harvest Prime</span></a>
-                <a class="ma-gallery-tile maf-book-returns" href="https://www.amazon.com/dp/B0GX36R57Z" target="_blank" rel="noopener noreferrer"><span>Diminishing Returns</span></a>
-            </div>
-        </section>
-
-        <section class="maf-section">
-            <h2>Visual Arts</h2>
-            <div class="ma-gallery maf-books">
-                <a class="ma-gallery-tile maf-book-mosaic" href="https://ryandebraal.com/mosaic/" target="_blank" rel="noopener noreferrer"><span>Mosaic</span></a>
-            </div>
-        </section>
+                @if (section.Type == "links")
+                {
+                    <nav class="maf-links" aria-label="@section.Title">
+                        @foreach (var item in section.Items)
+                        {
+                            <a href="@item.Url" target="_blank" rel="noopener noreferrer">@item.Title</a>
+                        }
+                    </nav>
+                }
+                else if (section.Type == "tabs")
+                {
+                    <div class="ma-tabs ma-tabs-board" data-closed>
+                        @foreach (var item in section.Items)
+                        {
+                            <section data-title="@item.Title">
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <p>@item.Description</p>
+                                }
+                                <p>
+                                    @if (!string.IsNullOrEmpty(item.IdeaSlug))
+                                    {
+                                        <a href="/projects/@item.IdeaSlug">Details</a>
+                                        @if (!string.IsNullOrEmpty(item.Url))
+                                        {
+                                            <text> · </text>
+                                        }
+                                    }
+                                    @if (!string.IsNullOrEmpty(item.Url))
+                                    {
+                                        <a href="@item.Url" target="_blank" rel="noopener noreferrer">Open</a>
+                                    }
+                                </p>
+                            </section>
+                        }
+                    </div>
+                }
+                else if (section.Type == "gallery")
+                {
+                    <div class="ma-gallery maf-books">
+                        @foreach (var item in section.Items)
+                        {
+                            <a class="ma-gallery-tile @item.CssClass" href="@item.Url" target="_blank" rel="noopener noreferrer">
+                                <span>@item.Title</span>
+                            </a>
+                        }
+                    </div>
+                }
+            </section>
+        }
     </main>
 
-    <footer class="ma-footer">© <span class="maf-year">2026</span> Ryan DeBraal · MindAttic</footer>
+    <footer class="ma-footer">© <span class="maf-year">@DateTime.UtcNow.Year</span> @settings.CopyrightName</footer>
 </div>
 
-<script>
-(function () {
-    var y = document.querySelector('.maf-year');
-    if (y) y.textContent = String(new Date().getFullYear());
-})();
-</script>
+@if (EditMode)
+{
+    <div class="maf-admin">
+        @if (error is not null)
+        {
+            <p class="maf-admin-error">@error</p>
+        }
+        <div class="maf-admin-toolbar">
+            @if (!editing)
+            {
+                <button @onclick="BeginEdit">Edit Content JSON</button>
+            }
+            else
+            {
+                <button @onclick="SaveEdit" disabled="@saving">@(saving ? "Saving…" : "Save")</button>
+                <button @onclick="CancelEdit">Cancel</button>
+            }
+        </div>
+        @if (editing)
+        {
+            <textarea class="maf-admin-json" @bind="draftJson" rows="30" spellcheck="false"></textarea>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string Slot { get; set; } = "main";
+
+    MafSettings settings = new();
+    IComponentMetadataStore? store;
+
+    bool editing;
+    bool saving;
+    string? draftJson;
+    string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Context.TryGetFeature(out store);
+        await LoadAsync();
+    }
+
+    async Task LoadAsync()
+    {
+        if (store is null) { settings = DefaultSettings(); return; }
+        var json = await store.GetAsync(Context.Page.PageId, "mindatticfrontpage", Slot);
+        settings = json is null ? DefaultSettings() : (Deserialize(json) ?? DefaultSettings());
+    }
+
+    void BeginEdit()
+    {
+        draftJson = System.Text.Json.JsonSerializer.Serialize(settings, new System.Text.Json.JsonSerializerOptions
+            { WriteIndented = true, PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+        editing = true;
+        error = null;
+    }
+
+    void CancelEdit() { editing = false; draftJson = null; error = null; }
+
+    async Task SaveEdit()
+    {
+        if (store is null) { error = "Metadata store not available."; return; }
+        if (string.IsNullOrWhiteSpace(draftJson)) { error = "JSON cannot be empty."; return; }
+        saving = true; error = null;
+        try
+        {
+            var parsed = Deserialize(draftJson);
+            if (parsed is null) { error = "Invalid JSON — could not parse."; return; }
+            await store.SaveAsync(Context.Page.PageId, "mindatticfrontpage", Slot, draftJson);
+            settings = parsed;
+            editing = false;
+            draftJson = null;
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { saving = false; }
+    }
+
+    // ---- Helpers ----
+
+    static readonly System.Text.Json.JsonSerializerOptions JsonOpts =
+        new(System.Text.Json.JsonSerializerDefaults.Web) { WriteIndented = false };
+
+    static MafSettings? Deserialize(string json) =>
+        System.Text.Json.JsonSerializer.Deserialize<MafSettings>(json, JsonOpts);
+
+    // ---- Settings model ----
+
+    sealed class MafSettings
+    {
+        public string Wordmark { get; set; } = "MindAttic";
+        public string CopyrightName { get; set; } = "Ryan DeBraal · MindAttic";
+        public List<MafSection> Sections { get; set; } = [];
+    }
+
+    sealed class MafSection
+    {
+        /// <summary>links | tabs | gallery</summary>
+        public string Type { get; set; } = "tabs";
+        public string Title { get; set; } = "";
+        public List<MafItem> Items { get; set; } = [];
+    }
+
+    sealed class MafItem
+    {
+        public string Title { get; set; } = "";
+        public string? Description { get; set; }
+        public string? Url { get; set; }
+        /// <summary>CSS class for gallery tiles (e.g. "maf-book-norp").</summary>
+        public string? CssClass { get; set; }
+        /// <summary>Slug under /projects/ — links to the Ideas project detail page.</summary>
+        public string? IdeaSlug { get; set; }
+    }
+
+    // ---- Built-in defaults (extracted from V1 hardcoded content) ----
+
+    static MafSettings DefaultSettings() => new()
+    {
+        Wordmark = "MindAttic",
+        CopyrightName = "Ryan DeBraal · MindAttic",
+        Sections =
+        [
+            new MafSection { Type = "links", Title = "Portfolio", Items =
+            [
+                new MafItem { Title = "ryandebraal.com",         Url = "https://ryandebraal.com" },
+                new MafItem { Title = "github.com/mindattic",    Url = "https://github.com/mindattic" },
+                new MafItem { Title = "MindAttic Cares",         Url = "https://mindatticcares.com" },
+            ]},
+            new MafSection { Type = "tabs", Title = "Software", Items =
+            [
+                new MafItem { Title = "BugOutBag",             IdeaSlug = "bugoutbag",           Url = "https://github.com/mindattic/BugOutBag" },
+                new MafItem { Title = "Cursory",               IdeaSlug = "cursory",             Url = "https://github.com/mindattic/Cursory",          Description = "Repository on GitHub — see source for details." },
+                new MafItem { Title = "GridGame2026",          IdeaSlug = "gridgame2026",        Url = "https://github.com/mindattic/GridGame2026",      Description = "Unity tactical grid RPG — 2D sprites on a 3D board, drag-and-slide hero movement, pincer-attack combat, Grandia-style timeline." },
+                new MafItem { Title = "IdiotProof",            IdeaSlug = "idiotproof",          Url = "https://github.com/mindattic/IdiotProof",        Description = "Automated stock trading platform — .NET Blazor Server + a console Monitor evaluating active strategies 24/7, scripted by the IdiotScript fluent DSL." },
+                new MafItem { Title = "MediaButler",           IdeaSlug = "mediabutler",         Url = "https://github.com/mindattic/MediaButler",       Description = "Media library organizer — point it at a folder of messy downloads and it renames, tags, and files everything into place." },
+                new MafItem { Title = "mindatticcares.com",    IdeaSlug = "mindatticcares-com",  Url = "https://github.com/mindattic/mindatticcares.com",Description = "Repository on GitHub — see source for details." },
+                new MafItem { Title = "ryandebraal.com",       IdeaSlug = "ryandebraal-com",     Url = "https://github.com/mindattic/ryandebraal.com",   Description = "Single-file HTML resume — one hand-authored index.htm, vanilla HTML/CSS/JS, no build step, 15 themes." },
+                new MafItem { Title = "SkinDeep",              IdeaSlug = "skindeep",            Url = "https://github.com/mindattic/SkinDeep" },
+                new MafItem { Title = "StreetSamurai",         IdeaSlug = "streetsamurai",       Url = "https://github.com/mindattic/StreetSamurai",     Description = "Blazor Server app for authoring long-form fiction — SQL Server canon with vector embeddings and a directional entity graph." },
+                new MafItem { Title = "TaxRateCollector",      IdeaSlug = "taxrate",             Url = "https://github.com/mindattic/TaxRateCollector",  Description = "US sales-tax rate database for 14,000+ jurisdictions — Blazor Server, EF Core, SQL Server, each rate linked to its source." },
+                new MafItem { Title = "ThinkTank",             IdeaSlug = "thinktank",           Url = "https://github.com/mindattic/ThinkTank",         Description = ".NET MAUI + Blazor desktop app for multi-LLM conversations across 11 providers." },
+                new MafItem { Title = "Tutor",                 IdeaSlug = "tutor",               Url = "https://github.com/mindattic/Tutor",             Description = "Converts books and documents (PDF, EPUB, DOCX, …) into structured courses via a multi-LLM pipeline." },
+                new MafItem { Title = "MindAttic.Helpers",     IdeaSlug = "helpers",             Url = "https://github.com/mindattic/MindAttic.Helpers",  Description = "Repository on GitHub — see source for details." },
+                new MafItem { Title = "MindAttic.Ideas",       IdeaSlug = "ideas",               Url = "https://github.com/mindattic/MindAttic.Ideas",    Description = "Content management system — Blazor Server CMS with a .idea package format for themes, plugins, and components." },
+                new MafItem { Title = "MindAttic.Legion",      IdeaSlug = "legion",              Url = "https://github.com/mindattic/MindAttic.Legion",   Description = ".NET library + CLI for multi-LLM consensus — one unified client across 11 providers." },
+                new MafItem { Title = "MindAttic.Psst",        IdeaSlug = "psst",                Url = "https://github.com/mindattic/MindAttic.Psst",     Description = "CLI notifier for long-running commands — on exit it plays a sound and sends an SMS with the result." },
+                new MafItem { Title = "MindAttic.UiUx",        IdeaSlug = "uiux",                Url = "https://github.com/mindattic/MindAttic.UiUx",     Description = "Shared front-end assets for MindAttic sites — ships the Console Background effects suite (17 animated backgrounds)." },
+                new MafItem { Title = "MindAttic.Vault",       IdeaSlug = "vault",               Url = "https://github.com/mindattic/MindAttic.Vault",    Description = "Credentials and per-app settings — a unified IConfiguration-backed pipeline over User Secrets, env vars, and Azure." },
+            ]},
+            new MafSection { Type = "tabs", Title = "Hardware", Items =
+            [
+                new MafItem { Title = "ChiMesh",  IdeaSlug = "chimesh",  Url = "https://github.com/mindattic/ChiMesh",  Description = "Chicago LoRa Meshtastic mesh — three solar-powered RAK4631 nodes in IP65 enclosures proving multi-hop routing." },
+                new MafItem { Title = "Claudia",  IdeaSlug = "claudia",  Url = "https://github.com/mindattic/Claudia",  Description = "DIY Claude-powered voice assistant on a Raspberry Pi Zero 2 W + PiSugar Whisplay HAT — build guide, parts catalog, installer." },
+            ]},
+            new MafSection { Type = "gallery", Title = "Writing", Items =
+            [
+                new MafItem { Title = "Melody Valkyrie: Huntress of Norp",        Url = "https://www.amazon.com/dp/B0G4NS2WZL", CssClass = "maf-book-norp" },
+                new MafItem { Title = "Melody Valkyrie: Harbinger of Vengeance",  Url = "https://www.amazon.com/dp/B0G4NPLWJY", CssClass = "maf-book-vengeance" },
+                new MafItem { Title = "Melody Valkyrie: Harvestman of Palus",     Url = "https://www.amazon.com/dp/B0G4NPLKW9", CssClass = "maf-book-palus" },
+                new MafItem { Title = "The Rime of Aurora Roe",                   Url = "https://www.amazon.com/dp/B0GDYXD6H1", CssClass = "maf-book-rime" },
+                new MafItem { Title = "Aurora Roe: Harvest Prime",                Url = "https://www.amazon.com/dp/B0GDYXBYFP", CssClass = "maf-book-harvest" },
+                new MafItem { Title = "Diminishing Returns",                      Url = "https://www.amazon.com/dp/B0GX36R57Z", CssClass = "maf-book-returns" },
+            ]},
+            new MafSection { Type = "gallery", Title = "Visual Arts", Items =
+            [
+                new MafItem { Title = "Mosaic", Url = "https://ryandebraal.com/mosaic/", CssClass = "maf-book-mosaic" },
+            ]},
+        ],
+    };
+}

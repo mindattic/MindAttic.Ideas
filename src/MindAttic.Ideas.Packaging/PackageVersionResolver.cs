@@ -30,8 +30,9 @@ public static class PackageVersionResolver
         var key = candidate.Key;
         var version = candidate.Version;
 
-        // Already installed at this exact version → nothing to do (idempotent re-install).
-        if (installed.Any(r => Same(r, category, key) && r.Version == version))
+        // Already installed at this exact version → idempotent no-op unless the caller explicitly
+        // allows override (e.g. CLI push of an updated build at the same version slot).
+        if (installed.Any(r => Same(r, category, key) && r.Version == version) && !allowOverride)
             return new InstallPlan(InstallAction.NoOpAlreadyInstalled,
                 $"{category}/{key} v{version} is already installed.", MakeActiveVersion: false, []);
 
