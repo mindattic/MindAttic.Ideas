@@ -64,6 +64,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICmsRoleService, CmsRoleService>();
         services.AddScoped<IWorkflowService, WorkflowService>();
         services.AddScoped<IWidgetInstanceSettingsService, WidgetInstanceSettingsService>();
+        services.AddScoped<IComponentMetadataStore, ComponentMetadataService>();
         services.AddScoped<ISlugRedirectService, SlugRedirectService>();
 
         // Phase-5: .idea package install (validate + persist bytes + extract + register rows + ALC resolve).

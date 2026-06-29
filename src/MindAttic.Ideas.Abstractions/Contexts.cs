@@ -94,6 +94,22 @@ public interface IIncludeRenderer
         IReadOnlyDictionary<string, object?>? attributes = null, RenderFragment? childContent = null);
 }
 
+/// <summary>
+/// Host-provided seam (resolved via <see cref="IRenderContext.TryGetFeature{T}"/>): per-instance
+/// metadata store for components that need to persist data beyond a single render — e.g. the
+/// FromMd component stores its source file path and cached Markdown here. Keyed by
+/// (pageUid, componentKey, slotName) so multiple instances on the same page are isolated.
+/// The host impl MUST never throw into a render. APPEND-ONLY interface (default methods only).
+/// </summary>
+public interface IComponentMetadataStore
+{
+    /// <summary>Returns the stored metadata JSON for this slot, or null if none exists yet.</summary>
+    Task<string?> GetAsync(Guid pageUid, string componentKey, string slotName = "main", CancellationToken ct = default);
+
+    /// <summary>Upserts metadata JSON for this slot.</summary>
+    Task SaveAsync(Guid pageUid, string componentKey, string slotName, string metadataJson, CancellationToken ct = default);
+}
+
 /// <summary>One child page in the site tree (for nav / the TableOfContents widget).</summary>
 public sealed record ChildPage(string Slug, string Title);
 

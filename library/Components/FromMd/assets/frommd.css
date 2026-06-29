@@ -1,0 +1,106 @@
+/* =============================================================================
+   MindAttic.Ideas.Component.FromMd — structural styles for rendered Markdown.
+   Served at /_ideas/Component/frommd/1/frommd.css
+   Themes should add their own .ma-frommd prose overrides using their CSS variables.
+   ============================================================================= */
+
+.ma-frommd {
+    container-type: inline-size;
+    max-width: 860px;
+}
+
+/* Heading rhythm */
+.ma-frommd h1, .ma-frommd h2, .ma-frommd h3,
+.ma-frommd h4, .ma-frommd h5, .ma-frommd h6 {
+    line-height: 1.25;
+    margin: 1.8em 0 0.5em;
+}
+.ma-frommd h1 { font-size: 2rem; }
+.ma-frommd h2 { font-size: 1.55rem; }
+.ma-frommd h3 { font-size: 1.25rem; }
+
+/* Paragraph and list spacing */
+.ma-frommd p  { margin: 0.9em 0; }
+.ma-frommd ul, .ma-frommd ol { margin: 0.9em 0; padding-left: 1.5em; }
+.ma-frommd li { margin: 0.3em 0; }
+
+/* Inline code */
+.ma-frommd code {
+    font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+}
+
+/* Code blocks */
+.ma-frommd pre {
+    padding: 1rem 1.1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    line-height: 1.5;
+}
+.ma-frommd pre code { padding: 0; border-radius: 0; font-size: 0.87em; }
+
+/* Blockquotes */
+.ma-frommd blockquote {
+    margin: 1.2em 0;
+    padding: 0.4em 1em;
+    border-left: 3px solid currentColor;
+    opacity: 0.8;
+}
+
+/* Tables */
+.ma-frommd table { width: 100%; border-collapse: collapse; margin: 1.2em 0; }
+.ma-frommd th, .ma-frommd td {
+    padding: 0.45rem 0.7rem;
+    text-align: left;
+    border: 1px solid;
+}
+
+/* Horizontal rule */
+.ma-frommd hr { margin: 2rem 0; border: 0; border-top: 1px solid; opacity: 0.3; }
+
+/* Images */
+.ma-frommd img { max-width: 100%; height: auto; border-radius: 6px; }
+
+/* Empty state */
+.ma-frommd-empty { opacity: 0.5; font-style: italic; }
+
+/* Admin bar (edit mode only) */
+.ma-frommd-admin {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px dashed;
+    opacity: 0.85;
+    font-size: 0.875rem;
+}
+
+.ma-frommd-admin-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ma-frommd-srcpath {
+    flex: 1 1 300px;
+    min-width: 0;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid;
+    font: inherit;
+    font-size: 0.85rem;
+}
+
+.ma-frommd-error {
+    color: #c0392b;
+    margin: 0.4rem 0;
+    font-size: 0.85rem;
+}
+
+.ma-frommd-synced {
+    display: block;
+    margin-top: 0.4rem;
+    opacity: 0.65;
+}

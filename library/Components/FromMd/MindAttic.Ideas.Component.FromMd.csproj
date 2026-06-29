@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!-- Common props + Abstractions reference come from Directory.Build.props. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Markdown rendering — included in bin/ so the .idea package is self-contained. -->
+    <PackageReference Include="Markdig" Version="0.40.0" />
+  </ItemGroup>
+</Project>

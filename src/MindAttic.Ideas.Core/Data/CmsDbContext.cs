@@ -30,6 +30,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
     public DbSet<WorkflowTransitionDef> WorkflowTransitionDefs => Set<WorkflowTransitionDef>();
     public DbSet<WidgetPlacementSettings> WidgetPlacementSettings => Set<WidgetPlacementSettings>();
     public DbSet<WidgetPlacementSettingsHistory> WidgetPlacementSettingsHistory => Set<WidgetPlacementSettingsHistory>();
+    public DbSet<ComponentMetadata> ComponentMetadata => Set<ComponentMetadata>();
 
     // MindAttic.Authentication identity tables (auth schema) — IAuthDataContext.
     public DbSet<AuthUser> AuthUsers => Set<AuthUser>();
@@ -139,6 +140,14 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.Property(x => x.Name).HasMaxLength(200).IsRequired();
             e.HasIndex(x => new { x.PageId, x.Name }).IsUnique();
             e.HasOne<Page>().WithMany(p => p.MetaTags).HasForeignKey(x => x.PageId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<ComponentMetadata>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.PageUid, x.ComponentKey, x.SlotName }).IsUnique();
+            e.Property(x => x.ComponentKey).HasMaxLength(120).IsRequired();
+            e.Property(x => x.SlotName).HasMaxLength(200).IsRequired();
         });
 
         b.Entity<CmsContentDefinition>(e =>
