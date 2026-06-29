@@ -834,6 +834,9 @@ namespace MindAttic.Ideas.Core.Migrations
                     b.Property<bool>("IsRestricted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("OpenInNewWindow")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(16)

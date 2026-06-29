@@ -111,10 +111,10 @@ public interface IComponentMetadataStore
 }
 
 /// <summary>One child page in the site tree (for nav / the TableOfContents widget).</summary>
-public sealed record ChildPage(string Slug, string Title);
+public sealed record ChildPage(string Slug, string Title, bool OpenInNewWindow = false);
 
 /// <summary>One node in a page sub-tree — carries its own children for recursive rendering.</summary>
-public sealed record ChildPageNode(string Slug, string Title, IReadOnlyList<ChildPageNode> Children);
+public sealed record ChildPageNode(string Slug, string Title, IReadOnlyList<ChildPageNode> Children, bool OpenInNewWindow = false);
 
 /// <summary>
 /// Host-provided render seam (resolved via <see cref="IRenderContext.TryGetFeature{T}"/>): the published,
@@ -135,6 +135,6 @@ public interface IPageTree
     async Task<IReadOnlyList<ChildPageNode>> DescendantsTreeAsync(Guid pageId, CancellationToken ct = default)
     {
         var flat = await ChildrenOfAsync(pageId, ct);
-        return flat.Select(c => new ChildPageNode(c.Slug, c.Title, Array.Empty<ChildPageNode>())).ToList();
+        return flat.Select(c => new ChildPageNode(c.Slug, c.Title, Array.Empty<ChildPageNode>(), c.OpenInNewWindow)).ToList();
     }
 }

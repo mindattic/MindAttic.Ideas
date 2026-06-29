@@ -35,6 +35,8 @@
             builder.OpenElement(seq++, "a");
             builder.AddAttribute(seq++, "class", "ma-toc-link");
             builder.AddAttribute(seq++, "href", "/" + node.Slug);
+            if (node.OpenInNewWindow)
+                builder.AddAttribute(seq++, "target", "_blank");
             builder.AddContent(seq++, node.Title);
             builder.CloseElement(); // a
             if (node.Children.Count > 0)

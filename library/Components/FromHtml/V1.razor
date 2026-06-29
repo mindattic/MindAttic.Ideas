@@ -1,0 +1,137 @@
+@namespace MindAttic.Ideas.Component.FromHtml
+@inherits ComponentBase
+@attribute [Idea(DisplayName = "HTML Doc")]
+
+<link rel="stylesheet" href="/_ideas/Component/fromhtml/1/fromhtml.css" />
+
+@if (htmlContent is not null)
+{
+    @* Inject the file's HTML/CSS/JS inline — no iframe, no theme wrapper. The file's own
+       <style> and <script> tags apply to the page so its CSS wins over the host theme. *@
+    @((MarkupString)htmlContent)
+
+    @if (ShowReturnLink)
+    {
+        <div class="ma-fromhtml-return">
+            <a href="javascript:history.back()" class="ma-fromhtml-return-link">&#8592; Return to MindAttic</a>
+        </div>
+    }
+}
+else if (!EditMode)
+{
+    <div class="ma-fromhtml-empty">
+        <p><em>No content loaded. In edit mode, set a source file path and click "Update from Source".</em></p>
+    </div>
+}
+
+@if (EditMode)
+{
+    <div class="ma-fromhtml-admin">
+        @if (error is not null)
+        {
+            <p class="ma-fromhtml-error">@error</p>
+        }
+
+        <div class="ma-fromhtml-admin-row">
+            <input type="text" placeholder="Source file path (e.g. D:/Projects/MyApp/index.htm)"
+                   @bind="localSourceFile" @bind:event="oninput" class="ma-fromhtml-srcpath" />
+            <button @onclick="UpdateFromSourceAsync" disabled="@updating">
+                @(updating ? "Updating…" : "Update from Source")
+            </button>
+        </div>
+
+        @if (lastSynced is not null)
+        {
+            <small class="ma-fromhtml-synced">Last synced: @lastSynced.Value.ToString("yyyy-MM-dd HH:mm") UTC</small>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>
+    /// Instance discriminator — use "main" (default) when there is only one FromHtml per page,
+    /// or a custom name when multiple instances coexist on the same page.
+    /// </summary>
+    [Parameter] public string Slot { get; set; } = "main";
+
+    /// <summary>
+    /// When true, injects a fixed return-link bar into the iframe so the user can navigate back
+    /// to the Ideas page they came from.
+    /// </summary>
+    [Parameter] public bool ShowReturnLink { get; set; } = false;
+
+    string? htmlContent;
+    string? localSourceFile;
+    DateTime? lastSynced;
+    string? error;
+    bool updating;
+
+    IComponentMetadataStore? store;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Context.TryGetFeature(out store);
+        await LoadAsync();
+    }
+
+    async Task LoadAsync()
+    {
+        if (store is null) return;
+        var json = await store.GetAsync(Context.Page.PageId, "fromhtml", Slot);
+        if (json is null) return;
+        var settings = Deserialize(json);
+        if (settings is null) return;
+        localSourceFile = settings.LocalSourceFile;
+        lastSynced = settings.LastSynced;
+        htmlContent = string.IsNullOrEmpty(settings.HtmlContent) ? null : settings.HtmlContent;
+    }
+
+    async Task UpdateFromSourceAsync()
+    {
+        if (store is null) { error = "Metadata store not available."; return; }
+        if (string.IsNullOrWhiteSpace(localSourceFile)) { error = "Enter a source file path first."; return; }
+        error = null;
+        updating = true;
+        try
+        {
+            if (!File.Exists(localSourceFile)) { error = $"File not found: {localSourceFile}"; return; }
+            var content = await File.ReadAllTextAsync(localSourceFile);
+            var synced = DateTime.UtcNow;
+            var json = Serialize(new FromHtmlSettings
+            {
+                LocalSourceFile = localSourceFile,
+                HtmlContent = content,
+                LastSynced = synced,
+            });
+            await store.SaveAsync(Context.Page.PageId, "fromhtml", Slot, json);
+            lastSynced = synced;
+            htmlContent = content;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            updating = false;
+        }
+    }
+
+    // ---- private helpers ----
+
+    static readonly System.Text.Json.JsonSerializerOptions JsonOpts =
+        new(System.Text.Json.JsonSerializerDefaults.Web);
+
+    static FromHtmlSettings? Deserialize(string json) =>
+        System.Text.Json.JsonSerializer.Deserialize<FromHtmlSettings>(json, JsonOpts);
+
+    static string Serialize(FromHtmlSettings s) =>
+        System.Text.Json.JsonSerializer.Serialize(s, JsonOpts);
+
+    sealed class FromHtmlSettings
+    {
+        public string? LocalSourceFile { get; set; }
+        public string? HtmlContent { get; set; }
+        public DateTime? LastSynced { get; set; }
+    }
+}

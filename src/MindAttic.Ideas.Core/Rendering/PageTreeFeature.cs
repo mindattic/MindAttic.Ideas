@@ -23,7 +23,7 @@ public sealed class PageTreeFeature(IDbContextFactory<CmsDbContext> factory) : I
             return await db.Pages
                 .Where(p => p.ParentId == parent.Id && p.IsPublished && p.Enabled && !p.IsDeleted)
                 .OrderBy(p => p.SortOrder).ThenBy(p => p.Title)
-                .Select(p => new ChildPage(p.Slug, p.Title))
+                .Select(p => new ChildPage(p.Slug, p.Title, p.OpenInNewWindow))
                 .ToListAsync(ct);
         }
         catch
@@ -45,7 +45,7 @@ public sealed class PageTreeFeature(IDbContextFactory<CmsDbContext> factory) : I
             var all = await db.Pages
                 .Where(p => p.SiteId == siteId && p.IsPublished && p.Enabled && !p.IsDeleted)
                 .OrderBy(p => p.SortOrder).ThenBy(p => p.Title)
-                .Select(p => new { p.Id, p.ParentId, p.Slug, p.Title })
+                .Select(p => new { p.Id, p.ParentId, p.Slug, p.Title, p.OpenInNewWindow })
                 .ToListAsync(ct);
 
             var byParent = all.GroupBy(p => p.ParentId).ToDictionary(g => g.Key, g => g.ToList());
@@ -57,7 +57,7 @@ public sealed class PageTreeFeature(IDbContextFactory<CmsDbContext> factory) : I
                 if (!byParent.TryGetValue(parentId, out var kids)) return Array.Empty<ChildPageNode>();
                 return kids
                     .Where(k => visited.Add(k.Id))
-                    .Select(k => new ChildPageNode(k.Slug, k.Title, BuildNodes(k.Id)))
+                    .Select(k => new ChildPageNode(k.Slug, k.Title, BuildNodes(k.Id), k.OpenInNewWindow))
                     .ToList();
             }
 

@@ -41,6 +41,8 @@
     <Project Path="Components/TableOfContents/MindAttic.Ideas.Component.TableOfContents.csproj" />
     <Project Path="Components/LegionPersonas/MindAttic.Ideas.Component.LegionPersonas.csproj" />
     <Project Path="Components/IdeasBrochure/MindAttic.Ideas.Component.IdeasBrochure.csproj" />
+    <Project Path="Components/FromMd/MindAttic.Ideas.Component.FromMd.csproj" />
+    <Project Path="Components/FromHtml/MindAttic.Ideas.Component.FromHtml.csproj" />
     <Project Path="Components/HelloWorld/MindAttic.Ideas.Component.HelloWorld.csproj" />
     <Project Path="Components/WebSnapshot/MindAttic.Ideas.Component.WebSnapshot.csproj" />
     <Project Path="Components/Claudia/MindAttic.Ideas.Component.Claudia.csproj" />

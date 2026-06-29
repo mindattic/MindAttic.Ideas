@@ -1,0 +1,74 @@
+/* =============================================================================
+   MindAttic.Ideas.Component.FromHtml
+   Served at /_ideas/Component/fromhtml/1/fromhtml.css
+
+   The file's HTML/CSS/JS is injected inline at render time. The file's own
+   <style> tags apply globally and naturally override the host theme — no
+   CSS reset or iframe needed.
+   ============================================================================= */
+
+/* Return link (ShowReturnLink=true) — fixed overlay bar at the bottom */
+.ma-fromhtml-return {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.82);
+    z-index: 2147483647;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+}
+
+.ma-fromhtml-return-link {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.ma-fromhtml-return-link:hover {
+    text-decoration: underline;
+}
+
+/* Empty state */
+.ma-fromhtml-empty { opacity: 0.5; font-style: italic; }
+
+/* Admin bar (edit mode only) */
+.ma-fromhtml-admin {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px dashed;
+    opacity: 0.85;
+    font-size: 0.875rem;
+}
+
+.ma-fromhtml-admin-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ma-fromhtml-srcpath {
+    flex: 1 1 300px;
+    min-width: 0;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid;
+    font: inherit;
+    font-size: 0.85rem;
+}
+
+.ma-fromhtml-error {
+    color: #c0392b;
+    margin: 0.4rem 0;
+    font-size: 0.85rem;
+}
+
+.ma-fromhtml-synced {
+    display: block;
+    margin-top: 0.4rem;
+    opacity: 0.65;
+}

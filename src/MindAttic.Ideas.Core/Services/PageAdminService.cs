@@ -44,6 +44,9 @@ public sealed class PageEditModel
     /// <summary>Plugin ref strings active for this page (e.g. "Plugin.tooltip", "Plugin.navmenu@1").</summary>
     public List<string> ActivePlugins { get; set; } = [];
 
+    /// <summary>When true, navigation links to this page open in a new browser tab/window.</summary>
+    public bool OpenInNewWindow { get; set; }
+
     // ---- Workflow ----
     /// <summary>Assigned workflow definition; null = site default or no workflow.</summary>
     public int? WorkflowDefinitionId { get; set; }
@@ -106,7 +109,8 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         {
             Id = p.Id, Slug = p.Slug, Title = p.Title, ThemeKey = p.ThemeKey, ThemeVersion = p.ThemeVersion,
             Kind = p.Kind, BodyHtml = p.BodyHtml, PageCss = p.PageCss, PageJs = p.PageJs,
-            IsPublished = p.IsPublished, Enabled = p.Enabled, ParentId = p.ParentId, SortOrder = p.SortOrder,
+            IsPublished = p.IsPublished, Enabled = p.Enabled, OpenInNewWindow = p.OpenInNewWindow,
+            ParentId = p.ParentId, SortOrder = p.SortOrder,
             SeoTitle       = p.SeoTitle,
             SeoDescription = p.MetaTags.FirstOrDefault(t => t.Name == "seo.description")?.Content,
             IsRestricted   = p.IsRestricted,
@@ -176,6 +180,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.PageJs = model.PageJs;
         page.IsPublished = model.IsPublished;
         page.Enabled = model.Enabled;
+        page.OpenInNewWindow = model.OpenInNewWindow;
         page.IsRestricted = model.IsRestricted;
         // Cycle guard: walk up from the proposed parent; if we reach model.Id the move would form a
         // cycle. Mirrors the same walk in MoveAsync. Existing pages only (model.Id == 0 = new page).

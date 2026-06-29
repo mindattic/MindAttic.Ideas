@@ -195,6 +195,32 @@ app.MapRazorComponents<App>()
 // MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
 app.MapMindAtticAuthEndpoints();
 
+// ---- CLI mode: --install <file.idea> --------------------------------------------------------
+// dotnet run --project src/MindAttic.Ideas.Web -- --install path/to/Foo.V1.idea
+var installIdx = Array.IndexOf(args, "--install");
+if (installIdx >= 0)
+{
+    var ideaPath = installIdx + 1 < args.Length ? args[installIdx + 1] : null;
+    if (string.IsNullOrEmpty(ideaPath) || !File.Exists(ideaPath))
+    {
+        Console.Error.WriteLine($"[install] File not found: {ideaPath ?? "(none)"}");
+        Environment.Exit(1);
+    }
+    using var cliScope = app.Services.CreateScope();
+    var installer = cliScope.ServiceProvider.GetRequiredService<MindAttic.Ideas.Core.Services.IPackageInstallService>();
+    await using var bytes = File.OpenRead(ideaPath);
+    var plan = await installer.InstallAsync(bytes, allowOverride: true);
+    Console.WriteLine($"[install] {Path.GetFileName(ideaPath)} -> {plan.Action}");
+    Environment.Exit(0);
+}
+
+// ---- CLI mode: --seed-hyperspace ------------------------------------------------------------
+if (args.Contains("--seed-hyperspace"))
+{
+    using var cliScope = app.Services.CreateScope();
+    Environment.Exit(await SeedHyperspaceCli.RunAsync(args, app.Services));
+}
+
 // ---- CLI mode: --seed-readmes ---------------------------------------------------------------
 if (args.Contains("--seed-readmes"))
 {

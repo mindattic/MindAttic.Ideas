@@ -39,6 +39,8 @@ public sealed class Page : ContentEntityBase
     public string? SettingsJson { get; set; }
 
     // ---- shared ----
+    /// <summary>When true, navigation links to this page should open in a new browser tab/window.</summary>
+    public bool OpenInNewWindow { get; set; }
     public bool IsPublished { get; set; }
     /// <summary>Disabled = exists but cannot be served until re-enabled.</summary>
     public bool Enabled { get; set; } = true;
