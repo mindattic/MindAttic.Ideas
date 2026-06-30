@@ -33,7 +33,7 @@ else
             @for (var i = 0; i < _entries.Count; i++)
             {
                 var e = _entries[i];
-                var isCurrent = i == 0;
+                var isCurrent = e.ValidTo.Year >= 9999;
                 <tr class="@(isCurrent ? "admin-hist-current" : "")">
                     <td>@e.ValidFrom.ToString("yyyy-MM-dd HH:mm")</td>
                     <td>@e.Title</td>

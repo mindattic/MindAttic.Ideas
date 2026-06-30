@@ -48,13 +48,13 @@ public sealed class WorkflowService(IDbContextFactory<CmsDbContext> dbFactory) :
     public async Task<IReadOnlyList<WorkflowDefinition>> GetDefinitionsAsync(CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        return await db.WorkflowDefinitions.Include(d => d.Transitions).ToListAsync(ct);
+        return await db.WorkflowDefinitions.AsNoTracking().Include(d => d.Transitions).ToListAsync(ct);
     }
 
     public async Task<WorkflowDefinition?> GetDefinitionAsync(int id, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        return await db.WorkflowDefinitions.Include(d => d.Transitions).FirstOrDefaultAsync(d => d.Id == id, ct);
+        return await db.WorkflowDefinitions.AsNoTracking().Include(d => d.Transitions).FirstOrDefaultAsync(d => d.Id == id, ct);
     }
 
     public async Task<WorkflowDefinition> CreateDefinitionAsync(

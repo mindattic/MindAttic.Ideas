@@ -80,6 +80,7 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
         // IgnoreQueryFilters: we need IsDeleted so we can skip soft-deleted pages in FindBlockingPages
         // (soft-deleted pages are not live references even if their flags were not cleared on delete).
         var pageRows = await db.Pages.IgnoreQueryFilters()
+            .Where(p => !p.IsDeleted && p.Enabled && p.IsPublished)
             .Select(p => new { p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished, p.Kind, p.ComponentTypeName, p.ActivePluginsJson, p.IsDeleted })
             .ToListAsync(ct);
 
@@ -126,6 +127,7 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
             return new DeleteGuardResult(false, false, false, Array.Empty<string>(), "Content definition not found.");
 
         var pageRows = await db.Pages.IgnoreQueryFilters()
+            .Where(p => !p.IsDeleted && p.Enabled && p.IsPublished)
             .Select(p => new { p.Slug, p.BodyHtml, p.ThemeKey, p.ThemeVersion, p.Enabled, p.IsPublished, p.Kind, p.ComponentTypeName, p.ActivePluginsJson, p.IsDeleted })
             .ToListAsync(ct);
 

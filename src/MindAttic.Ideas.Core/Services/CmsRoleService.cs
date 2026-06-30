@@ -39,7 +39,7 @@ public sealed class CmsRoleService(IDbContextFactory<CmsDbContext> dbFactory) : 
         name = name.Trim();
         if (string.IsNullOrEmpty(name)) return (false, "Name is required.");
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        if (await db.CmsRoles.AnyAsync(r => r.Name.ToLower() == name.ToLower(), ct))
+        if (await db.CmsRoles.AnyAsync(r => r.Name.ToLowerInvariant() == name.ToLowerInvariant(), ct))
             return (false, $"Role '{name}' already exists.");
         db.CmsRoles.Add(new CmsRole { Name = name, Description = description?.Trim(), CreatedUtc = DateTime.UtcNow });
         await db.SaveChangesAsync(ct);

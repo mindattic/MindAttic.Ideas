@@ -71,29 +71,41 @@
     {
         busy = true;
         results.Clear();
-        foreach (var file in e.GetMultipleFiles(maximumFileCount: 100))
+        try
         {
-            try
+            foreach (var file in e.GetMultipleFiles(maximumFileCount: 100))
             {
-                using var buffer = new MemoryStream();
-                await using (var rs = file.OpenReadStream(MaxBytes))
-                    await rs.CopyToAsync(buffer);
-                buffer.Position = 0;
+                try
+                {
+                    using var buffer = new MemoryStream();
+                    await using (var rs = file.OpenReadStream(MaxBytes))
+                        await rs.CopyToAsync(buffer);
+                    buffer.Position = 0;
 
-                var plan = await Installer.InstallAsync(buffer, allowOverride);
-                var ok = plan.Action is InstallAction.Install
-                             or InstallAction.NoOpAlreadyInstalled
-                             or InstallAction.RequiresOverrideConfirmation;
-                var detail = plan.Reason is { Length: > 0 } reason ? $"{plan.Action} ({reason})" : plan.Action.ToString();
-                results.Add(new Result(file.Name, ok, detail));
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                results.Add(new Result(file.Name, false, ex.Message));
-                StateHasChanged();
+                    var plan = await Installer.InstallAsync(buffer, allowOverride);
+                    var ok = plan.Action is InstallAction.Install
+                                 or InstallAction.NoOpAlreadyInstalled
+                                 or InstallAction.RequiresOverrideConfirmation;
+                    var detail = plan.Reason is { Length: > 0 } reason ? $"{plan.Action} ({reason})" : plan.Action.ToString();
+                    results.Add(new Result(file.Name, ok, detail));
+                    StateHasChanged();
+                }
+                catch (Exception ex)
+                {
+                    results.Add(new Result(file.Name, false, ex.Message));
+                    StateHasChanged();
+                }
             }
         }
-        busy = false;
+        catch (Exception ex)
+        {
+            results.Add(new Result("(upload)", false, ex.Message));
+            StateHasChanged();
+        }
+        finally
+        {
+            busy = false;
+            StateHasChanged();
+        }
     }
 }

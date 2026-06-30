@@ -59,9 +59,9 @@ public static class IncludeExpander
     // and safe to run in sequence because self-close is consumed before open-tag pass.
 
     private static readonly Regex _pascalSelfClose =
-        new(@"<([A-Z][A-Za-z0-9]*)((?:\s[^/>]*?)?)\s*/>", RegexOptions.Compiled);
+        new(@"<([A-Z][A-Za-z0-9]*)((?:\s(?:[^>""'/]|""[^""]*""|'[^']*')*)?)\s*/>", RegexOptions.Compiled);
     private static readonly Regex _pascalOpen =
-        new(@"<([A-Z][A-Za-z0-9]*)((?:\s[^>]*?)?)>", RegexOptions.Compiled);
+        new(@"<([A-Z][A-Za-z0-9]*)((?:\s(?:[^>""']|""[^""]*""|'[^']*')*)?)>", RegexOptions.Compiled);
     private static readonly Regex _pascalClose =
         new(@"</([A-Z][A-Za-z0-9]*)>", RegexOptions.Compiled);
 

@@ -313,12 +313,13 @@
             status = result.Error ?? "Save failed."; statusBad = true;
             return;
         }
-        statusBad = false;
-        status = result.StampedTrust == ContentTrust.Author
-            ? "Saved as Author — your raw HTML/JS is honored."
-            : "Saved as Untrusted — inline scripts will be sanitized.";
         isNew = false;
-        editing.Id = result.Id;
+        editing = await PagesSvc.GetAsync(result.Id) ?? editing;
+        statusBad = result.Error is not null;
+        status = result.Error
+            ?? (result.StampedTrust == ContentTrust.Author
+                ? "Saved as Author — your raw HTML/JS is honored."
+                : "Saved as Untrusted — inline scripts will be sanitized.");
         await Load();
     }
 
