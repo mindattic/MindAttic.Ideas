@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!-- Common props + Abstractions reference come from Directory.Build.props. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compile-time references only (ExcludeAssets=runtime keeps them out of bin/).
+         The host always provides these assemblies at runtime; the .idea package must not bundle them. -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0"
+                      Private="false" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0"
+                      Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>

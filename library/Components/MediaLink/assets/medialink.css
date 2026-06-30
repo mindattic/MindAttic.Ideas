@@ -1,0 +1,7 @@
+.ma-media-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}

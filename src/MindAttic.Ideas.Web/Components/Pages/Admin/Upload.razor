@@ -86,10 +86,12 @@
                              or InstallAction.RequiresOverrideConfirmation;
                 var detail = plan.Reason is { Length: > 0 } reason ? $"{plan.Action} ({reason})" : plan.Action.ToString();
                 results.Add(new Result(file.Name, ok, detail));
+                StateHasChanged();
             }
             catch (Exception ex)
             {
                 results.Add(new Result(file.Name, false, ex.Message));
+                StateHasChanged();
             }
         }
         busy = false;

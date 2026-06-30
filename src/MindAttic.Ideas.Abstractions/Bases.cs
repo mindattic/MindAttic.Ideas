@@ -17,6 +17,26 @@ public abstract class IdeaBase : BlazorComponentBase
     /// <summary>The render context for this placement (provided by the host via a cascade).</summary>
     [CascadingParameter] protected IRenderContext Context { get; set; } = default!;
     protected bool EditMode => Context?.Mode == ContentMode.Edit;
+
+    // ── URL safety ──────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the URL unchanged if it is safe to render in an href/src/action attribute.
+    /// Returns "#" for javascript:, data:, vbscript: and any other scheme that could execute
+    /// client-side code. Relative URLs (/path, #anchor, ./rel), http:, https:, mailto:, tel:
+    /// all pass through. Call on every untrusted URL attribute before rendering.
+    /// </summary>
+    protected static string SafeUrl(string? url) => IsUnsafeUrl(url) ? "#" : (url ?? "#");
+
+    /// <summary>True if the URL could execute script or embed attacker-controlled data.</summary>
+    protected static bool IsUnsafeUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return false;
+        var t = url.TrimStart();
+        return t.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)
+            || t.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
+            || t.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 // ---- Page ----
@@ -28,7 +48,7 @@ public abstract class PageBase : IdeaBase { }
 public abstract class PageBase<TSettings> : PageBase where TSettings : class, new()
 {
     protected TSettings Settings { get; private set; } = new();
-    protected override void OnParametersSet() => Settings = Context.GetSettings<TSettings>();
+    protected override void OnParametersSet() => Settings = Context?.GetSettings<TSettings>() ?? new TSettings();
 }
 
 // ---- Theme ----

@@ -1,9 +1,11 @@
 @namespace MindAttic.Ideas.Component.FromHtml
 @inherits ComponentBase
 @attribute [Idea(DisplayName = "HTML Doc")]
+@attribute [Uses(ContentKind.Plugin, "header", 1)]
 
 <link rel="stylesheet" href="/_ideas/Component/fromhtml/1/fromhtml.css" />
 
+<div class="@CssClass" style="@_outerStyle">
 @if (htmlContent is not null)
 {
     @* Inject the file's HTML/CSS/JS inline — no iframe, no theme wrapper. The file's own
@@ -46,6 +48,7 @@ else if (!EditMode)
         }
     </div>
 }
+</div>
 
 @code {
     /// <summary>
@@ -59,6 +62,27 @@ else if (!EditMode)
     /// to the Ideas page they came from.
     /// </summary>
     [Parameter] public bool ShowReturnLink { get; set; } = false;
+
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public string? CssStyle { get; set; }
+    [Parameter] public string? Padding  { get; set; }
+    [Parameter] public string? Margin   { get; set; }
+    [Parameter] public string? Align    { get; set; }
+
+    private string? _outerStyle
+    {
+        get
+        {
+            var s = string.Join(";", new[]
+            {
+                string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+                string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+                string.IsNullOrEmpty(Align)   ? null : $"text-align:{Align}",
+                CssStyle,
+            }.Where(s => s is not null));
+            return s.Length > 0 ? s : null;
+        }
+    }
 
     string? htmlContent;
     string? localSourceFile;
@@ -90,6 +114,9 @@ else if (!EditMode)
     {
         if (store is null) { error = "Metadata store not available."; return; }
         if (string.IsNullOrWhiteSpace(localSourceFile)) { error = "Enter a source file path first."; return; }
+        var ext = Path.GetExtension(localSourceFile);
+        if (!ext.Equals(".html", StringComparison.OrdinalIgnoreCase) && !ext.Equals(".htm", StringComparison.OrdinalIgnoreCase))
+        { error = "Only .html / .htm files are supported."; return; }
         error = null;
         updating = true;
         try

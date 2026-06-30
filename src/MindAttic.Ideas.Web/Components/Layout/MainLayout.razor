@@ -2,17 +2,8 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using MindAttic.Authentication
 
-@* Auth chrome — AuthorizeView-gated, so anonymous CMS visitors see nothing. UserCircle (upper-right)
-   gives sign-out; the admin User-Management link sits beside it; UserTimeout arms the 30-min idle
-   auto-logout only when authenticated. *@
-<div style="display:inline-block;">
-    <AuthorizeView Policy="@MaPolicies.Admin">
-        @* One entry point: the tabbed admin shell (Page Management / Idea Library / Upload Idea /
-           Settings / Attributions). *@
-        <a href="/admin" style="color:#9aa3af;font-size:.85rem;text-decoration:none;">Admin</a>
-    </AuthorizeView>
-    <UserCircle ShowProfileCircle="false" />
-</div>
+@* UserTimeout arms the 30-min idle auto-logout for authenticated users.
+   The Header is opt-in: pages that want chrome include <Header /> in their own markup. *@
 <UserTimeout />
 
 @Body

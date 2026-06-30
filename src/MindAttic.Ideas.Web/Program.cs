@@ -42,6 +42,10 @@ builder.Services.AddIdeasCore(
     typeof(Program).Assembly,
     typeof(MindAttic.Ideas.Page.Frontpage.V1).Assembly);
 
+// Point the asset service at {ContentRoot}/media for disk-backed uploads over the inline threshold.
+builder.Services.Configure<MindAttic.Ideas.Core.Services.AssetStorageOptions>(o =>
+    o.MediaRoot = Path.Combine(builder.Environment.ContentRootPath, "media"));
+
 // --- MindAttic.Legion: LLM + voting (A7). Zero-config; keys resolve via Vault when used. ---
 builder.Services.AddLegionClient();
 
@@ -184,6 +188,21 @@ app.MapGet("/_ideas/packages/{category}/{key}/{version:int}",
         return Results.File(stream, "application/octet-stream", filename);
     }).RequireAuthorization("Admin");
 app.MapGet("/_ideas/{*path}", () => Results.NotFound());   // anything else under /_ideas
+
+// Media assets: /_ma-assets/{uid:guid} serves inline (images, PDFs) or attachment (everything else).
+app.MapGet("/_ma-assets/{uid:guid}",
+    async (Guid uid, MindAttic.Ideas.Core.Services.IAssetService assets, CancellationToken ct) =>
+    {
+        var item = await assets.GetAsync(uid, ct);
+        if (item is null) return Results.NotFound();
+        var (meta, stream) = item.Value;
+        var inline = meta.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+                  || meta.ContentType == "application/pdf"
+                  || meta.ContentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase);
+        return inline
+            ? Results.File(stream, meta.ContentType)
+            : Results.File(stream, meta.ContentType, meta.FileName);
+    });
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode()
    // PageHost (the catch-all "/{*Slug}" content route) lives in the MindAttic.Ideas.Rendering RCL.

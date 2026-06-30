@@ -1,4 +1,4 @@
-﻿@namespace MindAttic.Ideas.Plugin.NavMenu
+@namespace MindAttic.Ideas.Plugin.NavMenu
 @inherits PluginBase
 @attribute [Idea(DisplayName = "Nav Menu")]
 
@@ -9,7 +9,7 @@
    The current page's slug gets aria-current. Collapses to a hamburger below 720px (navmenu.js). *@
 <link rel="stylesheet" href="/_ideas/Plugin/navmenu/1/navmenu.css" />
 <script src="/_ideas/Plugin/navmenu/1/navmenu.js" defer></script>
-<nav class="ma-nav" aria-label="Site">
+<nav class="ma-nav @CssClass" aria-label="Site" style="@_outerStyle">
     <a class="ma-nav-brand" href="@_brandHref">@_brand</a>
     <button class="ma-nav-toggle" type="button" aria-label="Menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -34,6 +34,29 @@
     /// <summary>Brand link target (default "/"). Overrides the "nav.brandhref" site setting.</summary>
     [Parameter] public string? BrandHref { get; set; }
 
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter] public string? CssStyle { get; set; }
+
+    /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
+    [Parameter] public string? Padding { get; set; }
+
+    /// <summary>CSS margin shorthand.</summary>
+    [Parameter] public string? Margin { get; set; }
+
+    /// <summary>Text-align or flex justification (e.g. "center", "left", "right").</summary>
+    [Parameter] public string? Align { get; set; }
+
+    private string _outerStyle => string.Join(";", new[]
+    {
+        string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+        string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+        string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        CssStyle,
+    }.Where(s => s is not null));
+
     private IReadOnlyList<(string Text, string Href)> _links = Array.Empty<(string, string)>();
     private string _brand = "";
     private string _brandHref = "/";
@@ -42,7 +65,7 @@
     {
         var site = Context?.Site;
         _brand = FirstNonEmpty(Brand, site?.GetSetting("nav.brand"), site?.Key) ?? "Home";
-        _brandHref = FirstNonEmpty(BrandHref, site?.GetSetting("nav.brandhref")) ?? "/";
+        _brandHref = SafeUrl(FirstNonEmpty(BrandHref, site?.GetSetting("nav.brandhref")) ?? "/");
         _links = ParseLinks(FirstNonEmpty(Links, site?.GetSetting("nav.links")));
     }
 
@@ -61,7 +84,9 @@
         {
             var eq = pair.IndexOf('=');
             if (eq <= 0 || eq == pair.Length - 1) continue;
-            list.Add((pair[..eq].Trim(), pair[(eq + 1)..].Trim()));
+            var href = pair[(eq + 1)..].Trim();
+            if (IsUnsafeUrl(href)) continue;
+            list.Add((pair[..eq].Trim(), href));
         }
         return list;
     }

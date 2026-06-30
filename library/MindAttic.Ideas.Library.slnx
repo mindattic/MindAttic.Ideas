@@ -22,6 +22,7 @@
     <Project Path="Plugins/BackToTop/MindAttic.Ideas.Plugin.BackToTop.csproj" />
     <Project Path="Plugins/BackHomeM/MindAttic.Ideas.Plugin.BackHomeM.csproj" />
     <Project Path="Plugins/SocialLinks/MindAttic.Ideas.Plugin.SocialLinks.csproj" />
+    <Project Path="Plugins/Header/MindAttic.Ideas.Plugin.Header.csproj" />
   </Folder>
   <Folder Name="/Components/">
     <Project Path="Components/Textbox/MindAttic.Ideas.Component.Textbox.csproj" />
@@ -43,6 +44,8 @@
     <Project Path="Components/IdeasBrochure/MindAttic.Ideas.Component.IdeasBrochure.csproj" />
     <Project Path="Components/FromMd/MindAttic.Ideas.Component.FromMd.csproj" />
     <Project Path="Components/FromHtml/MindAttic.Ideas.Component.FromHtml.csproj" />
+    <Project Path="Components/MediaImage/MindAttic.Ideas.Component.MediaImage.csproj" />
+    <Project Path="Components/MediaLink/MindAttic.Ideas.Component.MediaLink.csproj" />
     <Project Path="Components/HelloWorld/MindAttic.Ideas.Component.HelloWorld.csproj" />
     <Project Path="Components/WebSnapshot/MindAttic.Ideas.Component.WebSnapshot.csproj" />
     <Project Path="Components/Claudia/MindAttic.Ideas.Component.Claudia.csproj" />

@@ -1,5 +1,7 @@
 ﻿/* MindAttic.Ideas.Component.MindAtticFrontpage — all rules scoped under .maf or .maf-* */
 
+.page { position: relative; z-index: 1; width: 50% !important; margin: auto !important; }
+
 .maf { display: flex; flex-direction: column; gap: 1.5rem; max-width: 64rem; min-height: 100vh; margin: 0 auto; padding: 1.5rem; }
 .maf-header { display: contents; }
 .maf-wordmark { font-family: var(--font-attic, var(--font-outfit, system-ui)); font-size: clamp(2.2rem, 6vw, 3.6rem); letter-spacing: .04em; }

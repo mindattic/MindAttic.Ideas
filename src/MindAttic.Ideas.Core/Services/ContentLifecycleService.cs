@@ -157,14 +157,11 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
 
         if (def.Origin == ContentOrigin.Compiled)
         {
-            // Only persist and reload if the definition was actually enabled — skip the round-trip
-            // when an admin calls DeleteAsync on an already-disabled compiled citizen.
-            if (def.Enabled)
-            {
-                def.Enabled = false;
-                await db.SaveChangesAsync(ct);
-                await discovery.ReloadCatalogAsync(ct);
-            }
+            if (!def.Enabled)
+                return new DeleteGuardResult(false, false, false, Array.Empty<string>(), "Already disabled; no change made.");
+            def.Enabled = false;
+            await db.SaveChangesAsync(ct);
+            await discovery.ReloadCatalogAsync(ct);
             return new DeleteGuardResult(false, false, true, Array.Empty<string>(),
                 "Compiled content can't be removed (discovery would re-add it); it was disabled instead.");
         }

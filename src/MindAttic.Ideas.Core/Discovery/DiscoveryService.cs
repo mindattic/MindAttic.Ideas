@@ -17,11 +17,14 @@ namespace MindAttic.Ideas.Core.Discovery;
 public sealed class DiscoveryService(
     IDbContextFactory<CmsDbContext> dbFactory,
     IEnumerable<ICmsContentSource> sources,
-    ContentCatalog catalog)
+    ContentCatalog catalog) : IDisposable
 {
     // Serializes concurrent ReloadCatalogAsync calls so IsShadowed writes and LoadSnapshot
     // never interleave across two parallel admin enable/disable operations.
     private readonly SemaphoreSlim _reloadLock = new(1, 1);
+
+    public void Dispose() => _reloadLock.Dispose();
+
     public async Task RunAsync(CancellationToken ct = default)
     {
         var discovered = sources

@@ -1,4 +1,4 @@
-﻿@namespace MindAttic.Ideas.Plugin.SocialLinks
+@namespace MindAttic.Ideas.Plugin.SocialLinks
 @inherits PluginBase
 @attribute [Idea(DisplayName = "Social Links")]
 
@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="/_ideas/Plugin/sociallinks/1/sociallinks.css" />
 @if (_links.Count > 0)
 {
-    <ul class="ma-social" aria-label="Profiles">
+    <ul class="ma-social @CssClass" style="@_outerStyle" aria-label="Profiles">
         @foreach (var (name, href, path) in _links)
         {
             <li class="ma-social-item">
@@ -44,6 +44,20 @@
     /// <summary>RSS feed URL. Falls back to "social.rss".</summary>
     [Parameter] public string? Rss { get; set; }
 
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public string? CssStyle { get; set; }
+    [Parameter] public string? Padding { get; set; }
+    [Parameter] public string? Margin { get; set; }
+    [Parameter] public string? Align { get; set; }
+
+    private string _outerStyle => string.Join(";", new[]
+    {
+        string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+        string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+        string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        CssStyle,
+    }.Where(s => s is not null));
+
     private IReadOnlyList<(string Name, string Href, string Path)> _links =
         Array.Empty<(string, string, string)>();
 
@@ -63,7 +77,7 @@
     private void Add(List<(string, string, string)> links, string name, string? value, string? settingKey, string icon)
     {
         var href = FirstNonEmpty(value, settingKey is null ? null : Setting(settingKey));
-        if (!string.IsNullOrWhiteSpace(href)) links.Add((name, href, icon));
+        if (!string.IsNullOrWhiteSpace(href) && !IsUnsafeUrl(href)) links.Add((name, href, icon));
     }
 
     private string? Setting(string key) => Context?.Site?.GetSetting(key);

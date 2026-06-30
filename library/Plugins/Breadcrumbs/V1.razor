@@ -1,4 +1,4 @@
-﻿@namespace MindAttic.Ideas.Plugin.Breadcrumbs
+@namespace MindAttic.Ideas.Plugin.Breadcrumbs
 @inherits PluginBase
 @attribute [Idea(DisplayName = "Breadcrumbs")]
 
@@ -10,7 +10,7 @@
 @if (_crumbs.Count > 0)
 {
     <link rel="stylesheet" href="/_ideas/Plugin/breadcrumbs/1/breadcrumbs.css" />
-    <nav class="ma-crumbs" aria-label="Breadcrumb">
+    <nav class="ma-crumbs @CssClass" aria-label="Breadcrumb" style="@_outerStyle">
         <ol class="ma-crumbs-list">
             <li class="ma-crumbs-item"><a class="ma-crumbs-link" href="/">@_homeText</a></li>
             @foreach (var (text, href, isLast) in _crumbs)
@@ -34,6 +34,29 @@
     /// <summary>Text of the leading root crumb (default "Home").</summary>
     [Parameter] public string? Home { get; set; }
 
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter] public string? CssStyle { get; set; }
+
+    /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
+    [Parameter] public string? Padding { get; set; }
+
+    /// <summary>CSS margin shorthand.</summary>
+    [Parameter] public string? Margin { get; set; }
+
+    /// <summary>text-align or flex justification (e.g. "center", "left", "right").</summary>
+    [Parameter] public string? Align { get; set; }
+
+    private string _outerStyle => string.Join(";", new[]
+    {
+        string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+        string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+        string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        CssStyle,
+    }.Where(s => s is not null));
+
     private IReadOnlyList<(string Text, string Href, bool IsLast)> _crumbs =
         Array.Empty<(string, string, bool)>();
     private string _homeText = "Home";
@@ -47,7 +70,8 @@
     private static IReadOnlyList<(string, string, bool)> Build(string? slug, string? title)
     {
         var segments = (slug ?? "").Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length == 0 || segments is ["home"]) return Array.Empty<(string, string, bool)>();
+        if (segments.Length == 0 || (segments.Length == 1 && segments[0].Equals("home", StringComparison.OrdinalIgnoreCase)))
+            return Array.Empty<(string, string, bool)>();
         var crumbs = new List<(string, string, bool)>();
         var prefix = "";
         for (var i = 0; i < segments.Length; i++)

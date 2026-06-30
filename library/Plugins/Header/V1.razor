@@ -1,0 +1,104 @@
+@namespace MindAttic.Ideas.Plugin.Header
+@inherits PluginBase
+@attribute [Idea(DisplayName = "Site Header")]
+
+@* MindAttic.Ideas.Plugin.Header.V1 — 3-column fixed header (logo | center | user dropdown).
+   Auth is handled entirely server-side: AuthorizeView gates the dropdown; the logout form uses
+   POST + AntiforgeryToken (CSRF-safe). If auth state is unavailable the user column stays empty.
+   Logo text comes from Logo parameter → "header.logo" site setting → site key → "MindAttic". *@
+
+<link rel="stylesheet" href="/_ideas/Plugin/header/1/header.css" />
+
+<header class="mah-root @CssClass" style="@_outerStyle">
+    <div class="mah-col">
+        <a href="/" class="mah-logo-link">@_logoText</a>
+    </div>
+    <div class="mah-col mah-col--fill">@ChildContent</div>
+    <div class="mah-col">
+        <AuthorizeView>
+            <Authorized Context="ctx">
+                @{
+                    var email   = ctx.User.FindFirst(ClaimTypes.Email)?.Value
+                               ?? ctx.User.Identity?.Name
+                               ?? "";
+                    var isAdmin = ctx.User.IsInRole("Admin");
+                }
+                <div class="mah-uc">
+                    <button type="button" class="mah-uc-btn" aria-haspopup="true"
+                            aria-label="User menu for @email">
+                        @Initials(email)
+                    </button>
+                    <div class="mah-uc-menu" role="menu">
+                        <div class="mah-uc-email">@email</div>
+                        <ul class="mah-uc-list">
+                            @if (isAdmin)
+                            {
+                                <li role="menuitem">
+                                    <a href="/admin" class="mah-uc-item">Admin panel</a>
+                                </li>
+                            }
+                            <li role="menuitem">
+                                <form method="post" action="/_ma-auth/logout" style="margin:0">
+                                    <AntiforgeryToken />
+                                    <button type="submit" class="mah-uc-item mah-uc-signout">Sign out</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</header>
+
+@code {
+    /// <summary>Logo text override. Falls back to "header.logo" site setting, then site key, then "MindAttic".</summary>
+    [Parameter] public string? Logo { get; set; }
+
+    /// <summary>Optional center-column content (nav links, search bar, etc.).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter] public string? CssStyle { get; set; }
+
+    /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
+    [Parameter] public string? Padding { get; set; }
+
+    /// <summary>CSS margin shorthand.</summary>
+    [Parameter] public string? Margin { get; set; }
+
+    /// <summary>Text-align or flex justification (e.g. "center", "left", "right").</summary>
+    [Parameter] public string? Align { get; set; }
+
+    private string _logoText = "MindAttic";
+
+    private string _outerStyle => string.Join(";", new[]
+    {
+        string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+        string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+        string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        CssStyle,
+    }.Where(s => s is not null));
+
+    protected override void OnParametersSet()
+    {
+        _logoText = FirstNonEmpty(Logo,
+                                  Context?.Site?.GetSetting("header.logo"),
+                                  Context?.Site?.Key)
+                    ?? "MindAttic";
+    }
+
+    private static string Initials(string name)
+    {
+        var parts = name.Split(new[] { ' ', '.', '_', '-', '@' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant();
+        return string.Concat(parts[0][0], parts[^1][0]).ToUpperInvariant();
+    }
+
+    private static string? FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+}

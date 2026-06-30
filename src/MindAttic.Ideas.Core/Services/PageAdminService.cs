@@ -318,8 +318,8 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
     public async Task<bool> SwapSortOrderAsync(int idA, int sortA, int idB, int sortB, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var pageA = await db.Pages.FirstOrDefaultAsync(p => p.Id == idA, ct);
-        var pageB = await db.Pages.FirstOrDefaultAsync(p => p.Id == idB, ct);
+        var pageA = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == idA, ct);
+        var pageB = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == idB, ct);
         if (pageA is null || pageB is null) return false;
 
         var now = DateTime.UtcNow;

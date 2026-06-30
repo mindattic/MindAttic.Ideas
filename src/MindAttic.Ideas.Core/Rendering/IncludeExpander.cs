@@ -38,10 +38,60 @@ public static class IncludeExpander
         IRenderAlertSink? alerts = null, Guid pageId = default, string slug = "")
     {
         if (string.IsNullOrWhiteSpace(html)) return;
+        // Author-trusted content: upgrade PascalCase HTML tags to <ma-component> before AngleSharp
+        // normalises tag names to lowercase. Only Author content may embed component tags — untrusted
+        // content leaves PascalCase tags as unknown HTML elements (AngleSharp lowercases them safely).
+        if (trust == ContentTrust.Author)
+            html = UpgradePascalCaseTags(html);
         using var doc = Parser.ParseDocument("<!DOCTYPE html><html><head></head><body>" + html + "</body></html>");
         var counter = new Counter { Next = seq };
         RenderNodes(builder, counter, doc.Body!.ChildNodes, new ExpandCtx(catalog, gate, trust, alerts, pageId, slug));
         seq = counter.Next;
+    }
+
+    // ── PascalCase component-tag pre-processor ────────────────────────────────────────────────
+    // Converts <Alert type="error" /> and <Alert type="error">inner</Alert> to
+    // <ma-component data-key="alert" type="error"></ma-component> / <ma-component ...>inner</ma-component>.
+    // "ma-component" is a valid HTML5 custom element (hyphen required), so AngleSharp parses it
+    // correctly and preserves all attributes and children. The data-key holds the lowercased
+    // component key; all other attributes become component parameters in RenderNodes.
+    // Order: self-closing first, then open tags, then close tags — all three are idempotent
+    // and safe to run in sequence because self-close is consumed before open-tag pass.
+
+    private static readonly Regex _pascalSelfClose =
+        new(@"<([A-Z][A-Za-z0-9]*)((?:\s[^/>]*?)?)\s*/>", RegexOptions.Compiled);
+    private static readonly Regex _pascalOpen =
+        new(@"<([A-Z][A-Za-z0-9]*)((?:\s[^>]*?)?)>", RegexOptions.Compiled);
+    private static readonly Regex _pascalClose =
+        new(@"</([A-Z][A-Za-z0-9]*)>", RegexOptions.Compiled);
+
+    private static string UpgradePascalCaseTags(string html)
+    {
+        // Quick exit: scan for '<' followed by an uppercase letter.
+        bool hasPascal = false;
+        for (int i = 0; i < html.Length - 1; i++)
+            if (html[i] == '<' && char.IsUpper(html[i + 1])) { hasPascal = true; break; }
+        if (!hasPascal) return html;
+
+        html = _pascalSelfClose.Replace(html, static m =>
+        {
+            var key  = m.Groups[1].Value.ToLowerInvariant();
+            var tail = m.Groups[2].Value.Trim();
+            return tail.Length > 0
+                ? $"<ma-component data-key=\"{key}\" {tail}></ma-component>"
+                : $"<ma-component data-key=\"{key}\"></ma-component>";
+        });
+
+        html = _pascalOpen.Replace(html, static m =>
+        {
+            var key  = m.Groups[1].Value.ToLowerInvariant();
+            var tail = m.Groups[2].Value.Trim();
+            return tail.Length > 0
+                ? $"<ma-component data-key=\"{key}\" {tail}>"
+                : $"<ma-component data-key=\"{key}\">";
+        });
+
+        return _pascalClose.Replace(html, "</ma-component>");
     }
 
     private static void RenderNodes(RenderTreeBuilder b, Counter c, INodeList nodes, ExpandCtx ctx)
@@ -60,6 +110,61 @@ public static class IncludeExpander
                     b.AddMarkupContent(c.Next++, el.InnerHtml);
                     b.CloseElement();
                     break;
+
+                // PascalCase component tag — <Alert type="error" /> or <Alert>children</Alert>.
+                // UpgradePascalCaseTags() wraps these as <ma-component data-key="…" …> before parsing.
+                // Try Component kind first; fall back to Plugin if not found in that kind.
+                case IElement el when el.LocalName == "ma-component":
+                {
+                    var key = el.GetAttribute("data-key") ?? "";
+                    if (string.IsNullOrEmpty(key)) break; // malformed tag — skip silently
+
+                    var attrs = new List<KeyValuePair<string, object?>>();
+                    foreach (var attr in el.Attributes)
+                    {
+                        if (attr.Name == "data-key") continue;
+                        // Apply the same XSS filtering as regular elements (Author trust bypasses it).
+                        if (ctx.Trust != ContentTrust.Author &&
+                            (attr.Name.StartsWith("on", StringComparison.OrdinalIgnoreCase) ||
+                             (UrlAttributes.Contains(attr.Name) && IsUnsafeUri(attr.Value))))
+                            continue;
+                        attrs.Add(new KeyValuePair<string, object?>(attr.Name, attr.Value));
+                    }
+
+                    RenderFragment? childContent = el.ChildNodes.Length > 0
+                        ? innerBuilder =>
+                        {
+                            var ic = new Counter { Next = 0 };
+                            RenderNodes(innerBuilder, ic, el.ChildNodes, ctx);
+                        }
+                        : null;
+
+                    var res = ctx.Catalog.ResolveTag(ContentKind.Component, key, null);
+                    if (res.Outcome != ContentResolution.Resolved)
+                        res = ctx.Catalog.ResolveTag(ContentKind.Plugin, key, null);
+
+                    if (res.Outcome == ContentResolution.Resolved)
+                    {
+                        var type   = res.Type!;
+                        var pTypes = ParameterTypesOf(type);
+                        b.OpenComponent(c.Next++, type);
+                        foreach (var attr in attrs)
+                        {
+                            var val = pTypes.TryGetValue(attr.Key, out var pt)
+                                ? CoerceAttributeValue(pt, attr.Value) : attr.Value;
+                            b.AddAttribute(c.Next++, attr.Key, val);
+                        }
+                        if (childContent is not null && HasChildContent(type))
+                            b.AddAttribute(c.Next++, "ChildContent", childContent);
+                        b.CloseComponent();
+                    }
+                    else
+                    {
+                        EmitMissing(b, ref c.Next, $"<{key}>");
+                        ctx.Alerts?.RaiseMissing(ContentKind.Component, key, null, ctx.PageId, ctx.Slug);
+                    }
+                    break;
+                }
 
                 case IElement el:
                     b.OpenElement(c.Next++, el.LocalName);

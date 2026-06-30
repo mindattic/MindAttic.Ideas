@@ -10,7 +10,8 @@
     <Authorized Context="ctx">
         @{
             var name = ctx.User.Identity?.Name ?? "User";
-            var role = ctx.User.IsInRole("Admin") ? "Admin" : "";
+            var email = ctx.User.FindFirstValue(ClaimTypes.Email) ?? name;
+            var isAdmin = ctx.User.IsInRole("Admin");
         }
         @if (ShowProfileCircle)
         {
@@ -26,18 +27,26 @@
                     }
                 </button>
                 <div class="uc-menu">
-                    <div class="uc-name">@name@(role == "" ? "" : $" ({role})")</div>
-                    <form class="uc-logout-form" method="post" action="/_ma-auth/logout">
-                        <AntiforgeryToken />
-                        <button type="submit" class="uc-logout">Sign out</button>
-                    </form>
+                    <div class="uc-name">@email</div>
+                    <ul class="uc-list">
+                        @if (isAdmin)
+                        {
+                            <li><a href="/admin" class="uc-item">Admin panel</a></li>
+                        }
+                        <li>
+                            <form class="uc-logout-form" method="post" action="/_ma-auth/logout">
+                                <AntiforgeryToken />
+                                <button type="submit" class="uc-logout">Sign out</button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
             </div>
         }
         else
         {
             <span style="display:inline-block;font-size:.85rem;color:#9aa3af;">
-                @name@(role == "" ? "" : $" ({role})")
+                @name
                 <form style="display:inline;margin:0;" method="post" action="/_ma-auth/logout">
                     <AntiforgeryToken />
                     <button type="submit" style="background:none;border:none;color:#9aa3af;font-size:.85rem;cursor:pointer;padding:0 0 0 .4rem;font:inherit;">Sign out</button>

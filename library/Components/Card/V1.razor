@@ -1,4 +1,4 @@
-﻿@namespace MindAttic.Ideas.Component.Card
+@namespace MindAttic.Ideas.Component.Card
 @inherits ComponentBase
 @attribute [Idea(DisplayName = "Card")]
 
@@ -11,11 +11,11 @@
 <link rel="stylesheet" href="/_ideas/Component/card/1/card.css" />
 @if (string.IsNullOrWhiteSpace(Href))
 {
-    <article class="ma-card">@Inner</article>
+    <article class="ma-card @CssClass" style="@_outerStyle">@Inner</article>
 }
 else
 {
-    <a class="ma-card ma-card-link" href="@Href">@Inner</a>
+    <a class="ma-card ma-card-link @CssClass" href="@SafeUrl(Href)" style="@_outerStyle">@Inner</a>
 }
 
 @code {
@@ -37,10 +37,33 @@ else
     /// <summary>Optional small footer line (e.g. a date or category).</summary>
     [Parameter] public string? Footer { get; set; }
 
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter] public string? CssStyle { get; set; }
+
+    /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
+    [Parameter] public string? Padding { get; set; }
+
+    /// <summary>CSS margin shorthand.</summary>
+    [Parameter] public string? Margin { get; set; }
+
+    /// <summary>text-align or flex justification (e.g. "center", "left", "right").</summary>
+    [Parameter] public string? Align { get; set; }
+
     // Single quotes are not HTML-encoded by Blazor, so escape them to keep Image inside the url('…') string.
     private string? BackgroundStyle => string.IsNullOrWhiteSpace(Image)
         ? null
         : $"background-image: url('{Image.Replace("'", "%27")}');";
+
+    private string _outerStyle => string.Join(";", new[]
+    {
+        string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+        string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+        string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        CssStyle,
+    }.Where(s => s is not null));
 
     private RenderFragment Inner => @<text>
         @if (!string.IsNullOrWhiteSpace(ImageClass))

@@ -1,0 +1,165 @@
+@attribute [Authorize(Policy = MaPolicies.Admin)]
+@inject IAssetService AssetSvc
+
+@* Media Library — upload and manage images, PDFs, ZIPs and other files.
+   Small files (≤ 2 MB) are stored inline in the Assets table; larger files go to the media/ folder on disk.
+   Reference uploaded assets in page HTML with:
+     {{Component.MediaImage uid="<uid>" alt="description"}}
+     {{Component.MediaLink  uid="<uid>" label="Download"}} *@
+
+<div class="admin-upload">
+    <p class="admin-sub">
+        Upload images, PDFs, ZIPs, and other media files. Files ≤ 2 MB are stored inline in the database;
+        larger files are saved to the <code>media/</code> folder on disk.
+        Reference assets in page HTML using the tokens shown below each file.
+    </p>
+
+    <label class="admin-dropzone">
+        <InputFile OnChange="OnFilesAsync" multiple />
+        <span class="admin-dropzone-label">Drop files here</span>
+        <span class="admin-dropzone-hint">or <strong>click to browse</strong> · any file type accepted</span>
+    </label>
+
+    @if (_busy)
+    {
+        <div class="admin-status">Uploading…</div>
+    }
+    @if (_error is not null)
+    {
+        <div class="admin-status" style="color:#c0392b">@_error</div>
+    }
+</div>
+
+@if (_items.Count > 0)
+{
+    <table class="admin-table" style="margin-top:1.25rem">
+        <thead>
+            <tr>
+                <th style="width:48px"></th>
+                <th>File</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Include tokens</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _items)
+            {
+                <tr>
+                    <td style="text-align:center">
+                        @if (item.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <img src="/_ma-assets/@item.Uid"
+                                 alt="@item.FileName"
+                                 style="width:40px;height:40px;object-fit:cover;border-radius:4px;display:block;margin:auto" />
+                        }
+                        else
+                        {
+                            <span style="font-size:1.5rem">@FileIcon(item.ContentType)</span>
+                        }
+                    </td>
+                    <td>@item.FileName</td>
+                    <td style="font-size:.8rem">@item.ContentType</td>
+                    <td style="white-space:nowrap">@FormatSize(item.SizeBytes)</td>
+                    <td>
+                        <div style="display:flex;flex-direction:column;gap:.4rem">
+                            @if (item.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <input type="text" readonly
+                                       value="@($"{{{{Component.MediaImage uid=\"{item.Uid}\" alt=\"\"}}}}")"
+                                       onclick="this.select()"
+                                       title="Click to select, then Ctrl+C to copy"
+                                       style="font-family:monospace;font-size:.72rem;width:100%;cursor:pointer;
+                                              background:#111;color:#9cf;border:1px solid #333;padding:2px 4px;border-radius:3px" />
+                            }
+                            <input type="text" readonly
+                                   value="@($"{{{{Component.MediaLink uid=\"{item.Uid}\" label=\"{item.FileName}\"}}}}")"
+                                   onclick="this.select()"
+                                   title="Click to select, then Ctrl+C to copy"
+                                   style="font-family:monospace;font-size:.72rem;width:100%;cursor:pointer;
+                                          background:#111;color:#9cf;border:1px solid #333;padding:2px 4px;border-radius:3px" />
+                        </div>
+                    </td>
+                    <td>
+                        <button class="admin-btn" type="button"
+                                style="color:#c0392b;border-color:#c0392b"
+                                @onclick="() => DeleteAsync(item.Uid)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else if (!_busy)
+{
+    <p class="admin-empty" style="margin-top:1rem">No media assets uploaded yet.</p>
+}
+
+@code {
+    private bool _busy;
+    private string? _error;
+    private List<AssetRow> _items = new();
+
+    protected override async Task OnInitializedAsync() => await RefreshAsync();
+
+    private async Task RefreshAsync()
+    {
+        _items = (await AssetSvc.ListAsync()).ToList();
+    }
+
+    private const long MaxUploadBytes = 256L * 1024 * 1024; // 256 MB cap per file
+
+    private async Task OnFilesAsync(InputFileChangeEventArgs e)
+    {
+        _busy = true;
+        _error = null;
+        StateHasChanged();
+        try
+        {
+            foreach (var file in e.GetMultipleFiles(maximumFileCount: 100))
+            {
+                try
+                {
+                    await using var stream = file.OpenReadStream(MaxUploadBytes);
+                    var ct = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType;
+                    await AssetSvc.UploadAsync(stream, file.Name, ct);
+                    StateHasChanged();
+                }
+                catch (Exception ex)
+                {
+                    _error = $"Failed uploading {file.Name}: {ex.Message}";
+                    StateHasChanged();
+                }
+            }
+            await RefreshAsync();
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteAsync(Guid uid)
+    {
+        await AssetSvc.DeleteAsync(uid);
+        await RefreshAsync();
+    }
+
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        < 1024 => $"{bytes} B",
+        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+        _ => $"{bytes / (1024.0 * 1024):F1} MB",
+    };
+
+    private static string FileIcon(string ct) => ct switch
+    {
+        "application/pdf" => "📄",
+        var s when s.StartsWith("video/", StringComparison.OrdinalIgnoreCase) => "🎬",
+        var s when s.StartsWith("audio/", StringComparison.OrdinalIgnoreCase) => "🎵",
+        "application/zip" or "application/x-zip-compressed" or "application/x-7z-compressed" => "🗜",
+        _ => "📎",
+    };
+}

@@ -74,6 +74,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPackageInstallService, PackageInstallService>();
         services.AddScoped<IPackageRegistryService, PackageRegistryService>();
 
+        // Media asset storage (IAssetService). Caller must configure AssetStorageOptions.MediaRoot
+        // to the app's content root before the service is first resolved.
+        services.AddOptions<AssetStorageOptions>();
+        services.AddScoped<IAssetService, AssetService>();
+
         return services;
     }
 }
