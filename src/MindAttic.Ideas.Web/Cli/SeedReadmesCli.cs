@@ -111,7 +111,7 @@ public static class SeedReadmesCli
                         SiteId = siteId, ParentId = parentPage?.Id,
                         Slug = slug, Title = proj.Title,
                         Kind = PageKind.Data,
-                        BodyHtml = "{{Component.frommd}}",
+                        BodyHtml = "<Component.Frommd />",
                         BodyTrust = ContentTrust.Author,
                         IsPublished = true, Enabled = true,
                         CreatedUtc = now, ModifiedUtc = now,

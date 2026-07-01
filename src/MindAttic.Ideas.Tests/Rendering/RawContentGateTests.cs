@@ -8,8 +8,6 @@ namespace MindAttic.Ideas.Tests.Rendering;
 /// The injection guard for per-page raw Html/Css/Js (Page records). The gate is the SOLE place a
 /// MarkupString is built from author content: Author-trust passes raw (intentional admin markup);
 /// anything Untrusted is sanitized so script/style/event-handler/javascript: injection can't land.
-/// These lock that contract AND prove the {{…}} include tokens survive sanitization (so a non-admin
-/// page can still compose widgets, but can't inject script).
 /// </summary>
 [TestFixture]
 public class RawContentGateTests
@@ -55,17 +53,18 @@ public class RawContentGateTests
     }
 
     [Test]
-    public void Untrusted_PreservesIncludeTokens_SoWidgetsStillCompose()
+    public void Untrusted_PreservesSafePlainText_SoWidgetTokenLikeTextPassesThrough()
     {
-        // A non-admin page is sanitized, but must still be able to place widgets by token — the {{…}}
-        // text survives so IncludeExpander can resolve it. (Injection is blocked; composition is not.)
+        // Non-admin (Untrusted) page content is sanitized. Token-like text {{…}} is plain text
+        // and survives the sanitizer; however, IncludeExpander no longer interprets {{…}} as a
+        // component reference — it is treated as literal text. Component embedding requires Author trust.
         const string body = "<p>before</p>{{ MindAttic.Ideas.Plugin.Tooltip }}<p>after</p>";
         var outp = Untrusted(body);
-        Assert.That(outp, Does.Contain("{{ MindAttic.Ideas.Plugin.Tooltip }}"));
-        // and the parser still finds the reference in the sanitized output
+        Assert.That(outp, Does.Contain("{{ MindAttic.Ideas.Plugin.Tooltip }}"),
+            "plain text (including token-like strings) survives sanitization");
+        // The parser does NOT find it as a component reference (tokens are no longer parsed).
         var refs = IncludeReferenceParser.Parse(outp);
-        Assert.That(refs, Has.Count.EqualTo(1));
-        Assert.That(refs[0], Is.EqualTo((ContentKind.Plugin, "tooltip", (int?)null)));
+        Assert.That(refs, Is.Empty, "token-like text is not a component reference after the token grammar was removed");
     }
 
     [Test]

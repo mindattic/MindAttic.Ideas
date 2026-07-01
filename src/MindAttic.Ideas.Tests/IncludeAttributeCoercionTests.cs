@@ -8,7 +8,7 @@ using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// RFC 0001 typed-attribute coercion: a {{token}} attribute that matches a declared typed
+/// RFC 0001 typed-attribute coercion: a PascalCase HTML tag attribute that matches a declared typed
 /// [Parameter] on the resolved component is converted to that type (bool/int/double/enum, with
 /// Nullable unwrapped); unmatched attributes keep their raw string for the CaptureUnmatchedValues
 /// bag; a value that can't convert falls back to the raw value (a render never throws).
@@ -54,13 +54,13 @@ public class IncludeAttributeCoercionTests
     }
 
     [Test]
-    public void Expand_TokenAttributes_BindTyped_AndLeaveUnmatchedRaw()
+    public void Expand_TagAttributes_BindTyped_AndLeaveUnmatchedRaw()
     {
-        // The full path a data page takes: token text -> IncludeExpander -> component frames.
+        // The full path a data page takes: PascalCase HTML tag -> IncludeExpander -> component frames.
         var builder = new RenderTreeBuilder();
         var seq = 0;
         IncludeExpander.Expand(builder, ref seq,
-            "{{ MindAttic.Ideas.Plugin.Typed flag=true count=42 ratio=1.5 maybecount=7 mode=Spicy text=\"hi\" data-extra=\"raw\" }}",
+            "<Plugin.Typed flag=\"true\" count=\"42\" ratio=\"1.5\" maybecount=\"7\" mode=\"Spicy\" text=\"hi\" data-extra=\"raw\" />",
             new TypedCatalog(), new PassGate(), ContentTrust.Author);
 
         var attrs = ComponentAttributes(builder);
@@ -95,7 +95,7 @@ public class IncludeAttributeCoercionTests
             if (f.FrameType == RenderTreeFrameType.Attribute) attrs[f.AttributeName] = f.AttributeValue;
             else break;   // first non-attribute frame ends the component's attribute run
         }
-        Assert.That(attrs, Is.Not.Empty, "the token must resolve to the TypedWidget component");
+        Assert.That(attrs, Is.Not.Empty, "the tag must resolve to the TypedWidget component");
         return attrs;
     }
 

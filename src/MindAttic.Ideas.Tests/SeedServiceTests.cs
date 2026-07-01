@@ -68,14 +68,14 @@ public class SeedServiceTests
     }
 
     [Test]
-    public async Task SeedAsync_SoftDeletedPageWithLegacyTag_IsMigrated()
+    public async Task SeedAsync_PageWithUnknownBody_IsNotTouchedAndDoesNotThrow()
     {
-        // Regression: the legacy-tag-upgrade query (BodyHtml.Contains "<MindAttic.Ideas.") used the
-        // default EF filter (no IgnoreQueryFilters), so soft-deleted pages with old include tags were
-        // silently skipped. After undelete such pages still used the retired XML tag format, causing
-        // render failures. IgnoreQueryFilters ensures every page gets migrated regardless of IsDeleted.
+        // Regression guard: SeedAsync no longer runs any body-migration pass. A page with an
+        // unrecognisable body (e.g. a legacy XML include tag from a very old install) is left
+        // untouched and SeedAsync must complete without throwing.
         var factory = new InMemoryFactory("seed_legacytag_" + Guid.NewGuid().ToString("N"));
         int siteId;
+        const string originalBody = "<p><MindAttic.Ideas.Component.Textbox /></p>";
         await using (var setup = factory.CreateDbContext())
         {
             var site = new Site
@@ -88,12 +88,11 @@ public class SeedServiceTests
             await setup.SaveChangesAsync();
             siteId = site.Id;
 
-            // Insert a soft-deleted page with a legacy XML include tag.
             setup.Pages.Add(new CmsPage
             {
-                SiteId = siteId, Slug = "legacy-deleted", Title = "Legacy Deleted",
+                SiteId = siteId, Slug = "legacy-body", Title = "Legacy Body",
                 Kind = PageKind.Data,
-                BodyHtml = "<p><MindAttic.Ideas.Component.Textbox /></p>",
+                BodyHtml = originalBody,
                 BodyTrust = ContentTrust.Untrusted,
                 IsPublished = false, Enabled = false,
                 IsDeleted = true, DeletedUtc = DateTime.UtcNow,
@@ -102,15 +101,15 @@ public class SeedServiceTests
             await setup.SaveChangesAsync();
         }
 
-        await new SeedService(factory).SeedAsync();
+        Assert.DoesNotThrowAsync(async () => await new SeedService(factory).SeedAsync(),
+            "SeedAsync must not throw even when a page has an unrecognised body");
 
+        // Body is NOT migrated — SeedAsync no longer transforms existing page bodies.
         await using var verify = factory.CreateDbContext();
         var page = await verify.Pages.IgnoreQueryFilters()
-            .SingleAsync(p => p.SiteId == siteId && p.Slug == "legacy-deleted");
-        Assert.That(page.BodyHtml, Does.Not.Contain("<MindAttic.Ideas."),
-            "legacy XML tag must be migrated to {{ }} token grammar even for soft-deleted pages");
-        Assert.That(page.BodyHtml, Does.Contain("{{"),
-            "migrated body must use the {{ }} token grammar");
+            .SingleAsync(p => p.SiteId == siteId && p.Slug == "legacy-body");
+        Assert.That(page.BodyHtml, Is.EqualTo(originalBody),
+            "SeedAsync must not alter a page body it did not seed");
     }
 
     [Test]

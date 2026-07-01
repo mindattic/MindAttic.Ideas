@@ -136,7 +136,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
                 SiteId = site.Id, Slug = "claudia", Title = "Claudia",
                 ThemeKey = "hardware", ThemeVersion = 1,
                 Kind = PageKind.Data,
-                BodyHtml = "{{ MindAttic.Ideas.Component.Claudia }}",
+                BodyHtml = "<Component.Claudia />",
                 BodyTrust = ContentTrust.Author,
                 AuthoredByUserId = "system-seed",
                 IsPublished = true, Enabled = true,
@@ -155,7 +155,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
                 SeoTitle = "MindAttic.Ideas — The CMS That Gets Out of the Way",
                 ThemeKey = "cyberspace", ThemeVersion = 1,
                 Kind = PageKind.Data,
-                BodyHtml = "{{ MindAttic.Ideas.Component.IdeasBrochure }}",
+                BodyHtml = "<Component.IdeasBrochure />",
                 BodyTrust = ContentTrust.Author,
                 AuthoredByUserId = "system-seed",
                 IsPublished = true, Enabled = true,
@@ -172,7 +172,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
                 SiteId = site.Id, Slug = "chimesh", Title = "ChiMesh",
                 ThemeKey = "hardware", ThemeVersion = 1,
                 Kind = PageKind.Data,
-                BodyHtml = "{{ MindAttic.Ideas.Component.ChiMesh }}",
+                BodyHtml = "<Component.ChiMesh />",
                 BodyTrust = ContentTrust.Author,
                 AuthoredByUserId = "system-seed",
                 IsPublished = true, Enabled = true,
@@ -180,25 +180,6 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             });
             await db.SaveChangesAsync(ct);
         }
-
-        // One-time data upgrade: rewrite any data page still using the retired <MindAttic.Ideas.…/> include
-        // tags to the {{ … }} token grammar. Idempotent — the filter excludes already-converted bodies, so
-        // this is a no-op once the cutover is done. (SQL has no regex, so the rewrite is done here in code.)
-        var legacy = await db.Pages.IgnoreQueryFilters()
-            .Where(p => p.BodyHtml != null && p.BodyHtml.Contains("<MindAttic.Ideas."))
-            .ToListAsync(ct);
-        var upgraded = 0;
-        foreach (var p in legacy)
-        {
-            var converted = Rendering.IncludeReferenceParser.UpgradeLegacyTags(p.BodyHtml);
-            if (!string.Equals(converted, p.BodyHtml, StringComparison.Ordinal))
-            {
-                p.BodyHtml = converted;
-                p.ModifiedUtc = now;
-                upgraded++;
-            }
-        }
-        if (upgraded > 0) await db.SaveChangesAsync(ct);
     }
 
     // The retired stock home body — kept verbatim so the migration above can recognize an untouched
@@ -219,8 +200,8 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         </div>
         """;
 
-    // The self-contained frontpage component token — no PageCss or PageJs needed; the component carries both.
-    private const string FrontpageComponentToken = "{{ MindAttic.Ideas.Component.MindAtticFrontpage }}";
+    // The self-contained frontpage component tag — no PageCss or PageJs needed; the component carries both.
+    private const string FrontpageComponentToken = "<Component.MindAtticFrontpage />";
 
     // ── The Frontpage (legacy inline form, kept for migration recognition only) ────────────────────
     // Recognised in the else-if branch above so an existing DB row using this exact body is migrated
@@ -303,14 +284,14 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         """;
 
 
-    // ── The Personas page: MindAttic.Legion.Frontend collapsed into one token (MAI-A22) ──────────
+    // ── The Personas page: MindAttic.Legion.Frontend collapsed into one tag (MAI-A22) ──────────
     private const string PersonasBodyHtml =
         """
         <main class="personas">
           <h1>Legion Personas</h1>
           <p>Browse MindAttic.Legion's psychometrically-scored personas, each with a generated
              abstract-art portrait — the whole former standalone frontend, as one widget.</p>
-          {{ MindAttic.Ideas.Component.LegionPersonas }}
+          <Component.LegionPersonas />
         </main>
         """;
 

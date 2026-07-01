@@ -4,8 +4,8 @@
 @* Media Library — upload and manage images, PDFs, ZIPs and other files.
    Small files (≤ 2 MB) are stored inline in the Assets table; larger files go to the media/ folder on disk.
    Reference uploaded assets in page HTML with:
-     {{Component.MediaImage uid="<uid>" alt="description"}}
-     {{Component.MediaLink  uid="<uid>" label="Download"}} *@
+     <Component.MediaImage uid="<uid>" alt="description" />
+     <Component.MediaLink  uid="<uid>" label="Download" /> *@
 
 <div class="admin-upload">
     <p class="admin-sub">
@@ -67,14 +67,14 @@
                             @if (item.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
                             {
                                 <input type="text" readonly
-                                       value="@($"{{{{Component.MediaImage uid=\"{item.Uid}\" alt=\"\"}}}}")"
+                                       value="@($"<Component.MediaImage uid=\"{item.Uid}\" alt=\"\" />")"
                                        onclick="this.select()"
                                        title="Click to select, then Ctrl+C to copy"
                                        style="font-family:monospace;font-size:.72rem;width:100%;cursor:pointer;
                                               background:#111;color:#9cf;border:1px solid #333;padding:2px 4px;border-radius:3px" />
                             }
                             <input type="text" readonly
-                                   value="@($"{{{{Component.MediaLink uid=\"{item.Uid}\" label=\"{item.FileName}\"}}}}")"
+                                   value="@($"<Component.MediaLink uid=\"{item.Uid}\" label=\"{item.FileName}\" />")"
                                    onclick="this.select()"
                                    title="Click to select, then Ctrl+C to copy"
                                    style="font-family:monospace;font-size:.72rem;width:100%;cursor:pointer;

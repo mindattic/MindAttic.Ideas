@@ -7,10 +7,10 @@ using MindAttic.Ideas.Core.Rendering;
 namespace MindAttic.Ideas.Tests.Rendering;
 
 /// <summary>
-/// The CmsInclude (compiled-page) seam and the data-page include tag MUST route through the same
+/// The CmsInclude (compiled-page) seam and the data-page PascalCase include tag MUST route through the same
 /// resolve/render core (IncludeExpander.EmitInclude), so a compiled page's
 /// <c>&lt;CmsInclude Ref="MindAttic.Ideas.Plugin.Tooltip.V11"/&gt;</c> degrades and alerts identically
-/// to a data page's <c>&lt;MindAttic.Ideas.Plugin.Tooltip.V11/&gt;</c>. These tests assert that parity.
+/// to a data page's <c>&lt;Plugin.Tooltip data-version="11" /&gt;</c>. These tests assert that parity.
 /// </summary>
 [TestFixture]
 public class CmsIncludeParityTests
@@ -80,13 +80,13 @@ public class CmsIncludeParityTests
         return (sink.Missing, sink.Disabled, placeholder, resolved);
     }
 
-    // The data-page path (IncludeExpander over an HTML string).
+    // The data-page path (IncludeExpander over an HTML string with a PascalCase tag).
     private static (int, int, bool, bool) RunDataPage(ContentResolution outcome)
     {
         var sink = new RecordingSink();
         var b = new RenderTreeBuilder();
         var seq = 0;
-        IncludeExpander.Expand(b, ref seq, "{{MindAttic.Ideas.Plugin.Tooltip.V11}}",
+        IncludeExpander.Expand(b, ref seq, "<Plugin.Tooltip data-version=\"11\" />",
             new FakeCatalog { Outcome = outcome }, new PassGate(), ContentTrust.Author, sink,
             new FakePage().PageId, "demo");
         return Frames(b, sink);

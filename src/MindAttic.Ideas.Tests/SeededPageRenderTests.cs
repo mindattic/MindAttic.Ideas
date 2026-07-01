@@ -28,25 +28,25 @@ namespace MindAttic.Ideas.Tests;
 [TestFixture]
 public class SeededPageRenderTests
 {
-    // Sample floating tokens (no .Vn suffix) to verify the parser handles each kind correctly.
-    private const string SeedTabsToken    = "{{ MindAttic.Ideas.Component.Tabs }}";
-    private const string SeedGalleryToken = "{{ MindAttic.Ideas.Component.Gallery }}";
-    private const string SeedFooterToken  = "{{ MindAttic.Ideas.Plugin.Footer }}";
+    // Sample PascalCase tags (no data-version = float to latest) to verify the parser handles each kind correctly.
+    private const string SeedTabsTag    = "<Component.Tabs />";
+    private const string SeedGalleryTag = "<Component.Gallery />";
+    private const string SeedFooterTag  = "<Plugin.Footer />";
 
-    [TestCase(SeedTabsToken,    "tabs",    ContentKind.Component)]
-    [TestCase(SeedGalleryToken, "gallery", ContentKind.Component)]
-    [TestCase(SeedFooterToken,  "footer",  ContentKind.Plugin)]
-    public void SeedBodyTokens_ParseToCorrectKind_FloatingVersion(
-        string seedToken, string expectedKey, ContentKind expectedKind)
+    [TestCase(SeedTabsTag,    "tabs",    ContentKind.Component)]
+    [TestCase(SeedGalleryTag, "gallery", ContentKind.Component)]
+    [TestCase(SeedFooterTag,  "footer",  ContentKind.Plugin)]
+    public void SeedBodyTags_ParseToCorrectKind_FloatingVersion(
+        string seedTag, string expectedKey, ContentKind expectedKind)
     {
-        var refs = IncludeReferenceParser.Parse(seedToken);
+        var refs = IncludeReferenceParser.Parse(seedTag);
 
         Assert.That(refs, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
             Assert.That(refs[0].Kind,    Is.EqualTo(expectedKind));
             Assert.That(refs[0].Key,     Is.EqualTo(expectedKey));
-            Assert.That(refs[0].Version, Is.Null, "floating tokens have no version pin");
+            Assert.That(refs[0].Version, Is.Null, "floating tags have no version pin");
         });
     }
 
@@ -144,7 +144,7 @@ public class SeededPageRenderTests
             {
                 Assert.That(front.Kind, Is.EqualTo(PageKind.Data), "stock compiled frontpage migrates to Data");
                 Assert.That(front.ComponentTypeName, Is.Null);
-                Assert.That(front.BodyHtml, Is.EqualTo("{{ MindAttic.Ideas.Component.MindAtticFrontpage }}"));
+                Assert.That(front.BodyHtml, Is.EqualTo("<Component.MindAtticFrontpage />"));
                 Assert.That(custom.Kind, Is.EqualTo(PageKind.Code), "admin page is never clobbered");
                 Assert.That(custom.ComponentTypeName, Is.EqualTo("My.Custom.Page.V1"));
             });
@@ -198,7 +198,7 @@ public class SeededPageRenderTests
     public async Task SeedBody_InstalledTabsComponent_ExpandsToResolvedFrame()
     {
         // Proves the full pipeline for the A6 scenario: install a component with key "tabs"
-        // (matching the seed body's Component.Tabs token), then verify IncludeExpander resolves it.
+        // (matching the seed body's <Component.Tabs /> tag), then verify IncludeExpander resolves it.
         var (svc, catalog) = BuildPipeline();
 
         var archive = IdeaTestArchive.Build(new Dictionary<string, string>
@@ -214,10 +214,10 @@ public class SeededPageRenderTests
         });
         await svc.InstallAsync(archive, allowOverride: false);
 
-        // The floating token "{{ MindAttic.Ideas.Component.Tabs }}" (no .VN = float to latest).
+        // The floating PascalCase tag "<Component.Tabs />" (no data-version = float to latest).
         var builder = new RenderTreeBuilder();
         var seq = 0;
-        IncludeExpander.Expand(builder, ref seq, SeedTabsToken, catalog, new PassGate(), ContentTrust.Author);
+        IncludeExpander.Expand(builder, ref seq, SeedTabsTag, catalog, new PassGate(), ContentTrust.Author);
 
         var frames = builder.GetFrames();
         bool hasResolved = false, hasMissing = false;
@@ -230,8 +230,8 @@ public class SeededPageRenderTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(hasMissing,  Is.False, "seed Tabs token must not degrade to MissingContent");
-            Assert.That(hasResolved, Is.True,  "seed Tabs token must resolve to a Component frame");
+            Assert.That(hasMissing,  Is.False, "seed Tabs tag must not degrade to MissingContent");
+            Assert.That(hasResolved, Is.True,  "seed Tabs tag must resolve to a Component frame");
         });
     }
 

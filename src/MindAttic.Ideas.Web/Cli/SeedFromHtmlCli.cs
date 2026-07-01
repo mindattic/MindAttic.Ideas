@@ -51,7 +51,7 @@ public static class SeedFromHtmlCli
                     SiteId = siteId,
                     Slug = PageSlug, Title = PageTitle,
                     Kind = PageKind.Data,
-                    BodyHtml = "{{Component.fromhtml}}",
+                    BodyHtml = "<Component.Fromhtml />",
                     BodyTrust = ContentTrust.Author,
                     IsPublished = true, Enabled = true,
                     OpenInNewWindow = true,

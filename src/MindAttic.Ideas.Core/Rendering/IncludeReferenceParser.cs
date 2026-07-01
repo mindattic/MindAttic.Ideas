@@ -6,34 +6,29 @@ using MindAttic.Ideas.Abstractions;
 namespace MindAttic.Ideas.Core.Rendering;
 
 /// <summary>
-/// The ONE grammar for the include token <c>{{ [MindAttic.Ideas.]{Kind}.{Name}[.V{n}|.Latest] [attrs] }}</c>
-/// — the <c>MindAttic.Ideas.</c> prefix is OPTIONAL, so <c>{{Theme.Cyberspace}}</c> and
-/// <c>{{MindAttic.Ideas.Theme.Cyberspace}}</c> are equivalent —
-/// extracted so the renderer (<see cref="IncludeExpander"/>) and the delete-guard
-/// (ContentLifecycleService) parse references identically — no divergent duplicate. We use DOUBLE BRACES
-/// (not a custom HTML element) because <c>&lt;MindAttic.Ideas.…/&gt;</c> is non-conforming HTML: the parser
-/// ignores its self-close so it swallows following siblings, and a sanitizer strips the unknown element.
-/// A <c>{{…}}</c> token is inert text — it survives HTML parsing, sanitization, and WYSIWYG editing — and is
-/// resolved here. Tokens are matched only inside TEXT nodes (AngleSharp), so a token in an HTML comment is
-/// ignored. The kind segment is REQUIRED (the catalog/guard/hoist key on kind+key). Attributes after the
-/// reference are parsed by the renderer, not here (they don't affect reference identity).
+/// Parses include references from author HTML. The ONLY supported form is the PascalCase HTML
+/// component tag: <c>&lt;Alert /&gt;</c>, <c>&lt;Alert kind="Plugin" /&gt;</c>,
+/// <c>&lt;Alert&gt;…&lt;/Alert&gt;</c> (nested). Tags are pre-processed by
+/// <see cref="IncludeExpander.UpgradePascalCaseTags"/> into <c>&lt;ma-component data-key="…"&gt;</c>
+/// before AngleSharp parses so that tag names, attributes, and children are handled correctly.
+/// Extracted so the renderer (<see cref="IncludeExpander"/>) and the delete-guard
+/// (ContentLifecycleService) parse references identically — no divergent duplicate.
+/// The kind segment is REQUIRED (the catalog/guard/hoist key on kind+key).
 /// </summary>
 public static class IncludeReferenceParser
 {
     private static readonly HtmlParser Parser = new();
 
-    /// <summary>The include-token grammar: group 1 = the dotted reference (the <c>MindAttic.Ideas.</c>
-    /// prefix is OPTIONAL), group 2 = the raw attribute tail. A matched token whose first segment is not a
-    /// real <see cref="ContentKind"/> fails <see cref="TryParseTag"/> and is left as literal text.</summary>
-    public static readonly Regex BraceInclude =
-        new(@"\{\{\s*((?:MindAttic\.Ideas\.)?[A-Za-z0-9_.]+)([^}]*?)\}\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-    /// <summary>Every include reference in author HTML, in document order. Empty for null/blank.</summary>
+    /// <summary>Every include reference in author HTML, in document order. Handles PascalCase HTML
+    /// component tags (<c>&lt;Alert /&gt;</c>, <c>&lt;Alert kind="Plugin"&gt;…&lt;/Alert&gt;</c>).
+    /// Empty for null/blank.</summary>
     public static IReadOnlyList<(ContentKind Kind, string Key, int? Version)> Parse(string? html)
     {
         var result = new List<(ContentKind, string, int?)>();
         if (string.IsNullOrWhiteSpace(html)) return result;
-        using var doc = Parser.ParseDocument("<!DOCTYPE html><html><head></head><body>" + html + "</body></html>");
+        // Upgrade PascalCase tags so Walk finds them as ma-component elements rather than unknown text.
+        var upgraded = IncludeExpander.UpgradePascalCaseTags(html);
+        using var doc = Parser.ParseDocument("<!DOCTYPE html><html><head></head><body>" + upgraded + "</body></html>");
         Walk(doc.Body!.ChildNodes, result);
         return result;
     }
@@ -42,41 +37,25 @@ public static class IncludeReferenceParser
     {
         foreach (var node in nodes)
         {
-            if (node is IText t)
+            if (node is IElement el)
             {
-                foreach (Match m in BraceInclude.Matches(t.Text))
-                    if (TryParseTag(m.Groups[1].Value.ToLowerInvariant(), out var kind, out var key, out var version))
+                // PascalCase HTML tag form — UpgradePascalCaseTags rewrites these to ma-component before Walk.
+                if (el.LocalName == "ma-component")
+                {
+                    var key = el.GetAttribute("data-key") ?? "";
+                    if (key.Length > 0)
+                    {
+                        var kindStr = el.GetAttribute("kind");
+                        ContentKind kind = ContentKind.Component; // default; Plugin is a fallback at render time
+                        if (kindStr is not null) Enum.TryParse(kindStr, ignoreCase: true, out kind);
+                        int? version = null;
+                        if (int.TryParse(el.GetAttribute("data-version"), out var v)) version = v;
                         acc.Add((kind, key, version));
-            }
-            else if (node is IElement el)
-            {
-                Walk(el.ChildNodes, acc);   // tokens live in text, but recurse so nested text is scanned
+                    }
+                }
+                Walk(el.ChildNodes, acc);
             }
         }
-    }
-
-    // One-time upgrade of the RETIRED custom-element include form to the {{…}} token form. Self-closing
-    // <MindAttic.Ideas.X.Y.Z .../> and empty paired <…></…> both become {{ X.Y.Z … }}; attributes
-    // (including quoted values) are preserved verbatim. Idempotent — content already on {{…}} is untouched.
-    private static readonly Regex LegacyEmptyPair =
-        new(@"<(MindAttic\.Ideas\.[A-Za-z0-9_.]+)((?:\s[^<>]*?)?)\s*>\s*</\1>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex LegacySelfClosing =
-        new(@"<(MindAttic\.Ideas\.[A-Za-z0-9_.]+)((?:\s[^<>]*?)?)\s*/>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-    /// <summary>Rewrite legacy <c>&lt;MindAttic.Ideas.…/&gt;</c> include tags in author HTML to <c>{{ … }}</c> tokens.</summary>
-    public static string? UpgradeLegacyTags(string? html)
-    {
-        if (string.IsNullOrEmpty(html) || !html.Contains("<MindAttic.Ideas.", StringComparison.OrdinalIgnoreCase))
-            return html;
-
-        static string ToToken(Match m)
-        {
-            var attrs = m.Groups[2].Value.Trim();   // drop the separator/edge whitespace the pattern captured
-            return attrs.Length == 0 ? "{{" + m.Groups[1].Value + "}}" : "{{" + m.Groups[1].Value + " " + attrs + "}}";
-        }
-
-        var s = LegacyEmptyPair.Replace(html, ToToken);
-        return LegacySelfClosing.Replace(s, ToToken);
     }
 
     /// <summary>

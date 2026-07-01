@@ -23,7 +23,7 @@ public class ContentLifecycleServiceTests
     [Test]
     public void PinnedVersion_AlwaysBlocks_AndListsSlug()
     {
-        var pages = new[] { Pub("home", "{{MindAttic.Ideas.Plugin.Tooltip.V11}}") };
+        var pages = new[] { Pub("home", "<Plugin.Tooltip data-version=\"11\" />") };
         var blocking = ContentLifecycleService.FindBlockingPages(
             ContentKind.Plugin, "tooltip", 11, pages, otherEnabledVersions: new[] { 12 });
         Assert.That(blocking, Is.EquivalentTo(new[] { "home" }));   // pin blocks even though V12 also exists
@@ -32,7 +32,7 @@ public class ContentLifecycleServiceTests
     [Test]
     public void FloatingReference_BlocksOnlyWhenItWouldOrphan()
     {
-        var pages = new[] { Pub("home", "{{MindAttic.Ideas.Plugin.Tooltip}}") };  // floats to latest
+        var pages = new[] { Pub("home", "<Plugin.Tooltip />") };  // floats to latest
         // V11 is the last enabled version -> deleting it orphans the float -> blocked.
         Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "tooltip", 11, pages, Array.Empty<int>()),
             Is.EquivalentTo(new[] { "home" }));
@@ -46,8 +46,8 @@ public class ContentLifecycleServiceTests
     {
         var pages = new[]
         {
-            new PageRef("draft", "{{MindAttic.Ideas.Plugin.Tooltip.V11}}", null, null, Enabled: false, IsPublished: true),
-            new PageRef("hidden", "{{MindAttic.Ideas.Plugin.Tooltip.V11}}", null, null, Enabled: true, IsPublished: false),
+            new PageRef("draft", "<Plugin.Tooltip data-version=\"11\" />", null, null, Enabled: false, IsPublished: true),
+            new PageRef("hidden", "<Plugin.Tooltip data-version=\"11\" />", null, null, Enabled: true, IsPublished: false),
         };
         Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "tooltip", 11, pages, Array.Empty<int>()),
             Is.Empty);
@@ -60,7 +60,7 @@ public class ContentLifecycleServiceTests
         // so they fell through the guard and falsely blocked citizen deletion.
         var pages = new[]
         {
-            new PageRef("removed", "{{Plugin.Tooltip.V11}}", null, null, Enabled: true, IsPublished: true, IsDeleted: true),
+            new PageRef("removed", "<Plugin.Tooltip data-version=\"11\" />", null, null, Enabled: true, IsPublished: true, IsDeleted: true),
         };
         Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "tooltip", 11, pages, Array.Empty<int>()),
             Is.Empty, "soft-deleted pages must not block citizen deletion");
@@ -141,7 +141,7 @@ public class ContentLifecycleServiceTests
             db.Pages.Add(new CmsPage
             {
                 Slug = "home", Title = "Home",
-                Kind = PageKind.Data, BodyHtml = "{{Plugin.myplugin.V1}}",
+                Kind = PageKind.Data, BodyHtml = "<Plugin.Myplugin data-version=\"1\" />",
                 BodyTrust = ContentTrust.Untrusted, Enabled = true, IsPublished = true,
                 CreatedUtc = DateTime.UtcNow,
             });

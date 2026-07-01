@@ -17,29 +17,6 @@ public class RenderGuardTests
     // ---- IncludeReferenceParser grammar ----
 
     [Test]
-    public void Parse_PinnedVersion()
-    {
-        var refs = IncludeReferenceParser.Parse("{{MindAttic.Ideas.Plugin.Tooltip.V11}}");
-        Assert.That(refs, Has.Count.EqualTo(1));
-        Assert.That(refs[0], Is.EqualTo((ContentKind.Plugin, "tooltip", (int?)11)));
-    }
-
-    [Test]
-    public void Parse_PrefixIsOptional_ShortFormEqualsFullForm()
-    {
-        // {{Theme.Cyberspace}} == {{MindAttic.Ideas.Theme.Cyberspace}}; both forms parse identically.
-        Assert.That(IncludeReferenceParser.Parse("{{Theme.Cyberspace}}"),
-            Is.EqualTo(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Theme.Cyberspace}}")));
-
-        var refs = IncludeReferenceParser.Parse("{{Theme.Cyberspace}}{{Plugin.Tooltip}}");
-        Assert.That(refs, Is.EqualTo(new[]
-        {
-            (ContentKind.Theme, "cyberspace", (int?)null),
-            (ContentKind.Plugin, "tooltip", (int?)null),
-        }));
-    }
-
-    [Test]
     public void TryParseTag_ShortForm_WithVersionAndDottedKey()
     {
         Assert.That(IncludeReferenceParser.TryParseTag("plugin.tooltip.v11", out var k, out var key, out var v), Is.True);
@@ -53,61 +30,24 @@ public class RenderGuardTests
     [Test]
     public void TryParseTag_KindAloneOrUnknownKind_Fails()
     {
-        // A lone kind has no key, and a first segment that isn't a real kind is not an include
-        // (so a stray {{foo.bar}} survives as literal text rather than becoming a placeholder).
+        // A lone kind has no key, and a first segment that isn't a real kind is not an include.
         Assert.That(IncludeReferenceParser.TryParseTag("theme", out _, out _, out _), Is.False);
         Assert.That(IncludeReferenceParser.TryParseTag("foo.bar", out _, out _, out _), Is.False);
-    }
-
-    [Test]
-    public void Parse_BraceToken_WithAttributes_ResolvesReferenceIgnoringAttrs()
-    {
-        // Tokens carry attributes (e.g. fontSize=0.5rem); they don't affect the (kind,key,version) identity,
-        // and surrounding text is ignored. Only the reference is parsed here.
-        var refs = IncludeReferenceParser.Parse(
-            "before {{ MindAttic.Ideas.Plugin.TableOfContents fontSize=0.5rem class=\"x y\" }} after");
-        Assert.That(refs, Has.Count.EqualTo(1));
-        Assert.That(refs[0], Is.EqualTo((ContentKind.Plugin, "tableofcontents", (int?)null)));
-    }
-
-    [Test]
-    public void Parse_FloatingAndLatest_HaveNullVersion()
-    {
-        Assert.That(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Theme.Cyberspace}}")[0],
-            Is.EqualTo((ContentKind.Theme, "cyberspace", (int?)null)));
-        Assert.That(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Plugin.Tooltip.Latest}}")[0],
-            Is.EqualTo((ContentKind.Plugin, "tooltip", (int?)null)));
-    }
-
-    [Test]
-    public void UpgradeLegacyTags_RewritesOldElementFormToTokens_AndIsIdempotent()
-    {
-        var html = "<p>x</p><MindAttic.Ideas.Plugin.Tooltip /><MindAttic.Ideas.Plugin.Textbox placeholder=\"Type\" />";
-        var up = IncludeReferenceParser.UpgradeLegacyTags(html)!;
-        Assert.That(up, Does.Contain("{{MindAttic.Ideas.Plugin.Tooltip}}"));
-        Assert.That(up, Does.Contain("{{MindAttic.Ideas.Plugin.Textbox placeholder=\"Type\"}}"));
-        Assert.That(up, Does.Not.Contain("<MindAttic.Ideas."));
-        // Already-token content is left untouched (idempotent on a second pass / on new content).
-        Assert.That(IncludeReferenceParser.UpgradeLegacyTags("{{MindAttic.Ideas.Plugin.Tooltip}}"),
-            Is.EqualTo("{{MindAttic.Ideas.Plugin.Tooltip}}"));
     }
 
     [Test]
     public void Parse_IgnoresPlainHtmlAndMalformed()
     {
         Assert.That(IncludeReferenceParser.Parse("<div><p>hello</p></div>"), Is.Empty);
-        Assert.That(IncludeReferenceParser.Parse("{{MindAttic.Ideas.Bogus.Thing}}"), Is.Empty); // kind not a ContentKind
         Assert.That(IncludeReferenceParser.Parse(null), Is.Empty);
     }
 
     [Test]
-    public void BodyPinsVersion_And_BodyReferencesKey()
+    public void Parse_IgnoresTokenLikeText()
     {
-        const string html = "{{MindAttic.Ideas.Plugin.Tooltip.V11}}{{MindAttic.Ideas.Theme.Cyberspace}}";
-        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Plugin, "tooltip", 11), Is.True);
-        Assert.That(IncludeReferenceParser.BodyPinsVersion(html, ContentKind.Plugin, "tooltip", 12), Is.False);
-        Assert.That(IncludeReferenceParser.BodyReferencesKey(html, ContentKind.Theme, "cyberspace"), Is.True);
-        Assert.That(IncludeReferenceParser.BodyFloatsKey(html, ContentKind.Theme, "cyberspace"), Is.True);
+        // Text containing {{Plugin.Foo}} is now left as literal text — no component reference is found.
+        var refs = IncludeReferenceParser.Parse("<p>{{Plugin.Foo}}</p>");
+        Assert.That(refs, Is.Empty, "token-like text must not be parsed as a component reference");
     }
 
     // ---- IncludeExpander guard behavior ----
@@ -160,7 +100,7 @@ public class RenderGuardTests
         var builder = new RenderTreeBuilder();
         builder.OpenElement(0, "div");
         var seq = 1;
-        IncludeExpander.Expand(builder, ref seq, "{{MindAttic.Ideas.Plugin.Tooltip.V11}}",
+        IncludeExpander.Expand(builder, ref seq, "<Plugin.Tooltip />",
             catalog, new PassGate(), ContentTrust.Author, sink, Guid.NewGuid(), "demo");
         builder.CloseElement();
 
@@ -322,5 +262,89 @@ public class RenderGuardTests
             }
         }
         Assert.That(scriptFound, Is.False, "untrusted <script> element must be omitted entirely from the render tree");
+    }
+
+    // ---- Nested PascalCase XML tags <Outer><Inner>…</Inner></Outer> ----
+
+    [Test]
+    public void Expander_NestedPascalTags_OuterReceivesInnerAsChildContent()
+    {
+        // <Outer><Inner>text</Inner></Outer> — UpgradePascalCaseTags rewrites both to ma-component;
+        // AngleSharp parses them as nested elements; RenderNodes emits both components with the inner
+        // passed as ChildContent of the outer (if the outer declares it).
+        var catalog = new FakeCatalog { Outcome = ContentResolution.Resolved };
+        var builder = new RenderTreeBuilder();
+        var seq = 1;
+        IncludeExpander.Expand(builder, ref seq, "<Outer><Inner>text</Inner></Outer>",
+            catalog, new PassGate(), ContentTrust.Author, pageId: Guid.NewGuid(), slug: "x");
+
+        var frames = builder.GetFrames();
+        var componentCount = 0;
+        for (var i = 0; i < frames.Count; i++)
+            if (frames.Array[i].FrameType == RenderTreeFrameType.Component &&
+                frames.Array[i].ComponentType == typeof(DummyComponent))
+                componentCount++;
+
+        Assert.That(componentCount, Is.GreaterThanOrEqualTo(1),
+            "at least the outer PascalCase component must be resolved");
+    }
+
+    // ---- dotted <Kind.Key /> form ----
+
+    [Test]
+    public void Parse_DottedTag_CollectedWithCorrectKind()
+    {
+        // <Plugin.Footer /> — Parse() should find it as a Plugin reference.
+        var refs = IncludeReferenceParser.Parse("<Plugin.Footer />");
+        Assert.That(refs, Has.Count.EqualTo(1));
+        Assert.That(refs[0].Kind, Is.EqualTo(ContentKind.Plugin));
+        Assert.That(refs[0].Key, Is.EqualTo("footer"));
+    }
+
+    [Test]
+    public void Parse_PascalTag_WithoutKindAttribute_DefaultsToComponent()
+    {
+        // <Alert /> without kind — Parse defaults the reported kind to Component (render-time
+        // will also try Plugin as a fallback, but the guard records Component).
+        var refs = IncludeReferenceParser.Parse("<Alert />");
+        Assert.That(refs, Has.Count.EqualTo(1));
+        Assert.That(refs[0].Kind, Is.EqualTo(ContentKind.Component));
+        Assert.That(refs[0].Key, Is.EqualTo("alert"));
+    }
+
+    [Test]
+    public void Expander_DottedTag_UsedForResolution_NoFallback()
+    {
+        // <Plugin.Footer /> with an explicit kind must NOT fall back to Component if Plugin
+        // is missing — the dotted kind prefix is an authoritative disambiguation, not a hint.
+        var catalog = new FakeCatalog { Outcome = ContentResolution.Missing };
+        var sink = new RecordingSink();
+        var builder = new RenderTreeBuilder();
+        var seq = 1;
+        IncludeExpander.Expand(builder, ref seq, "<Plugin.Footer />",
+            catalog, new PassGate(), ContentTrust.Author, sink, Guid.NewGuid(), "x");
+
+        // Exactly one Missing alert for Plugin, none for Component.
+        Assert.That(sink.Missing, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Expander_DottedTag_KindNotPassedToComponent()
+    {
+        // The kind prefix in <Plugin.Footer> is routing metadata; it must not reach the component as a parameter.
+        var catalog = new FakeCatalog { Outcome = ContentResolution.Resolved };
+        var builder = new RenderTreeBuilder();
+        var seq = 1;
+        IncludeExpander.Expand(builder, ref seq, "<Plugin.Footer title=\"home\" />",
+            catalog, new PassGate(), ContentTrust.Author, pageId: Guid.NewGuid(), slug: "x");
+
+        var frames = builder.GetFrames();
+        bool kindAttrFound = false;
+        for (var i = 0; i < frames.Count; i++)
+            if (frames.Array[i].FrameType == RenderTreeFrameType.Attribute &&
+                string.Equals(frames.Array[i].AttributeName, "kind", StringComparison.OrdinalIgnoreCase))
+                kindAttrFound = true;
+
+        Assert.That(kindAttrFound, Is.False, "kind must not be forwarded to the component");
     }
 }

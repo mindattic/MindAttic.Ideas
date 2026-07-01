@@ -4,46 +4,45 @@ using MindAttic.Ideas.Core.Rendering;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// Verifies that the token strings MonacoEditor generates for its catalog IntelliSense provider
+/// Verifies that the tag strings MonacoEditor generates for its catalog IntelliSense provider
 /// round-trip through the include-reference grammar (MAI-US-F8).
+/// The completion now emits dotted PascalCase HTML tags: &lt;Kind.Key /&gt;
 /// </summary>
 [TestFixture]
 public class MonacoEditorTokenTests
 {
-    // Mirrors the interpolation in MonacoEditor.razor: $"{{{{{kind}.{key}.V{version}}}}}"
-    private static string FormatToken(ContentKind kind, string key, int version) =>
-        $"{{{{{kind}.{key}.V{version}}}}}";
-
-    [TestCase(ContentKind.Plugin, "tooltip",       1, "tooltip",       1)]
-    [TestCase(ContentKind.Plugin, "my.complex.key", 5, "my.complex.key", 5)]
-    [TestCase(ContentKind.Theme,  "cyberspace",    1, "cyberspace",    1)]
-    [TestCase(ContentKind.Theme,  "dark",          2, "dark",          2)]
-    public void IntelliSenseToken_ParsesBackViaTagGrammar(
-        ContentKind kind, string key, int version, string expectedKey, int expectedVersion)
+    // Mirrors the interpolation in MonacoEditor.razor:
+    // $"<{d.Kind}.{char.ToUpperInvariant(d.Key[0])}{d.Key[1..]} />"
+    private static string FormatTag(ContentKind kind, string key)
     {
-        var token = FormatToken(kind, key, version);
+        var pascalKey = char.ToUpperInvariant(key[0]) + key[1..];
+        return $"<{kind}.{pascalKey} />";
+    }
 
-        // BraceInclude extracts the inner reference from {{ … }}.
-        var match = IncludeReferenceParser.BraceInclude.Match(token);
-        Assert.That(match.Success, Is.True, $"BraceInclude did not match '{token}'");
+    [TestCase(ContentKind.Plugin, "tooltip",    "tooltip")]
+    [TestCase(ContentKind.Theme,  "cyberspace", "cyberspace")]
+    [TestCase(ContentKind.Theme,  "dark",       "dark")]
+    public void IntelliSenseTag_ParsesBackViaIncludeReferenceParser(
+        ContentKind kind, string key, string expectedKey)
+    {
+        var tag = FormatTag(kind, key);
 
-        var inner = match.Groups[1].Value.ToLowerInvariant();
-        Assert.That(IncludeReferenceParser.TryParseTag(inner, out var parsedKind, out var parsedKey, out var parsedVersion), Is.True);
+        var refs = IncludeReferenceParser.Parse(tag);
+        Assert.That(refs, Has.Count.EqualTo(1), $"Parse did not find a reference in '{tag}'");
 
         Assert.Multiple(() =>
         {
-            Assert.That(parsedKind,    Is.EqualTo(kind));
-            Assert.That(parsedKey,     Is.EqualTo(expectedKey));
-            Assert.That(parsedVersion, Is.EqualTo(expectedVersion));
+            Assert.That(refs[0].Kind, Is.EqualTo(kind));
+            Assert.That(refs[0].Key,  Is.EqualTo(expectedKey));
         });
     }
 
     [Test]
-    public void IntelliSenseToken_InsertedInBody_ParsedByIncludeReferenceParser()
+    public void IntelliSenseTag_InsertedInBody_ParsedByIncludeReferenceParser()
     {
-        // Proves the full round-trip: Monaco inserts token → page body → Parse → (kind, key, version).
-        var token = FormatToken(ContentKind.Plugin, "tooltip", 1);
-        var html  = $"<p>Embed: {token}</p>";
+        // Proves the full round-trip: Monaco inserts tag → page body → Parse → (kind, key, version).
+        var tag  = FormatTag(ContentKind.Plugin, "tooltip");
+        var html = $"<p>Embed: {tag}</p>";
 
         var refs = IncludeReferenceParser.Parse(html);
 
@@ -52,7 +51,7 @@ public class MonacoEditorTokenTests
         {
             Assert.That(refs[0].Kind,    Is.EqualTo(ContentKind.Plugin));
             Assert.That(refs[0].Key,     Is.EqualTo("tooltip"));
-            Assert.That(refs[0].Version, Is.EqualTo(1));
+            Assert.That(refs[0].Version, Is.Null, "floating tag has no version pin");
         });
     }
 }

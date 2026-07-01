@@ -4,7 +4,7 @@
 @inject IContentCatalog Catalog
 
 @* Thin Monaco wrapper for the admin body-HTML editor. Lazy-loads Monaco from CDN on first use
-   and registers a catalog-driven {{ }} completion provider for token IntelliSense. *@
+   and registers a catalog-driven PascalCase tag completion provider for component IntelliSense. *@
 
 <div @ref="_host" class="admin-monaco-host"></div>
 
@@ -26,8 +26,8 @@
             .OrderBy(d => d.Kind).ThenBy(d => d.Key).ThenByDescending(d => d.Version)
             .Select(d => new
             {
-                label       = $"{{{{{d.Kind}.{d.Key}.V{d.Version}}}}}",
-                token       = $"{{{{{d.Kind}.{d.Key}.V{d.Version}}}}}",
+                label       = $"<{d.Kind}.{char.ToUpperInvariant(d.Key[0])}{d.Key[1..]} />",
+                token       = $"<{d.Kind}.{char.ToUpperInvariant(d.Key[0])}{d.Key[1..]} />",
                 kind        = d.Kind.ToString(),
                 displayName = d.DisplayName
             });

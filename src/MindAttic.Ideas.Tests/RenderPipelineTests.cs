@@ -70,7 +70,7 @@ public class RenderPipelineTests
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
             {
                 ManifestVersion = 1, Category = "Plugin", Kind = "code",
-                Key = "test.widget", Version = 1,
+                Key = "testwidget", Version = 1,
                 DisplayName = "Test Widget", Sdk = 1,
                 EntryType = TestPluginTypeName,
                 AssemblyName = FakeAsmName,
@@ -82,14 +82,14 @@ public class RenderPipelineTests
         var plan = await svc.InstallAsync(archive, allowOverride: false);
 
         // Catalog should now have the descriptor
-        var desc = catalog.FindLatest(ContentKind.Plugin, "test.widget");
+        var desc = catalog.FindLatest(ContentKind.Plugin, "testwidget");
         Assert.That(desc, Is.Not.Null, "catalog should contain the installed widget");
 
         // IncludeExpander should produce a Component frame, not a Missing placeholder
         var builder = new RenderTreeBuilder();
         var seq = 0;
         IncludeExpander.Expand(builder, ref seq,
-            "{{Plugin.test.widget.V1}}",
+            "<Plugin.Testwidget data-version=\"1\" />",
             catalog, new PassGate(), ContentTrust.Author);
 
         var frames = builder.GetFrames();
@@ -118,7 +118,7 @@ public class RenderPipelineTests
             ["idea.json"] = ManifestReader.Write(new IdeaManifest
             {
                 ManifestVersion = 1, Category = "Plugin", Kind = "code",
-                Key = "known.widget", Version = 1, DisplayName = "Known", Sdk = 1,
+                Key = "knownwidget", Version = 1, DisplayName = "Known", Sdk = 1,
                 EntryType = TestPluginTypeName, AssemblyName = FakeAsmName,
             }),
             [$"bin/{FakeAsmName}.dll"] = "MZ-fake",
@@ -129,7 +129,7 @@ public class RenderPipelineTests
         var builder = new RenderTreeBuilder();
         var seq = 0;
         IncludeExpander.Expand(builder, ref seq,
-            "{{Plugin.not.installed.V1}}",
+            "<Plugin.NotInstalled data-version=\"1\" />",
             catalog, new PassGate(), ContentTrust.Author);
 
         var frames = builder.GetFrames();

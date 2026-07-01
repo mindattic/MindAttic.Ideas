@@ -11,13 +11,14 @@ using MindAttic.Ideas.Abstractions;
 namespace MindAttic.Ideas.Core.Rendering;
 
 /// <summary>
-/// Expands free-form author HTML into a render tree, rewriting each locked include tag
-/// <c>&lt;MindAttic.Ideas.{Kind}.{Name}[.V{n}|.Latest]/&gt;</c> into the live content resolved from the
-/// catalog — the SAME tag form a code page would use. Parsing uses AngleSharp tokenization (the shared
-/// <see cref="IncludeReferenceParser"/> grammar), so tags inside text/comments are handled correctly and
-/// an unresolved/stale/disabled tag degrades to a visible placeholder — never a render crash. When an
-/// <see cref="IRenderAlertSink"/> is supplied, a missing/disabled reference also raises an Admin Inbox
-/// alert (fire-and-forget). Inner content is passed to the resolved type as <c>ChildContent</c>.
+/// Expands free-form author HTML into a render tree, resolving each PascalCase component tag
+/// (<c>&lt;Alert /&gt;</c>, <c>&lt;Alert kind="Plugin"&gt;…&lt;/Alert&gt;</c>) to the live content
+/// from the catalog — the SAME rendering a compiled page uses via <see cref="IncludeRenderer"/>.
+/// Parsing uses AngleSharp tokenization (the shared <see cref="IncludeReferenceParser"/> grammar),
+/// so an unresolved/stale/disabled tag degrades to a visible placeholder — never a render crash.
+/// When an <see cref="IRenderAlertSink"/> is supplied, a missing/disabled reference also raises an
+/// Admin Inbox alert (fire-and-forget). Inner content is passed to the resolved type as
+/// <c>ChildContent</c>.
 /// </summary>
 public static class IncludeExpander
 {
@@ -59,13 +60,29 @@ public static class IncludeExpander
     // and safe to run in sequence because self-close is consumed before open-tag pass.
 
     private static readonly Regex _pascalSelfClose =
-        new(@"<([A-Z][A-Za-z0-9]*)((?:\s(?:[^>""'/]|""[^""]*""|'[^']*')*)?)\s*/>", RegexOptions.Compiled);
+        new(@"<([A-Z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)((?:\s(?:[^>""'/]|""[^""]*""|'[^']*')*)?)\s*/>", RegexOptions.Compiled);
     private static readonly Regex _pascalOpen =
-        new(@"<([A-Z][A-Za-z0-9]*)((?:\s(?:[^>""']|""[^""]*""|'[^']*')*)?)>", RegexOptions.Compiled);
+        new(@"<([A-Z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)((?:\s(?:[^>""']|""[^""]*""|'[^']*')*)?)>", RegexOptions.Compiled);
     private static readonly Regex _pascalClose =
-        new(@"</([A-Z][A-Za-z0-9]*)>", RegexOptions.Compiled);
+        new(@"</([A-Z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)>", RegexOptions.Compiled);
 
-    private static string UpgradePascalCaseTags(string html)
+    // Splits "<Kind.Key>" dotted tag names: if the first segment is a valid ContentKind, returns
+    // (key, kindStr); otherwise returns the whole lowercased name as the key with no explicit kind.
+    private static (string key, string? kind) ParseTagName(string rawName)
+    {
+        var dotIdx = rawName.IndexOf('.');
+        if (dotIdx > 0)
+        {
+            var kindStr = rawName[..dotIdx];
+            if (Enum.TryParse<ContentKind>(kindStr, ignoreCase: true, out _))
+                return (rawName[(dotIdx + 1)..].ToLowerInvariant(), kindStr);
+        }
+        return (rawName.ToLowerInvariant(), null);
+    }
+
+    // Exposed internal so IncludeReferenceParser.Parse() can run the same upgrade and then scan
+    // ma-component elements for PascalCase-tag component references.
+    internal static string UpgradePascalCaseTags(string html)
     {
         // Quick exit: scan for '<' followed by an uppercase letter.
         bool hasPascal = false;
@@ -75,20 +92,22 @@ public static class IncludeExpander
 
         html = _pascalSelfClose.Replace(html, static m =>
         {
-            var key  = m.Groups[1].Value.ToLowerInvariant();
+            var (key, kind) = ParseTagName(m.Groups[1].Value);
             var tail = m.Groups[2].Value.Trim();
+            var kindPart = kind is not null ? $" kind=\"{kind}\"" : "";
             return tail.Length > 0
-                ? $"<ma-component data-key=\"{key}\" {tail}></ma-component>"
-                : $"<ma-component data-key=\"{key}\"></ma-component>";
+                ? $"<ma-component data-key=\"{key}\"{kindPart} {tail}></ma-component>"
+                : $"<ma-component data-key=\"{key}\"{kindPart}></ma-component>";
         });
 
         html = _pascalOpen.Replace(html, static m =>
         {
-            var key  = m.Groups[1].Value.ToLowerInvariant();
+            var (key, kind) = ParseTagName(m.Groups[1].Value);
             var tail = m.Groups[2].Value.Trim();
+            var kindPart = kind is not null ? $" kind=\"{kind}\"" : "";
             return tail.Length > 0
-                ? $"<ma-component data-key=\"{key}\" {tail}>"
-                : $"<ma-component data-key=\"{key}\">";
+                ? $"<ma-component data-key=\"{key}\"{kindPart} {tail}>"
+                : $"<ma-component data-key=\"{key}\"{kindPart}>";
         });
 
         return _pascalClose.Replace(html, "</ma-component>");
@@ -111,18 +130,29 @@ public static class IncludeExpander
                     b.CloseElement();
                     break;
 
-                // PascalCase component tag — <Alert type="error" /> or <Alert>children</Alert>.
+                // PascalCase component tag — <Alert type="error" /> or <Alert>children</Alert> (and nested).
                 // UpgradePascalCaseTags() wraps these as <ma-component data-key="…" …> before parsing.
-                // Try Component kind first; fall back to Plugin if not found in that kind.
+                // An optional kind="Plugin|Component|Theme|Page" attribute on the original tag resolves
+                // conflicts when the same key exists in more than one kind; without it, Component is tried
+                // first and Plugin is the fallback.
                 case IElement el when el.LocalName == "ma-component":
                 {
                     var key = el.GetAttribute("data-key") ?? "";
                     if (string.IsNullOrEmpty(key)) break; // malformed tag — skip silently
 
+                    // Read optional explicit kind; filters out meta-attrs before they reach the component.
+                    ContentKind? explicitKind = null;
+                    var kindStr = el.GetAttribute("kind");
+                    if (kindStr is not null && Enum.TryParse<ContentKind>(kindStr, ignoreCase: true, out var ek))
+                        explicitKind = ek;
+
+                    int? version = null;
+                    if (int.TryParse(el.GetAttribute("data-version"), out var ver)) version = ver;
+
                     var attrs = new List<KeyValuePair<string, object?>>();
                     foreach (var attr in el.Attributes)
                     {
-                        if (attr.Name == "data-key") continue;
+                        if (attr.Name is "data-key" or "kind" or "data-version") continue;
                         // Apply the same XSS filtering as regular elements (Author trust bypasses it).
                         if (ctx.Trust != ContentTrust.Author &&
                             (attr.Name.StartsWith("on", StringComparison.OrdinalIgnoreCase) ||
@@ -139,9 +169,17 @@ public static class IncludeExpander
                         }
                         : null;
 
-                    var res = ctx.Catalog.ResolveTag(ContentKind.Component, key, null);
-                    if (res.Outcome != ContentResolution.Resolved)
-                        res = ctx.Catalog.ResolveTag(ContentKind.Plugin, key, null);
+                    ResolvedContent res;
+                    if (explicitKind.HasValue)
+                    {
+                        res = ctx.Catalog.ResolveTag(explicitKind.Value, key, version);
+                    }
+                    else
+                    {
+                        res = ctx.Catalog.ResolveTag(ContentKind.Component, key, version);
+                        if (res.Outcome != ContentResolution.Resolved)
+                            res = ctx.Catalog.ResolveTag(ContentKind.Plugin, key, version);
+                    }
 
                     if (res.Outcome == ContentResolution.Resolved)
                     {
@@ -160,8 +198,12 @@ public static class IncludeExpander
                     }
                     else
                     {
-                        EmitMissing(b, ref c.Next, $"<{key}>");
-                        ctx.Alerts?.RaiseMissing(ContentKind.Component, key, null, ctx.PageId, ctx.Slug);
+                        var displayKey = explicitKind.HasValue ? $"<{explicitKind.Value}.{key}>" : $"<{key}>";
+                        EmitMissing(b, ref c.Next, displayKey);
+                        if (res.Outcome == ContentResolution.Disabled)
+                            ctx.Alerts?.RaiseDisabled(explicitKind ?? ContentKind.Component, key, null, ctx.PageId, ctx.Slug);
+                        else
+                            ctx.Alerts?.RaiseMissing(explicitKind ?? ContentKind.Component, key, null, ctx.PageId, ctx.Slug);
                     }
                     break;
                 }
@@ -185,48 +227,10 @@ public static class IncludeExpander
                     break;
 
                 case IText t:
-                    EmitText(b, c, t.Text, ctx);
+                    b.AddContent(c.Next++, t.Text);
                     break;
             }
         }
-    }
-
-    // Author text, with every {{ MindAttic.Ideas.… [attrs] }} token swapped for the live citizen it names.
-    // Text around tokens is emitted verbatim (AddContent HTML-encodes it). A parseable-but-unresolved
-    // reference degrades to the placeholder (EmitInclude); an unparseable token is left as literal text.
-    private static void EmitText(RenderTreeBuilder b, Counter c, string text, ExpandCtx ctx)
-    {
-        var last = 0;
-        foreach (Match m in IncludeReferenceParser.BraceInclude.Matches(text))
-        {
-            if (m.Index > last) b.AddContent(c.Next++, text[last..m.Index]);
-            if (IncludeReferenceParser.TryParseTag(m.Groups[1].Value.ToLowerInvariant(), out var kind, out var key, out var version))
-                EmitInclude(b, ref c.Next, kind, key, version, m.Value, ctx.Catalog,
-                    ParseAttributes(m.Groups[2].Value), childContent: null, ctx.Alerts, ctx.PageId, ctx.Slug);
-            else
-                b.AddContent(c.Next++, m.Value);   // not a valid reference -> leave the literal token
-            last = m.Index + m.Length;
-        }
-        if (last < text.Length) b.AddContent(c.Next++, text[last..]);
-    }
-
-    // One token attribute: name | name=bareValue | name="quoted" | name='quoted'. A bare name => true.
-    private static readonly Regex AttrPair =
-        new(@"([A-Za-z_:][\w:.\-]*)\s*(?:=\s*(?:""([^""]*)""|'([^']*)'|([^\s}]+)))?", RegexOptions.Compiled);
-
-    private static IReadOnlyList<KeyValuePair<string, object?>> ParseAttributes(string raw)
-    {
-        if (string.IsNullOrWhiteSpace(raw)) return Array.Empty<KeyValuePair<string, object?>>();
-        var list = new List<KeyValuePair<string, object?>>();
-        foreach (Match m in AttrPair.Matches(raw))
-        {
-            object? value = m.Groups[2].Success ? m.Groups[2].Value
-                          : m.Groups[3].Success ? m.Groups[3].Value
-                          : m.Groups[4].Success ? m.Groups[4].Value
-                          : true;   // bare attribute (e.g. required)
-            list.Add(new KeyValuePair<string, object?>(m.Groups[1].Value, value));
-        }
-        return list;
     }
 
     /// <summary>
