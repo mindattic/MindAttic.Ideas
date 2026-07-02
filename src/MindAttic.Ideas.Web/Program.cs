@@ -234,6 +234,7 @@ if (installIdx >= 0)
 }
 
 // ---- CLI mode: --seed <target> --------------------------------------------------------------
+// dotnet run --project src/MindAttic.Ideas.Web -- --seed core        (re-run SeedService migrations)
 // dotnet run --project src/MindAttic.Ideas.Web -- --seed from-html [--dry-run]
 // dotnet run --project src/MindAttic.Ideas.Web -- --seed from-md   [--dry-run]
 var seedIdx = Array.IndexOf(args, "--seed");
@@ -242,13 +243,19 @@ if (seedIdx >= 0)
     var seedTarget = seedIdx + 1 < args.Length ? args[seedIdx + 1] : null;
     using var cliScope = app.Services.CreateScope();
     int exitCode;
-    if (seedTarget == "from-html")
+    if (seedTarget == "core")
+    {
+        await cliScope.ServiceProvider.GetRequiredService<SeedService>().SeedAsync();
+        Console.WriteLine("[seed] core seed completed.");
+        exitCode = 0;
+    }
+    else if (seedTarget == "from-html")
         exitCode = await SeedFromHtmlCli.RunAsync(args, app.Services);
     else if (seedTarget == "from-md")
         exitCode = await SeedReadmesCli.RunAsync(args, app.Services);
     else
     {
-        Console.Error.WriteLine($"[seed] Unknown target: '{seedTarget}'. Use 'from-html' or 'from-md'.");
+        Console.Error.WriteLine($"[seed] Unknown target: '{seedTarget}'. Use 'core', 'from-html', or 'from-md'.");
         exitCode = 1;
     }
     Environment.Exit(exitCode);

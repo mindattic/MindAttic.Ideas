@@ -107,11 +107,18 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             front.ModifiedUtc = now;
             await db.SaveChangesAsync(ct);
         }
+        else if (front.Kind == PageKind.Data && LegacyFrontpageTokens.Contains(NormEol(front.BodyHtml)))
+        {
+            front.BodyHtml = FrontpageComponentToken;
+            front.ModifiedUtc = now;
+            await db.SaveChangesAsync(ct);
+        }
 
         // Personas page — MindAttic.Legion.Frontend collapsed into a Data page (MAI-A22): the
         // persona gallery ships as the LegionPersonas Component .idea, so the standalone Blazor app
         // reduces to one token through the theme. Upsert by (SiteId, Slug); never clobber.
-        if (!await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.SiteId == site.Id && p.Slug == "personas", ct))
+        var personas = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "personas", ct);
+        if (personas is null)
         {
             db.Pages.Add(new Page
             {
@@ -127,9 +134,16 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             });
             await db.SaveChangesAsync(ct);
         }
+        else if (NormEol(personas.BodyHtml) != NormEol(PersonasBodyHtml) && IsStockPersonasBody(personas.BodyHtml))
+        {
+            personas.BodyHtml = PersonasBodyHtml;
+            personas.ModifiedUtc = now;
+            await db.SaveChangesAsync(ct);
+        }
 
         // Claudia — Pi Zero 2 WH + WonderEcho smart speaker (Hardware theme + Claudia widget).
-        if (!await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.SiteId == site.Id && p.Slug == "claudia", ct))
+        var claudia = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "claudia", ct);
+        if (claudia is null)
         {
             db.Pages.Add(new Page
             {
@@ -144,10 +158,17 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             });
             await db.SaveChangesAsync(ct);
         }
+        else if (LegacyClaudiaTokens.Contains(NormEol(claudia.BodyHtml)))
+        {
+            claudia.BodyHtml = "<Component.Claudia />";
+            claudia.ModifiedUtc = now;
+            await db.SaveChangesAsync(ct);
+        }
 
         // Ideas brochure — CMS product page explaining the three-primitive model, token grammar,
         // DNN retrospective, and comparison table. Seeded at /ideas via the IdeasBrochure widget.
-        if (!await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.SiteId == site.Id && p.Slug == "ideas", ct))
+        var ideas = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "ideas", ct);
+        if (ideas is null)
         {
             db.Pages.Add(new Page
             {
@@ -163,9 +184,16 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             });
             await db.SaveChangesAsync(ct);
         }
+        else if (LegacyIdeasBrochureTokens.Contains(NormEol(ideas.BodyHtml)))
+        {
+            ideas.BodyHtml = "<Component.IdeasBrochure />";
+            ideas.ModifiedUtc = now;
+            await db.SaveChangesAsync(ct);
+        }
 
         // ChiMesh — solar RAK4631 LoRa / Meshtastic mesh (Hardware theme + ChiMesh widget).
-        if (!await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.SiteId == site.Id && p.Slug == "chimesh", ct))
+        var chiMesh = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "chimesh", ct);
+        if (chiMesh is null)
         {
             db.Pages.Add(new Page
             {
@@ -180,7 +208,47 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             });
             await db.SaveChangesAsync(ct);
         }
+        else if (LegacyChiMeshTokens.Contains(NormEol(chiMesh.BodyHtml)))
+        {
+            chiMesh.BodyHtml = "<Component.ChiMesh />";
+            chiMesh.ModifiedUtc = now;
+            await db.SaveChangesAsync(ct);
+        }
     }
+
+    // ── Legacy token sets — recognise prior stock body formats so SeedAsync can migrate in place ──
+    // Each set lists every known historical value for a given page's BodyHtml (after EOL normalisation).
+    // An admin-edited body never matches these and is left untouched.
+
+    private static readonly HashSet<string> LegacyFrontpageTokens = new(StringComparer.Ordinal)
+    {
+        "<MindAtticFrontpage kind=\"Component\" />",
+        "{{ MindAttic.Ideas.Component.MindAtticFrontpage }}",
+    };
+
+    private static readonly HashSet<string> LegacyClaudiaTokens = new(StringComparer.Ordinal)
+    {
+        "<Claudia kind=\"Component\" />",
+        "{{ MindAttic.Ideas.Component.Claudia }}",
+    };
+
+    private static readonly HashSet<string> LegacyIdeasBrochureTokens = new(StringComparer.Ordinal)
+    {
+        "<IdeasBrochure kind=\"Component\" />",
+        "{{ MindAttic.Ideas.Component.IdeasBrochure }}",
+    };
+
+    private static readonly HashSet<string> LegacyChiMeshTokens = new(StringComparer.Ordinal)
+    {
+        "<ChiMesh kind=\"Component\" />",
+        "{{ MindAttic.Ideas.Component.ChiMesh }}",
+    };
+
+    // Personas body contains a wrapped token — match on presence of any legacy token string.
+    private static bool IsStockPersonasBody(string? html) =>
+        html is not null &&
+        (html.Contains("<LegionPersonas kind=\"Component\" />", StringComparison.Ordinal) ||
+         html.Contains("{{ MindAttic.Ideas.Component.LegionPersonas }}", StringComparison.Ordinal));
 
     // The retired stock home body — kept verbatim so the migration above can recognize an untouched
     // seed and soft-disable it; an admin-edited body never matches and is never touched.
