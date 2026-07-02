@@ -160,7 +160,7 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
         if (def.Origin == ContentOrigin.Compiled)
         {
             if (!def.Enabled)
-                return new DeleteGuardResult(false, false, false, Array.Empty<string>(), "Already disabled; no change made.");
+                return new DeleteGuardResult(false, false, true, Array.Empty<string>(), "Already disabled; no change made.");
             def.Enabled = false;
             await db.SaveChangesAsync(ct);
             await discovery.ReloadCatalogAsync(ct);
