@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Data;
@@ -191,6 +192,10 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             await db.SaveChangesAsync(ct);
         }
 
+        // General bulk migration: upgrade remaining legacy token formats on ALL Author Data pages.
+        // Covers custom pages the specific migrations above don't know about.
+        await MigrateAllLegacyTokensAsync(db, now, ct);
+
         // ChiMesh — solar RAK4631 LoRa / Meshtastic mesh (Hardware theme + ChiMesh widget).
         var chiMesh = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "chimesh", ct);
         if (chiMesh is null)
@@ -216,6 +221,58 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         }
     }
 
+    // ── General bulk token migration ─────────────────────────────────────────────────────────────
+
+    // Matches: {{ MindAttic.Ideas.Kind.Key[.V1] }}  and  {{ Kind.Key[.V1] }}
+    private static readonly Regex _legacyBrace = new(
+        @"\{\{[ \t]*(?:MindAttic\.Ideas\.)?([A-Za-z]+)\.([A-Za-z0-9]+)(?:\.(V\d+))?[ \t]*\}\}",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    // Matches: <MindAttic.Ideas.Kind.Key[.V1] />
+    private static readonly Regex _legacyXml = new(
+        @"<MindAttic\.Ideas\.([A-Za-z]+)\.([A-Za-z0-9]+)(?:\.(V\d+))?\s*/>",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    // Matches: <KeyName kind="Kind" />  (the intermediate attribute form)
+    private static readonly Regex _legacyAttrKind = new(
+        @"<([A-Z][A-Za-z0-9]+)\s+kind=""([A-Za-z]+)""\s*/>",
+        RegexOptions.Compiled);
+
+    private static string ApplyLegacyMigration(string html)
+    {
+        html = _legacyBrace.Replace(html, static m =>
+        {
+            var ver = m.Groups[3].Success ? $" data-version=\"{m.Groups[3].Value[1..]}\"" : "";
+            return $"<{m.Groups[1].Value}.{m.Groups[2].Value}{ver} />";
+        });
+        html = _legacyXml.Replace(html, static m =>
+        {
+            var ver = m.Groups[3].Success ? $" data-version=\"{m.Groups[3].Value[1..]}\"" : "";
+            return $"<{m.Groups[1].Value}.{m.Groups[2].Value}{ver} />";
+        });
+        html = _legacyAttrKind.Replace(html, static m =>
+            $"<{m.Groups[2].Value}.{m.Groups[1].Value} />");
+        return html;
+    }
+
+    private static async Task MigrateAllLegacyTokensAsync(CmsDbContext db, DateTime now, CancellationToken ct)
+    {
+        var pages = await db.Pages.IgnoreQueryFilters()
+            .Where(p => p.Kind == PageKind.Data && p.BodyTrust == ContentTrust.Author
+                        && p.BodyHtml != null
+                        && (p.BodyHtml.Contains("{{")
+                            || p.BodyHtml.Contains("<MindAttic.Ideas.")
+                            || p.BodyHtml.Contains("kind=\"Component\"")
+                            || p.BodyHtml.Contains("kind=\"Plugin\"")))
+            .ToListAsync(ct);
+        foreach (var pg in pages)
+        {
+            var migrated = ApplyLegacyMigration(pg.BodyHtml!);
+            if (migrated != pg.BodyHtml) { pg.BodyHtml = migrated; pg.ModifiedUtc = now; }
+        }
+        if (db.ChangeTracker.HasChanges()) await db.SaveChangesAsync(ct);
+    }
+
     // ── Legacy token sets — recognise prior stock body formats so SeedAsync can migrate in place ──
     // Each set lists every known historical value for a given page's BodyHtml (after EOL normalisation).
     // An admin-edited body never matches these and is left untouched.
@@ -224,6 +281,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
     {
         "<MindAtticFrontpage kind=\"Component\" />",
         "{{ MindAttic.Ideas.Component.MindAtticFrontpage }}",
+        "<Component.MindAtticFrontpage />",  // superseded by IdeasFrontpage
     };
 
     private static readonly HashSet<string> LegacyClaudiaTokens = new(StringComparer.Ordinal)
@@ -269,7 +327,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         """;
 
     // The self-contained frontpage component tag — no PageCss or PageJs needed; the component carries both.
-    private const string FrontpageComponentToken = "<Component.MindAtticFrontpage />";
+    private const string FrontpageComponentToken = "<Component.IdeasFrontpage />";
 
     // ── The Frontpage (legacy inline form, kept for migration recognition only) ────────────────────
     // Recognised in the else-if branch above so an existing DB row using this exact body is migrated

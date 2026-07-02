@@ -59,12 +59,15 @@ public static class IncludeExpander
     // Order: self-closing first, then open tags, then close tags — all three are idempotent
     // and safe to run in sequence because self-close is consumed before open-tag pass.
 
+    // Require at least two characters with the second being lowercase — prevents matching standard
+    // HTML short-tags: <B>, <I>, <P>, <H1>–<H6>, <EM>, <BR>, <HR>, <TR>, <TH>, <TD>, etc.
+    // Component/Kind names always have a lowercase second character (Alert, Plugin, Component…).
     private static readonly Regex _pascalSelfClose =
-        new(@"<([A-Z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)((?:\s(?:[^>""'/]|""[^""]*""|'[^']*')*)?)\s*/>", RegexOptions.Compiled);
+        new(@"<([A-Z][a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)((?:\s(?:[^>""'/]|""[^""]*""|'[^']*')*)?)\s*/>", RegexOptions.Compiled);
     private static readonly Regex _pascalOpen =
-        new(@"<([A-Z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)((?:\s(?:[^>""']|""[^""]*""|'[^']*')*)?)>", RegexOptions.Compiled);
+        new(@"<([A-Z][a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)((?:\s(?:[^>""']|""[^""]*""|'[^']*')*)?)>", RegexOptions.Compiled);
     private static readonly Regex _pascalClose =
-        new(@"</([A-Z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)>", RegexOptions.Compiled);
+        new(@"</([A-Z][a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)>", RegexOptions.Compiled);
 
     // Splits "<Kind.Key>" dotted tag names: if the first segment is a valid ContentKind, returns
     // (key, kindStr); otherwise returns the whole lowercased name as the key with no explicit kind.

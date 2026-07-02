@@ -18,23 +18,36 @@ public sealed class ComponentMetadataService(IDbContextFactory<CmsDbContext> dbF
 
     public async Task SaveAsync(Guid pageUid, string componentKey, string slotName, string metadataJson, CancellationToken ct = default)
     {
-        await using var db = await dbFactory.CreateDbContextAsync(ct);
         var now = DateTime.UtcNow;
-        var existing = await db.ComponentMetadata
-            .FirstOrDefaultAsync(m => m.PageUid == pageUid && m.ComponentKey == componentKey && m.SlotName == slotName, ct);
-        if (existing is null)
+        // Retry once: two admin tabs saving simultaneously both see existing=null, both try to insert,
+        // and the second SaveChangesAsync hits the UNIQUE index. On the retry the winner's row is visible.
+        for (int attempt = 0; attempt < 2; attempt++)
         {
-            db.ComponentMetadata.Add(new ComponentMetadata
+            await using var db = await dbFactory.CreateDbContextAsync(ct);
+            var existing = await db.ComponentMetadata
+                .FirstOrDefaultAsync(m => m.PageUid == pageUid && m.ComponentKey == componentKey && m.SlotName == slotName, ct);
+            if (existing is null)
             {
-                PageUid = pageUid, ComponentKey = componentKey, SlotName = slotName,
-                MetadataJson = metadataJson, CreatedUtc = now, ModifiedUtc = now,
-            });
+                db.ComponentMetadata.Add(new ComponentMetadata
+                {
+                    PageUid = pageUid, ComponentKey = componentKey, SlotName = slotName,
+                    MetadataJson = metadataJson, CreatedUtc = now, ModifiedUtc = now,
+                });
+            }
+            else
+            {
+                existing.MetadataJson = metadataJson;
+                existing.ModifiedUtc = now;
+            }
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                return;
+            }
+            catch (DbUpdateException) when (attempt == 0 && existing is null)
+            {
+                // Concurrent insert won the race — retry with a fresh context to load the winner's row.
+            }
         }
-        else
-        {
-            existing.MetadataJson = metadataJson;
-            existing.ModifiedUtc = now;
-        }
-        await db.SaveChangesAsync(ct);
     }
 }

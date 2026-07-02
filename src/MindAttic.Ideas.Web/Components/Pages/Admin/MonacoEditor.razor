@@ -23,6 +23,7 @@
         _lastPushed = Value;
 
         var tokens = Catalog.All
+            .Where(d => d.Key.Length > 0)
             .OrderBy(d => d.Kind).ThenBy(d => d.Key).ThenByDescending(d => d.Version)
             .Select(d => new
             {

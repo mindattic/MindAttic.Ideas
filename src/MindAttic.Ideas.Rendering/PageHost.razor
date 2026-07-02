@@ -338,7 +338,12 @@ else if (_context is not null)
         // so its references come from the manifest uses[] declared via [Uses] (surfaced onto the page
         // descriptor's Extra at reload). Both feed the SAME collector, so the head never disagrees with the
         // body about which citizen/version is on the page. Empty unless a citizen with assets is referenced.
-        var refs = new List<(ContentKind, string, int?)>(IncludeReferenceParser.Parse(page.BodyHtml));
+        // Only Author-trust pages can embed component tags; Untrusted content must not trigger asset
+        // hoisting for components that IncludeExpander will never render (skips upgrade for Untrusted).
+        var refs = new List<(ContentKind, string, int?)>(
+            page.BodyTrust == ContentTrust.Author
+                ? IncludeReferenceParser.Parse(page.BodyHtml)
+                : []);
         // Include active plugins in the asset collection so their css/js are hoisted too.
         refs.AddRange(IncludeReferenceParser.ParseUses(pluginRefs));
         if (page.Kind == PageKind.Code && page.ComponentTypeName is not null)

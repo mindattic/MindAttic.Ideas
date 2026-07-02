@@ -59,21 +59,34 @@ public sealed class AssetService(IDbContextFactory<CmsDbContext> dbFactory, IOpt
             ModifiedUtc = DateTime.UtcNow,
         };
 
-        if (bytes.LongLength <= _opts.InlineThresholdBytes)
+        string? diskPath = null;
+        try
         {
-            asset.Bytes = bytes;
+            if (bytes.LongLength <= _opts.InlineThresholdBytes)
+            {
+                asset.Bytes = bytes;
+            }
+            else
+            {
+                var dir = Path.Combine(_opts.MediaRoot, asset.Uid.ToString("N"));
+                Directory.CreateDirectory(dir);
+                diskPath = Path.Combine(dir, asset.FileName);
+                await File.WriteAllBytesAsync(diskPath, bytes, ct);
+                asset.BlobUri = diskPath;
+            }
+            db.Assets.Add(asset);
+            await db.SaveChangesAsync(ct);
         }
-        else
+        catch
         {
-            var dir = Path.Combine(_opts.MediaRoot, asset.Uid.ToString("N"));
-            Directory.CreateDirectory(dir);
-            var diskPath = Path.Combine(dir, asset.FileName);
-            await File.WriteAllBytesAsync(diskPath, bytes, ct);
-            asset.BlobUri = diskPath;
+            // If the DB save fails, remove any disk file we already wrote so it doesn't orphan.
+            if (diskPath is not null)
+            {
+                try { File.Delete(diskPath); } catch { }
+                try { Directory.Delete(Path.GetDirectoryName(diskPath)!); } catch { }
+            }
+            throw;
         }
-
-        db.Assets.Add(asset);
-        await db.SaveChangesAsync(ct);
         return asset;
     }
 

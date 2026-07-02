@@ -141,7 +141,7 @@
                     <details class="admin-component-palette">
                         <summary>Component Palette (@Catalog.All.Count(d => d.Kind == ContentKind.Component) available)</summary>
                         <div class="admin-palette-list">
-                            @foreach (var w in Catalog.All.Where(d => d.Kind == ContentKind.Component).OrderBy(d => d.Key).ThenByDescending(d => d.Version))
+                            @foreach (var w in Catalog.All.Where(d => d.Kind == ContentKind.Component && d.Key.Length > 0).OrderBy(d => d.Key).ThenByDescending(d => d.Version))
                             {
                                 var token = "<Component." + char.ToUpperInvariant(w.Key[0]) + w.Key[1..] + " />";
                                 <div class="admin-palette-item">

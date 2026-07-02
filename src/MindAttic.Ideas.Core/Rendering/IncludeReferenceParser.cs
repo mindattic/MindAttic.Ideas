@@ -21,6 +21,8 @@ public static class IncludeReferenceParser
 
     /// <summary>Every include reference in author HTML, in document order. Handles PascalCase HTML
     /// component tags (<c>&lt;Alert /&gt;</c>, <c>&lt;Alert kind="Plugin"&gt;…&lt;/Alert&gt;</c>).
+    /// Brace tokens (<c>{{ … }}</c>) are no longer part of the grammar; <see cref="SeedService"/>
+    /// migrates any remaining old-format bodies at startup so the guard stays complete.
     /// Empty for null/blank.</summary>
     public static IReadOnlyList<(ContentKind Kind, string Key, int? Version)> Parse(string? html)
     {

@@ -66,7 +66,7 @@ public static class SeedReadmesCli
         Console.WriteLine($"[seed-readmes] Using site: {site.Key} (Id={siteId})");
 
         // Ensure the "projects" parent page exists.
-        var parentPage = await db.Pages.FirstOrDefaultAsync(p => p.SiteId == siteId && p.Slug == "projects");
+        var parentPage = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == siteId && p.Slug == "projects");
         if (parentPage is null)
         {
             if (!dryRun)
@@ -98,7 +98,7 @@ public static class SeedReadmesCli
             if (!readmeExists)
                 Console.WriteLine($"[seed-readmes] WARN: README not found at {proj.ReadmePath}");
 
-            var existingPage = await db.Pages.FirstOrDefaultAsync(p => p.SiteId == siteId && p.Slug == slug);
+            var existingPage = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == siteId && p.Slug == slug);
             Guid pageUid;
 
             if (existingPage is null)
