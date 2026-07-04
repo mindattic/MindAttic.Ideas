@@ -34,28 +34,61 @@
     function _registerCompletions() {
         if (_completionsRegistered) return;
         _completionsRegistered = true;
+
+        // Register catalog widget tags as known custom elements so Monaco's HTML validator
+        // does not raise "Unknown HTML tag" warnings for <Component.X /> and <Plugin.X /> tags.
+        if (monaco.languages.html && monaco.languages.html.htmlDefaults) {
+            monaco.languages.html.htmlDefaults.setOptions({
+                data: {
+                    useDefaultDataProvider: true,
+                    dataProviders: {
+                        'ma-catalog': {
+                            version: 1.1,
+                            tags: _tokens.map(function (t) {
+                                // Derive lowercase element name: "<Component.Tabboard />" → "component.tabboard"
+                                return {
+                                    name: t.label.replace(/^</, '').replace(/\s*\/>$/, '').toLowerCase(),
+                                    description: t.kind + ': ' + t.displayName
+                                };
+                            })
+                        }
+                    }
+                }
+            });
+        }
+
         monaco.languages.registerCompletionItemProvider('html', {
-            triggerCharacters: ['{'],
+            triggerCharacters: ['<', '.'],
             provideCompletionItems: function (model, position) {
                 var line = model.getLineContent(position.lineNumber);
-                if (line.substring(0, position.column - 1).indexOf('{{') === -1) {
+                var textBefore = line.substring(0, position.column - 1);
+                var ltPos = textBefore.lastIndexOf('<');
+                if (ltPos === -1) return { suggestions: [] };
+                var typed = textBefore.substring(ltPos); // includes '<'
+                // Skip closing tags and HTML comments
+                if (typed.startsWith('</') || textBefore.substring(ltPos - 3, ltPos) === '!--') {
                     return { suggestions: [] };
                 }
+                var replaceRange = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: ltPos + 1,   // 1-based column of '<'
+                    endColumn: position.column
+                };
                 return {
-                    suggestions: _tokens.map(function (t) {
-                        return {
-                            label: t.label,
-                            kind: monaco.languages.CompletionItemKind.Snippet,
-                            insertText: t.token,
-                            detail: t.kind + ' — ' + t.displayName,
-                            range: {
-                                startLineNumber: position.lineNumber,
-                                endLineNumber: position.lineNumber,
-                                startColumn: position.column,
-                                endColumn: position.column
-                            }
-                        };
-                    })
+                    suggestions: _tokens
+                        .filter(function (t) {
+                            return t.token.toLowerCase().startsWith(typed.toLowerCase());
+                        })
+                        .map(function (t) {
+                            return {
+                                label: t.label,
+                                kind: monaco.languages.CompletionItemKind.Snippet,
+                                insertText: t.token,
+                                detail: t.kind + ' — ' + t.displayName,
+                                range: replaceRange
+                            };
+                        })
                 };
             }
         });

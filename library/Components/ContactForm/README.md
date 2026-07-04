@@ -5,8 +5,8 @@ A name/email/message contact form that POSTs to a configurable endpoint.
 ## Usage
 
 **Token syntax:**
-```
-{{ Component.ContactForm action="https://formspree.io/f/abc" submittext="Send" }}
+```html
+<Component.ContactForm action="https://formspree.io/f/abc" submittext="Send" />
 ```
 
 **HTML tag syntax:**
@@ -29,18 +29,18 @@ A name/email/message contact form that POSTs to a configurable endpoint.
 ## Examples
 
 **Formspree relay (explicit action on the token):**
-```
-{{ Component.ContactForm action="https://formspree.io/f/xpwzgkra" submittext="Send message" }}
+```html
+<Component.ContactForm action="https://formspree.io/f/xpwzgkra" submittext="Send message" />
 ```
 
 **Custom button label, action pulled from site setting `contact.action`:**
-```
-{{ Component.ContactForm submittext="Get in touch" }}
+```html
+<Component.ContactForm submittext="Get in touch" />
 ```
 
 **With layout helpers:**
-```
-{{ Component.ContactForm action="https://formspree.io/f/xpwzgkra" margin="0 auto" style="max-width:600px" }}
+```html
+<Component.ContactForm action="https://formspree.io/f/xpwzgkra" margin="0 auto" style="max-width:600px" />
 ```
 
 ## Notes

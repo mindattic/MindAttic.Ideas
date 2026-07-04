@@ -5,7 +5,7 @@
 @* MindAttic.Ideas.Component.VideoEmbed.V1 — a responsive video player. Give it any YouTube or Vimeo
    URL and it derives the privacy-friendly embed iframe (youtube-nocookie / dnt=1); any other URL
    (including a data: URI, per the inline-asset convention) renders a native <video controls>.
-   {{ MindAttic.Ideas.Component.VideoEmbed url="https://youtu.be/xyz" title="Launch demo" }} *@
+   <Component.VideoEmbed url="https://youtu.be/xyz" title="Launch demo" /> *@
 <link rel="stylesheet" href="/_ideas/Component/videoembed/1/videoembed.css" />
 @if (!string.IsNullOrWhiteSpace(_embedUrl))
 {

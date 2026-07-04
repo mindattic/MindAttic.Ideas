@@ -6,8 +6,8 @@ A full-width hero banner with a headline, optional subtitle, optional call-to-ac
 
 **Token syntax** (inside page content):
 
-```
-{{ Component.Hero title="Welcome" subtitle="Build something great" imageclass="img-sky" ctatext="Get started" ctahref="/docs" }}
+```html
+<Component.Hero title="Welcome" subtitle="Build something great" imageclass="img-sky" ctatext="Get started" ctahref="/docs" />
 ```
 
 **HTML tag syntax** (inside a Razor page or component):
@@ -41,20 +41,20 @@ A full-width hero banner with a headline, optional subtitle, optional call-to-ac
 
 **Minimal — title only:**
 
-```
-{{ Component.Hero title="Hello, world" }}
+```html
+<Component.Hero title="Hello, world" />
 ```
 
 **Hero with background image class and a CTA:**
 
-```
-{{ Component.Hero title="Ship faster" subtitle="A Blazor CMS that deploys from a zip file" imageclass="img-dark-gradient" ctatext="Read the docs" ctahref="/docs" align="left" }}
+```html
+<Component.Hero title="Ship faster" subtitle="A Blazor CMS that deploys from a zip file" imageclass="img-dark-gradient" ctatext="Read the docs" ctahref="/docs" align="left" />
 ```
 
 **Hero with a direct image URL, right-aligned content:**
 
-```
-{{ Component.Hero title="Our story" image="https://example.com/banner.jpg" align="right" ctatext="Meet the team" ctahref="/about" }}
+```html
+<Component.Hero title="Our story" image="https://example.com/banner.jpg" align="right" ctatext="Meet the team" ctahref="/about" />
 ```
 
 ## Notes

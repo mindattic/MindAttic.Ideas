@@ -18,7 +18,7 @@ public class AdminAssignmentTests
     [Test]
     public void PluginToken_PinnedVersion_ParsesBack()
     {
-        // Palette generates "{{Plugin.ui.tooltip.V3}}" — verify TryParseTag accepts it.
+        // Palette inserts "<Plugin.Tooltip.V3 />" — verify TryParseTag accepts the parsed key form.
         Assert.That(IncludeReferenceParser.TryParseTag("plugin.ui.tooltip.v3", out var kind, out var key, out var version), Is.True);
         Assert.Multiple(() =>
         {
@@ -31,7 +31,7 @@ public class AdminAssignmentTests
     [Test]
     public void ThemeToken_PinnedVersion_ParsesBack()
     {
-        // Theme pickers generate "{{Theme.cyberspace.V2}}" tokens.
+        // Theme pickers insert "<Theme.Cyberspace.V2 />" — verify TryParseTag accepts the parsed key form.
         Assert.That(IncludeReferenceParser.TryParseTag("theme.cyberspace.v2", out var kind, out var key, out var version), Is.True);
         Assert.Multiple(() =>
         {

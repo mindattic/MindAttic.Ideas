@@ -80,8 +80,8 @@ public abstract class ThemeBase : IdeaBase
 /// <summary>
 /// Base for a Plugin: a site-wide .idea that activates a behavior or capability across the entire
 /// rendered page without occupying a specific token position. Plugins are selected per-page via the
-/// Admin Page Properties Plugin checkbox list; they may also be injected inline via
-/// <c>{{Plugin.X}}</c> for one-off pages (non-canonical). e.g. dropping
+/// Admin Page Properties Plugin checkbox list; they may also be dropped inline via
+/// <c>&lt;Plugin.X /&gt;</c> for one-off pages. e.g. dropping
 /// <c>MindAttic.Ideas.Plugin.Tooltip.V1</c> loads tooltip css/js so ANY element with
 /// <c>data-tooltip</c>/<c>data-tt</c> shows a tooltip on hover.
 ///
@@ -124,11 +124,11 @@ public abstract class PluginBase : IdeaBase
     }
 }
 
-// ---- Component (inline-placed .idea: renders at the {{Component.X}} token position; can nest) ----
+// ---- Component (inline-placed .idea: renders at the <Component.X /> tag position; can nest) ----
 
 /// <summary>
 /// Base for a Component: an inline-placed .idea that renders at the exact
-/// <c>{{Component.X}}</c> token position in the page body. Components can nest other Components,
+/// <c>&lt;Component.X /&gt;</c> tag position in the page body. Components can nest other Components,
 /// enabling composite UIs — e.g. <c>MindAttic.Ideas.Component.TabControl</c> nests
 /// <c>Component.TabButtonContainer</c>, <c>Component.TabButton</c> instances,
 /// <c>Component.TabPageContainer</c>, and <c>Component.TabPage</c> instances (each of which may

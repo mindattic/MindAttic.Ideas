@@ -6,8 +6,8 @@ Embeds a local HTML file inline on a page — styles, scripts, and all — with 
 
 **Token syntax**
 
-```
-{{Component.FromHtml slot="main" showReturnLink="false"}}
+```html
+<Component.FromHtml slot="main" showReturnLink="false" />
 ```
 
 **HTML tag syntax**
@@ -32,25 +32,25 @@ Embeds a local HTML file inline on a page — styles, scripts, and all — with 
 
 **Basic usage — single document per page**
 
-```
-{{Component.FromHtml}}
+```html
+<Component.FromHtml />
 ```
 
 Opens in edit mode with an empty state message. In edit mode, enter the full path to a local `.htm`/`.html` file and click "Update from Source" to snapshot the content.
 
 **Multiple documents on the same page**
 
-```
-{{Component.FromHtml slot="intro"}}
-{{Component.FromHtml slot="appendix"}}
+```html
+<Component.FromHtml slot="intro" />
+<Component.FromHtml slot="appendix" />
 ```
 
 Each instance stores its own source path and HTML snapshot independently.
 
 **Centered document with a return link and padding**
 
-```
-{{Component.FromHtml slot="main" showReturnLink="true" padding="2rem" align="center"}}
+```html
+<Component.FromHtml slot="main" showReturnLink="true" padding="2rem" align="center" />
 ```
 
 Adds 2 rem of padding around the injected content, centers text, and shows a back-navigation link at the bottom.

@@ -24,19 +24,6 @@ public sealed class InstalledPackage
     public byte[]? RowVersion { get; set; }
 }
 
-/// <summary>A managed file/media asset. Blob-backed in production; small bytes may inline.</summary>
-public sealed class Asset : ContentEntityBase
-{
-    public int? SiteId { get; set; }
-    public string Folder { get; set; } = "";
-    public string FileName { get; set; } = "";
-    public string? BlobUri { get; set; }
-    public byte[]? Bytes { get; set; }               // optional inline for small assets
-    public string ContentType { get; set; } = "application/octet-stream";
-    public long SizeBytes { get; set; }
-    public string Sha256 { get; set; } = "";
-}
-
 /// <summary>
 /// Override-chain setting. Scope = Host | Site | Page. Global CSS lives at (Host, null, "css.global") —
 /// editable without a deploy. (Scope, ScopeId, Key) is unique.

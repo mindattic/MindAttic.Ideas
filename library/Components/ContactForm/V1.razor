@@ -7,7 +7,7 @@
    wires its own backend — Formspree-style relay or a future host endpoint). Includes a honeypot
    field bots fill and servers should reject. With no action configured it renders a visible
    configuration hint instead of a dead form.
-   {{ MindAttic.Ideas.Component.ContactForm action="https://formspree.io/f/abc" submittext="Send" }} *@
+   <Component.ContactForm action="https://formspree.io/f/abc" submittext="Send" /> *@
 <link rel="stylesheet" href="/_ideas/Component/contactform/1/contactform.css" />
 <div class="@CssClass" style="@_outerStyle">
 @if (string.IsNullOrWhiteSpace(_action))

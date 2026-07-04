@@ -22,7 +22,7 @@ namespace MindAttic.Ideas.Component.TabBoard;
 /// <c>TabBoard.art(name)</c> / <c>TabBoard.images</c> (how the frontpage tabifies its Portfolio
 /// links and books grids).
 ///
-/// PLACEMENT OPTIONS: <c>{{ MindAttic.Ideas.Component.TabBoard alwaysShowTabPage=true }}</c> keeps a
+/// PLACEMENT OPTIONS: <c>&lt;Component.TabBoard alwaysShowTabPage="true" /&gt;</c> keeps a
 /// selected item always visible — re-clicking the open tab no longer collapses it, and a board with
 /// no saved selection opens its first tab. The selection persists per section in localStorage
 /// either way (the engine's verbatim behavior).

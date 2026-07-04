@@ -6,8 +6,8 @@ Responsive video player that accepts YouTube, Vimeo, or direct video URLs and re
 
 **Token syntax**
 
-```
-{{ MindAttic.Ideas.Component.VideoEmbed url="https://youtu.be/xyz" title="Launch demo" }}
+```html
+<Component.VideoEmbed url="https://youtu.be/xyz" title="Launch demo" />
 ```
 
 **HTML tag syntax**
@@ -32,26 +32,26 @@ Responsive video player that accepts YouTube, Vimeo, or direct video URLs and re
 
 **YouTube video**
 
-```
-{{ MindAttic.Ideas.Component.VideoEmbed url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="Product walkthrough" }}
+```html
+<Component.VideoEmbed url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="Product walkthrough" />
 ```
 
 **YouTube Shorts**
 
-```
-{{ MindAttic.Ideas.Component.VideoEmbed url="https://youtu.be/shorts/abc123XYZ01" title="Quick tip" }}
+```html
+<Component.VideoEmbed url="https://youtu.be/shorts/abc123XYZ01" title="Quick tip" />
 ```
 
 **Vimeo video**
 
-```
-{{ MindAttic.Ideas.Component.VideoEmbed url="https://vimeo.com/123456789" title="Behind the scenes" }}
+```html
+<Component.VideoEmbed url="https://vimeo.com/123456789" title="Behind the scenes" />
 ```
 
 **Direct video file**
 
-```
-{{ MindAttic.Ideas.Component.VideoEmbed url="https://cdn.example.com/intro.mp4" title="Intro video" }}
+```html
+<Component.VideoEmbed url="https://cdn.example.com/intro.mp4" title="Intro video" />
 ```
 
 ## Notes

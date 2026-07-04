@@ -19,7 +19,7 @@ public enum ContentKind
     Plugin = 1,      // site-wide .idea: activates a behavior/capability across the whole page (MAI-A26)
     Theme = 2,
     // Control = 3 was REMOVED pre-1.0 (MAI-A19) — atomic UI is authored as a Component. NEVER reuse ordinal 3.
-    Component = 4,   // inline-placed .idea: renders at the {{Component.X}} token position; can nest (MAI-A26)
+    Component = 4,   // inline-placed .idea: renders at the <Component.X /> tag position; can nest (MAI-A26)
 }
 
 /// <summary>How a Page renders. A Page row carries exactly one of these.</summary>

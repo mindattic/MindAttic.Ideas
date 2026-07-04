@@ -8,8 +8,8 @@ A 3-column fixed header: logo link on the left, free-form center column, and an 
 
 **Token syntax**
 
-```
-{{Plugin.Header logo="Acme Corp"}}nav content here{{/Plugin.Header}}
+```html
+<Plugin.Header logo="Acme Corp">nav content here</Plugin.Header>
 ```
 
 **Blazor tag syntax**
@@ -40,18 +40,18 @@ A 3-column fixed header: logo link on the left, free-form center column, and an 
 
 **Minimal — logo from site settings, no center content**
 
-```
-{{Plugin.Header}}{{/Plugin.Header}}
+```html
+<Plugin.Header></Plugin.Header>
 ```
 
 **Named logo with navigation links**
 
-```
-{{Plugin.Header logo="RocketShip"}}
+```html
+<Plugin.Header logo="RocketShip">
   <a href="/features">Features</a>
   <a href="/pricing">Pricing</a>
   <a href="/docs">Docs</a>
-{{/Plugin.Header}}
+</Plugin.Header>
 ```
 
 **Logo overriding a site-level default**
@@ -73,4 +73,4 @@ A 3-column fixed header: logo link on the left, free-form center column, and an 
 - **User initials** are derived from the user's email or display name: two-part names produce first + last initials; a single token produces up to two characters; an empty name shows `?`.
 - **`Padding`, `Margin`, `Align`, and `Style`** are merged into a single `style` attribute on the `<header>` element in that order; `Style` is always last so it can override the others.
 - The stylesheet is served from `/_ideas/Plugin/header/1/header.css`. All CSS classes are prefixed `mah-` to avoid collisions with theme or page styles.
-- This plugin renders visible markup (a `<header>` element). It is safe to include inline via `{{Plugin.Header}}` on a single page, or to activate site-wide via the Admin Page Properties plugin list.
+- This plugin renders visible markup (a `<header>` element). It is safe to include inline via `<Plugin.Header />` on a single page, or to activate site-wide via the Admin Page Properties plugin list.

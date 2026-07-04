@@ -5,12 +5,12 @@
 @* MindAttic.Ideas.Component.MediaImage.V1 — renders a managed media asset as an <img>.
    The Uid is the stable asset identifier shown in Admin → Media for each uploaded file.
    Width/Height accept any CSS length ("300px", "50%", "auto"). Renders nothing when Uid is empty or invalid.
-   {{ Component.MediaImage uid="550e8400-e29b-41d4-a716-446655440000" alt="Hero banner" width="100%" }} *@
+   <Component.MediaImage uid="550e8400-e29b-41d4-a716-446655440000" alt="Hero banner" width="100%" /> *@
 
 @if (_uid.HasValue)
 {
     <link rel="stylesheet" href="/_ideas/Component/mediaimage/1/mediaimage.css" />
-    <img class="ma-media-img @CssClass" src="/_ma-assets/@_uid.Value" alt="@(Alt ?? "")"
+    <img class="ma-media-img @CssClass" src="/_media/@_uid.Value" alt="@(Alt ?? "")"
          style="@_outerStyle" />
 }
 

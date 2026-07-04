@@ -8,8 +8,8 @@ Renders a Markdown file from the local filesystem as HTML inside a page. In edit
 
 **Token syntax** (inside a page's body):
 
-```
-{{Component.FromMd slot="main"}}
+```html
+<Component.FromMd slot="main" />
 ```
 
 **Razor / HTML tag syntax**:
@@ -39,23 +39,23 @@ Renders a Markdown file from the local filesystem as HTML inside a page. In edit
 
 **Basic — single doc on a page:**
 
-```
-{{Component.FromMd}}
+```html
+<Component.FromMd />
 ```
 
 No `slot` needed when only one instance exists; `"main"` is used automatically.
 
 **Two docs on the same page, side-by-side:**
 
-```
-{{Component.FromMd slot="intro" style="width:50%;display:inline-block"}}
-{{Component.FromMd slot="api-ref" style="width:50%;display:inline-block"}}
+```html
+<Component.FromMd slot="intro" style="width:50%;display:inline-block" />
+<Component.FromMd slot="api-ref" style="width:50%;display:inline-block" />
 ```
 
 **Centered doc with breathing room:**
 
-```
-{{Component.FromMd slot="main" padding="2rem 3rem" margin="0 auto" align="left"}}
+```html
+<Component.FromMd slot="main" padding="2rem 3rem" margin="0 auto" align="left" />
 ```
 
 ---

@@ -6,9 +6,9 @@ A breadcrumb trail derived lexically from the current page's slug segments, requ
 
 **Token syntax**
 
-```
-{{Plugin.Breadcrumbs}}
-{{Plugin.Breadcrumbs home="Start"}}
+```html
+<Plugin.Breadcrumbs />
+<Plugin.Breadcrumbs home="Start" />
 ```
 
 **HTML tag syntax**
@@ -33,16 +33,16 @@ A breadcrumb trail derived lexically from the current page's slug segments, requ
 
 **Default — page at slug `docs/widgets/intro`**
 
-```
-{{Plugin.Breadcrumbs}}
+```html
+<Plugin.Breadcrumbs />
 ```
 
 Renders: Home / Docs / Widgets / *Intro* (last crumb uses the page's real `Title`).
 
 **Custom root label**
 
-```
-{{Plugin.Breadcrumbs home="Library"}}
+```html
+<Plugin.Breadcrumbs home="Library" />
 ```
 
 Renders: Library / Docs / Widgets / *Intro*.

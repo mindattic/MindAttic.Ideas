@@ -112,7 +112,7 @@ so the frontpage Data page composes reusable `.idea`s instead of carrying engine
 The solution count is now **7 Themes, 29 Widgets** (36 components). Adaptations are confined to:
 TabBoard's empty `PROJECT_IMAGES` map became the `TabBoard.images` registry; each bundle gained an
 idempotence guard + a DOM-swap re-init adapter (Blazor hosts replace the prerendered DOM). The
-frontpage page record drops the corresponding inline CSS/JS and places three `{{tokens}}` instead —
+frontpage page record drops the corresponding inline CSS/JS and places three component tags instead —
 its PageJs keeps only CONTENT (synopses, URLs, tabify converters); Theme + fonts + effects continue
 to come from the installed Theme.Cyberspace / Plugin.AtticFont / Plugin.OutfitFont /
 Plugin.Cyberspace `.idea`s. ([MAIL-A6](AMENDMENTS.md#MAIL-A6) reclassified `pinfooter` as Plugin, `tabboard` and `websnapshot` as Components.)
@@ -141,7 +141,7 @@ Plugins (12 — activate behavior across the whole page; selected via Admin Page
 | `backhomem` | MindAttic.Ideas.Plugin.BackHomeM |
 | `sociallinks` | MindAttic.Ideas.Plugin.SocialLinks |
 
-Components (23 — render at a specific `{{Component.X}}` token position):
+Components (23 — render at a specific `<Component.X />` tag position):
 
 | Key | Assembly |
 |---|---|

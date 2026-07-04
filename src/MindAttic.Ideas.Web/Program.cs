@@ -12,6 +12,7 @@ using MindAttic.Ideas.Web.Cli;
 using MindAttic.Ideas.Web.Components;
 using MindAttic.Ideas.Web.Services;
 using MindAttic.Legion;
+using MindAttic.Media;
 using MindAttic.Vault.Configuration;
 using MindAttic.Vault.DependencyInjection;
 
@@ -42,8 +43,8 @@ builder.Services.AddIdeasCore(
     typeof(Program).Assembly,
     typeof(MindAttic.Ideas.Page.Frontpage.V1).Assembly);
 
-// Point the asset service at {ContentRoot}/media for disk-backed uploads over the inline threshold.
-builder.Services.Configure<MindAttic.Ideas.Core.Services.AssetStorageOptions>(o =>
+// Point the media store at {ContentRoot}/media for disk-backed uploads over the inline threshold.
+builder.Services.Configure<MindAttic.Media.MediaStoreOptions>(o =>
     o.MediaRoot = Path.Combine(builder.Environment.ContentRootPath, "media"));
 
 // --- MindAttic.Legion: LLM + voting (A7). Zero-config; keys resolve via Vault when used. ---
@@ -104,7 +105,7 @@ using (var scope = app.Services.CreateScope())
 
     // SHIPS-WITH-A-LIBRARY: install the bundled first-party widgets (./library/*.idea, packed from
     // MindAttic.Ideas.Library) through the REAL install path, so a fresh CMS has the Cyberspace theme +
-    // Widgets/Controls available to reference by {{tag}} out of the box. Idempotent and allowOverride:false —
+    // Widgets/Controls available to reference by <Kind.Key /> tag out of the box. Idempotent and allowOverride:false —
     // an already-installed version is a NoOp and an admin-edited catalog row is never clobbered. Optional:
     // if the folder is absent the CMS runs fine with no first-party citizens.
     var libraryDir = Path.Combine(app.Environment.ContentRootPath, "library");
@@ -189,20 +190,8 @@ app.MapGet("/_ideas/packages/{category}/{key}/{version:int}",
     }).RequireAuthorization("Admin");
 app.MapGet("/_ideas/{*path}", () => Results.NotFound());   // anything else under /_ideas
 
-// Media assets: /_ma-assets/{uid:guid} serves inline (images, PDFs) or attachment (everything else).
-app.MapGet("/_ma-assets/{uid:guid}",
-    async (Guid uid, MindAttic.Ideas.Core.Services.IAssetService assets, CancellationToken ct) =>
-    {
-        var item = await assets.GetAsync(uid, ct);
-        if (item is null) return Results.NotFound();
-        var (meta, stream) = item.Value;
-        var inline = meta.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
-                  || meta.ContentType == "application/pdf"
-                  || meta.ContentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase);
-        return inline
-            ? Results.File(stream, meta.ContentType)
-            : Results.File(stream, meta.ContentType, meta.FileName);
-    });
+// Media assets: /_media/{uid:guid} serves inline (images, PDFs) or attachment (everything else).
+app.MapMediaEndpoints();
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode()
    // PageHost (the catch-all "/{*Slug}" content route) lives in the MindAttic.Ideas.Rendering RCL.

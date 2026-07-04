@@ -6,6 +6,7 @@ using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Rendering;
 using MindAttic.Ideas.Core.Services;
+using MindAttic.Media;
 
 namespace MindAttic.Ideas.Core.DependencyInjection;
 
@@ -74,10 +75,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPackageInstallService, PackageInstallService>();
         services.AddScoped<IPackageRegistryService, PackageRegistryService>();
 
-        // Media asset storage (IAssetService). Caller must configure AssetStorageOptions.MediaRoot
-        // to the app's content root before the service is first resolved.
-        services.AddOptions<AssetStorageOptions>();
-        services.AddScoped<IAssetService, AssetService>();
+        // Media asset storage. Caller configures MediaStoreOptions.MediaRoot (done in Program.cs).
+        services.AddMedia<CmsDbContext>();
 
         return services;
     }

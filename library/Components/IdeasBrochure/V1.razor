@@ -74,16 +74,16 @@
       <div>
         <p class="ibr-caption">A page body (authored in the admin editor):</p>
         <pre class="ibr-code-block"><span class="ibr-ck-tag">&lt;h2&gt;</span>Software Projects<span class="ibr-ck-tag">&lt;/h2&gt;</span>
-<span class="ibr-ck-token">{{ MindAttic.Ideas.Component.TabBoard }}</span>
+<span class="ibr-ck-token">&lt;Component.TabBoard /&gt;</span>
 
 <span class="ibr-ck-tag">&lt;h2&gt;</span>Selected Work<span class="ibr-ck-tag">&lt;/h2&gt;</span>
-<span class="ibr-ck-token">{{ MindAttic.Ideas.Component.Gallery }}</span>
+<span class="ibr-ck-token">&lt;Component.Gallery /&gt;</span>
 
 <span class="ibr-ck-comment">&lt;!-- Pin a specific version: --&gt;</span>
-<span class="ibr-ck-token">{{ MindAttic.Ideas.Plugin.Tooltip.V2 }}</span>
+<span class="ibr-ck-token">&lt;Plugin.Tooltip.V2 /&gt;</span>
 
 <span class="ibr-ck-comment">&lt;!-- Pass attributes to a widget: --&gt;</span>
-<span class="ibr-ck-token">{{ MindAttic.Ideas.Component.Hero title="Hello" }}</span></pre>
+<span class="ibr-ck-token">&lt;Component.Hero title="Hello" /&gt;</span></pre>
       </div>
       <div class="ibr-token-rules">
         <p class="ibr-caption">Resolution rules:</p>
@@ -126,7 +126,7 @@
           <li>The DLL is loaded into a <strong>Collectible Assembly Load Context</strong> — isolated from the host and garbage-collected when replaced.</li>
           <li>Static assets are mounted at <code class="ibr-code-inline">/_ideas/Component/tabboard/1/</code>.</li>
           <li>The widget is registered in the in-memory content catalog.</li>
-          <li>Any page containing <code class="ibr-code-inline">{{ … TabBoard }}</code> resolves it on the next render — without touching the page record.</li>
+          <li>Any page containing <code class="ibr-code-inline">&lt;Component.TabBoard /&gt;</code> resolves it on the next render — without touching the page record.</li>
         </ol>
       </div>
     </div>
@@ -349,7 +349,7 @@
         <div class="ibr-step-n">2</div>
         <div>
           <strong>Add a widget token</strong>
-          <p>Type <code class="ibr-code-inline">{{ MindAttic.Ideas.Component.TabBoard }}</code> into the body editor.</p>
+          <p>Type <code class="ibr-code-inline">&lt;Component.TabBoard /&gt;</code> into the body editor.</p>
         </div>
       </div>
       <div class="ibr-step">

@@ -19,7 +19,7 @@ public sealed class MissingContent : BlazorComponentBase
 
     protected override void BuildRenderTree(RenderTreeBuilder b)
     {
-        // A visible placeholder box for an unresolved {{ … }} token (missing/disabled .idea). Styled inline
+        // A visible placeholder box for an unresolved <Kind.Key /> tag (missing/disabled .idea). Styled inline
         // so it shows even before any theme/app CSS loads; .ma-missing-content lets a theme restyle it.
         b.OpenElement(0, "a");
         b.AddAttribute(1, "class", "ma-missing-content");

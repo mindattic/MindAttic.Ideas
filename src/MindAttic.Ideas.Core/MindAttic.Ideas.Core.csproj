@@ -15,8 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -26,7 +26,9 @@
          referenced as source below; MSBuild prefers the project output, so a dev build gets the lib's
          Debug build (MA_DEV_AUTH → localhost dev-login bypass). Never present in a release build. -->
     <PackageReference Include="MindAttic.Authentication" Version="1.0.0" />
-    <ProjectReference Include="..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj" Condition="'$(Configuration)' == 'Debug'" />
+    <ProjectReference Include="..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj" Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj')" />
+    <PackageReference Include="MindAttic.Media" Version="1.0.0" />
+    <ProjectReference Include="..\..\..\MindAttic.Media\src\MindAttic.Media\MindAttic.Media.csproj" Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\..\MindAttic.Media\src\MindAttic.Media\MindAttic.Media.csproj')" />
     <!-- Rendering-time dependencies the ADR mandates: HTML sanitizer + HTML tokenizer.
          AngleSharp pinned to the exact version HtmlSanitizer requires (no version clash). -->
     <PackageReference Include="HtmlSanitizer" Version="9.0.892" />

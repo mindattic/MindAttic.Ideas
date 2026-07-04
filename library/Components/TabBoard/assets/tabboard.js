@@ -11,7 +11,7 @@
  *       TabBoard.images        -> name->src registry consulted before generating art
  *       TabBoard.refresh()     -> re-wire after the DOM changes (also runs automatically)
  *
- * Placement options (set by the include token, e.g. {{ Widget.TabBoard alwaysShowTabPage=true }};
+ * Placement options (set by the include tag, e.g. <Component.TabBoard alwaysShowTabPage="true" />;
  * the widget emits them onto window.TabBoardConfig):
  *   alwaysShowTabPage — every board keeps a selected item visible: clicking the open tab no longer
  *                       collapses it, and a board with no saved selection opens its first tab.

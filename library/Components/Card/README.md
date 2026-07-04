@@ -6,8 +6,8 @@ A content card with an optional image, title, body text, footer, and link. When 
 
 **Token syntax** (inside a page or widget body):
 
-```
-{{ MindAttic.Ideas.Component.Card title="Getting Started" text="Read the guides." href="/docs" imageclass="img-docs" }}
+```html
+<Component.Card title="Getting Started" text="Read the guides." href="/docs" imageclass="img-docs" />
 ```
 
 **HTML tag syntax** (inside a Razor file):
@@ -20,9 +20,9 @@ To lay out multiple cards side by side, wrap the tokens inside a `<div class="ma
 
 ```html
 <div class="ma-cards">
-  {{ MindAttic.Ideas.Component.Card title="Alpha" text="First card." }}
-  {{ MindAttic.Ideas.Component.Card title="Beta"  text="Second card." }}
-  {{ MindAttic.Ideas.Component.Card title="Gamma" text="Third card." }}
+  <Component.Card title="Alpha" text="First card." />
+  <Component.Card title="Beta"  text="Second card." />
+  <Component.Card title="Gamma" text="Third card." />
 </div>
 ```
 
@@ -46,14 +46,14 @@ To lay out multiple cards side by side, wrap the tokens inside a `<div class="ma
 
 **Simple text card (no image, no link):**
 
-```
-{{ MindAttic.Ideas.Component.Card title="About" text="Learn what MindAttic does." }}
+```html
+<Component.Card title="About" text="Learn what MindAttic does." />
 ```
 
 **Linked card with a base64 image class:**
 
-```
-{{ MindAttic.Ideas.Component.Card title="Documentation" text="Guides and API reference." href="/docs" imageclass="img-docs-hero" }}
+```html
+<Component.Card title="Documentation" text="Guides and API reference." href="/docs" imageclass="img-docs-hero" />
 ```
 
 The page CSS supplies the image via the `img-docs-hero` class:
@@ -64,8 +64,8 @@ The page CSS supplies the image via the `img-docs-hero` class:
 
 **Card with footer and centered alignment:**
 
-```
-{{ MindAttic.Ideas.Component.Card title="Release Notes" text="See what changed in V3." footer="June 2026" href="/changelog" align="center" }}
+```html
+<Component.Card title="Release Notes" text="See what changed in V3." footer="June 2026" href="/changelog" align="center" />
 ```
 
 ## Notes

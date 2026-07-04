@@ -15,7 +15,7 @@
     <!-- DEBUG only: reference the auth lib as SOURCE so the dev-login bypass (MA_DEV_AUTH, defined
          only in the lib's Debug build) is present at runtime; MSBuild prefers the project output over
          the same-identity package. Release uses the clean package above. -->
-    <ProjectReference Include="..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj" Condition="'$(Configuration)' == 'Debug'" />
+    <ProjectReference Include="..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj" Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj')" />
     <!-- PROD Data Protection key-ring persistence + at-rest protection (DefaultAzureCredential ->
          Blob + Key Vault). Only the production code path uses these; dev persists to the file system. -->
     <PackageReference Include="Azure.Identity" Version="1.21.0" />

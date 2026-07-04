@@ -1,8 +1,8 @@
 @attribute [Authorize(Policy = MaPolicies.Admin)]
-@inject IAssetService AssetSvc
+@inject IMediaStore MediaStore
 
 @* Media Library — upload and manage images, PDFs, ZIPs and other files.
-   Small files (≤ 2 MB) are stored inline in the Assets table; larger files go to the media/ folder on disk.
+   Small files (≤ 2 MB) are stored inline in the Media table; larger files go to the media/ folder on disk.
    Reference uploaded assets in page HTML with:
      <Component.MediaImage uid="<uid>" alt="description" />
      <Component.MediaLink  uid="<uid>" label="Download" /> *@
@@ -50,7 +50,7 @@
                     <td style="text-align:center">
                         @if (item.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
                         {
-                            <img src="/_ma-assets/@item.Uid"
+                            <img src="/_media/@item.Uid"
                                  alt="@item.FileName"
                                  style="width:40px;height:40px;object-fit:cover;border-radius:4px;display:block;margin:auto" />
                         }
@@ -99,13 +99,13 @@ else if (!_busy)
 @code {
     private bool _busy;
     private string? _error;
-    private List<AssetRow> _items = new();
+    private List<MediaItem> _items = new();
 
     protected override async Task OnInitializedAsync() => await RefreshAsync();
 
     private async Task RefreshAsync()
     {
-        _items = (await AssetSvc.ListAsync()).ToList();
+        _items = (await MediaStore.ListAsync()).ToList();
     }
 
     private const long MaxUploadBytes = 256L * 1024 * 1024; // 256 MB cap per file
@@ -123,7 +123,7 @@ else if (!_busy)
                 {
                     await using var stream = file.OpenReadStream(MaxUploadBytes);
                     var ct = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType;
-                    await AssetSvc.UploadAsync(stream, file.Name, ct);
+                    await MediaStore.UploadAsync(stream, file.Name, ct);
                     StateHasChanged();
                 }
                 catch (Exception ex)
@@ -143,7 +143,7 @@ else if (!_busy)
 
     private async Task DeleteAsync(Guid uid)
     {
-        await AssetSvc.DeleteAsync(uid);
+        await MediaStore.DeleteAsync(uid);
         await RefreshAsync();
     }
 

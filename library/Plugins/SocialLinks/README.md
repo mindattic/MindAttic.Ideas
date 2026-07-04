@@ -5,8 +5,8 @@ A row of social and profile icon links rendered with inline SVG — no icon file
 ## Usage
 
 **Token syntax (page source):**
-```
-{{ Plugin.SocialLinks github="https://github.com/yourname" email="hi@example.com" }}
+```html
+<Plugin.SocialLinks github="https://github.com/yourname" email="hi@example.com" />
 ```
 
 **HTML tag syntax (Razor/Blazor):**
@@ -34,13 +34,13 @@ A row of social and profile icon links rendered with inline SVG — no icon file
 ## Examples
 
 **Minimal — GitHub and email only:**
-```
-{{ Plugin.SocialLinks github="https://github.com/mindattic" email="hi@mindattic.com" }}
+```html
+<Plugin.SocialLinks github="https://github.com/mindattic" email="hi@mindattic.com" />
 ```
 
 **Full set, centered:**
-```
-{{ Plugin.SocialLinks
+```html
+<Plugin.SocialLinks
    github="https://github.com/mindattic"
    x="https://x.com/mindattic"
    linkedin="https://linkedin.com/company/mindattic"
@@ -49,12 +49,12 @@ A row of social and profile icon links rendered with inline SVG — no icon file
    website="https://mindattic.com"
    rss="https://mindattic.com/feed.rss"
    align="center"
-   margin="2rem 0" }}
+   margin="2rem 0" />
 ```
 
 **Theme-driven (no inline values) — relies entirely on site settings:**
-```
-{{ Plugin.SocialLinks }}
+```html
+<Plugin.SocialLinks />
 ```
 When no parameter is supplied, the component reads `social.github`, `social.x`, etc. from the site settings, so a single theme token works across every site that has those settings populated.
 

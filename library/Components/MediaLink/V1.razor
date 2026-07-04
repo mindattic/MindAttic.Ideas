@@ -4,13 +4,13 @@
 
 @* MindAttic.Ideas.Component.MediaLink.V1 — renders a managed media asset as a hyperlink.
    Images and PDFs open inline in the browser; everything else triggers a download (set by the
-   /_ma-assets/ endpoint's Content-Disposition header). Renders nothing when Uid is empty or invalid.
-   {{ Component.MediaLink uid="550e8400-e29b-41d4-a716-446655440000" label="Download spec" }} *@
+   /_media/ endpoint's Content-Disposition header). Renders nothing when Uid is empty or invalid.
+   <Component.MediaLink uid="550e8400-e29b-41d4-a716-446655440000" label="Download spec" /> *@
 
 @if (_uid.HasValue)
 {
     <link rel="stylesheet" href="/_ideas/Component/medialink/1/medialink.css" />
-    <a class="ma-media-link @CssClass" href="/_ma-assets/@_uid.Value" style="@_outerStyle">@(Label ?? "Download")</a>
+    <a class="ma-media-link @CssClass" href="/_media/@_uid.Value" style="@_outerStyle">@(Label ?? "Download")</a>
 }
 
 @code {

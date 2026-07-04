@@ -6,10 +6,10 @@ A fixed-position overlay dialog with optional header, footer, backdrop dismiss, 
 
 **Token syntax** (inside a CMS page body):
 
-```
-{{Component.ModalPopup IsOpen="true" Title="Confirm Action" ConfirmText="OK" CancelText="Cancel"}}
+```html
+<Component.ModalPopup IsOpen="true" Title="Confirm Action" ConfirmText="OK" CancelText="Cancel">
   Your modal body content goes here.
-{{/Component.ModalPopup}}
+</Component.ModalPopup>
 ```
 
 **Razor tag syntax** (inside another component or page):

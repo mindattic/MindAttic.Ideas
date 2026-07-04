@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MindAttic.Authentication.Data;
 using MindAttic.Authentication.Entities;
 using MindAttic.Ideas.Core.Entities;
+using MindAttic.Media;
 
 namespace MindAttic.Ideas.Core.Data;
 
@@ -23,7 +24,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
     public DbSet<PageUserAccess> PageUserAccess => Set<PageUserAccess>();
     public DbSet<CmsContentDefinition> ContentDefinitions => Set<CmsContentDefinition>();
     public DbSet<InstalledPackage> InstalledPackages => Set<InstalledPackage>();
-    public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<MediaItem> Media => Set<MediaItem>();
     public DbSet<SettingEntry> Settings => Set<SettingEntry>();
     public DbSet<AdminInboxMessage> AdminInbox => Set<AdminInboxMessage>();
     public DbSet<WorkflowDefinition> WorkflowDefinitions => Set<WorkflowDefinition>();
@@ -182,20 +183,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.Property(x => x.RowVersion).IsRowVersion();
         });
 
-        b.Entity<Asset>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasAlternateKey(x => x.Uid);
-            e.HasIndex(x => new { x.SiteId, x.Folder, x.FileName });
-            e.HasIndex(x => x.Sha256);
-            e.Property(x => x.Folder).HasMaxLength(400);
-            e.Property(x => x.FileName).HasMaxLength(400).IsRequired();
-            e.Property(x => x.BlobUri).HasMaxLength(1024);
-            e.Property(x => x.ContentType).HasMaxLength(200);
-            e.Property(x => x.Sha256).HasMaxLength(64);
-            e.Property(x => x.RowVersion).IsRowVersion();
-            e.HasQueryFilter(x => !x.IsDeleted);
-        });
+        b.ApplyConfiguration(new MediaItemTypeConfiguration());
 
         b.Entity<SettingEntry>(e =>
         {

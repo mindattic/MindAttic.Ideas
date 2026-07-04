@@ -6,10 +6,10 @@ A responsive site navigation bar with a brand link and configurable menu entries
 
 **Token syntax**
 
-```
-{{Plugin.NavMenu}}
-{{Plugin.NavMenu links="Home=/;About=/about;Blog=/blog"}}
-{{Plugin.NavMenu brand="Acme" brandhref="/" links="Products=/products;Contact=/contact"}}
+```html
+<Plugin.NavMenu />
+<Plugin.NavMenu links="Home=/;About=/about;Blog=/blog" />
+<Plugin.NavMenu brand="Acme" brandhref="/" links="Products=/products;Contact=/contact" />
 ```
 
 **HTML tag syntax**
@@ -37,16 +37,16 @@ A responsive site navigation bar with a brand link and configurable menu entries
 
 **Site-wide default — links and brand from site settings**
 
-```
-{{Plugin.NavMenu}}
+```html
+<Plugin.NavMenu />
 ```
 
 No parameters needed. The plugin reads `nav.brand`, `nav.brandhref`, and `nav.links` from the Host → Site → Page setting cascade. Every site in a multi-site install supplies its own settings, so one theme token serves all sites automatically.
 
 **Fully explicit nav bar**
 
-```
-{{Plugin.NavMenu brand="MindAttic" brandhref="/" links="Home=/;Docs=/docs;Blog=/blog;Contact=/contact"}}
+```html
+<Plugin.NavMenu brand="MindAttic" brandhref="/" links="Home=/;Docs=/docs;Blog=/blog;Contact=/contact" />
 ```
 
 Renders a bar with "MindAttic" as the brand and four navigation links. The link matching the current page's slug receives `aria-current="page"`.
@@ -64,5 +64,5 @@ Renders a bar with "MindAttic" as the brand and four navigation links. The link 
 - **Active page:** the link whose href (slash-trimmed) matches the current page's slug (case-insensitive) receives `aria-current="page"`. Only an exact slug match qualifies; prefix matching is not performed.
 - **Responsive collapse:** the component self-loads `navmenu.css` and `navmenu.js`. Below 720 px the list collapses and the `.ma-nav-toggle` button becomes visible. No manual asset import is needed.
 - **CSS classes:** `ma-nav`, `ma-nav-brand`, `ma-nav-toggle`, `ma-nav-list`, `ma-nav-item`, `ma-nav-link`. These can be targeted by theme overrides.
-- **Multi-site seam:** a single `{{Plugin.NavMenu}}` token in a shared theme works across every site because `nav.links` is resolved per-site at render time.
+- **Multi-site seam:** a single `<Plugin.NavMenu />` tag in a shared theme works across every site because `nav.links` is resolved per-site at render time.
 - **`Padding`, `Margin`, `Align`, and `Style`** are merged into a single `style` attribute on the `<nav>` element in that order; `Style` is always last so it can override the others.

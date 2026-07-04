@@ -97,8 +97,8 @@ Abstractions reference live once in [`Directory.Build.props`](../Directory.Build
 - **Plugin** — a site-wide behavior activator (font loader, effect, tooltip); derives from `PluginBase`,
   exposes `StylesheetUrls`. Selected per-page via Admin Page Properties; renders no inline markup.
   May compose other Plugins. ([MAIL-A6](AMENDMENTS.md#MAIL-A6))
-- **Component (inline-placed kind)** — a parameterized UI element placed inline via `{{Component.Key}}`
-  token; derives from `ComponentBase`, typed `[Parameter]` props plus pass-through `Attributes`.
+- **Component (inline-placed kind)** — a parameterized UI element placed inline via `<Component.Key />`
+  tag; derives from `ComponentBase`, typed `[Parameter]` props plus pass-through `Attributes`.
   ([MAIL-A6](AMENDMENTS.md#MAIL-A6))
 - **Asset bundle** — a component's `assets/` folder (the single source of truth); becomes the package
   `wwwroot/` at pack time and is served under the component **mount** `/_ideas/<Kind>/<key>/<version>/`.
