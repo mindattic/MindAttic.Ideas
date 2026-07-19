@@ -8,9 +8,9 @@ using MindAttic.Ideas.Core.DependencyInjection;
 using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Entities;
 using MindAttic.Ideas.Core.Services;
-using MindAttic.Ideas.Web.Cli;
-using MindAttic.Ideas.Web.Components;
-using MindAttic.Ideas.Web.Services;
+using MindAttic.Ideas.Blazor.Cli;
+using MindAttic.Ideas.Blazor.Components;
+using MindAttic.Ideas.Blazor.Services;
 using MindAttic.Legion;
 using MindAttic.Media;
 using MindAttic.Vault.Configuration;
@@ -204,7 +204,7 @@ app.MapRazorComponents<App>()
 app.MapMindAtticAuthEndpoints();
 
 // ---- CLI mode: --install <file.idea> --------------------------------------------------------
-// dotnet run --project src/MindAttic.Ideas.Web -- --install path/to/Foo.V1.idea
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --install path/to/Foo.V1.idea
 var installIdx = Array.IndexOf(args, "--install");
 if (installIdx >= 0)
 {
@@ -223,9 +223,9 @@ if (installIdx >= 0)
 }
 
 // ---- CLI mode: --seed <target> --------------------------------------------------------------
-// dotnet run --project src/MindAttic.Ideas.Web -- --seed core        (re-run SeedService migrations)
-// dotnet run --project src/MindAttic.Ideas.Web -- --seed from-html [--dry-run]
-// dotnet run --project src/MindAttic.Ideas.Web -- --seed from-md   [--dry-run]
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --seed core        (re-run SeedService migrations)
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --seed from-html [--dry-run]
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --seed from-md   [--dry-run]
 var seedIdx = Array.IndexOf(args, "--seed");
 if (seedIdx >= 0)
 {

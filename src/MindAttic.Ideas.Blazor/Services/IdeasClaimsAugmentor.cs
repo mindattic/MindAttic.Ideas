@@ -5,7 +5,7 @@ using MindAttic.Authentication.Options;
 using MindAttic.Authentication.Web;
 using MindAttic.Ideas.Core.Entities;
 
-namespace MindAttic.Ideas.Web.Services;
+namespace MindAttic.Ideas.Blazor.Services;
 
 /// <summary>
 /// Bakes the Ideas-owned <see cref="CmsClaims.AuthorRawMarkup"/> claim into the auth cookie at sign-in,

@@ -5,13 +5,13 @@ using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Entities;
 using CmsPage = MindAttic.Ideas.Core.Entities.Page;
 
-namespace MindAttic.Ideas.Web.Cli;
+namespace MindAttic.Ideas.Blazor.Cli;
 
 /// <summary>
 /// CLI mode: --seed-readmes
 /// For every MindAttic project, upserts a Page record (under a "projects" parent) and a
 /// ComponentMetadata record that points the FromMd component at its local README.md.
-/// Usage: dotnet run --project src/MindAttic.Ideas.Web -- --seed-readmes [--dry-run]
+/// Usage: dotnet run --project src/MindAttic.Ideas.Blazor -- --seed-readmes [--dry-run]
 /// </summary>
 public static class SeedReadmesCli
 {

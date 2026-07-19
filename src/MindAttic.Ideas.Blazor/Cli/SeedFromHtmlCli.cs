@@ -5,13 +5,13 @@ using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Entities;
 using CmsPage = MindAttic.Ideas.Core.Entities.Page;
 
-namespace MindAttic.Ideas.Web.Cli;
+namespace MindAttic.Ideas.Blazor.Cli;
 
 /// <summary>
 /// CLI mode: --seed from-html
 /// Upserts a top-level Page record for the Hyperspace game (OpenInNewWindow=true) and a
 /// ComponentMetadata record that points the FromHtml component at Hyperspace/index.htm.
-/// Usage: dotnet run --project src/MindAttic.Ideas.Web -- --seed from-html [--dry-run]
+/// Usage: dotnet run --project src/MindAttic.Ideas.Blazor -- --seed from-html [--dry-run]
 /// </summary>
 public static class SeedFromHtmlCli
 {

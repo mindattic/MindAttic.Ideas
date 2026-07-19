@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using MindAttic.Authentication;
 using MindAttic.Authentication.Options;
 using MindAttic.Ideas.Core.Entities;
-using MindAttic.Ideas.Web.Services;
+using MindAttic.Ideas.Blazor.Services;
 
 namespace MindAttic.Ideas.Tests;
 
