@@ -68,7 +68,7 @@ public class SeededPageRenderTests
             Assert.That(front.IsPublished && front.Enabled, Is.True);
             Assert.That(refs.Select(r => (r.Kind, r.Key, r.Version)), Is.EquivalentTo(new[]
             {
-                (ContentKind.Component, "mindatticfrontpage", (int?)null),
+                (ContentKind.Component, "ideasfrontpage", (int?)null),
             }));
         });
     }
@@ -144,7 +144,7 @@ public class SeededPageRenderTests
             {
                 Assert.That(front.Kind, Is.EqualTo(PageKind.Data), "stock compiled frontpage migrates to Data");
                 Assert.That(front.ComponentTypeName, Is.Null);
-                Assert.That(front.BodyHtml, Is.EqualTo("<Component.MindAtticFrontpage />"));
+                Assert.That(front.BodyHtml, Is.EqualTo("<Component.IdeasFrontpage />"));
                 Assert.That(custom.Kind, Is.EqualTo(PageKind.Code), "admin page is never clobbered");
                 Assert.That(custom.ComponentTypeName, Is.EqualTo("My.Custom.Page.V1"));
             });
