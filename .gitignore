@@ -28,3 +28,4 @@ Thumbs.db
 # Defensive: a stray .env must never be stageable. (The auth design uses NO .env.)
 .env
 *.env
+.claude/checkpoint.md
