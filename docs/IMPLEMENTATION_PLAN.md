@@ -397,7 +397,7 @@ Build the designer on the **same `DynamicComponent` path** in `Mode = Edit` (chr
   `MindAttic.Ideas.Sdk` packer + custom static-asset serving.
 - **P6 Migrate** — `MindAttic.Frontpage` → `ProjectHub` + `Markdown` Ideas (do the smaller frontend
   first to validate the contract), then `Legion`. Heavy standalone apps (Unity GridGame2026, MAUI
-  ThinkTank, StreetSamurai, Cursory) stay external, surfaced as Pages with a `LinkOut` Idea.
+  ThinkTank, Prose, Cursory) stay external, surfaced as Pages with a `LinkOut` Idea.
 
 ---
 

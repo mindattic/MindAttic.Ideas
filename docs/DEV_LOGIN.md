@@ -11,7 +11,7 @@ A developer logs into Admin on localhost exactly the way production seeds its fi
 `AuthBootstrapper` seeds the `admin` account on an empty DB using the Vault `Security:bootstrap-token`
 read from the **uncommitted, machine-local** file `%APPDATA%\MindAttic\Security\providers.json`. The dev
 signs in at `/login` as `admin` / `<bootstrap-token>`, is force-redirected to change the password, and the
-token is then dead. This is byte-for-byte the proven StreetSamurai recipe — no app-specific dev backdoor.
+token is then dead. This is byte-for-byte the proven Prose recipe — no app-specific dev backdoor.
 
 This is **already provisioned on this machine**: `%APPDATA%\MindAttic\Security\providers.json` exists and
 contains `pepper.v1`, `bootstrap-token`, `reset-token-key`, `dp-kek`. The only Ideas-side wiring needed is to
@@ -70,7 +70,7 @@ Checklist applied to each: (1) adds a second secret store / trust domain, (2) we
   about the real sign-in flow.
 
 ### (iii) A dev-only auto-login / `DevAutoLoginMiddleware` backdoor — REJECTED (hardest no)
-- This is the exact anti-pattern StreetSamurai's adoption **deleted** ("it carries a DevAutoLoginMiddleware
+- This is the exact anti-pattern Prose's adoption **deleted** ("it carries a DevAutoLoginMiddleware
   backdoor and a hardcoded admin password that MUST die"). It bypasses the cookie pipeline, MustChangePassword,
   and (later) MFA entirely; it is trivially left enabled into prod by a config slip; it issues an authenticated
   principal with no credential at all. Fails every checklist item. Do not introduce one.

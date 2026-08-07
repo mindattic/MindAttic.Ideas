@@ -40,7 +40,7 @@ public sealed class SettingEntry
 
 /// <summary>
 /// System-wide admin notification (e.g. a Page tried to render a Disabled Theme/Component). DB-backed,
-/// deduplicated by <see cref="DedupKey"/>. Patterned on StreetSamurai's FindingRow + Upsert.
+/// deduplicated by <see cref="DedupKey"/>. Patterned on Prose's FindingRow + Upsert.
 /// </summary>
 public sealed class AdminInboxMessage
 {

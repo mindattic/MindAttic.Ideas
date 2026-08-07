@@ -186,7 +186,7 @@ A per-page tweak is either **inline CSS** in the Page definition, or an uploaded
 
 Sign-in is **not** Ideas-owned: it comes from the **[MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication)**
 package (Argon2id+pepper, Vault-backed, lockout, TOTP/MFA, hardened sessions) — the same engine
-StreetSamurai and Tutor use. The BCrypt `AuthService`/`User` in Core today is an **interim port**, replaced
+Prose and Tutor use. The BCrypt `AuthService`/`User` in Core today is an **interim port**, replaced
 on adoption (AMENDMENTS **A16**). What stays Ideas-owned is the *raw-content* trust gate below.
 
 You intentionally author **inline JavaScript** in trusted pages — that's a feature, not a leak. The trust

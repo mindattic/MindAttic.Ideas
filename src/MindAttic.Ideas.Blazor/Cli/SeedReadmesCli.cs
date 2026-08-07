@@ -28,7 +28,7 @@ public static class SeedReadmesCli
         new("tutor",            "Tutor",                  @"D:\Projects\MindAttic\Tutor\README.md"),
         new("taxrate",          "TaxRateCollector",       @"D:\Projects\MindAttic\TaxRateCollector\README.md"),
         new("psst",             "MindAttic Psst",         @"D:\Projects\MindAttic\MindAttic.Psst\README.md"),
-        new("streetsamurai",    "StreetSamurai",          @"D:\Projects\MindAttic\StreetSamurai\README.md"),
+        new("prose",    "Prose",          @"D:\Projects\MindAttic\Prose\README.md"),
         // ---- New projects ----
         new("bugoutbag",        "BugOutBag",              @"D:\Projects\MindAttic\BugOutBag\Readme.md"),
         new("chimesh",          "ChiMesh",                @"D:\Projects\MindAttic\ChiMesh\Readme.md"),

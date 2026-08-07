@@ -59,7 +59,7 @@ tag pins the version explicitly (`<…Cyberspace.V1/>` / `<ma-component key="cyb
 ## MAI-A4 — Temporal history (adds to ADR §4) {#MAI-A4}
 
 Pages (and their Theme/Component pin set) use **SQL Server system-versioned temporal tables** — mirror
-StreetSamurai's pattern: `SysStart`/`SysEnd` `GENERATED ALWAYS`, an idempotent
+Prose's pattern: `SysStart`/`SysEnd` `GENERATED ALWAYS`, an idempotent
 `EnableSystemVersioningAsync` at startup, `FOR SYSTEM_TIME AS OF` queries for the wiki-like history view.
 A Page version's row records the `(Kind,Key,Version)` set it rendered with, so history is fully
 reconstructable and rollback is a row restore.
@@ -68,7 +68,7 @@ reconstructable and rollback is a row restore.
 
 If a Page resolves a Theme/Component reference that is **Disabled** (or missing), the render **halts**
 (shows a clear block to the user instead of partial output) **and** immediately writes an **Admin Inbox**
-message. The inbox is DB-backed and patterned on StreetSamurai's `FindingRow` + `FindingsService.Upsert`
+message. The inbox is DB-backed and patterned on Prose's `FindingRow` + `FindingsService.Upsert`
 (hash `DedupKey` unique index, severity/status enums, dedup). Entity: `AdminInboxMessage`
 `{ Id, Severity, Category, Subject, Body, DedupKey(unique), Status, CreatedUtc, ResolvedUtc? }`.
 
@@ -191,9 +191,9 @@ home is UiUx.
 
 > *Updated by [A18](#MAI-A18):* "Widget" is now adopted as the umbrella term for the composable-UI kind.
 
-## MAI-A15 — Deployment: Windows App Service, StreetSamurai-style (supersedes IMPLEMENTATION_PLAN §10 "Linux") {#MAI-A15}
+## MAI-A15 — Deployment: Windows App Service, Prose-style (supersedes IMPLEMENTATION_PLAN §10 "Linux") {#MAI-A15}
 
-MindAttic.Ideas deploys the SAME way StreetSamurai does — **NOT Linux**. The plan doc's "App Service
+MindAttic.Ideas deploys the SAME way Prose does — **NOT Linux**. The plan doc's "App Service
 (Linux)" is wrong. Target: a GitHub Actions pipeline on `windows-latest`, **build → migrate → deploy** to
 an **Azure App Service (Windows)** + **Azure SQL**:
 - **build** — `dotnet publish` the Web host as an artifact; private packages (Vault, Legion, Authentication,
@@ -210,7 +210,7 @@ if non-Windows, swap the transport), with a Psst-backed implementation for Windo
 ## MAI-A16 — Authentication is MindAttic.Authentication, not Ideas-owned (supersedes the ported BCrypt auth) {#MAI-A16}
 
 The canonical auth engine for MindAttic.Ideas is the **[MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication)**
-Razor Class Library — the same hardened engine StreetSamurai and Tutor adopt, so the three authenticate
+Razor Class Library — the same hardened engine Prose and Tutor adopt, so the three authenticate
 **identically** instead of each rolling its own. It supersedes the **ported, interim** BCrypt auth now in
 Core (`Services/AuthService.cs` + `Entities/AuthEntities.cs`) — the very implementation that package's own
 audit flags as "🟡 minimal: BCrypt ✓ but SecurityStamp revalidation unwired, no lockout/MFA." Ideas does
@@ -228,7 +228,7 @@ of A15 (Psst-backed on Windows).
   by the library's fail-closed `IStartupFilter`) and `app.MapMindAtticAuthEndpoints();` (`/_ma-auth/login`,
   `/logout`, `/change-password`, `/mfa-challenge` — **endpoints own sign-in, never components**).
 - `o.AppName = "Ideas"` is the **per-app trust boundary**: per-app `SetApplicationName` + isolated Data
-  Protection ⇒ a cookie stolen from StreetSamurai/Tutor cannot authenticate to Ideas. **No cross-app SSO in v1.**
+  Protection ⇒ a cookie stolen from Prose/Tutor cannot authenticate to Ideas. **No cross-app SSO in v1.**
 - The CMS DbContext applies the package's schema (`b.ApplyMindAtticAuthConfiguration()`), which owns an
   isolated **`auth`** schema; Ideas keeps its own connection and runs `dotnet ef migrations add`. The host
   checks the package's **migration fingerprint** at startup. The interim `Users` table is dropped on adoption.
@@ -242,7 +242,7 @@ The `AuthorTrustVersion` epoch-bump demotion path is unaffected.
 
 **Timing (foundation-optional, like A6/A7):** the package is mid-build (crypto core + canonical EF model
 done; DI/middleware/endpoints/components/`MaLogin` not yet shipped) and is **not** in the local feed. Per
-its locked order, Ideas adopts **after** the library completes **and after** StreetSamurai — at which point
+its locked order, Ideas adopts **after** the library completes **and after** Prose — at which point
 the ported `AuthService`/`User` are deleted and the Phase-2 Admin login wires to the package. Until then the
 interim BCrypt auth stands unchanged. This is a ratified direction, not a Phase-0/1 render dependency.
 (Org-wide form: [HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7).)
