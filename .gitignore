@@ -1,4 +1,4 @@
-# Build output
+﻿# Build output
 [Bb]in/
 [Oo]bj/
 [Oo]ut/
@@ -24,8 +24,8 @@ packages/
 Thumbs.db
 .DS_Store
 
-# Secrets never live in the repo — auth/dev secrets are in %APPDATA%\MindAttic\ (Vault).
+# Secrets never live in the repo â€” auth/dev secrets are in %APPDATA%\MindAttic\ (Vault).
 # Defensive: a stray .env must never be stageable. (The auth design uses NO .env.)
 .env
 *.env
-.claude/checkpoint.md
+.claude/quicksave.md
