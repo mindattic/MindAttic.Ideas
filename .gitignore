@@ -36,3 +36,7 @@ Thumbs.db
 
 # `dotnet publish -o publish` output. A deployment artifact, never source.
 publish/
+
+# The LOCAL media store: uploaded screenshots, diagrams and page assets the dev host writes at
+# runtime. Content belongs in the database and travels as a .ideabundle (MAI-A34), never in git.
+src/MindAttic.Ideas.Blazor/media/

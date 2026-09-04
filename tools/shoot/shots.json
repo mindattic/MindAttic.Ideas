@@ -192,6 +192,138 @@
           "theme": "dark"
         }
       ]
+    },
+    {
+      "repo": "Audible-To-GoodReads",
+      "slug": "audible-to-goodreads",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-static",
+          "file": "index.html",
+          "settleMs": 4000,
+          "viewport": [
+            1600,
+            1000
+          ],
+          "dir": "static"
+        }
+      ]
+    },
+    {
+      "repo": "ExperimentEve",
+      "slug": "experimenteve",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-static",
+          "file": "index.html",
+          "settleMs": 12000,
+          "viewport": [
+            1600,
+            1000
+          ],
+          "dir": "dist"
+        }
+      ],
+      "//": "The source entry is a Vite module graph that needs a build; dist/ is the built bundle. Its /assets paths resolve because dist IS the served root."
+    },
+    {
+      "repo": "MindAttic.Legion",
+      "slug": "mindattic-legion",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-static",
+          "file": "index.htm",
+          "settleMs": 5000,
+          "viewport": [
+            1600,
+            1000
+          ]
+        }
+      ]
+    },
+    {
+      "repo": "MindAttic.Psst",
+      "slug": "mindattic-psst",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-static",
+          "file": "index.htm",
+          "settleMs": 5000,
+          "viewport": [
+            1600,
+            1000
+          ]
+        }
+      ]
+    },
+    {
+      "repo": "MindAttic.UiUx",
+      "slug": "mindattic-uiux",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-static",
+          "file": "index.htm",
+          "settleMs": 6000,
+          "viewport": [
+            1600,
+            1000
+          ],
+          "dir": "Components/Cyberspace"
+        }
+      ]
+    },
+    {
+      "repo": "TaxRateCollector",
+      "slug": "taxratecollector",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-static",
+          "file": "index.htm",
+          "settleMs": 5000,
+          "viewport": [
+            1600,
+            1000
+          ]
+        }
+      ]
+    },
+    {
+      "repo": "ThinkTank",
+      "slug": "thinktank",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-static",
+          "file": "index.htm",
+          "settleMs": 5000,
+          "viewport": [
+            1600,
+            1000
+          ]
+        }
+      ]
+    },
+    {
+      "repo": "Tutor",
+      "slug": "tutor",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-static",
+          "file": "index.htm",
+          "settleMs": 5000,
+          "viewport": [
+            1600,
+            1000
+          ]
+        }
+      ]
     }
   ]
 }

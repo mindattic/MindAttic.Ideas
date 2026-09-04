@@ -52,3 +52,37 @@ headless, keeps ANSI colour, and looks better than OS console chrome.
 not a load event — `networkidle` fires long before the first render) · `waitFor` (selectors) ·
 `actions` (`click` / `press` / `evaluate` / `waitMs`, for dismissing a splash or entering a gallery) ·
 `clip` (screenshot one element) · `enabled: false` to park a shot.
+
+## Generating the brochure pages
+
+`brochures.py` writes a `<Component.ProjectBrochure>` body for every `projects/*` page.
+
+**The tagline is lifted from each project's own README**, never invented — the READMEs were seeded
+from GitHub, so they are the project's own words and stay true when the repo changes. What the README
+cannot supply is left off rather than guessed. GitHub's empty-repo stub ("This repository does not
+have a README yet") is filtered out: quoting it under the title reads as if it meant something.
+
+A project with no screenshot gets [`assets/no-screenshot.svg`](assets/no-screenshot.svg) rather than
+an empty frame, so every page has the same shape and the gaps are visible instead of invisible.
+
+It needs two inputs beside it:
+
+```pwsh
+# 1. the pages + their seeded READMEs
+sqlcmd -S "(localdb)\MSSQLLocalDB" -d MindAtticIdeas -y 0 -o pages.json -Q `
+  "SET NOCOUNT ON; SELECT p.Slug, p.Title, ISNULL(m.MetadataJson,'') AS Meta FROM Pages p
+   LEFT JOIN ComponentMetadata m ON m.PageUid = p.Uid AND m.ComponentKey = 'frommd'
+   WHERE p.Slug LIKE 'projects/%' AND p.IsDeleted = 0 ORDER BY p.Slug FOR JSON PATH;"
+# sqlcmd chunks FOR JSON at 2033 chars — strip the physical newlines to reassemble it.
+
+# 2. the placeholder's media uid, one line
+dotnet run --project src/MindAttic.Ideas.Blazor -- --upload-media tools/shoot/assets/no-screenshot.svg --folder screenshots
+
+python brochures.py                      # -> brochures-all.sql
+sqlcmd -S "(localdb)\MSSQLLocalDB" -d MindAtticIdeas -f 65001 -i brochures-all.sql
+```
+
+**`-f 65001` is not optional.** sqlcmd reads a UTF-8 script as ANSI otherwise, and every em-dash in
+the page copy silently becomes mojibake.
+
+As screenshots land, add them to the `SHOTS` map and re-run — the pages regenerate in place.
