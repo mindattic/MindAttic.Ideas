@@ -236,10 +236,19 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
 
     // ── General bulk token migration ─────────────────────────────────────────────────────────────
 
-    // Matches: {{ MindAttic.Ideas.Kind.Key[.V1] }}  and  {{ Kind.Key[.V1] }}
+    // Matches: {{ MindAttic.Ideas.Kind.Key[.V1] [attr=value ...] }}  and  {{ Kind.Key[.V1] [attr=value ...] }}
+    // The brace grammar carried parameters (e.g. {{ ...Component.TabBoard alwaysShowTabPage=true }}), so the
+    // trailing attribute blob must be captured too -- matching only the bare form left every parameterised
+    // token unmigrated, and an unmigrated token renders as literal text on the page.
     private static readonly Regex _legacyBrace = new(
-        @"\{\{[ \t]*(?:MindAttic\.Ideas\.)?([A-Za-z]+)\.([A-Za-z0-9]+)(?:\.(V\d+))?[ \t]*\}\}",
+        @"\{\{[ \t]*(?:MindAttic\.Ideas\.)?([A-Za-z]+)\.([A-Za-z0-9]+)(?:\.(V\d+))?" +
+        @"((?:[ \t]+[A-Za-z_][A-Za-z0-9_.:-]*=(?:""[^""]*""|'[^']*'|[^\s}]+))*)[ \t]*\}\}",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    // One attr=value pair inside that blob, used to re-emit it as well-formed HTML attributes.
+    private static readonly Regex _legacyBraceAttr = new(
+        @"([A-Za-z_][A-Za-z0-9_.:-]*)=(""[^""]*""|'[^']*'|[^\s}]+)",
+        RegexOptions.Compiled);
 
     // Matches: <MindAttic.Ideas.Kind.Key[.V1] />
     private static readonly Regex _legacyXml = new(
@@ -256,7 +265,7 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         html = _legacyBrace.Replace(html, static m =>
         {
             var ver = m.Groups[3].Success ? $" data-version=\"{m.Groups[3].Value[1..]}\"" : "";
-            return $"<{m.Groups[1].Value}.{m.Groups[2].Value}{ver} />";
+            return $"<{m.Groups[1].Value}.{m.Groups[2].Value}{ver}{NormalizeBraceAttributes(m.Groups[4].Value)} />";
         });
         html = _legacyXml.Replace(html, static m =>
         {
@@ -266,6 +275,25 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
         html = _legacyAttrKind.Replace(html, static m =>
             $"<{m.Groups[2].Value}.{m.Groups[1].Value} />");
         return html;
+    }
+
+    /// <summary>
+    /// Re-emit a brace token's attribute blob as HTML attributes, quoting bare values
+    /// (<c>alwaysShowTabPage=true</c> -> <c>alwaysShowTabPage="true"</c>). Returns "" when there are none.
+    /// </summary>
+    private static string NormalizeBraceAttributes(string blob)
+    {
+        if (string.IsNullOrWhiteSpace(blob)) return "";
+        var sb = new System.Text.StringBuilder();
+        foreach (Match a in _legacyBraceAttr.Matches(blob))
+        {
+            var value = a.Groups[2].Value;
+            if (value.Length > 1 && (value[0] == '"' || value[0] == '\''))
+                value = value[1..^1];
+            sb.Append(' ').Append(a.Groups[1].Value).Append("=\"")
+              .Append(value.Replace("\"", "&quot;")).Append('"');
+        }
+        return sb.ToString();
     }
 
     private static async Task MigrateAllLegacyTokensAsync(CmsDbContext db, DateTime now, CancellationToken ct)
