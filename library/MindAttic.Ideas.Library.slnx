@@ -16,6 +16,7 @@
     <Project Path="Plugins/SacredGeometry/MindAttic.Ideas.Plugin.SacredGeometry.csproj" />
     <Project Path="Plugins/Cyberspace/MindAttic.Ideas.Plugin.Cyberspace.csproj" />
     <Project Path="Plugins/NavMenu/MindAttic.Ideas.Plugin.NavMenu.csproj" />
+    <Project Path="Plugins/PoweredBy/MindAttic.Ideas.Plugin.PoweredBy.csproj" />
     <Project Path="Plugins/Breadcrumbs/MindAttic.Ideas.Plugin.Breadcrumbs.csproj" />
     <Project Path="Plugins/Footer/MindAttic.Ideas.Plugin.Footer.csproj" />
     <Project Path="Plugins/PinFooter/MindAttic.Ideas.Plugin.PinFooter.csproj" />

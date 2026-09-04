@@ -4,7 +4,7 @@ project: MindAttic.Ideas.Library
 code: MAIL
 layer: amendments
 status: living
-updated: 2026-06-16
+updated: 2026-09-04
 ---
 
 # MindAttic.Ideas.Library — Amendments (append-only; amendment wins over the bible)
@@ -180,3 +180,30 @@ MindAttic.Ideas.Abstractions.ComponentBase` in `_Imports.razor` to alias Blazor'
 
 > *Supersedes MAIL-A1 (Widget vocabulary) and MAIL-A2 (Textbox as Widget); the Plugin/Component
 > classification is the current vocabulary.*
+
+## MAIL-A7 — ProjectGrid and PoweredBy join the library (45 `.idea`s) {#MAIL-A7}
+
+**What changed.** Two new first-party citizens, both built while making the MindAttic site run *on*
+the CMS rather than beside it:
+
+| Kind | Key | Assembly | What it is |
+|---|---|---|---|
+| Component | `projectgrid` | `MindAttic.Ideas.Component.ProjectGrid` | Card grid over the current page's child pages, enriched from the `repo` metadata slot. |
+| Plugin | `poweredby` | `MindAttic.Ideas.Plugin.PoweredBy` | Site footer + the "Powered by MindAttic.Ideas" badge linking to the brochure page. |
+
+**Why they needed host changes.** Both depend on additions to the frozen SDK made under
+[MAI-A27](../../docs/AMENDMENTS.md#MAI-A27):
+
+- `ProjectGrid` joins each child page to its metadata, which needs `ChildPage.PageId` (children
+  previously carried only slug + title) and `IComponentMetadataStore.GetManyAsync` (an index over 41
+  children would otherwise issue 41 round trips per render).
+- `PoweredBy` is the first citizen to declare `[Idea(Slot = PluginSlot.AfterBody)]`. Every plugin
+  used to render *before* the theme/body, so a footer plugin landed at the top of the page.
+
+**Composition note.** `PoweredBy` emits a real `<footer class="ma-footer">` rather than duplicating
+the `footer` plugin, which is asset-only by design ([MAIL-A5](#MAIL-A5)) and styles whatever footer
+markup exists. The two compose: activate both and the badge footer gets the pin-when-short behavior.
+
+**Solution count.** **8 Themes + 13 Plugins + 24 Components = 45 `.idea`s.**
+
+> *Supersedes the counts in [MAIL-A6](#MAIL-A6); the Plugin/Component classification itself is unchanged.*

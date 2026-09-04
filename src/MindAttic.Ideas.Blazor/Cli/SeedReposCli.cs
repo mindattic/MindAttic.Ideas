@@ -43,7 +43,18 @@ public static class SeedReposCli
     /// <summary>Default chrome for a generated project page. Only applied when the page has none.</summary>
     private const string DefaultThemeKey = "cyberspace";
     private static readonly string[] DefaultPlugins =
-        ["Plugin.navmenu", "Plugin.breadcrumbs", "Plugin.footer", "Plugin.backtotop"];
+        ["Plugin.navmenu", "Plugin.breadcrumbs", "Plugin.footer", "Plugin.backtotop", "Plugin.poweredby"];
+
+    /// <summary>
+    /// Plugin selections this seeder has shipped as its default. A page still carrying one verbatim has
+    /// never been touched by an author, so it can be upgraded to the current default; anything else is a
+    /// deliberate choice and is left exactly as it is.
+    /// </summary>
+    private static readonly string[][] StockPluginSets =
+    [
+        ["Plugin.navmenu", "Plugin.breadcrumbs", "Plugin.footer", "Plugin.backtotop"],
+        DefaultPlugins,
+    ];
 
     private static readonly JsonSerializerOptions JsonOpts = new(JsonSerializerDefaults.Web);
 
@@ -178,7 +189,8 @@ public static class SeedReposCli
 
                 // Only fill in chrome the author hasn't chosen; never clobber an admin edit.
                 page.ThemeKey ??= DefaultThemeKey;
-                page.ActivePluginsJson ??= JsonSerializer.Serialize(DefaultPlugins);
+                if (page.ActivePluginsJson is null || IsStockPluginSelection(page.ActivePluginsJson))
+                    page.ActivePluginsJson = JsonSerializer.Serialize(DefaultPlugins);
                 page.ParentId ??= parent!.Id;
                 if (string.IsNullOrWhiteSpace(page.BodyHtml)) page.BodyHtml = FromMdBody;
                 page.Enabled = true;
@@ -320,7 +332,8 @@ public static class SeedReposCli
                 parent.Enabled = true;
                 parent.IsPublished = true;
                 parent.ThemeKey ??= DefaultThemeKey;
-                parent.ActivePluginsJson ??= JsonSerializer.Serialize(DefaultPlugins);
+                if (parent.ActivePluginsJson is null || IsStockPluginSelection(parent.ActivePluginsJson))
+                    parent.ActivePluginsJson = JsonSerializer.Serialize(DefaultPlugins);
                 // Adopt the index body only while the page is still the seeder's placeholder heading —
                 // an author who has written a real index keeps it.
                 if (string.IsNullOrWhiteSpace(parent.BodyHtml)
@@ -425,6 +438,20 @@ public static class SeedReposCli
         if (!string.IsNullOrWhiteSpace(repo.Homepage)) lines.Add($"**Site:** <{repo.Homepage}>  ");
         lines.Add($"**Source:** <{url}>");
         return string.Join('\n', lines);
+    }
+
+    /// <summary>True when a page's plugin selection is still verbatim seeder output.</summary>
+    private static bool IsStockPluginSelection(string json)
+    {
+        try
+        {
+            var current = JsonSerializer.Deserialize<string[]>(json) ?? [];
+            return StockPluginSets.Any(stock => stock.SequenceEqual(current, StringComparer.OrdinalIgnoreCase));
+        }
+        catch
+        {
+            return false;   // unparseable = hand-edited; leave it alone
+        }
     }
 
     private static async Task RecordSlugHistoryAsync(CmsDbContext db, int pageId, string oldSlug)

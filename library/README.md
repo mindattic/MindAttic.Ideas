@@ -25,15 +25,16 @@ library/
   Themes/      Cyberspace, Light, Dark, Spring, Summer, Autumn, Winter, Hardware  (8)
   Plugins/     Tooltip, OutfitFont, AtticFont, SacredGeometry, Cyberspace,
                NavMenu, Breadcrumbs, Footer, PinFooter, BackToTop, BackHomeM,
-               SocialLinks  (12)
+               SocialLinks, PoweredBy  (13)
   Components/  HelloWorld, Textbox, Card, Accordion, Tabs, TabBoard, Gallery,
                Carousel, Callout, CodeBlock, VideoEmbed, ContactForm, ModalPopup,
                Hero, HardwareHero, TableOfContents, LegionPersonas, IdeasBrochure,
-               WebSnapshot, Claudia, ChiMesh, MindAtticFrontpage, Frontpage  (23)
+               WebSnapshot, Claudia, ChiMesh, MindAtticFrontpage, Frontpage,
+               ProjectGrid  (24)
   dist/        packed *.idea — seeded into the CMS on startup as optional content
 ```
 
-**43 `.idea`s total** (MAIL-A6). Each project is its own small csproj so each `.idea` is independently
+**45 `.idea`s total** ([MAIL-A7](docs/AMENDMENTS.md#MAIL-A7)). Each project is its own small csproj so each `.idea` is independently
 versioned and uploadable. Common build settings + the Abstractions reference live once in
 `Directory.Build.props`.
 

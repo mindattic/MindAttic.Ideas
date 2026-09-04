@@ -59,7 +59,7 @@ else if (_context is not null)
     <PageTitle>@(_context.Page.SeoTitle ?? _context.Page.Title)</PageTitle>
 
     <CascadingValue Value="_context" IsFixed="true">
-        @foreach (var pt in _pluginTypes)
+        @foreach (var pt in _pluginTypesBeforeBody)
         {
             <DynamicComponent Type="pt" />
         }
@@ -71,12 +71,22 @@ else if (_context is not null)
         {
             <DynamicComponent Type="_bodyType" />
         }
+        @foreach (var pt in _pluginTypesAfterBody)
+        {
+            <DynamicComponent Type="pt" />
+        }
     </CascadingValue>
 }
 
 @code {
     [Parameter] public string? Slug { get; set; }
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    /// <summary>A plugin's declared render slot, defaulting to BeforeBody when it declares none.</summary>
+    private static PluginSlot SlotOf(Type t) =>
+        t.GetCustomAttributes(typeof(IdeaAttribute), inherit: false) is [IdeaAttribute a, ..]
+            ? a.Slot
+            : PluginSlot.BeforeBody;
 
     private enum Status { Pending, Ok, NotFound, Forbidden }
     private Status _status = Status.Pending;
@@ -85,7 +95,8 @@ else if (_context is not null)
     private Type? _themeType;
     private Type _bodyType = typeof(FreeFormPage);
     private IDictionary<string, object>? _themeParams;
-    private IReadOnlyList<Type> _pluginTypes = [];
+    private IReadOnlyList<Type> _pluginTypesBeforeBody = [];
+    private IReadOnlyList<Type> _pluginTypesAfterBody = [];
     private string? _globalCss;
     private IReadOnlyList<string> _themeGlobalCss = Array.Empty<string>();
     private IReadOnlyList<string> _themeCss = Array.Empty<string>();
@@ -326,7 +337,13 @@ else if (_context is not null)
         // Resolve active plugins (selected via Admin Page Properties). Each plugin is a PluginBase citizen
         // that renders site-wide behavior before the body/theme; unresolved refs degrade to a warning in
         // Admin Inbox, never a crash. Inline {{Plugin.X}} tokens in BodyHtml are handled by IIncludeRenderer.
+        // A page with no selection of its own inherits the site's default chrome, so every page in a site
+        // gets its nav/footer without per-page bookkeeping. An explicit empty selection is still a choice —
+        // but ActivePluginsJson serializes an empty list as null, so "none" is expressed by the fallback
+        // being empty, not by an empty array.
         var pluginRefs = PageAdminService.DeserializePlugins(page.ActivePluginsJson);
+        if (pluginRefs.Count == 0)
+            pluginRefs = PageAdminService.DeserializePlugins(siteSettings.GetValueOrDefault("plugins.default"));
         var pluginTypeList = new List<Type>(pluginRefs.Count);
         foreach (var pRef in pluginRefs)
         {
@@ -342,7 +359,10 @@ else if (_context is not null)
                 }
             }
         }
-        _pluginTypes = pluginTypeList;
+        // A plugin declares its slot on the TYPE via [Idea(Slot = ...)], so this needs no instantiation.
+        // Order within each slot follows the author's plugin selection.
+        _pluginTypesBeforeBody = pluginTypeList.Where(t => SlotOf(t) == PluginSlot.BeforeBody).ToList();
+        _pluginTypesAfterBody = pluginTypeList.Where(t => SlotOf(t) == PluginSlot.AfterBody).ToList();
 
         // Hoist + dedupe the head assets of the PACKAGE citizens this page includes (the no-schema
         // manifest->Extra data path feeds PageAssets.PackageAssetsOf; the collector + path are NUnit-tested

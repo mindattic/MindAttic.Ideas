@@ -1,0 +1,109 @@
+@namespace MindAttic.Ideas.Plugin.PoweredBy
+@inherits PluginBase
+@attribute [Idea(DisplayName = "Powered By", Slot = PluginSlot.AfterBody)]
+
+@*  MindAttic.Ideas.Plugin.PoweredBy.V1 — the site footer, and the CMS's own byline.
+
+    Emits a real <footer class="ma-footer">, so the Footer plugin's chrome and pin-when-short behavior
+    style it when both are active; activate this alone and it still renders, just unstyled by that plugin.
+
+    Content comes from the Host -> Site -> Page setting chain, exactly like NavMenu:
+      footer.text    free text (e.g. "© 2026 MindAttic LLC")
+      footer.links   "Text=/href;Text=/href"
+    The "Powered by" badge is always rendered — advertising the CMS is the whole point of the plugin —
+    and points at the Ideas brochure page, which is itself a Component in this CMS.  *@
+
+<link rel="stylesheet" href="/_ideas/Plugin/poweredby/1/poweredby.css" />
+
+<footer class="ma-footer ma-pb @CssClass" style="@_outerStyle">
+    <div class="ma-pb-inner">
+        @if (!string.IsNullOrWhiteSpace(_text))
+        {
+            <span class="ma-pb-text">@_text</span>
+        }
+
+        @if (_links.Count > 0)
+        {
+            <nav class="ma-pb-links" aria-label="Footer">
+                @foreach (var (text, href) in _links)
+                {
+                    <a class="ma-pb-link" href="@href">@text</a>
+                }
+            </nav>
+        }
+
+        <span class="ma-pb-badge">
+            Powered by <a class="ma-pb-badge-link" href="@_href">@_label</a>
+        </span>
+    </div>
+</footer>
+
+@code {
+    /// <summary>Footer text. Overrides the "footer.text" site setting.</summary>
+    [Parameter] public string? Text { get; set; }
+
+    /// <summary>Footer links as "Text=/href;Text=/href". Overrides the "footer.links" site setting.</summary>
+    [Parameter] public string? Links { get; set; }
+
+    /// <summary>Where the badge points. Overrides the "poweredby.href" site setting. Default "/ideas".</summary>
+    [Parameter] public string? Href { get; set; }
+
+    /// <summary>Badge wording. Overrides the "poweredby.label" site setting. Default "MindAttic.Ideas".</summary>
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public string? CssStyle { get; set; }
+    [Parameter] public string? Padding { get; set; }
+    [Parameter] public string? Margin { get; set; }
+
+    private string _outerStyle => string.Join(";", new[]
+    {
+        string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+        string.IsNullOrEmpty(Margin) ? null : $"margin:{Margin}",
+        CssStyle,
+    }.Where(s => s is not null));
+
+    private string? _text;
+    private string _href = "/ideas";
+    private string _label = "MindAttic.Ideas";
+    private IReadOnlyList<(string Text, string Href)> _links = Array.Empty<(string, string)>();
+
+    protected override void OnParametersSet()
+    {
+        var site = Context?.Site;
+        _text = FirstNonEmpty(Text, site?.GetSetting("footer.text"));
+        _href = SafeUrl(FirstNonEmpty(Href, site?.GetSetting("poweredby.href")) ?? "/ideas");
+        _label = FirstNonEmpty(Label, site?.GetSetting("poweredby.label")) ?? "MindAttic.Ideas";
+        _links = ParseLinks(FirstNonEmpty(Links, site?.GetSetting("footer.links")));
+    }
+
+    private static string? FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+    // "Home=/;About=/about" -> [(Home, /), (About, /about)]. Tolerant: skips malformed or unsafe pairs.
+    private static IReadOnlyList<(string, string)> ParseLinks(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return Array.Empty<(string, string)>();
+        var list = new List<(string, string)>();
+        foreach (var pair in raw.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var eq = pair.IndexOf('=');
+            if (eq <= 0 || eq == pair.Length - 1) continue;
+            var href = pair[(eq + 1)..].Trim();
+            if (IsUnsafeUrl(href)) continue;
+            list.Add((pair[..eq].Trim(), href));
+        }
+        return list;
+    }
+
+    /// <summary>Settings are author-editable, so a hostile scheme must never reach an href.</summary>
+    private static string SafeUrl(string url) => IsUnsafeUrl(url) ? "/" : url;
+
+    private static bool IsUnsafeUrl(string url)
+    {
+        var trimmed = url.TrimStart();
+        return trimmed.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase);
+    }
+}

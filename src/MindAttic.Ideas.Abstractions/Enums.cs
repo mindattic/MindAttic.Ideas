@@ -76,6 +76,19 @@ public enum PlacementScope
 }
 
 /// <summary>
+/// Where in the page a globally-activated Plugin renders, relative to the theme/body.
+/// APPEND-ONLY: ordinals grow by appending; never renumber.
+/// </summary>
+public enum PluginSlot
+{
+    /// <summary>Before the theme/body — headers, nav, font and behavior activators. The default, and
+    /// the only behavior that existed before this enum, so every existing plugin keeps its position.</summary>
+    BeforeBody = 0,
+    /// <summary>After the theme/body — footers and anything that must close the page.</summary>
+    AfterBody = 1,
+}
+
+/// <summary>
 /// The trust line for author-supplied raw markup/JS. Stamped at WRITE time from the author's claim,
 /// never re-evaluated at render against the current viewer.
 /// </summary>

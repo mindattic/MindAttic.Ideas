@@ -23,6 +23,12 @@ public sealed class IdeaAttribute : Attribute
     /// <summary>For Module/Control: Global attaches at theme scope; default Placeable.</summary>
     public PlacementScope Scope { get; init; } = PlacementScope.Placeable;
     public CmsRenderMode RenderMode { get; init; } = CmsRenderMode.InteractiveServer;
+    /// <summary>
+    /// For a Plugin activated site-wide: whether it renders before or after the theme/body. Read off the
+    /// TYPE (no instantiation) by the host, so a footer plugin lands at the foot of the page instead of
+    /// the top. Defaults to BeforeBody, which is where every plugin rendered before this existed.
+    /// </summary>
+    public PluginSlot Slot { get; init; } = PluginSlot.BeforeBody;
 
     public IdeaAttribute() { }
     public IdeaAttribute(string key) => Key = key;

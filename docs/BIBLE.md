@@ -78,7 +78,7 @@ is live. The four kinds derive from one shared root `IdeaBase`.
                           │
                           ▼
    ┌──────────────────────────────────────────────────────────────┐
-   │  MindAttic.Ideas.Web   (Blazor Web App, global InteractiveServer)
+   │  MindAttic.Ideas.Blazor   (Blazor Web App, global InteractiveServer)
    │   PageHost  /{*slug}  ──►  resolve (SiteId,Slug) ─► Theme ─► render fork
    │   CmsHead (FIXED CSS cascade)   /_ideas/{Kind}/{key}/{ver}/… asset route
    │   /admin (Admin policy)         Vault + Legion wired                   │
@@ -120,10 +120,10 @@ is live. The four kinds derive from one shared root `IdeaBase`.
   resolver.
 - **`src/MindAttic.Ideas.Rendering`** — rendering-support library.
 - **`src/MindAttic.Ideas.Sdk`** — the `ma-idea` CLI (pack / inspect / list / install / upgrade / verify).
-- **`src/MindAttic.Ideas.Web`** — the Blazor Web App host: `PageHost` catch-all, `CmsHead` cascade,
+- **`src/MindAttic.Ideas.Blazor`** — the Blazor Web App host: `PageHost` catch-all, `CmsHead` cascade,
   render fork, `/admin`, `/_ideas` route, Vault+Legion wiring; Phase-1 proof content under
   `Components/Library/Theme` (Bootstrap theme only — Widget/Control inline content removed with A19).
-- **`src/MindAttic.Ideas.Tests`** — NUnit suite (224 tests).
+- **`src/MindAttic.Ideas.Tests`** — NUnit suite (330 tests).
 - **`library/`** — first-party widget/theme library (`library/MindAttic.Ideas.Library.slnx`);
   independent of the CMS, references only `src/MindAttic.Ideas.Abstractions`. Merged from the
   former sibling repo ([A23](AMENDMENTS.md#MAI-A23)).

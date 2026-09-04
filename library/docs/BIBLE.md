@@ -17,7 +17,7 @@ updated: 2026-06-16
 ## 1. The one sentence {#MAIL-§1}
 
 MindAttic.Ideas.Library is the **first-party catalog of `.idea` components** — Themes, Plugins, and
-Components — that ship *with* the [MindAttic.Ideas](../../MindAttic.Ideas) CMS, each an independently
+Components — that ship *with* the [MindAttic.Ideas](../..) CMS, each an independently
 versioned, independently packable RCL whose **asset bundle is the single source of truth** across all
 three of its consumers (raw HTML pages, standalone Blazor apps, and the CMS).
 
@@ -44,7 +44,7 @@ three of its consumers (raw HTML pages, standalone Blazor apps, and the CMS).
   only installs packed `.idea` files as **optional** content. The only thing these projects compile
   against is the frozen `MindAttic.Ideas.Abstractions` SDK in the sibling repo.
 - **NOT a NuGet library.** Every component is `IsPackable=false`; the unit of distribution is the
-  `.idea` (a guarded zip, [HOUSE-LAW-5](../../MindAttic.HouseRules.md)), never a package.
+  `.idea` (a guarded zip, [HOUSE-LAW-5](../../../MindAttic.HouseRules.md)), never a package.
 - **NOT a place for Pages.** A Page is a CMS **database record** (Html/Css/Js + tags), not a `.idea`.
   The formerly-parked Pages/_wip sources were deleted as no longer applicable
   ([MAIL-A4](AMENDMENTS.md#MAIL-A4)): the frontpage is assembled verbatim from mindattic.com's
@@ -79,8 +79,8 @@ three of its consumers (raw HTML pages, standalone Blazor apps, and the CMS).
 ```
 
 ### 4.1 Projects {#MAIL-§4.1}
-The solution ([`MindAttic.Ideas.Library.slnx`](../MindAttic.Ideas.Library.slnx)) is 43 component RCLs in
-three solution folders — **8 Themes, 12 Plugins, 23 Components** ([MAIL-A6](AMENDMENTS.md#MAIL-A6) split;
+The solution ([`MindAttic.Ideas.Library.slnx`](../MindAttic.Ideas.Library.slnx)) is 45 component RCLs in
+three solution folders — **8 Themes, 13 Plugins, 24 Components** ([MAIL-A6](AMENDMENTS.md#MAIL-A6) split;
 `ComponentBase` remains available in Abstractions; `ControlBase` was removed in MAI-A19). Eleven citizen-kinds are
 MindAttic-specific, fifteen are the general-purpose **baseline set** ([MAIL-A3](AMENDMENTS.md#MAIL-A3))
 that lets the CMS build ordinary websites from reusable parts, and three are the **mindattic.com
@@ -118,10 +118,10 @@ Abstractions reference live once in [`Directory.Build.props`](../Directory.Build
 ## 5. The Laws {#MAIL-§5}
 
 This project **inherits the org-wide House Rules** at
-[`MindAttic.HouseRules.md`](../../MindAttic.HouseRules.md) by reference — they are not restated here.
-Most load-bearing for this repo: [HOUSE-LAW-1](../../MindAttic.HouseRules.md) (whole-number versioning),
-[HOUSE-LAW-5](../../MindAttic.HouseRules.md) (`.idea` is a guarded, versioned, integrity-checked zip with a
-soft-disable lifecycle), and [HOUSE-LAW-8](../../MindAttic.HouseRules.md) (done = verified). The laws below
+[`MindAttic.HouseRules.md`](../../../MindAttic.HouseRules.md) by reference — they are not restated here.
+Most load-bearing for this repo: [HOUSE-LAW-1](../../../MindAttic.HouseRules.md) (whole-number versioning),
+[HOUSE-LAW-5](../../../MindAttic.HouseRules.md) (`.idea` is a guarded, versioned, integrity-checked zip with a
+soft-disable lifecycle), and [HOUSE-LAW-8](../../../MindAttic.HouseRules.md) (done = verified). The laws below
 are **project-specific** to MindAttic.Ideas.Library.
 
 ### {#MAIL-LAW-1} The asset bundle is the single source of truth.
@@ -166,7 +166,7 @@ this repo at all — the once-parked Pages/_wip tree was deleted as no longer ap
 |---|---|---|
 | Full solution compiles | ✅ | `dotnet build -c Release MindAttic.Ideas.Library.slnx` → **Build succeeded, 0 Warning(s), 0 Error(s)**; all 36 component DLLs + Abstractions emitted (net10.0). Verified 2026-06-09. |
 | Smallest component builds standalone | ✅ | `dotnet build -c Release Components/HelloWorld` → succeeded, 0/0. Verified 2026-06-07. |
-| Packed artifacts present | ✅ | [`dist/`](../dist) holds 43 `*.idea` — one per catalogued component in [`components.json`](data/components.json). Repacked 2026-06-16 after [MAIL-A6](AMENDMENTS.md#MAIL-A6) Plugin/Component split; compose-graph verified (`ma-idea verify`). |
+| Packed artifacts present | ✅ | [`dist/`](../dist) holds 45 `*.idea` — one per catalogued component in [`components.json`](data/components.json). Repacked 2026-06-16 after [MAIL-A6](AMENDMENTS.md#MAIL-A6) Plugin/Component split; compose-graph verified (`ma-idea verify`). |
 | Automated tests | ⬜ | No test project exists in the repo (RCL component library; verification is build + the HelloWorld interactive smoke test + per-component `demo.html`). See [MAIL-§8](#MAIL-§8). |
 | `pack` round-trip | ✅ | Re-run 2026-06-09: 15 baseline widgets packed (`ma-idea pack --wwwroot assets`); `ma-idea verify ./dist` → "OK — every declared dependency resolves" across all 36 (re-verified with the MAIL-A5 set 2026-06-09). |
 | Plugin→Widget rename | ✅ | Rename complete (MAIL-A1); superseded by MAIL-A6 — `Widget` kind is now `Plugin` (site-wide) or `Component` (inline-placed); the `Widgets/` folder was split into `Plugins/` + `Components/`. |
@@ -176,7 +176,7 @@ this repo at all — the once-parked Pages/_wip tree was deleted as no longer ap
 ## 7. Active frontier {#MAIL-§7}
 
 - [RFC 0001](rfc/0001-component-test-harness.md) — a smoke-test harness so component "done" is build-proven,
-  not asserted (closing the ⬜ in [MAIL-§6](#MAIL-§6) against [HOUSE-LAW-8](../../MindAttic.HouseRules.md)).
+  not asserted (closing the ⬜ in [MAIL-§6](#MAIL-§6) against [HOUSE-LAW-8](../../../MindAttic.HouseRules.md)).
 - [RFC 0002](rfc/0002-uiux-source-to-idea-pipeline.md) — raw UiUx source → `.idea` generator (deferred).
 - Backlog and acceptance criteria: [`USER_STORIES.md`](USER_STORIES.md).
 
@@ -191,11 +191,11 @@ A component change is **done** only when:
 4. The catalog row in [`components.json`](data/components.json) is updated (key/version/kind/uses).
 5. For interactive widgets, the live behavior is observed (HelloWorld's click counter; per-component
    `demo.html` for the raw-HTML consumer). Mark `✅` only when build/observation proves it, else `🟡`/`⬜`
-   ([HOUSE-LAW-8](../../MindAttic.HouseRules.md)).
+   ([HOUSE-LAW-8](../../../MindAttic.HouseRules.md)).
 
 ## 9. Glossary {#MAIL-§9}
 
-- **`.idea`** — a guarded, versioned zip ([HOUSE-LAW-5](../../MindAttic.HouseRules.md)) that is the unit of
+- **`.idea`** — a guarded, versioned zip ([HOUSE-LAW-5](../../../MindAttic.HouseRules.md)) that is the unit of
   distribution for a component; uploaded to the CMS as optional content.
 - **Component** — any `.idea` citizen (Theme, Plugin, or inline-placed Component); one RCL, one `.idea`. Catalog: [`components.json`](data/components.json).
 - **Theme / Plugin / Component (inline-placed)** — see [MAIL-§4.2](#MAIL-§4.2). (Plugin was formerly "Widget"; Widget was formerly "Plugin" — see MAIL-A1, [MAIL-A6](AMENDMENTS.md#MAIL-A6).)
@@ -203,7 +203,7 @@ A component change is **done** only when:
   the package `wwwroot/` at pack time.
 - **Mount** — the served path `/_ideas/<Kind>/<key>/<version>/` for a component's assets.
 - **Key** — a component's namespace tail, lowercased; its stable string identity.
-- **Version** — the `V{n}` content class number; whole-number only ([HOUSE-LAW-1](../../MindAttic.HouseRules.md)).
+- **Version** — the `V{n}` content class number; whole-number only ([HOUSE-LAW-1](../../../MindAttic.HouseRules.md)).
 - **`[Uses]` / `<CmsInclude>`** — declare/render a dependency on another installed component by string id.
 - **Abstractions** — `MindAttic.Ideas.Abstractions`, the frozen SDK (the only thing components compile
   against); supplies `ThemeBase` / `PluginBase` / `ComponentBase`, `[Idea]`, `[Uses]`, `CmsInclude`.

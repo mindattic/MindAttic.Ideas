@@ -46,6 +46,19 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             await db.SaveChangesAsync(ct);
         }
 
+        // Site chrome defaults. NavMenu and PoweredBy read these through the Host -> Site -> Page setting
+        // chain; without them the nav renders an empty list and the brand falls back to the site key
+        // ("default"). Seeded per-site and only when absent, so an admin edit is never clobbered.
+        await EnsureSiteSettingAsync(db, site.Id, "nav.brand", "MindAttic", ct);
+        await EnsureSiteSettingAsync(db, site.Id, "nav.brandhref", "/", ct);
+        await EnsureSiteSettingAsync(db, site.Id, "nav.links", "Projects=/projects;Ideas=/ideas", ct);
+        await EnsureSiteSettingAsync(db, site.Id, "footer.text", $"© {now.Year} MindAttic LLC", ct);
+        await EnsureSiteSettingAsync(db, site.Id, "footer.links", "Projects=/projects;GitHub=https://github.com/mindattic", ct);
+
+        // The site's default plugin chrome: any page that selects none of its own renders with this.
+        await EnsureSiteSettingAsync(db, site.Id, "plugins.default",
+            """["Plugin.navmenu","Plugin.breadcrumbs","Plugin.footer","Plugin.backtotop","Plugin.poweredby"]""", ct);
+
         // The bare route ("" slug) no longer renders a page — PageHost forwards it to the Frontpage.
         // Migrate a stock seeded home page to soft-disabled (HOUSE-LAW-2: never hard-delete); an
         // admin-edited body is left untouched (and stays reachable should the forward be re-pointed).
@@ -486,4 +499,14 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
     // The previous stock default — recognized so a fresh-install DB migrates to the reset above, while a
     // value an admin has since edited is left untouched.
     private const string LegacyGlobalCss = ":root{--ma-ideas-accent:#ff8c00}body{margin:0}";
+
+    /// <summary>Insert a site-scoped setting only when it is absent — an admin's value always wins.</summary>
+    private static async Task EnsureSiteSettingAsync(
+        CmsDbContext db, int siteId, string key, string value, CancellationToken ct)
+    {
+        var exists = await db.Settings.AnyAsync(s => s.Scope == "Site" && s.ScopeId == siteId && s.Key == key, ct);
+        if (exists) return;
+        db.Settings.Add(new SettingEntry { Scope = "Site", ScopeId = siteId, Key = key, Value = value });
+        await db.SaveChangesAsync(ct);
+    }
 }

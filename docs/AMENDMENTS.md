@@ -4,7 +4,7 @@ project: MindAttic.Ideas
 code: MAI
 layer: amendments
 status: living
-updated: 2026-06-16
+updated: 2026-09-04
 ---
 
 # MindAttic.Ideas — Amendments (append-only; amendment wins over the bible)
@@ -601,3 +601,42 @@ Namespaces and asset mounts change accordingly: `MindAttic.Ideas.Plugin.{Key}` /
    `MindAttic.Ideas.Component.{key}` in `Pages.BodyHtml` per the classification table.
 4. Rewrites `"Widget."` prefix → `"Plugin."` or `"Component."` in `WidgetPlacementSettings.WidgetRef`
    per the classification table.
+
+## MAI-A27 — Three append-only SDK additions: plugin slots, child identity, batch metadata {#MAI-A27}
+
+**What changed (2026-09-04).** Building the MindAttic site *on* the CMS surfaced three gaps in the
+frozen SDK. All three are additive under [MAI-LAW-2](BIBLE.md#MAI-LAW-2) — new enum, new init-only
+attribute property, new interface default method — so `MAJOR` stays pinned at 1 and every already-packed
+`.idea` keeps its exact meaning.
+
+**1. `PluginSlot` — a Plugin declares where it renders.** Every active plugin rendered *before* the
+theme/body, so a footer plugin landed at the top of the page. New append-only enum:
+
+```csharp
+public enum PluginSlot { BeforeBody = 0, AfterBody = 1 }
+```
+
+surfaced as `IdeaAttribute.Slot`, defaulting to `BeforeBody` — the behavior that already existed, so no
+shipped plugin moves. `PageHost` reads it off the **type** (no instantiation) and partitions the active
+plugin list into a pass before the theme/body and a pass after, preserving author order within each.
+First consumer: `Plugin.poweredby` (MAIL-A7 in the [library amendments](../library/docs/AMENDMENTS.md)).
+
+**2. `ChildPage.PageId` — a listed child is identifiable.** `IPageTree` gave a component a child's slug
+and title but not its identity, so a component rendering an index could not look up anything *about* the
+pages it listed. `ChildPage` gains a trailing, defaulted `Guid PageId`; the positional record stays
+source-compatible and `PageTreeFeature` populates it from `Page.Uid`.
+
+**3. `IComponentMetadataStore.GetManyAsync` — one query for a list.** With (2), an index over N children
+would issue N metadata round trips per render. The batch read is a **default method** that loops
+`GetAsync`, so any existing host keeps working unchanged, and `ComponentMetadataService` overrides it
+with a single query.
+
+**Also corrected: renames now emit a real 301.** `PageHost` claimed "Auto-301" in comment but redirected
+via `NavigationManager.NavigateTo`, which can only produce a 302 — telling search engines the *old* URL
+was still canonical. `SlugRedirectResult.StatusCode` was, in consequence, dead code. The host now writes
+the declared status and `Location` directly when the response has not started, falling back to
+`NavigateTo` when it has.
+
+**Site-level default chrome.** A page whose `ActivePluginsJson` selects nothing now inherits the
+site setting `plugins.default`, so every page in a site gets its nav/footer without per-page
+bookkeeping. A page's own selection always wins.
