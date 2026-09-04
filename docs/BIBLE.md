@@ -37,8 +37,8 @@ is live. The four kinds derive from one shared root `IdeaBase`.
   (DotNetNuke's fixed-layout model is rejected).
 - A **Plugin** is site-wide: checked in the Admin Page Properties panel, it activates across the entire
   rendered page (e.g. Tooltip adds global tooltip behavior; OutfitFont loads a font family). A Plugin
-  may also be injected inline with `{{Plugin.X}}` for one-off pages.
-- A **Component** is lexically scoped: it renders at the exact `{{Component.X}}` token position in the
+  may also be injected inline with `<Plugin.X />` for one-off pages.
+- A **Component** is lexically scoped: it renders at the exact `<Component.X />` tag position in the
   page body. Components can nest other Components (e.g. `TabControl` nests `TabButton` and `TabPage`
   children, each of which may contain further Components).
 - **Two authoring paths, one render path.** A *Data page* (free-form `BodyHtml`/`PageCss`/`PageJs`
@@ -150,8 +150,8 @@ is live. The four kinds derive from one shared root `IdeaBase`.
 - **`ContentCatalog`** (`Core/Discovery`) — the one catalog; ordered `ICmsContentSource` providers feed it.
 - **`AlcAwareTypeResolver` / `CmsPackageLoadContext`** (`Core/Discovery`) — load `.idea` citizens through a
   per-package collectible `AssemblyLoadContext`; host types unify by reference identity (the ALC linchpin).
-- **`IncludeExpander` / `IncludeReferenceParser`** (`Core/Rendering`) — resolve `{{Kind.Name[.Vn]}}` tokens
-  against the catalog; unresolved/disabled → placeholder.
+- **`IncludeExpander` / `IncludeReferenceParser`** (`Core/Rendering`) — resolve `<Kind.Name />` tags (with an optional
+  `data-version="n"`) against the catalog; unresolved/disabled → placeholder.
 - **`RawContentGate`** (`Core/Rendering`) — the sole `MarkupString` chokepoint: Author → raw passthrough,
   Untrusted → sanitized.
 - **`PageAssetCollector`** (`Core/Rendering`) — cascade-orders/dedupes a page's citizen css/scripts into `<head>`.
@@ -288,14 +288,14 @@ Definition of done (a feature is `✅` only when *verified*, never merely assert
 - **Plugin** — a site-wide `.idea` kind ([A26](AMENDMENTS.md#MAI-A26), ordinal 1): activates a behavior
   or capability across the entire rendered page without occupying a specific token position (e.g. Tooltip,
   OutfitFont, NavMenu). Selected per-page via the Admin Page Properties Plugin checkbox list; may also be
-  injected inline via `{{Plugin.X}}` on a one-off basis. Formerly "Widget" (A18), "Plugin" (A17),
+  injected inline via `<Plugin.X />` on a one-off basis. Formerly "Widget" (A18), "Plugin" (A17),
   "Component" (A9).
 - **Component** — an inline-placed `.idea` kind ([A26](AMENDMENTS.md#MAI-A26), ordinal 4): renders at the
-  exact `{{Component.X}}` token position in the page body. Can nest other Components (e.g. TabControl
+  exact `<Component.X />` tag position in the page body. Can nest other Components (e.g. TabControl
   contains TabButton + TabPage children, each of which may contain Textbox or other Components).
   `ComponentBase` aliases Blazor's `ComponentBase` as `BlazorComponentBase`; MindAttic's wins the bare name.
 - **Theme** — layout chrome + one `@Body` hole + a CSS bundle. Can be overridden inline per-page with
-  `{{Theme.X}}`.
+  `<Theme.X />`.
 - **Widget** — *retired ([A26](AMENDMENTS.md#MAI-A26)): the former umbrella kind (ordinal 1) is split into
   Plugin and Component. No type named `WidgetBase` exists; no content kind string `"Widget"` is valid.*
 - **Control** — *removed ([A19](AMENDMENTS.md#MAI-A19)): atomic UI is now authored as a Component.* The

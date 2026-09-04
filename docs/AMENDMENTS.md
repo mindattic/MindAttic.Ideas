@@ -640,3 +640,33 @@ the declared status and `Location` directly when the response has not started, f
 **Site-level default chrome.** A page whose `ActivePluginsJson` selects nothing now inherits the
 site setting `plugins.default`, so every page in a site gets its nav/footer without per-page
 bookkeeping. A page's own selection always wins.
+
+## MAI-A28 — Brace tokens are retired; the tag form is the composition grammar {#MAI-A28}
+
+**What changed (2026-09-04).** The bible documented composition as `{{Kind.Key[.Vn]}}` in six places,
+and the shipped Ideas brochure taught the same. The code had already moved on: `IncludeExpander` and
+`IncludeReferenceParser` recognise **only** the PascalCase tag form, and `SeedService` rewrites any
+surviving brace token at startup. Canon and code disagreed, and the canon lost.
+
+**The grammar is the tag form**, in author-trusted page bodies:
+
+```html
+<Component.Textbox />
+<Plugin.Tooltip />
+<Theme.Cyberspace />
+<Component.TabBoard alwaysShowTabPage="true" />
+<Component.TabBoard data-version="2" />      <!-- pin a version; omit to float to latest -->
+```
+
+`{{ … }}` is **not** part of the grammar and is never re-added. It survives only as a migration input:
+`SeedService.ApplyLegacyMigration` converts brace tokens (parameters included, per
+[MAI-A27](#MAI-A27)) into tags, so old content is upgraded in place rather than silently rendering the
+token as visible text — which is exactly what had been happening on the MindAttic front page.
+
+**Why the tag form won.** It parses as HTML, so AngleSharp handles nesting, attributes, and quoting
+instead of a bespoke regex; the reference guard and the head-asset hoist read the same tree the renderer
+does ([MAI-LAW-3](BIBLE.md#MAI-LAW-3)); and untrusted content degrades safely, since an unknown
+PascalCase element is lowercased into an inert unknown tag rather than expanded.
+
+> *Corrects prose in [MAI-A26](#MAI-A26) and the bible glossary, both of which described the retired
+> brace form. The kinds, ordinals, and everything else in A26 stand unchanged.*

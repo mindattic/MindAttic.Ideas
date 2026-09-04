@@ -34,7 +34,7 @@ library/
   dist/        packed *.idea — seeded into the CMS on startup as optional content
 ```
 
-**45 `.idea`s total** ([MAIL-A7](docs/AMENDMENTS.md#MAIL-A7)). Each project is its own small csproj so each `.idea` is independently
+**51 `.idea`s total** ([MAIL-A8](docs/AMENDMENTS.md#MAIL-A8)). Each project is its own small csproj so each `.idea` is independently
 versioned and uploadable. Common build settings + the Abstractions reference live once in
 `Directory.Build.props`.
 

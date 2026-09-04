@@ -79,8 +79,8 @@ three of its consumers (raw HTML pages, standalone Blazor apps, and the CMS).
 ```
 
 ### 4.1 Projects {#MAIL-§4.1}
-The solution ([`MindAttic.Ideas.Library.slnx`](../MindAttic.Ideas.Library.slnx)) is 45 component RCLs in
-three solution folders — **8 Themes, 13 Plugins, 24 Components** ([MAIL-A6](AMENDMENTS.md#MAIL-A6) split;
+The solution ([`MindAttic.Ideas.Library.slnx`](../MindAttic.Ideas.Library.slnx)) is 51 component RCLs in
+three solution folders — **8 Themes, 14 Plugins, 29 Components** ([MAIL-A6](AMENDMENTS.md#MAIL-A6) split;
 `ComponentBase` remains available in Abstractions; `ControlBase` was removed in MAI-A19). Eleven citizen-kinds are
 MindAttic-specific, fifteen are the general-purpose **baseline set** ([MAIL-A3](AMENDMENTS.md#MAIL-A3))
 that lets the CMS build ordinary websites from reusable parts, and three are the **mindattic.com
@@ -166,7 +166,7 @@ this repo at all — the once-parked Pages/_wip tree was deleted as no longer ap
 |---|---|---|
 | Full solution compiles | ✅ | `dotnet build -c Release MindAttic.Ideas.Library.slnx` → **Build succeeded, 0 Warning(s), 0 Error(s)**; all 36 component DLLs + Abstractions emitted (net10.0). Verified 2026-06-09. |
 | Smallest component builds standalone | ✅ | `dotnet build -c Release Components/HelloWorld` → succeeded, 0/0. Verified 2026-06-07. |
-| Packed artifacts present | ✅ | [`dist/`](../dist) holds 45 `*.idea` — one per catalogued component in [`components.json`](data/components.json). Repacked 2026-06-16 after [MAIL-A6](AMENDMENTS.md#MAIL-A6) Plugin/Component split; compose-graph verified (`ma-idea verify`). |
+| Packed artifacts present | ✅ | [`dist/`](../dist) holds 51 `*.idea` — one per catalogued component in [`components.json`](data/components.json). Repacked 2026-06-16 after [MAIL-A6](AMENDMENTS.md#MAIL-A6) Plugin/Component split; compose-graph verified (`ma-idea verify`). |
 | Automated tests | ⬜ | No test project exists in the repo (RCL component library; verification is build + the HelloWorld interactive smoke test + per-component `demo.html`). See [MAIL-§8](#MAIL-§8). |
 | `pack` round-trip | ✅ | Re-run 2026-06-09: 15 baseline widgets packed (`ma-idea pack --wwwroot assets`); `ma-idea verify ./dist` → "OK — every declared dependency resolves" across all 36 (re-verified with the MAIL-A5 set 2026-06-09). |
 | Plugin→Widget rename | ✅ | Rename complete (MAIL-A1); superseded by MAIL-A6 — `Widget` kind is now `Plugin` (site-wide) or `Component` (inline-placed); the `Widgets/` folder was split into `Plugins/` + `Components/`. |

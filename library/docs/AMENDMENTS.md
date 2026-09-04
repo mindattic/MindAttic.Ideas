@@ -204,6 +204,31 @@ the CMS rather than beside it:
 the `footer` plugin, which is asset-only by design ([MAIL-A5](#MAIL-A5)) and styles whatever footer
 markup exists. The two compose: activate both and the badge footer gets the pin-when-short behavior.
 
-**Solution count.** **8 Themes + 13 Plugins + 24 Components = 45 `.idea`s.**
+**Solution count.** **8 Themes + 13 Plugins + 24 Components = 45 `.idea`s** *(superseded by [MAIL-A8](#MAIL-A8), which catalogues six citizens that already shipped uncatalogued: 51).*
 
 > *Supersedes the counts in [MAIL-A6](#MAIL-A6); the Plugin/Component classification itself is unchanged.*
+
+## MAIL-A8 — Six shipped-but-uncatalogued citizens enter the canon (51 `.idea`s) {#MAIL-A8}
+
+**What changed.** `dist/` held 51 packed `.idea`s while
+[`components.json`](data/components.json) listed 45. Six citizens had been built, packed and
+installed without ever entering the L5 catalog, so canon-as-data understated what the library
+actually ships:
+
+| Kind | Key | Why it matters |
+|---|---|---|
+| Component | `frommd` | Renders Markdown from component metadata. Every project page in the MindAttic site is this component. |
+| Component | `fromhtml` | The HTML counterpart of `frommd`. |
+| Component | `ideasfrontpage` | Landing page for the CMS itself (distinct from the longer-form `ideasbrochure`). |
+| Component | `mediaimage` | A managed MindAttic.Media asset as an `<img>` — the DB-backed alternative to base64-inlining. |
+| Component | `medialink` | A managed media asset as a hyperlink; images/PDFs inline, everything else downloads. |
+| Plugin | `header` | Three-column fixed header with server-side auth. |
+
+**Solution count.** **8 Themes + 14 Plugins + 29 Components = 51 `.idea`s.**
+
+**Tooling, so this stops recurring.** `dist/` drifting from source is what let the Ideas brochure go
+on teaching a token grammar the CMS had already retired. `tools/pack-all.ps1` builds every citizen and
+repacks any whose assembly is newer than its `.idea` (`-Force` for all, `-Install` to copy them into the
+CMS host's `library/`), so a full, consistent repack is one command rather than 51 hand-written ones.
+
+> *Supersedes the counts in [MAIL-A7](#MAIL-A7) and [MAIL-A6](#MAIL-A6).*

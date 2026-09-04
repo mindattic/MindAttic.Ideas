@@ -99,6 +99,28 @@
       "notes": "Baseline set (MAIL-A3). Name/email/message form POSTing to action= or the contact.action site setting; honeypot included; renders a config hint when unset."
     },
     {
+      "id": "component.fromhtml",
+      "key": "fromhtml",
+      "kind": "Component",
+      "version": 1,
+      "displayName": "HTML Doc",
+      "assembly": "MindAttic.Ideas.Component.FromHtml",
+      "artifact": "MindAttic.Ideas.Component.FromHtml.V1.idea",
+      "mount": "/_ideas/Component/fromhtml/1",
+      "notes": "The HTML counterpart of frommd: renders author HTML held in component metadata. Uses Plugin.header."
+    },
+    {
+      "id": "component.frommd",
+      "key": "frommd",
+      "kind": "Component",
+      "version": 1,
+      "displayName": "Markdown Doc",
+      "assembly": "MindAttic.Ideas.Component.FromMd",
+      "artifact": "MindAttic.Ideas.Component.FromMd.V1.idea",
+      "mount": "/_ideas/Component/frommd/1",
+      "notes": "Renders Markdown (Markdig) held in the page's 'frommd' metadata slot, with an in-page edit mode that re-syncs from a source file. Ships Markdig in its bin/ -- the first citizen to carry a third-party dependency, which is what surfaced the packer/ALC gap fixed in MAI-A27's sibling commit. Uses Plugin.header."
+    },
+    {
       "id": "component.frontpage",
       "key": "frontpage",
       "kind": "Component",
@@ -169,6 +191,17 @@
       "notes": "Full product brochure for MindAttic.Ideas CMS: three-primitive model, token grammar, .idea package anatomy, DNN retrospective, feature comparison table, tech deep-dive, and get-started guide. CSS scoped under .ibr-*."
     },
     {
+      "id": "component.ideasfrontpage",
+      "key": "ideasfrontpage",
+      "kind": "Component",
+      "version": 1,
+      "displayName": "Ideas Frontpage",
+      "assembly": "MindAttic.Ideas.Component.IdeasFrontpage",
+      "artifact": "MindAttic.Ideas.Component.IdeasFrontpage.V1.idea",
+      "mount": "/_ideas/Component/ideasfrontpage/1",
+      "notes": "Self-contained landing page for the CMS itself: slide-in navigation drawer plus marketing sections. Distinct from ideasbrochure, which is the longer-form product tour."
+    },
+    {
       "id": "component.legionpersonas",
       "key": "legionpersonas",
       "kind": "Component",
@@ -182,6 +215,28 @@
         "modalpopup"
       ],
       "notes": "Persona gallery widget (PersonaCard/PersonaDetail, personas.json). Detail panel uses ModalPopup widget."
+    },
+    {
+      "id": "component.mediaimage",
+      "key": "mediaimage",
+      "kind": "Component",
+      "version": 1,
+      "displayName": "Media Image",
+      "assembly": "MindAttic.Ideas.Component.MediaImage",
+      "artifact": "MindAttic.Ideas.Component.MediaImage.V1.idea",
+      "mount": "/_ideas/Component/mediaimage/1",
+      "notes": "Renders a managed MindAttic.Media asset as an <img>, addressed by the stable Uid shown in Admin -> Media. The DB-backed alternative to base64-inlining an image into page markup."
+    },
+    {
+      "id": "component.medialink",
+      "key": "medialink",
+      "kind": "Component",
+      "version": 1,
+      "displayName": "Media Link",
+      "assembly": "MindAttic.Ideas.Component.MediaLink",
+      "artifact": "MindAttic.Ideas.Component.MediaLink.V1.idea",
+      "mount": "/_ideas/Component/medialink/1",
+      "notes": "Renders a managed MindAttic.Media asset as a hyperlink; images and PDFs open inline, everything else downloads."
     },
     {
       "id": "component.mindatticfrontpage",
@@ -354,6 +409,17 @@
       "artifact": "MindAttic.Ideas.Plugin.Footer.V1.idea",
       "mount": "/_ideas/Plugin/footer/1",
       "notes": "Baseline set (MAIL-A3). Activator: chrome + the mindattic.com pin-when-short behavior for any author-written footer.ma-footer."
+    },
+    {
+      "id": "plugin.header",
+      "key": "header",
+      "kind": "Plugin",
+      "version": 1,
+      "displayName": "Site Header",
+      "assembly": "MindAttic.Ideas.Plugin.Header",
+      "artifact": "MindAttic.Ideas.Plugin.Header.V1.idea",
+      "mount": "/_ideas/Plugin/header/1",
+      "notes": "Three-column fixed header (logo | center | user dropdown). Auth is entirely server-side: AuthorizeView gates the dropdown and logout posts a real form. Renders BeforeBody (the default slot)."
     },
     {
       "id": "plugin.navmenu",

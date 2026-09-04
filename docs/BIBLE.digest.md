@@ -93,14 +93,14 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - **Plugin** — a site-wide `.idea` kind ([A26](AMENDMENTS.md#MAI-A26), ordinal 1): activates a behavior
   or capability across the entire rendered page without occupying a specific token position (e.g. Tooltip,
   OutfitFont, NavMenu). Selected per-page via the Admin Page Properties Plugin checkbox list; may also be
-  injected inline via `{{Plugin.X}}` on a one-off basis. Formerly "Widget" (A18), "Plugin" (A17),
+  injected inline via `<Plugin.X />` on a one-off basis. Formerly "Widget" (A18), "Plugin" (A17),
   "Component" (A9).
 - **Component** — an inline-placed `.idea` kind ([A26](AMENDMENTS.md#MAI-A26), ordinal 4): renders at the
-  exact `{{Component.X}}` token position in the page body. Can nest other Components (e.g. TabControl
+  exact `<Component.X />` tag position in the page body. Can nest other Components (e.g. TabControl
   contains TabButton + TabPage children, each of which may contain Textbox or other Components).
   `ComponentBase` aliases Blazor's `ComponentBase` as `BlazorComponentBase`; MindAttic's wins the bare name.
 - **Theme** — layout chrome + one `@Body` hole + a CSS bundle. Can be overridden inline per-page with
-  `{{Theme.X}}`.
+  `<Theme.X />`.
 - **Widget** — *retired ([A26](AMENDMENTS.md#MAI-A26)): the former umbrella kind (ordinal 1) is split into
   Plugin and Component. No type named `WidgetBase` exists; no content kind string `"Widget"` is valid.*
 - **Control** — *removed ([A19](AMENDMENTS.md#MAI-A19)): atomic UI is now authored as a Component.* The
@@ -122,5 +122,5 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - done: 35  |  partial: 0  |  planned: 5  |  cut: 0
 
 ## Latest amendment
-- MAI-A27 — Three append-only SDK additions: plugin slots, child identity, batch metadata
+- MAI-A28 — Brace tokens are retired; the tag form is the composition grammar
 
