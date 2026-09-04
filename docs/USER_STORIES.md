@@ -301,6 +301,16 @@ updated: 2026-06-16
 > (`src/MindAttic.Media.Tests`), because that is where the code under test lives. The codex doctor
 > only scans this repo's test tree, so it reports those citations as warnings; they are real tests.
 
+- **MAI-US-I6 ⬜** As an Author, I can hand the CMS **pixels instead of a file path** — paste a base64
+  image (or a clipboard capture) and have it become a stored asset with a `/_media/{uid}` URL, with
+  the reference rewritten to point at the file. *Selecting real files means keeping throwaway files
+  around; pasting is the natural motion for a screenshot. This is the inverse of
+  [`--extract-media`](AMENDMENTS.md#MAI-A30), which lifts base64 out of a page body that already has
+  it — this accepts base64 as an INPUT and never lets it reach a page.* **Lands in MindAttic.Media**
+  (a dynamic→static asset conversion on the store), surfaced through the Ideas host CLI and the Admin
+  Media panel. *Deferred by the owner 2026-09-04: "a good future feature … put it on the bottom of
+  the list."*
+
 ## Epic J — Azure deployment (A32)
 
 - **MAI-US-J1 ✅** As a Maintainer, CI can restore and publish this repo without my dev box, because

@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "//": "How each MindAttic project gets photographed for its Ideas brochure page. See shoot.mjs for why this is declared rather than detected. Repo paths are relative to D:\\Projects\\MindAttic.",
+
+  "defaults": {
+    "viewport": [1440, 900],
+    "scale": 2,
+    "settleMs": 3000
+  },
+
+  "repos": [
+    {
+      "repo": "Hyperspace",
+      "slug": "hyperspace",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-static",
+          "file": "index.htm",
+          "//": "A Three.js scene needs frames, not a load event — networkidle fires long before the first render.",
+          "settleMs": 9000,
+          "viewport": [1600, 1000]
+        }
+      ]
+    },
+    {
+      "repo": "mindattic.com",
+      "slug": "mindattic-com",
+      "shots": [
+        { "id": "hero", "driver": "web-static", "file": "index.htm", "settleMs": 4000, "viewport": [1600, 1000] }
+      ]
+    },
+    {
+      "repo": "ryandebraal.com",
+      "slug": "ryandebraal-com",
+      "shots": [
+        { "id": "hero", "driver": "web-static", "file": "index.htm", "settleMs": 5000, "viewport": [1600, 1000] }
+      ]
+    },
+    {
+      "repo": "mindatticcares.com",
+      "slug": "mindatticcares-com",
+      "shots": [
+        { "id": "hero", "driver": "web-static", "file": "index.htm", "settleMs": 4000, "viewport": [1600, 1000] }
+      ]
+    },
+    {
+      "repo": "JoyceFit",
+      "slug": "joycefit",
+      "shots": [
+        { "id": "hero", "driver": "web-static", "file": "index.htm", "settleMs": 3000, "viewport": [1440, 900] }
+      ]
+    },
+    {
+      "repo": "GridGame2026",
+      "slug": "gridgame2026",
+      "shots": [
+        { "id": "hero", "driver": "web-static", "file": "index.htm", "settleMs": 6000, "viewport": [1440, 900] }
+      ]
+    },
+    {
+      "repo": "IdiotProof",
+      "slug": "idiotproof",
+      "shots": [
+        { "id": "hero", "driver": "web-static", "file": "index.htm", "settleMs": 4000, "viewport": [1440, 900] }
+      ]
+    },
+    {
+      "repo": "MediaButler",
+      "slug": "mediabutler",
+      "shots": [
+        { "id": "hero", "driver": "web-static", "file": "index.htm", "settleMs": 4000, "viewport": [1440, 900] }
+      ]
+    },
+
+    {
+      "repo": "ExperimentRTS",
+      "slug": "experimentrts",
+      "shots": [
+        {
+          "id": "hero",
+          "driver": "web-cmd",
+          "//": "Vite needs a relative base or its absolute /assets/... paths escape a served subdirectory.",
+          "build": "npx vite build --base=./ --outDir {tmp}/experimentrts --emptyOutDir",
+          "serveDir": "{tmp}/experimentrts",
+          "file": "index.html",
+          "settleMs": 9000,
+          "viewport": [1600, 1000]
+        }
+      ]
+    },
+
+    {
+      "repo": "Prose",
+      "slug": "prose",
+      "//": "NOT a console app: Prose Hub is an ASP.NET host serving a pale-yellow log view on :5900.",
+      "enabled": false,
+      "shots": [
+        {
+          "id": "hub",
+          "driver": "web-cmd",
+          "cwd": "v3/Prose.Hub",
+          "run": "dotnet run --no-launch-profile",
+          "url": "http://127.0.0.1:5900",
+          "readyUrl": "http://127.0.0.1:5900/api/health",
+          "readyTimeoutMs": 180000,
+          "settleMs": 4000,
+          "viewport": [1600, 1000]
+        }
+      ]
+    }
+  ]
+}
