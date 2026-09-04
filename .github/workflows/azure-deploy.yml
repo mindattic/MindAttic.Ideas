@@ -1,0 +1,174 @@
+name: Build and deploy MindAttic.Ideas to Azure App Service
+
+# Three stages, in order, each gating the next:
+#   build    — restore, run the full NUnit suite, publish, and emit the idempotent migration script
+#   migrate  — apply that script to Azure SQL under an Entra token (the running site never does DDL)
+#   deploy   — push the artifact to the App Service
+#
+# Prerequisites (see docs/DEPLOYMENT.md for the full runbook):
+#   1. ./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas
+#   2. Repo secret  AZURE_WEBAPP_PUBLISH_PROFILE  — App Service → Get publish profile
+#   3. For the migrate job, either OIDC federated credentials (AZURE_CLIENT_ID / AZURE_TENANT_ID /
+#      AZURE_SUBSCRIPTION_ID) or set SKIP_MIGRATE below and run ./infra/migrate.ps1 by hand.
+#   4. Flip MindAttic.Deploy/projects.json → apps[] 'ideas' to disabled: false.
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      skip_migrate:
+        description: 'Skip the migrate stage (schema already current)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write          # required by azure/login's OIDC flow
+
+env:
+  PUBLISH_PROJECT: src/MindAttic.Ideas.Blazor/MindAttic.Ideas.Blazor.csproj
+  TEST_PROJECT: src/MindAttic.Ideas.Tests/MindAttic.Ideas.Tests.csproj
+  MIGRATIONS_PROJECT: src/MindAttic.Ideas.Core
+  AZURE_WEBAPP_NAME: mindattic-ideas
+  AZURE_RESOURCE_GROUP: rg-mindattic-ideas
+  DOTNET_VERSION: '10.x'
+
+jobs:
+  build:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Every MindAttic.* package is restored from the git-tracked lib/local-packages feed. A
+      # GitHub runner has no C:\LocalNuGet and no ../local-feed; NuGet tolerates those missing
+      # sources silently, which is exactly why the vendored copies have to be there.
+      - name: Restore
+        run: dotnet restore MindAttic.Ideas.slnx
+
+      - name: Build
+        run: dotnet build MindAttic.Ideas.slnx -c Release --no-restore
+
+      # The deploy is gated on the suite. PageHistorySqlServerTests is [Explicit] and needs the dev
+      # LocalDB, so it does not run here.
+      - name: Test
+        run: dotnet test ${{ env.TEST_PROJECT }} -c Release --no-build --verbosity normal
+
+      - name: Publish
+        run: dotnet publish ${{ env.PUBLISH_PROJECT }} -c Release -o publish --no-build
+
+      - name: Generate idempotent migration script
+        run: |
+          dotnet tool install --global dotnet-ef
+          dotnet ef migrations script --idempotent `
+            --project ${{ env.MIGRATIONS_PROJECT }} `
+            --startup-project ${{ env.MIGRATIONS_PROJECT }} `
+            --configuration Release --no-build `
+            --output migrate.sql
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ideas-app
+          path: publish/
+
+      - name: Upload migration script
+        uses: actions/upload-artifact@v7
+        with:
+          name: ideas-migration
+          path: migrate.sql
+
+  migrate:
+    runs-on: windows-2025
+    needs: build
+    if: ${{ !inputs.skip_migrate }}
+    steps:
+      - name: Download migration script
+        uses: actions/download-artifact@v8
+        with:
+          name: ideas-migration
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # A GitHub-hosted runner has no stable egress IP, so the rule is created for this run's IP
+      # and torn down in the always() step below, whatever happens in between.
+      - name: Open the SQL firewall for this runner
+        id: firewall
+        shell: pwsh
+        run: |
+          $ip = (Invoke-RestMethod 'https://api.ipify.org?format=json').ip
+          $rule = "gh-$($env:GITHUB_RUN_ID)"
+          $server = az sql server list --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query "[0].name" -o tsv
+          az sql server firewall-rule create --resource-group ${{ env.AZURE_RESOURCE_GROUP }} `
+            --server $server --name $rule --start-ip-address $ip --end-ip-address $ip --output none
+          "rule=$rule"     | Out-File $env:GITHUB_OUTPUT -Append
+          "server=$server" | Out-File $env:GITHUB_OUTPUT -Append
+          "fqdn=$(az sql server show --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name $server --query fullyQualifiedDomainName -o tsv)" | Out-File $env:GITHUB_OUTPUT -Append
+
+      - name: Apply the schema
+        shell: pwsh
+        run: |
+          Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber
+          Import-Module SqlServer
+          $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
+          Invoke-Sqlcmd -ServerInstance '${{ steps.firewall.outputs.fqdn }}' -Database 'MindAtticIdeas' `
+            -AccessToken $token -InputFile migrate.sql -QueryTimeout 300 -ErrorAction Stop
+          Write-Host 'Schema applied.'
+
+      - name: Close the SQL firewall
+        if: always() && steps.firewall.outputs.rule != ''
+        shell: pwsh
+        run: |
+          az sql server firewall-rule delete --resource-group ${{ env.AZURE_RESOURCE_GROUP }} `
+            --server '${{ steps.firewall.outputs.server }}' --name '${{ steps.firewall.outputs.rule }}' --output none
+
+  deploy:
+    runs-on: windows-2025
+    needs: [build, migrate]
+    # Deploy even when migrate was skipped, but never when it ran and failed: shipping code against
+    # a schema that did not apply is how you get a half-migrated production database.
+    if: ${{ always() && needs.build.result == 'success' && needs.migrate.result != 'failure' && needs.migrate.result != 'cancelled' }}
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.webapp-url }}
+    steps:
+      - name: Download app artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ideas-app
+          path: publish/
+
+      - name: Deploy to Azure App Service
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          slot-name: Production
+          package: publish/
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+
+      # The app boots, migrates nothing, discovers its citizens, seeds the CMS and installs 51
+      # library .ideas. If /_health does not answer, the deploy did not really succeed.
+      - name: Smoke-test the health endpoint
+        shell: pwsh
+        run: |
+          $url = "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/_health"
+          for ($i = 1; $i -le 20; $i++) {
+            try {
+              $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 20
+              if ($r.StatusCode -eq 200) { Write-Host "Healthy after $i attempt(s)."; exit 0 }
+            } catch { Write-Host "attempt $i : $($_.Exception.Message)" }
+            Start-Sleep -Seconds 15
+          }
+          throw "$url never returned 200."

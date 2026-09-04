@@ -301,6 +301,46 @@ updated: 2026-06-16
 > (`src/MindAttic.Media.Tests`), because that is where the code under test lives. The codex doctor
 > only scans this repo's test tree, so it reports those citations as warnings; they are real tests.
 
+## Epic J — Azure deployment (A32)
+
+- **MAI-US-J1 ✅** As a Maintainer, CI can restore and publish this repo without my dev box, because
+  every private MindAttic package is vendored into `lib/local-packages/` and `nuget.config` lists it
+  first. *A GitHub runner has no `C:\LocalNuGet` and no `../local-feed`, and NuGet tolerates a
+  missing local source silently — so the guard is a test, not a comment.*
+  *(test: `DeploymentPackagingTests.EveryReferencedMindAtticPackageIsVendoredForCi`,
+  `NugetConfigListsTheVendoredFeed`, `VendoredPackagesAreTrackedRatherThanGitIgnored`. Live: a
+  Release restore **and** publish seeing only the vendored feed + nuget.org produced a complete 94 MB
+  artifact carrying all 51 library `.idea`s.)*
+- **MAI-US-J2 ✅** As an Operator, App Service can tell whether the site is alive, because `/_health`
+  answers 200 without touching the database. *A health check that hits SQL turns a transient blip
+  into a restart loop. Lives under `/_` with the other reserved routes so it cannot shadow a page
+  slug.* *(test: `DeploymentPackagingTests.ProductionRequiresItsDataProtectionSettingsByName`
+  pins the route and both required production settings; `DeployWorkflowPointsAtProjectsThatExist`
+  pins the paths CI hands to dotnet. Live: `/_health` → `200 healthy`, `/frontpage` still 200.)*
+- **MAI-US-J3 ✅** As a Maintainer, the engine ships with no known-vulnerable dependency.
+  *`System.Security.Cryptography.Xml` 10.0.8 → 10.0.11 (five HIGH advisories), `AngleSharp` 0.17.1 →
+  1.7.2 and `HtmlSanitizer` 9.0.892 → 9.2.1039 (GHSA-pgww-w46g-26qg). AngleSharp is load-bearing in
+  the render path.* *(test: `DeploymentPackagingTests.SecurityPinnedPackagesAreNotDowngraded` holds
+  a version floor per package, because a pinned version is easy to revert in a merge and nothing else
+  in the build would notice. Live: the full suite stayed green across the bump, a sweep of 48 pages
+  returned all 200 with zero `ma-missing`, and `dotnet list package --vulnerable --include-transitive`
+  reports none.)*
+- **MAI-US-J4 🟡 As an Operator, I can stand the whole estate up with one command**
+  (`./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas`), passwordless throughout: Entra-only
+  SQL, no storage shared keys, managed-identity RBAC, and the auth Security bucket generated into
+  Key Vault. *`infra/main.bicep` compiles and **validates against the live subscription**
+  (`provisioningState: Succeeded`); what-if enumerates the 16 resources; both scripts parse under
+  Windows PowerShell 5.1.* **🟡 because nothing has been provisioned** — no resources exist and the
+  app has never run on App Service ([HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8):
+  verified, not asserted).
+- **MAI-US-J5 🟡 As a Maintainer, a push to `master` builds, migrates and deploys**, with the deploy
+  gated on green tests and on the migration having applied. *`.github/workflows/azure-deploy.yml`;
+  the migrate stage opens and closes a single-run SQL firewall rule under an Entra token, and the
+  running site holds `db_datareader`/`db_datawriter` only, so it cannot issue DDL even by mistake.*
+  **🟡 because the workflow has never run** — it needs the estate plus
+  `AZURE_WEBAPP_PUBLISH_PROFILE`. The `ideas` entry in `MindAttic.Deploy/projects.json → apps[]`
+  ships `disabled: true` with a note ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)).
+
 ## Priority backlog
 
 **Entries from Epic H** — A26 taxonomy refactor (2026-06-16, [A26](AMENDMENTS.md#MAI-A26)). The headline goal is met:

@@ -30,11 +30,13 @@
     <PackageReference Include="MindAttic.Media" Version="2.0.0" />
     <ProjectReference Include="..\..\..\MindAttic.Media\src\MindAttic.Media\MindAttic.Media.csproj" Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\..\MindAttic.Media\src\MindAttic.Media\MindAttic.Media.csproj')" />
     <!-- Rendering-time dependencies the ADR mandates: HTML sanitizer + HTML tokenizer.
-         AngleSharp pinned to the exact version HtmlSanitizer requires (no version clash). -->
-    <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
-    <PackageReference Include="AngleSharp" Version="0.17.1" />
-    <!-- Override the vulnerable transitive crypto.Xml 9.0.0 (pulled via SqlClient -> Azure.Identity). -->
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.8" />
+         AngleSharp pinned to the exact version HtmlSanitizer requires (no version clash).
+         Both moved off the 0.17.1 line, which carries GHSA-pgww-w46g-26qg. -->
+    <PackageReference Include="HtmlSanitizer" Version="9.2.1039" />
+    <PackageReference Include="AngleSharp" Version="1.7.2" />
+    <!-- Override the vulnerable transitive crypto.Xml 9.0.0 (pulled via SqlClient -> Azure.Identity).
+         10.0.8 itself later picked up five HIGH advisories; 10.0.11 matches the EF Core line. -->
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.11" />
   </ItemGroup>
 
 </Project>

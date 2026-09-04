@@ -29,3 +29,7 @@ Thumbs.db
 .env
 *.env
 .claude/quicksave.md
+
+# The vendored MindAttic package feed IS tracked: GitHub-hosted CI has no C:\LocalNuGet
+# and no ../local-feed, so these are the only copies a Release restore can see.
+!lib/local-packages/*.nupkg

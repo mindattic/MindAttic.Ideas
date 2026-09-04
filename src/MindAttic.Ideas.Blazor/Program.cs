@@ -196,6 +196,11 @@ app.MapGet("/_ideas/{*path}", () => Results.NotFound());   // anything else unde
 // Media assets: /_media/{uid:guid} redirects to a signed blob URL when the backend can mint one,
 // otherwise streams the payload with Range support (inline for image/text/video/audio/PDF).
 app.MapMediaEndpoints();
+
+// Liveness probe for the App Service health check. Deliberately does NOT touch the database: App
+// Service restarts an instance that fails this, and a transient SQL blip must not turn into a
+// restart loop. Under `/_` like every other reserved route, so it can never shadow a page slug.
+app.MapGet("/_health", () => Results.Text("healthy", "text/plain")).AllowAnonymous();
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode()
    // PageHost (the catch-all "/{*Slug}" content route) lives in the MindAttic.Ideas.Rendering RCL.

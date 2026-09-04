@@ -792,3 +792,68 @@ deployment does not strand the assets already in the database.
 **What this does not do.** Nothing migrates existing inline rows into blob storage, and `DeleteAsync`
 stays soft (HOUSE-LAW-2) — the blob is deliberately left behind, so reclaiming storage is a separate,
 explicit operation.
+
+## MAI-A32 — The deployment is code: infra, CI, and a vendored feed {#MAI-A32}
+
+**What changed (2026-09-04).** MindAttic.Ideas can be stood up on Azure from this repo. Nothing was
+provisioned by this amendment; what landed is the means, verified as far as it can be without
+spending money.
+
+**The estate is one deployment.** `infra/main.bicep` provisions sixteen resources: an App Service
+plan + web app, an Azure SQL server + `MindAtticIdeas` database, a storage account with `media` and
+`dp-keys` containers, a Key Vault with the `dp-protect` RSA key, and five role assignments. That is
+the whole thing — the CMS hosts many pages from one deployment ([§1](BIBLE.md#MAI-§1)), so there is
+nothing per-page in the infrastructure.
+
+**Everything is passwordless.** The web app has a system-assigned managed identity and reaches SQL,
+Blob Storage and Key Vault through it. The SQL server is **Entra-only** (`azureADOnlyAuthentication`),
+the storage account has `allowSharedKeyAccess: false` and `allowBlobPublicAccess: false`, and the
+connection string carries `Authentication=Active Directory Default` — so there is no database
+password, no storage key and no client secret in the repo, in CI, or in app settings
+([HOUSE-LAW-3](../../MindAttic.HouseRules.md#HOUSE-LAW-3)).
+
+**Least privilege at the database.** The app identity is granted `db_datareader` + `db_datawriter`
+and nothing more. It *cannot* issue DDL, which is the enforcement of what was previously only a
+convention: `MigrateAsync` runs in Development only, and schema changes come from the migrate job.
+
+**A CI problem that would have failed confusingly.** Ideas references six private packages from
+`C:\LocalNuGet` and `../local-feed`. A GitHub runner has neither — and **NuGet tolerates a missing
+local source silently**, so the failure surfaces as `NU1101: package not found` for a package that
+plainly exists on the dev box. `lib/local-packages/` now holds a git-tracked copy of each (the
+closure is exactly those six; none has a transitive MindAttic dependency), `nuget.config` lists it
+first so dev and CI resolve identically, and `.gitignore` re-includes it against the global
+`*.nupkg` exclusion. `DeploymentPackagingTests` fails the build when a `PackageReference` is bumped
+without vendoring the matching `.nupkg` — the one thing between a one-line version bump and a red
+deploy.
+
+**Three gated CI stages** (`.github/workflows/azure-deploy.yml`): **build** (restore → Release build
+→ the full NUnit suite → publish → emit the idempotent migration script), **migrate** (apply it
+under an Entra token, opening and closing a single-run SQL firewall rule), **deploy** (push the
+artifact, then poll `/_health` until 200). Deploy proceeds when migrate is *skipped* but never when
+migrate *ran and failed*: shipping code against a schema that did not apply is how a production
+database ends up half-migrated.
+
+**A health endpoint, under the reserved prefix.** `/_health` is a liveness probe that deliberately
+does **not** touch the database — App Service restarts an instance that fails its health check, and
+a transient SQL blip must not become a restart loop. It sits under `/_` with `/_media`, `/_ideas`
+and `/_ma-auth` so it can never shadow a page slug.
+
+**Three security advisories cleared on the way.** `System.Security.Cryptography.Xml` 10.0.8 had
+picked up five HIGH advisories since it was pinned (it was itself an override for a vulnerable
+transitive 9.0.0) → 10.0.11. `AngleSharp` 0.17.1 carried GHSA-pgww-w46g-26qg → 1.7.2, which required
+`HtmlSanitizer` 9.0.892 → 9.2.1039. AngleSharp is load-bearing in the render path
+(`IncludeExpander`, `IncludeReferenceParser`), so the jump was verified against the whole suite and
+a live sweep: **48 pages, all 200, zero `ma-missing` placeholders**. `dotnet list package
+--vulnerable --include-transitive` now reports none.
+
+**Verified.** Bicep compiles and **validates against the live subscription** (`provisioningState:
+Succeeded`); what-if enumerates the sixteen resources; a Release restore *and* publish succeed
+seeing **only** the vendored feed and nuget.org, producing a complete 94 MB artifact with all 51
+library `.idea`s; `dotnet ef migrations script --idempotent` generates cleanly; Release build + 370
+tests green; `/_health` answers 200 live. Both PowerShell scripts parse under Windows PowerShell 5.1.
+
+**Not verified, because it costs money.** No resources exist. The estate has not been provisioned,
+the app has never run on App Service, and the migrate job has never touched an Azure SQL database.
+The `ideas` entry in `MindAttic.Deploy/projects.json → apps[]` therefore ships `disabled: true` with
+a note ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)) and `/deploy` exits 0 without
+half-firing. Runbook: [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
