@@ -47,6 +47,9 @@ public class ExtractMediaCliTests
             => Task.FromResult<IReadOnlyList<MediaItem>>(
                 Items.Where(i => folder is null || i.Folder == folder).ToList());
 
+        public Task<MediaItem?> GetMetaAsync(Guid uid, CancellationToken ct = default)
+            => Task.FromResult(Items.FirstOrDefault(i => i.Uid == uid));
+
         public Task<(MediaItem Meta, Stream Content)?> GetAsync(Guid uid, CancellationToken ct = default)
         {
             var m = Items.FirstOrDefault(i => i.Uid == uid);

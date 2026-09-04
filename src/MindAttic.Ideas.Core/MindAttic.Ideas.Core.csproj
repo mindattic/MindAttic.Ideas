@@ -27,7 +27,7 @@
          Debug build (MA_DEV_AUTH → localhost dev-login bypass). Never present in a release build. -->
     <PackageReference Include="MindAttic.Authentication" Version="2.0.0" />
     <ProjectReference Include="..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj" Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj')" />
-    <PackageReference Include="MindAttic.Media" Version="1.0.0" />
+    <PackageReference Include="MindAttic.Media" Version="2.0.0" />
     <ProjectReference Include="..\..\..\MindAttic.Media\src\MindAttic.Media\MindAttic.Media.csproj" Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\..\MindAttic.Media\src\MindAttic.Media\MindAttic.Media.csproj')" />
     <!-- Rendering-time dependencies the ADR mandates: HTML sanitizer + HTML tokenizer.
          AngleSharp pinned to the exact version HtmlSanitizer requires (no version clash). -->

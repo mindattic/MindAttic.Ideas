@@ -729,3 +729,66 @@ inline base64, 13 managed media references.
 **The general shape, for the next site.** A page is markup plus a stylesheet; bytes are managed assets;
 behavior is a Plugin, not a `<script>` block in a page row. An asset-only activator Plugin must be
 removed along with the markup it wires, or it silently loads CSS and JS for nothing.
+
+## MAI-A31 — Media has two backing stores, chosen by config; `/_media/{uid}` is the contract {#MAI-A31}
+
+**What changed (2026-09-04).** Completes the open case [MAI-A29](#MAI-A29) named: *"Large media that
+should not live in the database (video) is the open case."*
+
+**The contract.** `/_media/{uid}` is the only thing a page ever references. Behind it, the backing store
+is chosen by `Media:Provider` — `local` (default, unchanged) or `azure`. Switching the provider changes
+no page markup, no component, and no stored row. A page says *which asset*; it never says *where the
+bytes live*.
+
+**How a blob-backed asset is served.** When the store can mint a URL for an item, `/_media/{uid}` answers
+**302** to a short-lived SAS URL and Azure serves the bytes; otherwise it streams them through the app.
+This is not an optimisation, it is the whole point: a video needs HTTP Range so the player can seek, and
+Range is the storage service's job, not the CMS's. A signed URL also means the container stays private —
+no anonymous blob access — while a public/CDN container is still available via `PublicRead` +
+`PublicBaseUri`, which hands out a plain, cacheable URL with no query string.
+
+**Streaming, both stores.** Neither store buffers a payload to compute its hash any more. `MediaStreams.
+CopyAndHashAsync` reads the source **once, sequentially** — the only thing a browser upload stream or a
+request body can offer — hashing in flight. `ThresholdSpillStream` keeps a payload in memory only up to
+`InlineThresholdBytes` and spills to its destination past that, so inline-vs-blob is decided *without*
+knowing the length up front. Memory is bounded by the threshold (2 MB), not by the file. The previous
+code did `CopyToAsync(new MemoryStream()).ToArray()`: a 400 MB video meant ~800 MB of transient LOH.
+
+**Three defects this fixed in the pre-existing Azure provider**, none of which would have survived
+contact with a real video:
+1. **Blobs were uploaded with no `Content-Type`.** Every asset served as `application/octet-stream`, so a
+   redirected video downloaded instead of playing.
+2. **`GetAsync` re-authenticated the stored URI with a fresh `DefaultAzureCredential`**, ignoring the
+   configured connection string — a connection-string deployment could write but never read. Reads now
+   resolve through the one configured container client.
+3. **The endpoint redirected to any `https://` `BlobUri` verbatim**, which 403s against a private
+   container. Redirects now go only to a URL a signer actually minted.
+
+**Endpoint, otherwise.** Streamed responses now carry `Accept-Ranges` (206 on Range), an ETag from the
+stored SHA-256 (304 on `If-None-Match`), `Last-Modified`, and `Cache-Control`. `video/*` and `audio/*`
+join `image/`, `text/` and PDF as inline dispositions.
+
+**Interface change.** `IMediaStore` gains `GetMetaAsync(uid)` — the row alone, no payload. A caller
+deciding *how* to serve an item (redirect, 304, stream) must not pull the whole blob down to find out.
+MindAttic.Media and MindAttic.Media.Azure both go to **V2** (HOUSE-LAW-1); the Ideas Core reference moves
+to `2.0.0`.
+
+**Credentials.** `Media:Azure:ConnectionString` / `BlobServiceUri` resolve through the Vault chain — a
+`"Media"` bucket was added to the Ideas Vault bucket list (HOUSE-LAW-3). `Media:Provider=azure` with
+neither credential **fails closed at startup** rather than falling back to disk: a deployment that
+believes it is on blob storage and is not would lose every upload on the next app-service restart.
+
+**Getting a video in.** `--upload-media <file…> [--folder site] [--media-type video]` streams local files
+straight into the configured store. The Admin Media panel is right for an image and wrong for a 400 MB
+video, which would have to cross a SignalR circuit first.
+
+**Verified end-to-end** against the Azurite emulator, through the running app: a 40 MB upload landed in
+blob storage with `Bytes` NULL and a SHA-256 matching the source file exactly; `/_media/{uid}` answered
+302 to a 30-minute SAS; following it returned all 41,943,040 bytes at the same hash; and a Range request
+seeked to byte 20,000,000 for `206 · content-range: bytes 20000000-20000999/41943040 · content-type:
+video/mp4`. Pre-existing inline rows still stream unchanged under the Azure provider, so switching a live
+deployment does not strand the assets already in the database.
+
+**What this does not do.** Nothing migrates existing inline rows into blob storage, and `DeleteAsync`
+stays soft (HOUSE-LAW-2) — the blob is deliberately left behind, so reclaiming storage is a separate,
+explicit operation.

@@ -247,6 +247,60 @@ updated: 2026-06-16
   verify`. *(test: `LibraryKindClassificationTests.AllLibraryIdeas_HaveExpectedKind`; live: `ma-idea
   verify` reports compose-graph green with zero kind mismatches.)*
 
+## Epic I — Media storage (A31)
+
+- **MAI-US-I1 ✅** As an Operator, I can point the CMS at Azure Blob Storage by setting
+  `Media:Provider=azure` (plus `Media:Azure:ConnectionString` **or** `BlobServiceUri`), and every page
+  keeps working untouched, because `/_media/{uid}` is the contract and the backing store is an
+  implementation detail. *`MediaProviderSetup.AddConfiguredMediaStore` replaces the local store
+  registered by `AddIdeasCore`; an unknown provider or Azure without credentials throws at startup
+  rather than silently falling back to disk.*
+  *(test: `MediaProviderSetupTests.NoConfiguration_KeepsTheLocalDiskStore`,
+  `ProviderAzure_ReplacesTheStoreAndRegistersASigner`,
+  `ProviderAzure_CarriesSignedUrlLifetimeThroughToTheEndpointOptions`,
+  `ProviderAzure_WithoutCredentials_FailsClosed`, `UnknownProvider_FailsClosed`. Live: the app boots
+  clean on `Media:Provider=azure` and pre-existing inline rows still serve 200.)*
+- **MAI-US-I2 ✅** As a Visitor, I can scrub through a video on a page, because `/_media/{uid}` 302s to a
+  short-lived SAS URL and Azure serves the Range requests directly — the bytes never transit the app.
+  *`IMediaUrlSigner` is the optional seam; `AzureBlobUrlSigner` mints a key-signed SAS, a
+  user-delegation SAS, or a plain CDN URL under `PublicRead`.*
+  *(test: `MediaEndpointTests.RedirectsToASignedUrlWhenASignerIsRegistered`,
+  `FallsBackToStreamingWhenTheSignerDeclines`;
+  `AzureBlobMediaStoreIntegrationTests.SignedUrlServesTheBytesAndHonoursRangeRequests`,
+  `SignedUrlExpires`, `PublicReadModeHandsOutThePlainUrlRebasedOnTheCdnOrigin`. Live against Azurite
+  through the running app: 302 → 41,943,040 bytes at the source SHA-256, and a seek to byte 20,000,000
+  returning `206 · bytes 20000000-20000999/41943040 · video/mp4`.)*
+- **MAI-US-I3 ✅** As an Operator, I can upload a file far larger than memory without the app buffering
+  it, because both stores hash in flight over a single sequential pass and spill past the inline
+  threshold. *`MediaStreams.CopyAndHashAsync` + `ThresholdSpillStream`; memory is bounded by
+  `InlineThresholdBytes`, not by the payload.*
+  *(test: `LocalDiskMediaStoreTests.Upload_OverThreshold_SpillsToDiskWithIntactBytesAndHash`,
+  `Upload_AtExactlyThreshold_StaysInline`, `ThresholdSpillStreamTests.SpillsOnceAndPreservesEveryByteInOrder`,
+  `CopyAndHashMatchesAOneShotHashOverTheSameBytes`,
+  `AzureBlobMediaStoreIntegrationTests.LargePayloadStreamsUpAndBackWithItsHashIntact`.)*
+- **MAI-US-I4 ✅** As a Visitor, a repeat request for an unchanged asset costs no bytes, and a
+  non-inline asset downloads under its real filename. *The endpoint emits an ETag from the stored
+  SHA-256, `Last-Modified`, `Cache-Control`, and `Accept-Ranges`; `video/*` and `audio/*` join
+  `image/`, `text/` and PDF as inline dispositions.*
+  *(test: `MediaEndpointTests.ServesInlinePayloadWithEtagAndRangeSupport`,
+  `RepeatRequestWithMatchingEtagIsNotModified`, `ServesAByteRangeOutOfALargeSpilledPayload`,
+  `NonInlineTypeIsServedAsAnAttachment`, `UnknownUidIs404`, `DeletedItemIs404`. Live: 200 + ETag,
+  206 on Range, 304 on `If-None-Match`.)*
+- **MAI-US-I5 ✅** As an Operator, I can get a video into the CMS from the command line rather than
+  pushing it through the Admin panel's browser circuit. *`--upload-media <file…> [--folder site]
+  [--media-type video] [--dry-run]` streams from disk into the configured store and prints the token
+  to paste into a page.* *(test: `UploadMediaCliTests.UploadsAVideoWithTheRightContentTypeAndMediaType`,
+  `UploadsEveryFileUpToTheNextFlag`, `DryRunUploadsNothing`, `MissingFileFailsBeforeUploadingAnything`,
+  `NoFilesIsAnError`, `UnknownExtensionFallsBackToOctetStream`. Live: a 40 MB upload through the
+  running app landed in blob storage with `Bytes` NULL and the source hash intact.)*
+
+> **Where these tests live.** `MediaProviderSetupTests` and `UploadMediaCliTests` are in
+> `src/MindAttic.Ideas.Tests`. The store/endpoint fixtures — `LocalDiskMediaStoreTests`,
+> `MediaEndpointTests`, `ThresholdSpillStreamTests`, `AzureBlobNamingTests` and
+> `AzureBlobMediaStoreIntegrationTests` — live in the sibling **MindAttic.Media** repo
+> (`src/MindAttic.Media.Tests`), because that is where the code under test lives. The codex doctor
+> only scans this repo's test tree, so it reports those citations as warnings; they are real tests.
+
 ## Priority backlog
 
 **Entries from Epic H** — A26 taxonomy refactor (2026-06-16, [A26](AMENDMENTS.md#MAI-A26)). The headline goal is met:

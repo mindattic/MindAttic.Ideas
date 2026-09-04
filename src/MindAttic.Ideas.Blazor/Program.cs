@@ -25,7 +25,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
     .AddMindAtticVaultFiles(o => o.Buckets = new[]
     {
-        "LLM", "Brokers", "Tokens", "Subtitles", "Notifications", "AudioStore", "Security",
+        "LLM", "Brokers", "Tokens", "Subtitles", "Notifications", "AudioStore", "Security", "Media",
     })
     .AddEnvironmentVariables();
 builder.Services.AddMindAtticVault(builder.Configuration);
@@ -43,9 +43,12 @@ builder.Services.AddIdeasCore(
     typeof(Program).Assembly,
     typeof(MindAttic.Ideas.Page.Frontpage.V1).Assembly);
 
-// Point the media store at {ContentRoot}/media for disk-backed uploads over the inline threshold.
-builder.Services.Configure<MindAttic.Media.MediaStoreOptions>(o =>
-    o.MediaRoot = Path.Combine(builder.Environment.ContentRootPath, "media"));
+// --- Media store (A31): local disk by default, Azure Blob when Media:Provider=azure. AddIdeasCore
+//     already registered the local store; the Azure registration replaces it. The page-facing contract
+//     is /_media/{uid} either way, so switching the backing store changes no page markup. Blob-backed
+//     media serves via a short-lived SAS redirect, which is what gives video working Range/seek. ---
+var mediaRoot = Path.Combine(builder.Environment.ContentRootPath, "media");
+builder.Services.AddConfiguredMediaStore<CmsDbContext>(builder.Configuration, mediaRoot);
 
 // --- MindAttic.Legion: LLM + voting (A7). Zero-config; keys resolve via Vault when used. ---
 builder.Services.AddLegionClient();
@@ -190,7 +193,8 @@ app.MapGet("/_ideas/packages/{category}/{key}/{version:int}",
     }).RequireAuthorization("Admin");
 app.MapGet("/_ideas/{*path}", () => Results.NotFound());   // anything else under /_ideas
 
-// Media assets: /_media/{uid:guid} serves inline (images, PDFs) or attachment (everything else).
+// Media assets: /_media/{uid:guid} redirects to a signed blob URL when the backend can mint one,
+// otherwise streams the payload with Range support (inline for image/text/video/audio/PDF).
 app.MapMediaEndpoints();
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode()
@@ -228,6 +232,16 @@ if (installIdx >= 0)
 if (args.Contains("--extract-media"))
 {
     var exit = await ExtractMediaCli.RunAsync(args, app.Services);
+    Environment.Exit(exit);
+}
+
+// ---- CLI mode: --upload-media ---------------------------------------------------------------
+// Stream local files straight into the configured media store — the path for anything too large to
+// push through the Admin panel's browser circuit (video above all).
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --upload-media <file…> [--folder site] [--media-type video] [--dry-run]
+if (args.Contains("--upload-media"))
+{
+    var exit = await UploadMediaCli.RunAsync(args, app.Services);
     Environment.Exit(exit);
 }
 
