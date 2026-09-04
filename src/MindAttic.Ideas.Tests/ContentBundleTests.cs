@@ -370,6 +370,85 @@ public class ContentBundleTests
     }
 
     [Test]
+    public async Task ExportCarriesOneSite_AndImportCreatesThatSiteRatherThanDumpingOntoTheDefault()
+    {
+        var source = NewEnv();
+        await SeedSiteAsync(source, "rdb");
+        await AddPageAsync(source, "frontpage", "<p>ryan</p>");
+        Assert.That(await ExportAsync(source), Is.Zero);
+
+        // The target hosts a DIFFERENT site. Since A35 one deployment can serve several domains, so
+        // falling back to the default site here would republish rdb's pages under mindattic.com.
+        var target = NewEnv();
+        await SeedSiteAsync(target, "default");
+        await AddPageAsync(target, "frontpage", "<p>mindattic</p>");
+
+        Assert.That(await ImportAsync(target), Is.Zero);
+
+        await using var read = target.Db();
+        var defaultSite = await read.Sites.SingleAsync(s => s.Key == "default");
+        var rdbSite = await read.Sites.SingleAsync(s => s.Key == "rdb");
+        Assert.Multiple(async () =>
+        {
+            Assert.That(await read.Sites.CountAsync(), Is.EqualTo(2), "the bundle's site must be created");
+            Assert.That(rdbSite.IsDefault, Is.False, "an imported site must not seize the default");
+            Assert.That((await read.Pages.SingleAsync(p => p.SiteId == defaultSite.Id)).BodyHtml,
+                Is.EqualTo("<p>mindattic</p>"), "the existing site's page must be untouched");
+            Assert.That((await read.Pages.SingleAsync(p => p.SiteId == rdbSite.Id)).BodyHtml,
+                Is.EqualTo("<p>ryan</p>"));
+        });
+    }
+
+    [Test]
+    public async Task ExportTakesOnlyTheNamedSitesPages()
+    {
+        var env = NewEnv();
+        await SeedSiteAsync(env, "default");
+        await AddPageAsync(env, "frontpage", "<p>mindattic</p>");
+        await using (var db = env.Db())
+        {
+            db.Sites.Add(new Site { Key = "rdb", Name = "Ryan", CreatedUtc = DateTime.UtcNow });
+            await db.SaveChangesAsync();
+            var rdb = await db.Sites.SingleAsync(s => s.Key == "rdb");
+            db.Pages.Add(new CmsPage
+            {
+                Uid = Guid.NewGuid(), SiteId = rdb.Id, Slug = "frontpage", Title = "Ryan",
+                Kind = PageKind.Data, BodyHtml = "<p>ryan</p>", BodyTrust = ContentTrust.Author,
+                AuthorTrustVersion = 1, IsPublished = true, Enabled = true, CreatedUtc = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        Assert.That(await ExportAsync(env, "--site", "rdb"), Is.Zero);
+
+        var target = NewEnv();
+        Assert.That(await ImportAsync(target), Is.Zero);
+
+        await using var read = target.Db();
+        var page = await read.Pages.SingleAsync();
+        Assert.Multiple(async () =>
+        {
+            Assert.That(page.BodyHtml, Is.EqualTo("<p>ryan</p>"),
+                "a --site export must not sweep in the other domain's identically-slugged page");
+            Assert.That((await read.Sites.SingleAsync()).Key, Is.EqualTo("rdb"));
+        });
+    }
+
+    [Test]
+    public async Task ExportWithAnUnknownSiteKey_FailsRatherThanExportingTheWrongSite()
+    {
+        var env = NewEnv();
+        await SeedSiteAsync(env, "default");
+        await AddPageAsync(env, "frontpage", "<p>x</p>");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ExportAsync(env, "--site", "nope").Result, Is.EqualTo(1));
+            Assert.That(File.Exists(BundlePath), Is.False, "a refused export must write no file");
+        });
+    }
+
+    [Test]
     public async Task ABundleFromAFutureFormat_IsRefusedRatherThanPartiallyApplied()
     {
         var source = NewEnv();

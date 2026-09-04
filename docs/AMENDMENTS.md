@@ -967,3 +967,63 @@ them all. `--prune` (soft-delete pages absent from the bundle) is opt-in, per
 exported from the dev database (634 KB), imported into a fresh LocalDB seeded exactly like production
 (5 pages, 0 media), then served — `/frontpage`, `/projects`, `/personas`, `/ideas`, `/chimesh` and
 the project pages all 200, and every remapped `/_media/{uid}` on the front page resolving 200.
+
+## MAI-A35 — One deployment, many domains: `HostBindings` is finally read {#MAI-A35}
+
+**What changed (2026-09-04).** `Site.HostBindings` has been in the schema since migration #1, and
+`Site`'s own XML doc has always described a tenant *"resolved by host header"* — but **nothing read
+it**. `PageHost` took `Sites.FirstOrDefault(s => s.IsDefault)` and set `CmsSiteContext.Host = ""`, so
+one deployment meant one domain and every project lived as a slug beneath it. The seam is now wired.
+
+**Resolution.** `ISiteResolver` scores the request host against each site's bindings and picks the
+best match, falling back to the default site when nothing matches. A binding list is comma /
+semicolon / whitespace separated, case-insensitive, tolerant of a pasted URL, and **port-agnostic
+unless a port is named** — so a production binding keeps matching on `localhost:5199` without being
+rewritten. Precedence, highest first:
+
+| | Binding | Matches |
+|---|---|---|
+| `HostAndPort` | `localhost:5199` | that host on that port only |
+| `Host` | `mindattic.com` | that host on any port |
+| `Wildcard` | `*.mindattic.com` | any subdomain — **never the apex** |
+| `CatchAll` | `*` | anything |
+| *(fallback)* | — | the default site |
+
+A wildcard deliberately excludes the apex so it can never silently claim the bare domain another
+site owns; ties are broken by the default flag then the lowest id, so the answer never depends on
+row order.
+
+**The host comes from `NavigationManager`, not `IHttpContextAccessor`.** `PageHost` is
+`@rendermode InteractiveServer`: `HttpContext` exists during prerender and is **null for every render
+after the circuit connects**. Reading the host from it would have resolved the correct site on first
+paint and the *default* site on every client-side navigation thereafter — a bug that would look like
+"the second domain works until you click a link". `Nav.BaseUri` is set from the originating request
+and stays correct for the life of the circuit. Verified in a real browser: after the circuit was
+live, `Blazor.navigateTo('/about')` resolved against the correct site, and the same navigation on the
+other host correctly 404'd.
+
+**Backwards compatible by construction.** A site with empty bindings answers every hostname it is the
+default for, exactly as before; multi-site is opt-in per site by filling bindings in. The existing
+single-site shape is pinned by a test, because a regression here would 404 every deployment that
+predates this amendment.
+
+**Also changed.**
+- **Per-domain front page.** The bare route `/` now prefers the Site-scope `page.frontpage` setting
+  over the Host-scope one, so each domain lands on its own page.
+- **`CmsSiteContext.Host`** carries the host the request actually arrived on, so a citizen can build
+  absolute URLs or vary per domain.
+- **Admin → Sites** (`/admin/sites`): create sites, edit bindings, move the default, delete
+  (reference-guarded — a site with pages cannot be deleted, since that would orphan them onto
+  whatever site resolves next), plus a "which site answers…?" probe that runs the *same* rule the
+  render path uses. Without this, a second domain could only be added by hand in SQL, which is
+  exactly how `HostBindings` came to sit unread for so long. A binding another site already claims is
+  refused: the loser would otherwise be invisible, with no error anywhere.
+- **Bundles ([A34](#MAI-A34)) became site-aware**, because multi-site made the old behaviour wrong:
+  `--export-content` now carries **one** site (`--site <key>`, default the default site) and scopes
+  its pages and Site-scope settings to it, and `--import-content` matches the target site by **key
+  and creates it when absent** rather than falling back to the default site — which would have
+  republished one domain's pages under another. `--into-site <key>` overrides the target.
+
+**Not changed, deliberately.** `UseForwardedHeaders` still forwards only `X-Forwarded-For` and
+`-Proto`. App Service passes the real `Host`, and trusting `X-Forwarded-Host` from an unrestricted
+proxy would let a caller choose which site it gets. Revisit only alongside a known proxy allowlist.

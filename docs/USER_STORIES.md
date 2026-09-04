@@ -379,6 +379,48 @@ updated: 2026-06-16
   *(test: `ContentBundleTests.UntrustedFlag_DowngradesAuthorTrust`,
   `ABundleFromAFutureFormat_IsRefusedRatherThanPartiallyApplied`, `NotABundle_IsReportedRatherThanThrowing`.)*
 
+## Epic L — Multi-domain (A35)
+
+- **MAI-US-L1 ✅** As an Operator, one Ideas deployment can serve several domains, because
+  `ISiteResolver` matches the request host against each site's `HostBindings` and `PageHost` resolves
+  `(SiteId, Slug)` against the site it picks. *The column has been in the schema since migration #1
+  and was read by nothing until [A35](AMENDMENTS.md#MAI-A35).*
+  *(test: `SiteResolutionTests` — hostname/port/wildcard/catch-all matching, precedence, IPv6
+  literals, stable tie-breaking. Live: with `mindattic.com` and `ryandebraal.com` bound on one
+  instance, the same URL `/frontpage` served each site's own page; `/about` (rdb only) rendered on
+  `ryandebraal.com` and 404'd on `mindattic.com`, and `/personas` did the reverse.)*
+- **MAI-US-L2 ✅** As an Operator, an existing single-site deployment is unaffected, because a site
+  with no bindings still answers every hostname it is the default for. *A regression here would 404
+  every deployment that predates the amendment, so it is pinned rather than assumed.*
+  *(test: `SiteResolutionTests.TheExistingSingleSiteInstallIsUnaffected`,
+  `AnUnboundHostFallsBackToTheDefaultSite`. Live: `127.0.0.1`, bound to nothing, still served the
+  default site's front page.)*
+- **MAI-US-L3 ✅** As a visitor, the right site keeps answering **after** the page goes interactive,
+  because the host is read from `NavigationManager.BaseUri` rather than `IHttpContextAccessor`.
+  *`PageHost` is `InteractiveServer`, so `HttpContext` is null for every render after the circuit
+  connects — the naive reading works on first paint and silently falls back to the default site on
+  every click afterwards.*
+  *(test: `SiteResolutionTests.PageHostReadsTheRequestHostFromNavigationManager_NotHttpContext` pins
+  the source, because no unit test of the resolver could ever catch this — the guard was confirmed to
+  FAIL when the two sources were swapped. Live, in a real browser: with the circuit connected,
+  `Blazor.navigateTo('/about')` rendered `RYANDEBRAAL-ABOUT` on the bound host while the identical
+  client-side navigation on the other host showed "Page not found". Zero page errors.)*
+- **MAI-US-L4 ✅** As an Admin, I can add and bind a domain without touching SQL, because
+  **Admin → Sites** manages sites, bindings and the default, and answers "which site would this
+  hostname reach?" with the same rule the render path uses. *Deleting a site that still has pages is
+  refused ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)) — it would orphan them onto
+  whatever site resolved next — and a binding another site already claims is refused, because the
+  loser would be invisible with no error anywhere.*
+  *(test: `SiteResolutionTests.CreatingASite_NormalizesItsBindings_AndDoesNotStealDefault`,
+  `TwoSitesCannotClaimTheSameHostname`, `TheDefaultSiteCannotBeDeleted_AndNeitherCanOneThatStillHasPages`,
+  `MakeDefault_LeavesExactlyOneDefault`, `TheResolverAndTheAdminProbeAgree`.)*
+- **MAI-US-L5 ✅** As a Maintainer, a content bundle carries exactly one site, because multi-site made
+  the old behaviour wrong: an import that fell back to the default site would republish one domain's
+  pages under another. *`--export-content --site <key>` scopes pages and Site-scope settings;
+  `--import-content` matches by key and creates the site when absent (`--into-site` overrides).*
+  *(test: `ContentBundleTests.ExportCarriesOneSite_AndImportCreatesThatSiteRatherThanDumpingOntoTheDefault`,
+  `ExportTakesOnlyTheNamedSitesPages`, `ExportWithAnUnknownSiteKey_FailsRatherThanExportingTheWrongSite`.)*
+
 ## Priority backlog
 
 **Entries from Epic H** — A26 taxonomy refactor (2026-06-16, [A26](AMENDMENTS.md#MAI-A26)). The headline goal is met:

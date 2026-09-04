@@ -6,6 +6,7 @@ using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Rendering;
 using MindAttic.Ideas.Core.Services;
+using MindAttic.Ideas.Core.Sites;
 using MindAttic.Media;
 
 namespace MindAttic.Ideas.Core.DependencyInjection;
@@ -67,6 +68,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IWidgetInstanceSettingsService, WidgetInstanceSettingsService>();
         services.AddScoped<IComponentMetadataStore, ComponentMetadataService>();
         services.AddScoped<ISlugRedirectService, SlugRedirectService>();
+
+        // One deployment, many domains: Site.HostBindings has been in the schema since migration #1;
+        // the resolver is what finally reads it. Stateless, so a singleton — it takes the DbContext
+        // per call rather than holding one.
+        services.AddSingleton<ISiteResolver, SiteResolver>();
+        services.AddScoped<ISiteAdminService, SiteAdminService>();
 
         // Phase-5: .idea package install (validate + persist bytes + extract + register rows + ALC resolve).
         // Local file store/extractor by default; the ADR's Azure Blob backing slots in behind IPackageBlobStore.

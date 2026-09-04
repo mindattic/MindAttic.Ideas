@@ -17,7 +17,7 @@ namespace MindAttic.Ideas.Blazor.Cli;
 /// <c>--seed</c> regenerates shape, not curation.
 /// </para>
 /// Usage: <c>dotnet run --project src/MindAttic.Ideas.Blazor -- --export-content site.ideabundle
-/// [--slug projects/] [--no-media] [--dry-run]</c>
+/// [--site rdb] [--slug projects/] [--no-media] [--dry-run]</c>
 /// </summary>
 public static class ExportContentCli
 {
@@ -30,7 +30,7 @@ public static class ExportContentCli
         var target = ArgValue(args, "--export-content");
         if (string.IsNullOrWhiteSpace(target))
         {
-            Console.Error.WriteLine("[export-content] No output file given. Usage: --export-content <file.ideabundle> [--slug prefix] [--no-media] [--dry-run]");
+            Console.Error.WriteLine("[export-content] No output file given. Usage: --export-content <file.ideabundle> [--site key] [--slug prefix] [--no-media] [--dry-run]");
             return 1;
         }
         // `dotnet run --project` runs from the PROJECT directory, so a relative path here is almost
@@ -40,7 +40,20 @@ public static class ExportContentCli
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<CmsDbContext>();
 
-        var site = await db.Sites.OrderBy(s => s.IsDefault ? 0 : 1).ThenBy(s => s.Id).FirstOrDefaultAsync();
+        // Since A35 a deployment can host several domains, so an export names WHICH site it carries.
+        // Default: the default site — the single-site behaviour, unchanged.
+        var siteKey = ArgValue(args, "--site")?.Trim().ToLowerInvariant();
+        var site = siteKey is { Length: > 0 }
+            ? await db.Sites.FirstOrDefaultAsync(s => s.Key == siteKey)
+            : await db.Sites.OrderBy(s => s.IsDefault ? 0 : 1).ThenBy(s => s.Id).FirstOrDefaultAsync();
+        if (siteKey is { Length: > 0 } && site is null)
+        {
+            Console.Error.WriteLine($"[export-content] No site with key \"{siteKey}\". "
+                                  + $"Known keys: {string.Join(", ", await db.Sites.Select(s => s.Key).ToListAsync())}");
+            return 1;
+        }
+        var exportSiteId = site?.Id;
+
         var bundle = new ContentBundle
         {
             ExportedUtc = DateTime.UtcNow,
@@ -59,12 +72,14 @@ public static class ExportContentCli
         // Host- and Site-scope settings only: a Page-scope entry keys on a local page id, and a page
         // already carries everything it needs on its own row.
         bundle.Settings = await db.Settings
-            .Where(s => s.Scope == "Host" || s.Scope == "Site")
+            .Where(s => s.Scope == "Host" || (s.Scope == "Site" && s.ScopeId == exportSiteId))
             .OrderBy(s => s.Scope).ThenBy(s => s.Key)
             .Select(s => new BundleSetting { Scope = s.Scope, Key = s.Key, Value = s.Value })
             .ToListAsync();
 
-        var pageQuery = db.Pages.Include(p => p.MetaTags).AsQueryable();
+        // Only this site's pages travel — otherwise a multi-domain deployment would export every
+        // domain's content into a bundle that claims to be one site's.
+        var pageQuery = db.Pages.Include(p => p.MetaTags).Where(p => p.SiteId == exportSiteId);
         if (!string.IsNullOrWhiteSpace(slugPrefix))
             pageQuery = pageQuery.Where(p => p.Slug.StartsWith(slugPrefix));
 

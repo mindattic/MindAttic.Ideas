@@ -144,11 +144,18 @@ public static class ImportContentCli
         Site? site = null;
         if (bundle.Site is { } bs)
         {
-            site = await db.Sites.FirstOrDefaultAsync(s => s.Key == bs.Key)
-                ?? await db.Sites.OrderBy(s => s.IsDefault ? 0 : 1).ThenBy(s => s.Id).FirstOrDefaultAsync();
+            // Match on the site KEY, and CREATE when it is absent rather than falling back to the
+            // default site. Since A35 a deployment can host several domains, so quietly redirecting
+            // another site's pages onto the default one would republish them under the wrong domain.
+            // --into-site overrides the target when that is genuinely what you mean.
+            var targetKey = (ArgValue(args, "--into-site") ?? bs.Key).Trim().ToLowerInvariant();
+            site = await db.Sites.FirstOrDefaultAsync(s => s.Key == targetKey);
             if (site is null)
             {
-                site = new Site { Key = bs.Key, IsDefault = true, CreatedUtc = DateTime.UtcNow };
+                var anySites = await db.Sites.AnyAsync();
+                Console.WriteLine($"[import-content] no site keyed \"{targetKey}\" here — creating it"
+                                + (anySites ? " (it will NOT become the default)." : " as the default site."));
+                site = new Site { Key = targetKey, IsDefault = !anySites, CreatedUtc = DateTime.UtcNow };
                 if (!dryRun) db.Sites.Add(site);
             }
             site.Name = bs.Name;

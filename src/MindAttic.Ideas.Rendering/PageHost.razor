@@ -17,8 +17,10 @@
 @using MindAttic.Ideas.Core.Data
 @using MindAttic.Ideas.Core.Entities
 @using MindAttic.Ideas.Core.Services
+@using MindAttic.Ideas.Core.Sites
 @inject IDbContextFactory<CmsDbContext> DbFactory
 @inject ISlugRedirectService SlugRedirects
+@inject ISiteResolver SiteResolver
 @inject IContentCatalog Catalog
 @inject IServiceProvider Services
 @inject IRenderAlertSink Alerts
@@ -88,6 +90,10 @@ else if (_context is not null)
             ? a.Slot
             : PluginSlot.BeforeBody;
 
+    /// <summary>The "host[:port]" of an absolute URI, or null if it cannot be parsed.</summary>
+    private static string? HostOf(string? absoluteUri) =>
+        Uri.TryCreate(absoluteUri, UriKind.Absolute, out var u) ? u.Authority : null;
+
     private enum Status { Pending, Ok, NotFound, Forbidden }
     private Status _status = Status.Pending;
 
@@ -153,18 +159,29 @@ else if (_context is not null)
 
         await using var db = await DbFactory.CreateDbContextAsync();
 
-        // The bare route never renders content itself — it forwards to the site's front page
-        // (Host setting "page.frontpage"; default slug "frontpage"). During prerender the
+        // Which domain was asked for. NavigationManager — not IHttpContextAccessor — because this
+        // component is InteractiveServer: HttpContext exists during prerender and is NULL for every
+        // render after the circuit connects, so reading the host from it would resolve the right site
+        // on first paint and the DEFAULT site on every subsequent navigation. BaseUri is set from the
+        // originating request and stays correct for the life of the circuit.
+        var requestHost = HostOf(Nav.BaseUri) ?? Http.HttpContext?.Request.Host.Value;
+        var site = await SiteResolver.ResolveAsync(requestHost, db);
+        var siteId = site?.Id;
+
+        // The bare route never renders content itself — it forwards to this site's front page. The
+        // Site-scope setting wins over the Host-scope one so each domain can have its own landing
+        // page; absent both, the conventional "frontpage" slug. During prerender the
         // NavigationException this raises is converted by the framework into an HTTP redirect.
         if (slug.Length == 0)
         {
-            var fp = await db.Settings.FirstOrDefaultAsync(s => s.Scope == "Host" && s.Key == "page.frontpage");
-            Nav.NavigateTo("/" + (string.IsNullOrWhiteSpace(fp?.Value) ? "frontpage" : fp!.Value.Trim('/')), replace: true);
+            var siteFp = siteId is null ? null : await db.Settings.FirstOrDefaultAsync(
+                s => s.Scope == "Site" && s.ScopeId == siteId && s.Key == "page.frontpage");
+            var hostFp = await db.Settings.FirstOrDefaultAsync(s => s.Scope == "Host" && s.Key == "page.frontpage");
+            var fp = !string.IsNullOrWhiteSpace(siteFp?.Value) ? siteFp!.Value : hostFp?.Value;
+            Nav.NavigateTo("/" + (string.IsNullOrWhiteSpace(fp) ? "frontpage" : fp!.Trim('/')), replace: true);
             return;
         }
 
-        var site = await db.Sites.FirstOrDefaultAsync(s => s.IsDefault) ?? await db.Sites.FirstOrDefaultAsync();
-        var siteId = site?.Id;
         var page = await db.Pages.Include(p => p.MetaTags).FirstOrDefaultAsync(p =>
             p.SiteId == siteId && p.Slug == slug && p.IsPublished && p.Enabled);
 
@@ -261,7 +278,10 @@ else if (_context is not null)
             : new Dictionary<string, string?>();
         var siteCtx = new CmsSiteContext
         {
-            SiteId = site?.Uid ?? Guid.Empty, Key = site?.Key ?? "default", Host = "",
+            SiteId = site?.Uid ?? Guid.Empty, Key = site?.Key ?? "default",
+            // The host this request actually arrived on, so a citizen can build absolute URLs or
+            // vary per domain. Empty only when neither the circuit nor an HttpContext knows it.
+            Host = requestHost ?? "",
             DefaultThemeKey = site?.DefaultThemeKey ?? "",
             SettingReader = key => siteSettings.GetValueOrDefault(key),
         };

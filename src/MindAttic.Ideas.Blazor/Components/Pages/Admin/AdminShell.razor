@@ -59,6 +59,9 @@
         case "roles":
             <RolesPanel />
             break;
+        case "sites":
+            <SitesPanel />
+            break;
         case "attributions":
             <AttributionsPanel />
             break;
@@ -69,7 +72,7 @@
 </div>
 
 @code {
-    /// <summary>Route segment: pages | content | upload | settings | attributions (null = pages).</summary>
+    /// <summary>Route segment: pages | content | upload | settings | sites | attributions (null = pages).</summary>
     [Parameter] public string? Tab { get; set; }
 
     private sealed record TabDef(string Slug, string Title);
@@ -85,6 +88,7 @@
         new("settings",     "Settings"),
         new("assets",       "Pkg Assets"),
         new("roles",        "Roles"),
+        new("sites",        "Sites"),
         new("attributions", "Attributions"),
     ];
 

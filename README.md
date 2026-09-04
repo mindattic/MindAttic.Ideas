@@ -543,6 +543,40 @@ powershell -File tools/codex.ps1 doctor   # validate the canon (must pass)
 
 ---
 
+## One deployment, many domains ([A35](docs/AMENDMENTS.md#MAI-A35))
+
+A single Ideas instance can serve several domains. Each `Site` row carries a **HostBindings** list;
+an incoming request is matched against it and resolved to that site, and `(SiteId, Slug)` does the
+rest — so two domains can both have a `/frontpage` and never see each other's.
+
+Manage it in **Admin → Sites**, which also answers *"which site would this hostname reach?"* using
+the same rule the render path uses. Bindings are comma-separated, case-insensitive, tolerate a pasted
+URL, and are **port-agnostic unless you name a port** — so a production binding keeps matching on
+`localhost:5199` without being rewritten:
+
+```
+mindattic.com, www.mindattic.com, *.mindattic.com
+```
+
+Precedence, highest first: `host:port` → `host` → `*.domain` → `*` → the default site. A wildcard
+covers subdomains but **never the apex**, so it can't silently claim a bare domain another site owns.
+
+**Nothing changes for a single-site install.** A site with no bindings still answers every hostname
+it is the default for; multi-site is opt-in per site by filling bindings in.
+
+Two consequences worth knowing:
+
+- The bare route `/` prefers the **Site**-scope `page.frontpage` setting over the Host-scope one, so
+  each domain lands on its own front page.
+- A content bundle carries **one** site (`--export-content --site <key>`), and importing creates that
+  site when it is absent rather than folding its pages onto the default site.
+
+Behind a proxy, the real `Host` header must reach the app. `UseForwardedHeaders` deliberately does
+**not** trust `X-Forwarded-Host` — an unrestricted proxy header would let a caller choose which site
+it gets. Azure App Service passes the real Host, so custom domains work as-is.
+
+---
+
 ## The host CLI — content operations
 
 The Blazor host doubles as a CLI for the operations that need a live database and media store. Every
@@ -555,8 +589,8 @@ verb runs the normal host startup first, so it sees the same configuration the s
 | `--seed core \| from-html \| from-md \| repos` | Re-runs the baseline seed, or generates pages from HTML / READMEs / the GitHub org. |
 | `--extract-media [--slug s] [--folder f] [--dry-run]` | Lifts inline base64 images out of page bodies into managed media. |
 | `--upload-media <file…> [--folder f] [--media-type t] [--dry-run]` | Streams local files straight into the media store — the path for anything too large for the browser circuit. |
-| `--export-content <file> [--slug prefix] [--no-media] [--dry-run]` | Writes authored content — pages, Host/Site settings, per-component metadata and media — to a portable `.ideabundle`. |
-| `--import-content <file> [--dry-run] [--untrusted] [--prune]` | Applies a bundle to this environment. |
+| `--export-content <file> [--site key] [--slug prefix] [--no-media] [--dry-run]` | Writes ONE site's authored content — pages, Host/Site settings, per-component metadata and media — to a portable `.ideabundle`. |
+| `--import-content <file> [--dry-run] [--untrusted] [--prune] [--into-site key]` | Applies a bundle to this environment. |
 
 ### Moving authored content between environments ([A34](docs/AMENDMENTS.md#MAI-A34))
 
