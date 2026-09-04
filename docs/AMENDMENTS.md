@@ -1027,3 +1027,14 @@ predates this amendment.
 **Not changed, deliberately.** `UseForwardedHeaders` still forwards only `X-Forwarded-For` and
 `-Proto`. App Service passes the real `Host`, and trusting `X-Forwarded-Host` from an unrestricted
 proxy would let a caller choose which site it gets. Revisit only alongside a known proxy allowlist.
+
+**Why `X-Forwarded-Host` stays untrusted — the concrete risk, now that a header picks a tenant.**
+It is a client-supplied header: anyone can send it. Trusting it would let the *caller*, rather than
+DNS, choose which site they are served — bind a staging or internal hostname to a site, and a request
+to the public domain carrying `X-Forwarded-Host: internal.mindattic.com` would be answered by that
+site. It is also the classic host-header-poisoning vector for anything that builds absolute URLs from
+the host. The exposure is compounded by `Program.cs` clearing `KnownProxies`/`KnownIPNetworks`, which
+means forwarded headers are accepted from **any** peer — tolerable for `For`/`Proto` behind App
+Service, but it would leave zero authentication on the value that now selects a tenant. App Service
+passes the real `Host`, so there is nothing to gain. If a future proxy ever requires it, the safe
+order is: populate `KnownProxies` **first**, then enable the header — never the reverse.

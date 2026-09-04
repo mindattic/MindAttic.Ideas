@@ -413,7 +413,12 @@ updated: 2026-06-16
   loser would be invisible with no error anywhere.*
   *(test: `SiteResolutionTests.CreatingASite_NormalizesItsBindings_AndDoesNotStealDefault`,
   `TwoSitesCannotClaimTheSameHostname`, `TheDefaultSiteCannotBeDeleted_AndNeitherCanOneThatStillHasPages`,
-  `MakeDefault_LeavesExactlyOneDefault`, `TheResolverAndTheAdminProbeAgree`.)*
+  `MakeDefault_LeavesExactlyOneDefault`, `TheResolverAndTheAdminProbeAgree`. Live, driving the real
+  panel in a browser as a signed-in admin: creating a site normalized
+  `" RyanDeBraal.com , https://www.ryandebraal.com/ "` to `ryandebraal.com, www.ryandebraal.com`;
+  the probe answered `WWW.RyanDeBraal.com:5199 → Ryan DeBraal (rdb)` and an unbound host → the default
+  site; a duplicate binding was refused with `"ryandebraal.com" is already bound to site "rdb"` and
+  created nothing; the default site offered no Delete. Zero page errors.)*
 - **MAI-US-L5 ✅** As a Maintainer, a content bundle carries exactly one site, because multi-site made
   the old behaviour wrong: an import that fell back to the default site would republish one domain's
   pages under another. *`--export-content --site <key>` scopes pages and Site-scope settings;
