@@ -464,7 +464,7 @@
       "assembly": "MindAttic.Ideas.Plugin.PoweredBy",
       "artifact": "MindAttic.Ideas.Plugin.PoweredBy.V1.idea",
       "mount": "/_ideas/Plugin/poweredby/1",
-      "notes": "Site footer and the CMS byline. Declares Slot=AfterBody so it renders after the theme/body. Emits a real <footer class=\"ma-footer\">, so the Footer plugin's chrome and pin-when-short behavior style it when both are active. Text/links come from the footer.text and footer.links settings; the 'Powered by' badge always renders and points at the Ideas brochure page."
+      "notes": "Site footer and the CMS byline. Declares Slot=AfterBody so it renders after the theme/body. Emits a real <footer class=\"ma-footer pin-when-short\">, so Plugin.Footer styles it and Plugin.PinFooter pins it while the page is shorter than the viewport — both by class contract, neither required. Text/links come from the footer.text and footer.links settings; the 'Powered by' badge always renders and points at the Ideas brochure page."
     },
     {
       "id": "plugin.sacredgeometry",

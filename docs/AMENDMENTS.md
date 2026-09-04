@@ -698,3 +698,34 @@ Applied to `/frontpage`: **179,321 → 5,202 characters** of body.
 Large media that should not live in the database (video) is the open case — `MediaStoreOptions.MediaRoot`
 is the existing disk seam, and an Azure Blob provider behind the same `IMediaStore` is the intended
 route, with the page still referencing an asset rather than a URL.
+
+## MAI-A30 — `--extract-media` covers stylesheets; the home page carries no page JS {#MAI-A30}
+
+**What changed (2026-09-04).** Extends [MAI-A29](#MAI-A29).
+
+**Stylesheets.** `--extract-media` now lifts CSS `url(data:…;base64,…)` out of `PageCss` as well as
+`<img>` out of `BodyHtml`. CSS cannot reference a component, so these rewrite to the raw
+`/_media/{uid}` endpoint rather than to a `MediaImage` tag, and the asset is named after the custom
+property it is assigned to (`--bg-abstract-dark` → `bg-abstract-dark.png`) so Admin → Media reads as
+names. Body and stylesheet share one asset when the bytes match, because deduplication is by SHA-256
+across the whole run.
+
+**A defect this surfaced, which the CMS did not introduce.** `mindattic.com`'s
+`--bg-abstract-light` and `--bg-abstract-dark` hold **truncated** base64 — length not divisible by 4 —
+and have **zero `var()` references**. 246KB of broken, unreferenced data has been shipping on every
+page load of the live site, and is present in `mindattic.com/index.htm` itself, not just the CMS copy.
+Removed from the page here; the source repo still has it. This is why the tool leaves undecodable data
+inline and reports a failure rather than dropping it: the failure is the signal.
+
+**Page JS.** `/frontpage` now stores **no `PageJs` at all**. The 144KB it held was already inert —
+its `init()` returns early unless `window.TabBoard` is present, and that activator went with the static
+board markup the repo grids replaced. The data it carried (portfolio blurbs, book synopses) is markup
+now, so it is readable without script and visible to search engines instead of appearing only on click.
+
+**Where the home page landed.** Body 5,202 → 10,032 characters (it gained the recovered blurbs and
+synopses), `PageCss` 261,171 → 20,006, `PageJs` 144,332 → 0. Rendered: **624,070 → 57,064 bytes**, zero
+inline base64, 13 managed media references.
+
+**The general shape, for the next site.** A page is markup plus a stylesheet; bytes are managed assets;
+behavior is a Plugin, not a `<script>` block in a page row. An asset-only activator Plugin must be
+removed along with the markup it wires, or it silently loads CSS and JS for nothing.
