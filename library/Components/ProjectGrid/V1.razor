@@ -68,6 +68,12 @@
 }
 
 @code {
+    /// <summary>
+    /// Slug of the page whose children to list, e.g. "projects". Empty = the current page's own children,
+    /// which is what an index page wants; a home page pointing at the projects index wants this.
+    /// </summary>
+    [Parameter] public string? From { get; set; }
+
     /// <summary>Show the topic filter bar. Off for a short, unfiltered list.</summary>
     [Parameter] public bool ShowFilters { get; set; } = true;
 
@@ -76,6 +82,15 @@
 
     /// <summary>Only show cards carrying this GitHub topic. Empty = all.</summary>
     [Parameter] public string? Topic { get; set; }
+
+    /// <summary>
+    /// Only show repos whose NAME starts with this, e.g. "MindAttic." for the ecosystem libraries.
+    /// Pairs with <see cref="ExcludeNamePrefix"/> to split one topic into two grids.
+    /// </summary>
+    [Parameter] public string? NamePrefix { get; set; }
+
+    /// <summary>Hide repos whose name starts with this — the other half of a <see cref="NamePrefix"/> split.</summary>
+    [Parameter] public string? ExcludeNamePrefix { get; set; }
 
     [Parameter] public string? CssClass { get; set; }
     [Parameter] public string? CssStyle { get; set; }
@@ -109,7 +124,9 @@
         if (Context is null) return;
         if (!Context.TryGetFeature<IPageTree>(out var tree) || tree is null) return;
 
-        var children = await tree.ChildrenOfAsync(Context.Page.PageId);
+        var children = string.IsNullOrWhiteSpace(From)
+            ? await tree.ChildrenOfAsync(Context.Page.PageId)
+            : await tree.ChildrenOfSlugAsync(From!);
         if (children.Count == 0) return;
 
         // One lookup for the whole list — GetManyAsync exists precisely so an index page isn't N+1.
@@ -128,6 +145,13 @@
         if (!string.IsNullOrWhiteSpace(Topic))
             _cards = _cards.Where(c => c.Topics.Contains(Topic!, StringComparer.OrdinalIgnoreCase)).ToList();
 
+        // Name filters work on the REPO name, not the page title, so "MindAttic." splits the ecosystem
+        // libraries out of the software topic exactly the way the repo names do.
+        if (!string.IsNullOrWhiteSpace(NamePrefix))
+            _cards = _cards.Where(c => c.Name.StartsWith(NamePrefix!, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (!string.IsNullOrWhiteSpace(ExcludeNamePrefix))
+            _cards = _cards.Where(c => !c.Name.StartsWith(ExcludeNamePrefix!, StringComparison.OrdinalIgnoreCase)).ToList();
+
         // Most-starred first, then alphabetical — a portfolio should lead with its strongest work.
         _cards = _cards.OrderByDescending(c => c.Stars).ThenBy(c => c.Title, StringComparer.OrdinalIgnoreCase).ToList();
 
@@ -144,6 +168,7 @@
         {
             using var doc = System.Text.Json.JsonDocument.Parse(json);
             var root = doc.RootElement;
+            card.Name = Str(root, "name") ?? card.Name;
             card.Description = Str(root, "description") ?? card.Description;
             card.Language = Str(root, "language");
             card.Url = Str(root, "url");
@@ -171,6 +196,8 @@
     {
         public string Slug { get; set; } = "";
         public string Title { get; set; } = "";
+        /// <summary>The GitHub repo name, which the name filters match on.</summary>
+        public string Name { get; set; } = "";
         public string? Description { get; set; }
         public string? Language { get; set; }
         public string? Url { get; set; }

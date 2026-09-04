@@ -32,6 +32,21 @@ public sealed class PageTreeFeature(IDbContextFactory<CmsDbContext> factory) : I
         }
     }
 
+    public async Task<IReadOnlyList<ChildPage>> ChildrenOfSlugAsync(string slug, CancellationToken ct = default)
+    {
+        try
+        {
+            slug = (slug ?? "").Trim('/');
+            await using var db = await factory.CreateDbContextAsync(ct);
+            var parent = await db.Pages.FirstOrDefaultAsync(p => p.Slug == slug && !p.IsDeleted, ct);
+            return parent is null ? Array.Empty<ChildPage>() : await ChildrenOfAsync(parent.Uid, ct);
+        }
+        catch
+        {
+            return Array.Empty<ChildPage>();
+        }
+    }
+
     public async Task<IReadOnlyList<ChildPageNode>> DescendantsTreeAsync(Guid pageId, CancellationToken ct = default)
     {
         try

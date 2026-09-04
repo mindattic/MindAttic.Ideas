@@ -95,4 +95,34 @@ public class PageTreeFeatureTests
                 "each child must carry its own id");
         });
     }
+
+    [Test]
+    public async Task ChildrenOfSlug_ResolvesTheSamePageAsChildrenOfUid()
+    {
+        // A home page lists the projects index's children by SLUG, because a slug is what an author can
+        // type into a tag attribute. It must agree with the uid-based lookup.
+        var (feature, parentUid) = await SeedAsync();
+
+        var byUid = await feature.ChildrenOfAsync(parentUid);
+        var bySlug = await feature.ChildrenOfSlugAsync("parent");
+
+        Assert.That(bySlug.Select(c => c.Slug), Is.EqualTo(byUid.Select(c => c.Slug)));
+    }
+
+    [Test]
+    public async Task ChildrenOfSlug_ToleratesSurroundingSlashes()
+    {
+        var (feature, _) = await SeedAsync();
+
+        Assert.That(await feature.ChildrenOfSlugAsync("/parent/"), Is.Not.Empty);
+    }
+
+    [Test]
+    public async Task ChildrenOfSlug_UnknownSlug_ReturnsEmpty()
+    {
+        // A mistyped From="" attribute must render an empty grid, never throw into the render.
+        var (feature, _) = await SeedAsync();
+
+        Assert.That(await feature.ChildrenOfSlugAsync("no-such-page"), Is.Empty);
+    }
 }

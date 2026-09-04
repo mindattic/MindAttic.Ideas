@@ -150,6 +150,16 @@ public interface IPageTree
     Task<IReadOnlyList<ChildPage>> ChildrenOfAsync(Guid pageId, CancellationToken ct = default);
 
     /// <summary>
+    /// The published, enabled children of the page at <paramref name="slug"/> — for a component that lists
+    /// SOME OTHER page's children, e.g. a home page showing the projects index. Slug rather than uid because
+    /// that is what an author can type into a tag attribute.
+    /// The default implementation returns empty, so a host that has not implemented it degrades to an empty
+    /// list rather than breaking; the CMS host overrides it. MUST never throw into a render.
+    /// </summary>
+    Task<IReadOnlyList<ChildPage>> ChildrenOfSlugAsync(string slug, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<ChildPage>>(Array.Empty<ChildPage>());
+
+    /// <summary>
     /// Returns the full sub-tree rooted at <paramref name="pageId"/> (children, grandchildren, …)
     /// as nested <see cref="ChildPageNode"/> records. Empty when the page has no descendants.
     /// Default implementation falls back to one level via <see cref="ChildrenOfAsync"/>.
