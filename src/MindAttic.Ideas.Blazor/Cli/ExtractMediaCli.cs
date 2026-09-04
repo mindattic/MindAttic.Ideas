@@ -31,6 +31,19 @@ public static partial class ExtractMediaCli
         RegexOptions.IgnoreCase)]
     private static partial Regex InlineImage();
 
+    /// <summary>
+    /// A CSS <c>url(data:…;base64,…)</c>. CSS cannot reference a component, so these rewrite to the raw
+    /// <c>/_media/{uid}</c> endpoint rather than to a MediaImage tag.
+    /// </summary>
+    [GeneratedRegex(
+        """url\(\s*(?<q>["']?)data:(?<mime>image/[a-zA-Z0-9.+-]+);base64,(?<data>[A-Za-z0-9+/=\s]+?)\k<q>\s*\)""",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex CssDataUrl();
+
+    /// <summary>The nearest custom property or selector before a url(), used to name the extracted asset.</summary>
+    [GeneratedRegex("""(?<name>--[A-Za-z0-9_-]+)\s*:\s*[^;{}]*$""")]
+    private static partial Regex PrecedingCustomProperty();
+
     /// <summary>One attribute inside a tag, used to carry alt/title/class/width/height across the rewrite.</summary>
     [GeneratedRegex("""(?<name>[A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*(?<q>["'])(?<value>[^"']*)\k<q>""")]
     private static partial Regex TagAttribute();
@@ -48,7 +61,9 @@ public static partial class ExtractMediaCli
         var media = scope.ServiceProvider.GetRequiredService<IMediaStore>();
 
         var query = db.Pages.IgnoreQueryFilters()
-            .Where(p => p.Kind == PageKind.Data && p.BodyHtml != null && p.BodyHtml.Contains("base64,"));
+            .Where(p => p.Kind == PageKind.Data
+                        && ((p.BodyHtml != null && p.BodyHtml.Contains("base64,"))
+                            || (p.PageCss != null && p.PageCss.Contains("base64,"))));
         if (!string.IsNullOrWhiteSpace(onlySlug))
             query = query.Where(p => p.Slug == onlySlug);
 
@@ -59,83 +74,137 @@ public static partial class ExtractMediaCli
             return 0;
         }
 
-        // Reuse an asset when the same bytes appear again, here or on another page.
+        // Reuse an asset when the same bytes appear again — in this field, another field, or another page.
         var byHash = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
         foreach (var existing in await media.ListAsync(folder: folder))
             if (!string.IsNullOrEmpty(existing.Sha256))
                 byHash[existing.Sha256] = existing.Uid;
 
-        int extracted = 0, reused = 0, failed = 0, pagesChanged = 0;
-        long bytesLifted = 0;
+        var stats = new Stats();
 
         foreach (var page in pages)
         {
-            var before = page.BodyHtml!;
-            var index = 0;
+            var bodyBefore = page.BodyHtml;
+            var cssBefore = page.PageCss;
 
-            var after = await ReplaceAsync(before, InlineImage(), async match =>
+            // Markup: an <img> becomes a MediaImage component.
+            var bodyAfter = await LiftAsync(bodyBefore, InlineImage(), page.Slug, folder, media, byHash, dryRun, stats,
+                (match, uid, bytes) => BuildTag(uid, AltOf(match), ReadAttributes(match.Value)),
+                match => AltOf(match));
+
+            // Stylesheet: CSS cannot reference a component, so a data: url() becomes the raw media endpoint.
+            var cssAfter = await LiftAsync(cssBefore, CssDataUrl(), page.Slug, folder, media, byHash, dryRun, stats,
+                (match, uid, bytes) => $"url(/_media/{uid})",
+                match => CssAssetNameFor(cssBefore!, match));
+
+            if (dryRun) continue;
+
+            var changed = false;
+            if (bodyAfter != bodyBefore)
             {
-                index++;
-                byte[] bytes;
-                try
-                {
-                    // Data URIs are often wrapped across lines in an authored file.
-                    bytes = Convert.FromBase64String(Regex.Replace(match.Groups["data"].Value, @"\s+", ""));
-                }
-                catch (FormatException)
-                {
-                    Console.Error.WriteLine($"[extract-media]   ! {page.Slug} image {index}: unreadable base64 — left inline.");
-                    failed++;
-                    return match.Value;
-                }
+                Console.WriteLine($"[extract-media]   ~ /{page.Slug} body: {bodyBefore!.Length:N0} -> {bodyAfter!.Length:N0} chars");
+                page.BodyHtml = bodyAfter;
+                changed = true;
+            }
+            if (cssAfter != cssBefore)
+            {
+                Console.WriteLine($"[extract-media]   ~ /{page.Slug} css:  {cssBefore!.Length:N0} -> {cssAfter!.Length:N0} chars");
+                page.PageCss = cssAfter;
+                changed = true;
+            }
+            if (!changed) continue;
 
-                var mime = match.Groups["mime"].Value.ToLowerInvariant();
-                var attrs = ReadAttributes(match.Value);
-                var alt = attrs.GetValueOrDefault("alt") ?? attrs.GetValueOrDefault("title") ?? "";
-                var hash = Convert.ToHexString(SHA256.HashData(bytes));
-
-                Guid uid;
-                if (byHash.TryGetValue(hash, out var known))
-                {
-                    uid = known;
-                    reused++;
-                }
-                else if (dryRun)
-                {
-                    Console.WriteLine($"[extract-media] [DRY] {page.Slug} image {index}: {bytes.Length / 1024} KB {mime} \"{Truncate(alt)}\"");
-                    extracted++;
-                    bytesLifted += bytes.Length;
-                    return match.Value;
-                }
-                else
-                {
-                    var fileName = FileNameFor(alt, page.Slug, index, mime);
-                    await using var stream = new MemoryStream(bytes);
-                    var item = await media.UploadAsync(stream, fileName, mime, folder: folder, mediaType: "image",
-                        notes: $"Extracted from page /{page.Slug}");
-                    uid = item.Uid;
-                    byHash[hash] = uid;
-                    extracted++;
-                    bytesLifted += bytes.Length;
-                    Console.WriteLine($"[extract-media]   + {fileName} ({bytes.Length / 1024} KB) -> {uid}");
-                }
-
-                return BuildTag(uid, alt, attrs);
-            });
-
-            if (dryRun || ReferenceEquals(after, before) || after == before) continue;
-
-            page.BodyHtml = after;
             page.ModifiedUtc = DateTime.UtcNow;
-            pagesChanged++;
-            Console.WriteLine($"[extract-media]   ~ /{page.Slug}: {before.Length:N0} -> {after.Length:N0} chars");
+            stats.PagesChanged++;
         }
 
-        if (!dryRun && pagesChanged > 0) await db.SaveChangesAsync();
+        if (!dryRun && stats.PagesChanged > 0) await db.SaveChangesAsync();
 
-        Console.WriteLine($"[extract-media] Done. pages={pagesChanged} extracted={extracted} reused={reused} " +
-                          $"failed={failed} lifted={bytesLifted / 1024:N0} KB");
-        return failed > 0 ? 1 : 0;
+        Console.WriteLine($"[extract-media] Done. pages={stats.PagesChanged} extracted={stats.Extracted} " +
+                          $"reused={stats.Reused} failed={stats.Failed} lifted={stats.BytesLifted / 1024:N0} KB");
+        return stats.Failed > 0 ? 1 : 0;
+    }
+
+    private sealed class Stats
+    {
+        public int Extracted, Reused, Failed, PagesChanged;
+        public long BytesLifted;
+    }
+
+    /// <summary>
+    /// Replace every base64 match in <paramref name="input"/> with a managed-media reference.
+    /// <paramref name="build"/> renders the replacement text; <paramref name="nameOf"/> supplies the asset
+    /// filename. Returns the input unchanged when there is nothing to lift.
+    /// </summary>
+    private static async Task<string?> LiftAsync(
+        string? input, Regex pattern, string slug, string folder, IMediaStore media,
+        Dictionary<string, Guid> byHash, bool dryRun, Stats stats,
+        Func<Match, Guid, byte[], string> build, Func<Match, string> nameOf)
+    {
+        if (string.IsNullOrEmpty(input) || !input.Contains("base64,", StringComparison.Ordinal)) return input;
+
+        var index = 0;
+        return await ReplaceAsync(input, pattern, async match =>
+        {
+            index++;
+            byte[] bytes;
+            try
+            {
+                // Data URIs are routinely wrapped across lines in an authored file.
+                bytes = Convert.FromBase64String(Regex.Replace(match.Groups["data"].Value, @"\s+", ""));
+            }
+            catch (FormatException)
+            {
+                Console.Error.WriteLine($"[extract-media]   ! {slug} asset {index}: unreadable base64 — left inline.");
+                stats.Failed++;
+                return match.Value;
+            }
+
+            var mime = match.Groups["mime"].Value.ToLowerInvariant();
+            var name = nameOf(match);
+            var hash = Convert.ToHexString(SHA256.HashData(bytes));
+
+            if (byHash.TryGetValue(hash, out var known))
+            {
+                stats.Reused++;
+                return build(match, known, bytes);
+            }
+
+            if (dryRun)
+            {
+                Console.WriteLine($"[extract-media] [DRY] {slug} asset {index}: {bytes.Length / 1024} KB {mime} \"{Truncate(name)}\"");
+                stats.Extracted++;
+                stats.BytesLifted += bytes.Length;
+                return match.Value;
+            }
+
+            var fileName = FileNameFor(name, slug, index, mime);
+            await using var stream = new MemoryStream(bytes);
+            var item = await media.UploadAsync(stream, fileName, mime, folder: folder, mediaType: "image",
+                notes: $"Extracted from page /{slug}");
+            byHash[hash] = item.Uid;
+            stats.Extracted++;
+            stats.BytesLifted += bytes.Length;
+            Console.WriteLine($"[extract-media]   + {fileName} ({bytes.Length / 1024} KB) -> {item.Uid}");
+            return build(match, item.Uid, bytes);
+        });
+    }
+
+    private static string AltOf(Match match)
+    {
+        var attrs = ReadAttributes(match.Value);
+        return attrs.GetValueOrDefault("alt") ?? attrs.GetValueOrDefault("title") ?? "";
+    }
+
+    /// <summary>
+    /// Name a CSS-extracted asset after the custom property it is assigned to (<c>--bg-abstract-dark</c> ->
+    /// <c>bg-abstract-dark</c>), so Admin → Media reads as names rather than frontpage-3.png.
+    /// </summary>
+    private static string CssAssetNameFor(string css, Match match)
+    {
+        var lookBehind = css[Math.Max(0, match.Index - 200)..match.Index];
+        var m = PrecedingCustomProperty().Match(lookBehind);
+        return m.Success ? m.Groups["name"].Value.TrimStart('-') : "";
     }
 
     /// <summary>Regex.Replace with an async replacement callback (uploading is I/O).</summary>

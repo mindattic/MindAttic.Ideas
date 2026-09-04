@@ -71,13 +71,20 @@ public class ExtractMediaCliTests
 
     private static async Task<(string Body, FakeMediaStore Store, int Exit)> RunAsync(string body, params string[] extraArgs)
     {
+        var (b, _, store, exit) = await RunFullAsync(body, null, extraArgs);
+        return (b, store, exit);
+    }
+
+    private static async Task<(string Body, string? Css, FakeMediaStore Store, int Exit)> RunFullAsync(
+        string? body, string? css, params string[] extraArgs)
+    {
         var factory = new InMemoryFactory("media_" + Guid.NewGuid().ToString("N"));
         await using (var db = factory.CreateDbContext())
         {
             db.Pages.Add(new CmsPage
             {
                 SiteId = 1, Slug = "page-under-test", Title = "T", Kind = PageKind.Data,
-                BodyHtml = body, BodyTrust = ContentTrust.Author,
+                BodyHtml = body, PageCss = css, BodyTrust = ContentTrust.Author,
                 IsPublished = true, Enabled = true, CreatedUtc = DateTime.UtcNow,
             });
             await db.SaveChangesAsync();
@@ -94,7 +101,7 @@ public class ExtractMediaCliTests
 
         await using var read = factory.CreateDbContext();
         var page = await read.Pages.IgnoreQueryFilters().FirstAsync(p => p.Slug == "page-under-test");
-        return (page.BodyHtml!, store, exit);
+        return (page.BodyHtml ?? "", page.PageCss, store, exit);
     }
 
     [Test]
@@ -236,6 +243,78 @@ public class ExtractMediaCliTests
         {
             Assert.That(store.Uploads, Is.EqualTo(1));
             Assert.That(body, Does.Not.Contain("base64,"));
+        });
+    }
+
+    // ---- CSS: url(data:…) has no component to become, so it points at the raw media endpoint ----
+
+    [Test]
+    public async Task CssDataUrl_BecomesTheRawMediaEndpoint()
+    {
+        var (_, css, store, exit) = await RunFullAsync(
+            null, $$""":root { --logo: url("data:image/gif;base64,{{Gif1x1}}"); }""");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exit, Is.Zero);
+            Assert.That(store.Uploads, Is.EqualTo(1));
+            Assert.That(css, Does.Not.Contain("base64,"));
+            Assert.That(css, Does.Contain($"url(/_media/{store.Items[0].Uid})"));
+        });
+    }
+
+    [Test]
+    public async Task CssAsset_IsNamedAfterItsCustomProperty()
+    {
+        // Admin -> Media should read as names, not frontpage-1.gif.
+        var (_, _, store, _) = await RunFullAsync(
+            null, $$""":root { --bg-abstract-dark: url("data:image/gif;base64,{{Gif1x1}}"); }""");
+
+        Assert.That(store.Items[0].FileName, Is.EqualTo("bg-abstract-dark.gif"));
+    }
+
+    [Test]
+    public async Task UnquotedCssUrl_IsAlsoRecognised()
+    {
+        var (_, css, store, _) = await RunFullAsync(
+            null, $$""".x { background: url(data:image/gif;base64,{{Gif1x1}}); }""");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.Uploads, Is.EqualTo(1));
+            Assert.That(css, Does.Not.Contain("base64,"));
+        });
+    }
+
+    [Test]
+    public async Task BodyAndCssShareOneAssetWhenTheBytesMatch()
+    {
+        // The same logo inlined in both markup and stylesheet must not become two assets.
+        var (body, css, store, _) = await RunFullAsync(
+            $"""<img src="data:image/gif;base64,{Gif1x1}" alt="logo">""",
+            $$""":root { --logo: url("data:image/gif;base64,{{Gif1x1}}"); }""");
+
+        var uid = store.Items[0].Uid.ToString();
+        Assert.Multiple(() =>
+        {
+            Assert.That(store.Uploads, Is.EqualTo(1));
+            Assert.That(body, Does.Contain(uid));
+            Assert.That(css, Does.Contain(uid));
+        });
+    }
+
+    [Test]
+    public async Task TruncatedCssBase64_IsLeftInline_AndReportsFailure()
+    {
+        // This is the real shape of the two dead mindattic.com backgrounds: valid alphabet, bad length.
+        var (_, css, store, exit) = await RunFullAsync(
+            null, """:root { --broken: url("data:image/png;base64,ABCDE"); }""");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exit, Is.EqualTo(1));
+            Assert.That(store.Uploads, Is.Zero);
+            Assert.That(css, Does.Contain("base64,ABCDE"));
         });
     }
 }

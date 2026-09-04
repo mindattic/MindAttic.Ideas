@@ -4,8 +4,9 @@
 
 @*  MindAttic.Ideas.Plugin.PoweredBy.V1 — the site footer, and the CMS's own byline.
 
-    Emits a real <footer class="ma-footer">, so the Footer plugin's chrome and pin-when-short behavior
-    style it when both are active; activate this alone and it still renders, just unstyled by that plugin.
+    Emits a real <footer class="ma-footer pin-when-short">, so the Footer plugin's chrome styles it and
+    Plugin.PinFooter pins it to the bottom edge while the page is shorter than the viewport — both by
+    class contract, neither required. Activate this alone and it still renders, just without either.
 
     Content comes from the Host -> Site -> Page setting chain, exactly like NavMenu:
       footer.text    free text (e.g. "© 2026 MindAttic LLC")
@@ -15,7 +16,7 @@
 
 <link rel="stylesheet" href="/_ideas/Plugin/poweredby/1/poweredby.css" />
 
-<footer class="ma-footer ma-pb @CssClass" style="@_outerStyle">
+<footer class="ma-footer ma-pb pin-when-short @CssClass" style="@_outerStyle">
     <div class="ma-pb-inner">
         @if (!string.IsNullOrWhiteSpace(_text))
         {
