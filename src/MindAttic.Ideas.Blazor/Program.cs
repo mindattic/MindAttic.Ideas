@@ -222,6 +222,15 @@ if (installIdx >= 0)
     Environment.Exit(0);
 }
 
+// ---- CLI mode: --extract-media -------------------------------------------------------------
+// Lift inline base64 images out of page bodies into the managed media store.
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --extract-media [--slug frontpage] [--folder site] [--dry-run]
+if (args.Contains("--extract-media"))
+{
+    var exit = await ExtractMediaCli.RunAsync(args, app.Services);
+    Environment.Exit(exit);
+}
+
 // ---- CLI mode: --seed <target> --------------------------------------------------------------
 // dotnet run --project src/MindAttic.Ideas.Blazor -- --seed core        (re-run SeedService migrations)
 // dotnet run --project src/MindAttic.Ideas.Blazor -- --seed from-html [--dry-run]
