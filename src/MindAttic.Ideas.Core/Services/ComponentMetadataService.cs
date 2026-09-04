@@ -16,6 +16,25 @@ public sealed class ComponentMetadataService(IDbContextFactory<CmsDbContext> dbF
             .FirstOrDefaultAsync(ct);
     }
 
+    /// <summary>One query for a whole list of pages — the default interface impl would issue one per row.</summary>
+    public async Task<IReadOnlyDictionary<Guid, string>> GetManyAsync(
+        IEnumerable<Guid> pageUids, string componentKey, string slotName = "main", CancellationToken ct = default)
+    {
+        var ids = pageUids.Distinct().ToArray();
+        if (ids.Length == 0) return new Dictionary<Guid, string>();
+        try
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(ct);
+            return await db.ComponentMetadata
+                .Where(m => ids.Contains(m.PageUid) && m.ComponentKey == componentKey && m.SlotName == slotName)
+                .ToDictionaryAsync(m => m.PageUid, m => m.MetadataJson, ct);
+        }
+        catch
+        {
+            return new Dictionary<Guid, string>();   // never throw into a render
+        }
+    }
+
     public async Task SaveAsync(Guid pageUid, string componentKey, string slotName, string metadataJson, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;

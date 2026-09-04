@@ -29,6 +29,14 @@ public static class SeedReposCli
 {
     private const string ProjectsSlug = "projects";
     private const string FromMdBody = "<Component.frommd />";
+
+    /// <summary>The portfolio index: a heading plus the card grid over this page's children.</summary>
+    private const string ProjectsIndexBody =
+        """
+        <h1>Projects</h1>
+        <p class="ma-lede">Every public repository, with its README rendered as a page.</p>
+        <Component.projectgrid />
+        """;
     private const string MetaKeyReadme = "frommd";
     private const string MetaKeyRepo = "repo";
 
@@ -160,6 +168,12 @@ public static class SeedReposCli
                     await RecordSlugHistoryAsync(db, page.Id, page.Slug);
                     Console.WriteLine($"[seed-repos]   ~ /{page.Slug} -> /{slug} (redirect recorded)");
                     page.Slug = slug;
+
+                    // The slug is derived from the repo name, so a slug change means the name changed —
+                    // leaving the old title would keep showing e.g. "StreetSamurai" for a repo now called
+                    // Prose. Titles are only refreshed here, so an author's rename is otherwise preserved.
+                    page.Title = TitleFor(repo.Name);
+                    page.SeoTitle = $"{page.Title} — MindAttic";
                 }
 
                 // Only fill in chrome the author hasn't chosen; never clobber an admin edit.
@@ -305,6 +319,13 @@ public static class SeedReposCli
             {
                 parent.Enabled = true;
                 parent.IsPublished = true;
+                parent.ThemeKey ??= DefaultThemeKey;
+                parent.ActivePluginsJson ??= JsonSerializer.Serialize(DefaultPlugins);
+                // Adopt the index body only while the page is still the seeder's placeholder heading —
+                // an author who has written a real index keeps it.
+                if (string.IsNullOrWhiteSpace(parent.BodyHtml)
+                    || parent.BodyHtml.Trim() is "<h1>Projects</h1>" or "<h1>MindAttic Projects</h1>")
+                    parent.BodyHtml = ProjectsIndexBody;
                 await db.SaveChangesAsync();
             }
             return parent;
@@ -319,7 +340,7 @@ public static class SeedReposCli
             Slug = ProjectsSlug,
             Title = "Projects",
             Kind = PageKind.Data,
-            BodyHtml = "<h1>Projects</h1>",
+            BodyHtml = ProjectsIndexBody,
             BodyTrust = ContentTrust.Author,
             ThemeKey = DefaultThemeKey,
             ActivePluginsJson = JsonSerializer.Serialize(DefaultPlugins),

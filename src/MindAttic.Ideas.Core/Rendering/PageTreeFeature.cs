@@ -23,7 +23,7 @@ public sealed class PageTreeFeature(IDbContextFactory<CmsDbContext> factory) : I
             return await db.Pages
                 .Where(p => p.ParentId == parent.Id && p.IsPublished && p.Enabled && !p.IsDeleted)
                 .OrderBy(p => p.SortOrder).ThenBy(p => p.Title)
-                .Select(p => new ChildPage(p.Slug, p.Title, p.OpenInNewWindow))
+                .Select(p => new ChildPage(p.Slug, p.Title, p.OpenInNewWindow, p.Uid))
                 .ToListAsync(ct);
         }
         catch

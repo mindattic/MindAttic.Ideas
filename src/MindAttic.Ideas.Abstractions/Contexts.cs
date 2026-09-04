@@ -108,10 +108,32 @@ public interface IComponentMetadataStore
 
     /// <summary>Upserts metadata JSON for this slot.</summary>
     Task SaveAsync(Guid pageUid, string componentKey, string slotName, string metadataJson, CancellationToken ct = default);
+
+    /// <summary>
+    /// Metadata for MANY pages at once, keyed by page uid; pages with no row for this slot are absent.
+    /// A component that renders a list of other pages (an index, a card grid) needs one lookup, not one per
+    /// row. The default implementation loops <see cref="GetAsync"/> so every existing host keeps working;
+    /// a host SHOULD override it with a single query. MUST never throw into a render.
+    /// </summary>
+    async Task<IReadOnlyDictionary<Guid, string>> GetManyAsync(
+        IEnumerable<Guid> pageUids, string componentKey, string slotName = "main", CancellationToken ct = default)
+    {
+        var result = new Dictionary<Guid, string>();
+        foreach (var uid in pageUids.Distinct())
+        {
+            var json = await GetAsync(uid, componentKey, slotName, ct);
+            if (json is not null) result[uid] = json;
+        }
+        return result;
+    }
 }
 
-/// <summary>One child page in the site tree (for nav / the TableOfContents widget).</summary>
-public sealed record ChildPage(string Slug, string Title, bool OpenInNewWindow = false);
+/// <summary>
+/// One child page in the site tree (for nav / the TableOfContents widget).
+/// <paramref name="PageId"/> is the child's stable uid, so a component listing children can look their
+/// metadata up through <see cref="IComponentMetadataStore"/>. Defaulted, and last, to stay additive.
+/// </summary>
+public sealed record ChildPage(string Slug, string Title, bool OpenInNewWindow = false, Guid PageId = default);
 
 /// <summary>One node in a page sub-tree — carries its own children for recursive rendering.</summary>
 public sealed record ChildPageNode(string Slug, string Title, IReadOnlyList<ChildPageNode> Children, bool OpenInNewWindow = false);

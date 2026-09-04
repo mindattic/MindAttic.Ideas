@@ -27,6 +27,7 @@
   <Folder Name="/Components/">
     <Project Path="Components/Textbox/MindAttic.Ideas.Component.Textbox.csproj" />
     <Project Path="Components/Card/MindAttic.Ideas.Component.Card.csproj" />
+    <Project Path="Components/ProjectGrid/MindAttic.Ideas.Component.ProjectGrid.csproj" />
     <Project Path="Components/Accordion/MindAttic.Ideas.Component.Accordion.csproj" />
     <Project Path="Components/Tabs/MindAttic.Ideas.Component.Tabs.csproj" />
     <Project Path="Components/TabBoard/MindAttic.Ideas.Component.TabBoard.csproj" />

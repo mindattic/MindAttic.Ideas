@@ -1,0 +1,181 @@
+@namespace MindAttic.Ideas.Component.ProjectGrid
+@inherits ComponentBase
+@attribute [Idea(DisplayName = "Project Grid")]
+
+@*  Renders the CURRENT page's child pages as a card grid, enriched with the repo metadata that
+    `--seed repos` snapshots into the "repo" metadata slot (description, language, stars, topics).
+
+    Host-agnostic: it asks the render context for IPageTree and IComponentMetadataStore and degrades to a
+    plain link list — then to nothing at all — as those features or that metadata go missing. A page with
+    no children renders nothing rather than an empty shell.  *@
+
+<link rel="stylesheet" href="/_ideas/Component/projectgrid/1/projectgrid.css" />
+
+@if (_cards.Count > 0)
+{
+    <div class="ma-projectgrid @CssClass" style="@_outerStyle">
+        @if (ShowFilters && _topics.Count > 1)
+        {
+            <div class="ma-pg-filters" role="tablist" aria-label="Filter projects by topic">
+                <button type="button" role="tab"
+                        class="ma-pg-filter @(_activeTopic is null ? "is-active" : "")"
+                        aria-selected="@(_activeTopic is null)"
+                        @onclick="() => SetTopic(null)">All <span class="ma-pg-count">@_cards.Count</span></button>
+                @foreach (var topic in _topics)
+                {
+                    var count = _cards.Count(c => c.Topics.Contains(topic));
+                    <button type="button" role="tab"
+                            class="ma-pg-filter @(_activeTopic == topic ? "is-active" : "")"
+                            aria-selected="@(_activeTopic == topic)"
+                            @onclick="() => SetTopic(topic)">@topic <span class="ma-pg-count">@count</span></button>
+                }
+            </div>
+        }
+
+        <ul class="ma-pg-grid">
+            @foreach (var card in Visible)
+            {
+                <li class="ma-pg-card">
+                    <a class="ma-pg-link" href="/@card.Slug">
+                        <h3 class="ma-pg-title">@card.Title</h3>
+                        @if (!string.IsNullOrWhiteSpace(card.Description))
+                        {
+                            <p class="ma-pg-desc">@card.Description</p>
+                        }
+                    </a>
+                    <div class="ma-pg-meta">
+                        @if (!string.IsNullOrWhiteSpace(card.Language))
+                        {
+                            <span class="ma-pg-lang">@card.Language</span>
+                        }
+                        @if (card.Stars > 0)
+                        {
+                            <span class="ma-pg-stars" title="@card.Stars stargazers">★ @card.Stars</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(card.Homepage))
+                        {
+                            <a class="ma-pg-ext" href="@card.Homepage" target="_blank" rel="noopener noreferrer">Live</a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(card.Url))
+                        {
+                            <a class="ma-pg-ext" href="@card.Url" target="_blank" rel="noopener noreferrer">Source</a>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    /// <summary>Show the topic filter bar. Off for a short, unfiltered list.</summary>
+    [Parameter] public bool ShowFilters { get; set; } = true;
+
+    /// <summary>Cap the number of cards rendered (e.g. a "featured" strip on a home page). 0 = no cap.</summary>
+    [Parameter] public int Max { get; set; }
+
+    /// <summary>Only show cards carrying this GitHub topic. Empty = all.</summary>
+    [Parameter] public string? Topic { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public string? CssStyle { get; set; }
+    [Parameter] public string? Padding { get; set; }
+    [Parameter] public string? Margin { get; set; }
+
+    private string _outerStyle => string.Join(";", new[]
+    {
+        string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+        string.IsNullOrEmpty(Margin) ? null : $"margin:{Margin}",
+        CssStyle,
+    }.Where(s => s is not null));
+
+    private List<Card> _cards = [];
+    private List<string> _topics = [];
+    private string? _activeTopic;
+
+    private IEnumerable<Card> Visible
+    {
+        get
+        {
+            var q = _activeTopic is null ? _cards : _cards.Where(c => c.Topics.Contains(_activeTopic));
+            return Max > 0 ? q.Take(Max) : q;
+        }
+    }
+
+    private void SetTopic(string? topic) => _activeTopic = topic;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Context is null) return;
+        if (!Context.TryGetFeature<IPageTree>(out var tree) || tree is null) return;
+
+        var children = await tree.ChildrenOfAsync(Context.Page.PageId);
+        if (children.Count == 0) return;
+
+        // One lookup for the whole list — GetManyAsync exists precisely so an index page isn't N+1.
+        IReadOnlyDictionary<Guid, string> meta = new Dictionary<Guid, string>();
+        if (Context.TryGetFeature<IComponentMetadataStore>(out var store) && store is not null)
+            meta = await store.GetManyAsync(children.Select(c => c.PageId), "repo");
+
+        foreach (var child in children)
+        {
+            // A child with no repo metadata still gets a card — the page exists, so it belongs in the index.
+            var card = new Card { Slug = child.Slug, Title = child.Title };
+            if (meta.TryGetValue(child.PageId, out var json)) Apply(card, json);
+            _cards.Add(card);
+        }
+
+        if (!string.IsNullOrWhiteSpace(Topic))
+            _cards = _cards.Where(c => c.Topics.Contains(Topic!, StringComparer.OrdinalIgnoreCase)).ToList();
+
+        // Most-starred first, then alphabetical — a portfolio should lead with its strongest work.
+        _cards = _cards.OrderByDescending(c => c.Stars).ThenBy(c => c.Title, StringComparer.OrdinalIgnoreCase).ToList();
+
+        _topics = _cards.SelectMany(c => c.Topics)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    /// <summary>Fold a "repo" metadata blob onto a card. A malformed blob leaves the card as-is.</summary>
+    private static void Apply(Card card, string json)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            card.Description = Str(root, "description") ?? card.Description;
+            card.Language = Str(root, "language");
+            card.Url = Str(root, "url");
+            card.Homepage = Str(root, "homepage");
+            if (root.TryGetProperty("stars", out var s) && s.TryGetInt32(out var stars)) card.Stars = stars;
+            if (root.TryGetProperty("topics", out var t) && t.ValueKind == System.Text.Json.JsonValueKind.Array)
+                card.Topics = t.EnumerateArray()
+                    .Select(e => e.GetString())
+                    .Where(v => !string.IsNullOrWhiteSpace(v))
+                    .Select(v => v!)
+                    .ToList();
+        }
+        catch
+        {
+            // Metadata is author-editable; a bad blob must not take the index down.
+        }
+    }
+
+    private static string? Str(System.Text.Json.JsonElement root, string name) =>
+        root.TryGetProperty(name, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.String
+            ? v.GetString() is { Length: > 0 } s ? s : null
+            : null;
+
+    private sealed class Card
+    {
+        public string Slug { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string? Description { get; set; }
+        public string? Language { get; set; }
+        public string? Url { get; set; }
+        public string? Homepage { get; set; }
+        public int Stars { get; set; }
+        public List<string> Topics { get; set; } = [];
+    }
+}

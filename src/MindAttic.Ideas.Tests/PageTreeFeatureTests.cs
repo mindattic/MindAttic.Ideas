@@ -77,4 +77,22 @@ public class PageTreeFeatureTests
         var children = await feature.ChildrenOfAsync(Guid.NewGuid());
         Assert.That(children, Is.Empty);
     }
+
+    [Test]
+    public async Task ChildrenOf_PopulatesPageId_SoMetadataCanBeJoined()
+    {
+        // ProjectGrid joins each child to IComponentMetadataStore by this id; a default Guid would make
+        // every card silently lose its metadata.
+        var (feature, parentUid) = await SeedAsync();
+
+        var children = await feature.ChildrenOfAsync(parentUid);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(children, Is.Not.Empty);
+            Assert.That(children.Select(c => c.PageId), Has.All.Not.EqualTo(Guid.Empty));
+            Assert.That(children.Select(c => c.PageId).Distinct().Count(), Is.EqualTo(children.Count),
+                "each child must carry its own id");
+        });
+    }
 }
