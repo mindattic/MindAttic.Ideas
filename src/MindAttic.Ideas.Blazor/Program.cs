@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using MindAttic.Authentication;
@@ -226,6 +226,7 @@ if (installIdx >= 0)
 // dotnet run --project src/MindAttic.Ideas.Blazor -- --seed core        (re-run SeedService migrations)
 // dotnet run --project src/MindAttic.Ideas.Blazor -- --seed from-html [--dry-run]
 // dotnet run --project src/MindAttic.Ideas.Blazor -- --seed from-md   [--dry-run]
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --seed repos [--org mindattic] [--local-root <dir>] [--dry-run]
 var seedIdx = Array.IndexOf(args, "--seed");
 if (seedIdx >= 0)
 {
@@ -242,9 +243,11 @@ if (seedIdx >= 0)
         exitCode = await SeedFromHtmlCli.RunAsync(args, app.Services);
     else if (seedTarget == "from-md")
         exitCode = await SeedReadmesCli.RunAsync(args, app.Services);
+    else if (seedTarget == "repos")
+        exitCode = await SeedReposCli.RunAsync(args, app.Services);
     else
     {
-        Console.Error.WriteLine($"[seed] Unknown target: '{seedTarget}'. Use 'core', 'from-html', or 'from-md'.");
+        Console.Error.WriteLine($"[seed] Unknown target: '{seedTarget}'. Use 'core', 'from-html', 'from-md', or 'repos'.");
         exitCode = 1;
     }
     Environment.Exit(exitCode);

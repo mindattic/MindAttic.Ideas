@@ -10,6 +10,7 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Http
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 @using MindAttic.Authentication
@@ -22,6 +23,7 @@
 @inject IServiceProvider Services
 @inject IRenderAlertSink Alerts
 @inject NavigationManager Nav
+@inject IHttpContextAccessor Http
 @inject PersistentComponentState AppState
 
 @* The single, permanent render entry point for free-form pages. No zones. Resolution is by
@@ -157,10 +159,20 @@ else if (_context is not null)
 
         if (page is null)
         {
-            // Auto-301: before showing 404, check if this slug was renamed and a redirect entry exists.
+            // Before showing 404, check if this slug was renamed and a redirect entry exists.
             var redirect = await SlugRedirects.CheckRedirectAsync(siteId, slug);
             if (redirect is not null)
             {
+                // Emit the status the redirect actually declares (301 for a rename). NavigateTo can only
+                // ever produce a 302, which tells search engines the OLD url is still the canonical one —
+                // exactly wrong for a permanent rename. Fall back to it only once the response has started.
+                var http = Http.HttpContext;
+                if (http is not null && !http.Response.HasStarted)
+                {
+                    http.Response.StatusCode = redirect.StatusCode;
+                    http.Response.Headers.Location = "/" + redirect.TargetSlug;
+                    return;
+                }
                 Nav.NavigateTo("/" + redirect.TargetSlug, forceLoad: true);
                 return;
             }
