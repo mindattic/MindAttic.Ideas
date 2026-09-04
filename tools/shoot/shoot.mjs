@@ -16,6 +16,7 @@
  *   web-static  serve the repo over http and shoot it
  *   web-cmd     run a dev/build command, wait for its URL, shoot it
  *   console     run a command, capture stdout, compose it as a terminal card
+ *   diagram     render Mermaid source to a static SVG (for repos with no UI at all)
  *
  * Usage:
  *   node shoot.mjs                     # every enabled shot
@@ -31,6 +32,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serveDir } from './lib/serve.mjs';
 import { terminalHtml } from './lib/terminal.mjs';
+import { renderMermaid, sourceFor } from './lib/diagram.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..', '..');        // MindAttic.Ideas
@@ -203,11 +205,22 @@ async function driveConsole(browser, repoDir, shot, outFile) {
   return res.code === 0 || shot.allowNonZeroExit !== false ? [] : [`exit ${res.code}`];
 }
 
+async function driveDiagram(browser, repoDir, shot, outFile) {
+  const source = sourceFor(shot, HERE);
+  const svg = await renderMermaid(browser, source, { theme: shot.theme ?? 'dark' });
+  await fsp.writeFile(outFile, svg, 'utf8');
+  return [];
+}
+
 const DRIVERS = {
   'web-static': driveWebStatic,
   'web-cmd': driveWebCmd,
   'console': driveConsole,
+  'diagram': driveDiagram,
 };
+
+/** A diagram is vector; everything else is a raster capture. */
+const extFor = (shot) => shot.format ?? (shot.driver === 'diagram' ? 'svg' : 'png');
 
 // ---------------------------------------------------------------------------------------------
 
@@ -241,11 +254,13 @@ const browser = await chromium.launch({
 const results = [];
 for (const { entry, shot } of planned) {
   const repoDir = path.join(PROJECTS_ROOT, entry.repo);
-  const name = `${entry.slug}-${shot.id}.png`;
+  const name = `${entry.slug}-${shot.id}.${extFor(shot)}`;
   const outFile = path.join(OUT, name);
   const driver = DRIVERS[shot.driver];
 
-  if (!fs.existsSync(repoDir)) { results.push({ name, ok: false, note: `no repo at ${repoDir}` }); continue; }
+  if (shot.driver !== 'diagram' && !fs.existsSync(repoDir)) {
+    results.push({ name, ok: false, note: `no repo at ${repoDir}` }); continue;
+  }
   if (!driver) { results.push({ name, ok: false, note: `unknown driver "${shot.driver}"` }); continue; }
 
   process.stdout.write(`[shoot] ${entry.slug}/${shot.id} … `);

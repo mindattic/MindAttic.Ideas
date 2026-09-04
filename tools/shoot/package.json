@@ -8,6 +8,7 @@
     "shoot": "node shoot.mjs"
   },
   "devDependencies": {
+    "mermaid": "^11.17.2",
     "playwright": "^1.62.1"
   }
 }

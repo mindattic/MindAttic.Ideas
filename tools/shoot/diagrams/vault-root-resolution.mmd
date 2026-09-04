@@ -1,0 +1,38 @@
+%% MindAttic.Vault — how a storage root is chosen, on any OS.
+%%
+%% This is the chain introduced in Vault V3 (VLT-A3). The red node is the one that actually took
+%% production down: GetFolderPath returns an EMPTY STRING on a container with no user profile — it
+%% does not throw — and the old code turned that into an exception during host construction, so the
+%% process aborted before a line of application code ran.
+%%
+%% Left-to-right on purpose: the chain is ordered, and a top-down layout renders it as a narrow
+%% sliver with every branch swooping back into one node.
+flowchart LR
+    START([Vault needs a<br/>storage root]) --> A
+
+    A{"1 · Explicit override<br/>MINDATTIC_VAULT_ROAMING_ROOT"} -- set --> OK
+    A -- unset --> B
+
+    B{"2 · Environment<br/>GetFolderPath"} -- "non-empty path" --> OK
+    B -- "empty string — NOT a throw" --> C
+
+    C{"3 · Platform<br/>convention"} -- Windows --> C1["%APPDATA%"]
+    C -- macOS --> C2["~/Library/Application Support"]
+    C -- Linux --> C3["$XDG_CONFIG_HOME"]
+
+    C1 --> D
+    C2 --> D
+    C3 --> D
+
+    D{"resolved?"} -- yes --> OK
+    D -- no --> E
+
+    E{"4 · $HOME"} -- set --> E1["$HOME/.mindattic"] --> OK
+    E -- unset --> F["5 · Application base directory"] --> OK
+
+    OK([A root. Always.<br/>This chain never throws.])
+
+    classDef trap fill:#3a1d20,stroke:#a4444f,color:#ffd9dc,stroke-width:2px;
+    classDef good fill:#16301f,stroke:#3f8055,color:#d7f5e2,stroke-width:2px;
+    class B trap;
+    class OK good;
