@@ -1,0 +1,177 @@
+@namespace MindAttic.Ideas.Component.AppLaunch
+@using System.Text.Json
+@inherits ComponentBase
+@attribute [Idea(DisplayName = "App Launch")]
+
+@* MindAttic.Ideas.Component.AppLaunch.V1 — a landing-page tile that opens a hosted app borderless.
+
+   <Component.AppLaunch url="/_ideas/Component/hyperspace/1/index.htm"
+                        title="Hyperspace" blurb="A starfield you can fly."
+                        mode="fullscreen" />
+
+   Three modes; see assets/applaunch.js for the browser rule that forces the ladder.
+     fullscreen (default)  overlay iframe in THIS window + Fullscreen API. Zero browser chrome.
+     window                a real separate window; the opened page goes borderless on its own
+                           first gesture (it must be an Ideas page carrying this component).
+     inline                embedded, no launch step, with a fullscreen affordance.
+
+   Assets are hoisted into <head> by the host (PageAssetCollector), so no <link>/<script> here. *@
+
+@if (_mode == "inline")
+{
+    <div class="ma-applaunch-inline @CssClass" style="@_outerStyle">
+        <iframe class="ma-applaunch-frame" src="@_url" title="@_title"
+                allowfullscreen allow="fullscreen; autoplay; gamepad; clipboard-write; xr-spatial-tracking"></iframe>
+        @if (_showExpand)
+        {
+            <button type="button" class="ma-applaunch-expand" data-ma-applaunch-expand
+                    aria-label="Show @_title fullscreen">@ExpandText</button>
+        }
+    </div>
+}
+else
+{
+    <div class="ma-applaunch @CssClass" style="@_outerStyle">
+        @if (!string.IsNullOrWhiteSpace(_poster))
+        {
+            <img class="ma-applaunch-poster" src="@_poster" alt="" loading="lazy" decoding="async" />
+        }
+        @if (!string.IsNullOrWhiteSpace(_title))
+        {
+            <p class="ma-applaunch-title">@_title</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(_blurb))
+        {
+            <p class="ma-applaunch-blurb">@_blurb</p>
+        }
+        <button type="button" class="ma-applaunch-btn"
+                data-ma-applaunch
+                data-url="@_url"
+                data-title="@_title"
+                data-mode="@_mode"
+                data-width="@_width"
+                data-height="@_height"
+                data-target="@Target">@_buttonText</button>
+    </div>
+}
+
+@code {
+    private const string Mount = "/_ideas/Component/applaunch/1";
+
+    public override IReadOnlyList<string> StylesheetUrls { get; } = new[] { Mount + "/applaunch.css" };
+    public override IReadOnlyList<string> ScriptUrls { get; } = new[] { Mount + "/applaunch.js" };
+
+    /// <summary>The app to launch: an /_ideas asset path, an Ideas page slug, or an absolute URL.</summary>
+    [Parameter] public string? Url { get; set; }
+
+    /// <summary>App name — the tile heading, the iframe's accessible name, and the dialog label.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>One-line description under the title. Omit to suppress.</summary>
+    [Parameter] public string? Blurb { get; set; }
+
+    /// <summary>Launch button label. Defaults to "Launch".</summary>
+    [Parameter] public string? ButtonText { get; set; }
+
+    /// <summary>"fullscreen" (default), "window", or "inline".</summary>
+    [Parameter] public string? Mode { get; set; }
+
+    /// <summary>Poster image URL for the tile. Ignored when <see cref="PosterUid"/> is set.</summary>
+    [Parameter] public string? PosterUrl { get; set; }
+
+    /// <summary>Managed-media uid for the poster, served from /_media/{uid}.</summary>
+    [Parameter] public string? PosterUid { get; set; }
+
+    /// <summary>Separate-window width in CSS pixels (mode="window"). Default 1280.</summary>
+    [Parameter] public int? Width { get; set; }
+
+    /// <summary>Separate-window height in CSS pixels (mode="window"). Default 800.</summary>
+    [Parameter] public int? Height { get; set; }
+
+    /// <summary>Named window target, so re-launching reuses one window instead of stacking them.</summary>
+    [Parameter] public string? Target { get; set; }
+
+    /// <summary>Aspect ratio for inline/poster framing, e.g. "16/9" or "4/3". Default 16/9.</summary>
+    [Parameter] public string? Ratio { get; set; }
+
+    /// <summary>Whether inline mode shows its fullscreen button. Default true.</summary>
+    [Parameter] public bool? ShowExpand { get; set; }
+
+    /// <summary>Inline-mode fullscreen button label. Default "⤢".</summary>
+    [Parameter] public string ExpandText { get; set; } = "⤢";
+
+    /// <summary>JSON blob carrying any of the above (camel- or pascal-case). Explicit parameters win.</summary>
+    [Parameter] public string? Config { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public string? CssStyle { get; set; }
+    [Parameter] public string? Padding { get; set; }
+    [Parameter] public string? Margin { get; set; }
+    [Parameter] public string? Align { get; set; }
+
+    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
+
+    private sealed class LaunchConfig
+    {
+        public string? Url { get; set; }
+        public string? Title { get; set; }
+        public string? Blurb { get; set; }
+        public string? ButtonText { get; set; }
+        public string? Mode { get; set; }
+        public string? PosterUrl { get; set; }
+        public string? PosterUid { get; set; }
+        public int? Width { get; set; }
+        public int? Height { get; set; }
+        public string? Ratio { get; set; }
+        public bool? ShowExpand { get; set; }
+    }
+
+    private string _url = "#";
+    private string _title = "Application";
+    private string? _blurb;
+    private string _buttonText = "Launch";
+    private string _mode = "fullscreen";
+    private string? _poster;
+    private int _width = 1280;
+    private int _height = 800;
+    private bool _showExpand = true;
+    private string? _ratio;
+
+    protected override void OnParametersSet()
+    {
+        LaunchConfig? cfg = null;
+        if (!string.IsNullOrEmpty(Config))
+            try { cfg = JsonSerializer.Deserialize<LaunchConfig>(Config, JsonOpts); } catch { }
+
+        // SafeUrl blocks javascript:/data:/vbscript: — the tile's url is author content, and the
+        // whole point of this component is that the value lands in an iframe src.
+        _url = SafeUrl(Url ?? cfg?.Url);
+        _title = FirstNonEmpty(Title, cfg?.Title) ?? "Application";
+        _blurb = FirstNonEmpty(Blurb, cfg?.Blurb);
+        _buttonText = FirstNonEmpty(ButtonText, cfg?.ButtonText) ?? "Launch";
+        _width = Width ?? cfg?.Width ?? 1280;
+        _height = Height ?? cfg?.Height ?? 800;
+        _showExpand = ShowExpand ?? cfg?.ShowExpand ?? true;
+        _ratio = FirstNonEmpty(Ratio, cfg?.Ratio);
+
+        var mode = (FirstNonEmpty(Mode, cfg?.Mode) ?? "fullscreen").Trim().ToLowerInvariant();
+        _mode = mode is "window" or "inline" ? mode : "fullscreen";
+
+        var uid = FirstNonEmpty(PosterUid, cfg?.PosterUid);
+        _poster = !string.IsNullOrWhiteSpace(uid)
+            ? "/_media/" + uid.Trim()
+            : FirstNonEmpty(PosterUrl, cfg?.PosterUrl) is { } p ? SafeUrl(p) : null;
+    }
+
+    private static string? FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+    private string _outerStyle => string.Join(";", new[]
+    {
+        string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+        string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+        string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        string.IsNullOrEmpty(_ratio) ? null : $"--ma-applaunch-ratio:{_ratio}",
+        CssStyle,
+    }.Where(s => s is not null));
+}

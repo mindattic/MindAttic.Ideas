@@ -12,6 +12,17 @@
       "notes": "Baseline set (MAIL-A3). Activator: chrome for native <details> groups in .ma-accordion; data-exclusive keeps one open."
     },
     {
+      "id": "component.applaunch",
+      "key": "applaunch",
+      "kind": "Component",
+      "version": 1,
+      "displayName": "App Launch",
+      "assembly": "MindAttic.Ideas.Component.AppLaunch",
+      "artifact": "MindAttic.Ideas.Component.AppLaunch.V1.idea",
+      "mount": "/_ideas/Component/applaunch/1",
+      "notes": "Launches a hosted app borderless (MAIL-A9). Three modes: fullscreen overlay + Fullscreen API (default), a separate window that arms itself via ?ma-fs=1, or inline. A page cannot fullscreen a window it opened, so the modes are a fallback ladder, not a switch."
+    },
+    {
       "id": "component.callout",
       "key": "callout",
       "kind": "Component",

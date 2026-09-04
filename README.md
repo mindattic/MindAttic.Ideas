@@ -543,6 +543,49 @@ powershell -File tools/codex.ps1 doctor   # validate the canon (must pass)
 
 ---
 
+## The host CLI — content operations
+
+The Blazor host doubles as a CLI for the operations that need a live database and media store. Every
+verb runs the normal host startup first, so it sees the same configuration the site does. Note that
+`dotnet run --project` executes from the **project** directory, so pass absolute paths.
+
+| Verb | What it does |
+|---|---|
+| `--install <file.idea>` | Installs a package with `allowOverride: true` (the same path the startup library scan uses). |
+| `--seed core \| from-html \| from-md \| repos` | Re-runs the baseline seed, or generates pages from HTML / READMEs / the GitHub org. |
+| `--extract-media [--slug s] [--folder f] [--dry-run]` | Lifts inline base64 images out of page bodies into managed media. |
+| `--upload-media <file…> [--folder f] [--media-type t] [--dry-run]` | Streams local files straight into the media store — the path for anything too large for the browser circuit. |
+| `--export-content <file> [--slug prefix] [--no-media] [--dry-run]` | Writes authored content — pages, Host/Site settings, per-component metadata and media — to a portable `.ideabundle`. |
+| `--import-content <file> [--dry-run] [--untrusted] [--prune]` | Applies a bundle to this environment. |
+
+### Moving authored content between environments ([A34](docs/AMENDMENTS.md#MAI-A34))
+
+A `.idea` package moves a **citizen**; a `.ideabundle` moves what an author **built** with citizens.
+`--seed` regenerates the shape of a site, never its curation — so promoting a hand-built site to
+production is an export/import, not a re-do.
+
+```pwsh
+# on the source environment
+dotnet run --project src/MindAttic.Ideas.Blazor -- --export-content D:	mp\site.ideabundle
+
+# on the target: look before you leap, then apply
+$env:ConnectionStrings__Ideas = '<production connection string>'
+dotnet run --project src/MindAttic.Ideas.Blazor -- --import-content D:	mp\site.ideabundle --dry-run
+dotnet run --project src/MindAttic.Ideas.Blazor -- --import-content D:	mp\site.ideabundle
+```
+
+Re-runnable by construction: pages reconcile on `Uid` first and `(SiteId, Slug)` second — the slug
+fallback is what lets a bundle **adopt** a page an independently seeded database already has, rather
+than colliding with the unique `(SiteId, Slug)` index. Media is adopted by SHA-256, so a second
+import moves no bytes; because the store mints media uids, every `/_media/{uid}` reference is
+rewritten through an old→new map.
+
+Two flags are safety valves. `--untrusted` downgrades `Author`-trust pages (whose HTML/JS is written
+verbatim and rendered unsanitized) — the import always prints how many there are. `--prune`
+soft-deletes pages absent from the bundle, and is opt-in.
+
+---
+
 ## The `ma-idea` CLI
 
 `src/MindAttic.Ideas.Sdk` builds a CLI (`ma-idea`) over the pure `MindAttic.Ideas.Packaging` library.

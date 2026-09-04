@@ -345,6 +345,40 @@ updated: 2026-06-16
   entry in `MindAttic.Deploy/projects.json → apps[]` stays `disabled: true` until then
   ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)).
 
+## Epic K — Content portability (A34)
+
+- **MAI-US-K1 ✅** As a Maintainer, I can move an authored site between environments, because
+  `--export-content` writes pages, Host/Site settings, per-component metadata and media into one
+  `.ideabundle` and `--import-content` applies it. *A `.idea` moves a citizen; this moves what an
+  author built with citizens — the thing `--seed` regenerates the shape of but never the curation of
+  ([A34](AMENDMENTS.md#MAI-A34)).*
+  *(test: `ContentBundleTests.RoundTrip_PreservesTheAuthoredPage`, `SlugFilter_ExportsOnlyTheMatchingSubtree`,
+  `PageTree_SurvivesOnParentUid`, `DryRunImport_WritesNothing`. Live: 55 pages / 86 metadata rows /
+  7 settings / 12 media exported from the dev database as a 634 KB bundle, imported into a fresh
+  LocalDB seeded exactly like production, then served — `/frontpage`, `/projects`, `/personas`,
+  `/ideas`, `/chimesh` and the project pages all 200.)*
+- **MAI-US-K2 ✅** As an Operator, importing into a database that was seeded independently **adopts**
+  its pages instead of colliding with them, because reconciliation is `Uid` first and
+  `(SiteId, Slug)` second. *Production already has a `frontpage` under a different uid; a uid-only
+  match would hit the unique `(SiteId, Slug)` index rather than update the page I meant.*
+  *(test: `ContentBundleTests.ImportAdoptsAnIndependentlySeededPage_BySlug_RatherThanDuplicatingIt`,
+  `SecondImportUploadsNothingAndCreatesNothing`. Live: importing into a freshly seeded database
+  reported 50 created, 5 updated — the baseline pages adopted, not duplicated; a second run reported
+  0 created, 55 updated, 0 media uploaded.)*
+- **MAI-US-K3 ✅** As an Author, every media reference still resolves after the move, because the
+  store mints media uids and import rewrites `/_media/{uid}`, `<Component.MediaImage uid="…">` and
+  uids inside component metadata through an old→new map. *Forcing the exported uid would work on the
+  local disk store and corrupt the Azure one, where the blob is addressed by uid.*
+  *(test: `ContentBundleTests.MediaUidsAreRemapped_SoEveryReferenceStillResolves`. Live: every
+  `/_media/{uid}` on the imported front page returned 200, and a SQL sweep found zero page bodies
+  referencing a uid with no matching media row.)*
+- **MAI-US-K4 ✅** As an Operator, a bundle cannot silently grant itself raw-markup trust, because the
+  import states how many pages carry `Author` trust and `--untrusted` downgrades them.
+  *[MAI-LAW-5](BIBLE.md#MAI-LAW-5) stamps trust from the writer's claim; a CLI run against the server
+  is strictly more privileged than an Admin, so the trust is honoured — but never quietly.*
+  *(test: `ContentBundleTests.UntrustedFlag_DowngradesAuthorTrust`,
+  `ABundleFromAFutureFormat_IsRefusedRatherThanPartiallyApplied`, `NotABundle_IsReportedRatherThanThrowing`.)*
+
 ## Priority backlog
 
 **Entries from Epic H** — A26 taxonomy refactor (2026-06-16, [A26](AMENDMENTS.md#MAI-A26)). The headline goal is met:

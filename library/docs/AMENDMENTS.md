@@ -232,3 +232,45 @@ repacks any whose assembly is newer than its `.idea` (`-Force` for all, `-Instal
 CMS host's `library/`), so a full, consistent repack is one command rather than 51 hand-written ones.
 
 > *Supersedes the counts in [MAIL-A7](#MAIL-A7) and [MAIL-A6](#MAIL-A6).*
+
+## MAIL-A9 — AppLaunch: a landing page can open an app borderless (52 `.idea`s) {#MAIL-A9}
+
+**What changed (2026-09-04).** Some MindAttic projects are applications, not documents —
+ExperimentRTS and Hyperspace exist to be entered, not read. Their landing pages needed to hand the
+visitor a borderless, chrome-free surface, and nothing in the library did that. `Component.AppLaunch`
+does.
+
+**The constraint that shaped it.** There is no single call that yields "a separate borderless
+fullscreen window". A page **cannot** put a window it opened into fullscreen: calling
+`requestFullscreen()` on a popup's document from the opener is rejected with *"Permissions check
+failed"* even when the two are same-origin, because the activating gesture must occur inside the
+target window. Verified against Chromium rather than assumed. So AppLaunch is a ladder:
+
+| Mode | Result | Requires |
+|---|---|---|
+| `fullscreen` *(default)* | Overlay iframe in this window + the Fullscreen API — zero browser chrome. | One click. No permission prompt. |
+| `window` | A real separate window that goes borderless on **its own** first gesture. | The opened page must carry `applaunch.js` — i.e. be an Ideas page with an AppLaunch on it. |
+| `inline` | Embedded iframe with a fullscreen affordance. | — |
+
+Rungs below: `requestFullscreen` missing or refused leaves the overlay a `position:fixed` cover
+(borderless within the tab); a blocked popup falls back to the overlay rather than doing nothing.
+
+**Why the arming curtain, and not a click listener.** An app-host page is mostly a full-bleed
+`<iframe>`, so the visitor's first click lands *inside* it — and a click in a nested browsing context
+never reaches the host document. A bare `document.addEventListener('click', …)` therefore never fires
+and the window stays chrome'd forever; the failure is the common case, not the edge one. `?ma-fs=1`
+raises a curtain that intercepts exactly one click, then removes itself (and self-removes after 15s,
+so it can never trap the page).
+
+**Ideas hosts the apps too.** A built bundle packs as an asset-only `.idea` — a `ComponentBase` that
+declares no `StylesheetUrls`/`ScriptUrls`, so a 6.6 MB game bundle is never hoisted into a landing
+page's `<head>` — and serves from `/_ideas/Component/{key}/{version}/…` with correct MIME types.
+Proven with ExperimentRTS: `index.html` 200, the 6.65 MB entry chunk 200 as `text/javascript`,
+Babylon booted, canvas live at 1280×720 inside a fullscreen overlay, zero page errors.
+Two limits of that route are worth knowing: **no default document** (a directory URL returns 400 —
+link `index.html` explicitly) and **no SPA fallback** (client-side deep links 404). Neither affects a
+canvas app; both would affect a router-based SPA.
+
+**Solution count.** **8 Themes + 14 Plugins + 30 Components = 52 `.idea`s.**
+
+> *Supersedes the count in [MAIL-A8](#MAIL-A8); the Plugin/Component classification is unchanged.*

@@ -164,6 +164,21 @@ Set as App Service application settings. `__` maps to `:` in the config chain.
   Point it at production by exporting the same `Media__*` and `ConnectionStrings__Ideas` values
   locally. `/_media/{uid}` then 302s to a short-lived SAS and Azure serves the Range requests
   ([A31](AMENDMENTS.md#MAI-A31)).
+- **A whole authored site** — export it where you built it, import it where it should live
+  ([A34](AMENDMENTS.md#MAI-A34)). This is the only path that carries hand-curation: composed page
+  bodies, extracted media and the `ComponentMetadata` rows behind `frommd`/`fromhtml` slots.
+  ```pwsh
+  # on the source (your dev box)
+  dotnet run --project src/MindAttic.Ideas.Blazor -- --export-content D:	mp\site.ideabundle
+
+  # against production — dry run first; it prints exactly what it would create and update
+  $env:ConnectionStrings__Ideas = '<production connection string>'
+  dotnet run --project src/MindAttic.Ideas.Blazor -- --import-content D:	mp\site.ideabundle --dry-run
+  dotnet run --project src/MindAttic.Ideas.Blazor -- --import-content D:	mp\site.ideabundle
+  ```
+  Safe to re-run: pages reconcile on uid then slug (so the baseline seed's pages are **adopted**, not
+  duplicated) and media is matched by SHA-256 (so nothing re-uploads). The import reports how many
+  pages carry `Author` trust — raw, unsanitized markup — and `--untrusted` refuses it.
 
 ---
 

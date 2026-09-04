@@ -250,6 +250,24 @@ if (args.Contains("--upload-media"))
     Environment.Exit(exit);
 }
 
+// ---- CLI mode: --export-content / --import-content ------------------------------------------
+// Move AUTHORED CONTENT between environments. A .idea package carries a citizen; a bundle carries
+// what an author built with citizens — pages, settings, per-component metadata, and media. This is
+// the only path that reproduces hand-curation, which --seed regenerates the shape of but not the
+// substance of.
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --export-content site.ideabundle [--slug projects/] [--no-media] [--dry-run]
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --import-content site.ideabundle [--dry-run] [--untrusted] [--prune]
+if (args.Contains("--export-content"))
+{
+    var exit = await ExportContentCli.RunAsync(args, app.Services);
+    Environment.Exit(exit);
+}
+if (args.Contains("--import-content"))
+{
+    var exit = await ImportContentCli.RunAsync(args, app.Services);
+    Environment.Exit(exit);
+}
+
 // ---- CLI mode: --seed <target> --------------------------------------------------------------
 // dotnet run --project src/MindAttic.Ideas.Blazor -- --seed core        (re-run SeedService migrations)
 // dotnet run --project src/MindAttic.Ideas.Blazor -- --seed from-html [--dry-run]

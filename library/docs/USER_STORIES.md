@@ -93,6 +93,26 @@ updated: 2026-06-09
   LegionPersonas ships as `Component.LegionPersonas`. The `Pages/` tree was deleted; history stays in git.
   [MAIL-LAW-8](BIBLE.md#MAIL-LAW-8) (pages are DB records, never `.idea`s) is unchanged.
 
+## Epic F — Apps as landing pages (A9)
+
+- **MAIL-US-F1 ✅** As a project owner, my landing page can open the app **borderless**, because
+  `Component.AppLaunch` overlays a full-viewport iframe and calls the Fullscreen API on the launch
+  click. *A page cannot fullscreen a window it opened — `requestFullscreen()` from the opener is
+  rejected "Permissions check failed" even same-origin — so the component is a fallback ladder, not
+  a switch ([MAIL-A9](AMENDMENTS.md#MAIL-A9)).*
+  *(verified by demo, driven with Playwright against a live host: clicking the tile produced
+  `document.fullscreenElement = .ma-applaunch-overlay`, an overlay measuring exactly the 1280×720
+  viewport, `overflow:hidden` on the host page, and Escape restored both. Inline mode's expand button
+  fullscreens the frame; `mode="window"` opened a real window at `?ma-fs=1` whose first click gave
+  `document.fullscreenElement = HTML`. Zero page errors.)*
+- **MAIL-US-F2 ✅** As a project owner, Ideas can **host** the app as well as launch it, because a
+  built bundle packs as an asset-only `.idea` and serves from `/_ideas/Component/{key}/{version}/…`.
+  *Asset-only means it declares no `StylesheetUrls`/`ScriptUrls`, so the bundle loads in its own
+  iframe and is never hoisted into the landing page head.*
+  *(verified by demo: ExperimentRTS built with `--base=./`, packed to a 2.8 MB `.idea`, installed — `index.html`
+  200 `text/html`, the 6.65 MB entry chunk 200 `text/javascript`, `favicon.svg` 200, Babylon booted
+  with a live WebGL context and a 1280×720 canvas rendering inside the fullscreen overlay.)*
+
 ## Priority backlog
 
 1. **MAIL-US-B2** — a standalone-Blazor-app smoke harness ([RFC 0001](rfc/0001-component-test-harness.md))

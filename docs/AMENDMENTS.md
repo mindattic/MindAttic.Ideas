@@ -914,3 +914,56 @@ anywhere.
 composed home page, 12 media assets — was built in the dev database by CLI runs and admin edits, and
 none of that lives in the repo. Moving it over is a content migration (`--seed repos`,
 `--upload-media` against the production connection), not a deployment step.
+
+## MAI-A34 — Authored content is portable: the `.ideabundle` {#MAI-A34}
+
+**What changed (2026-09-04).** A `.idea` package moves a **citizen** — a Theme, a Plugin, a
+Component, a compiled Page type. Nothing moved what an author **built** with citizens. That gap was
+not theoretical: after [A33](#MAI-A33) the production database held the 5-page baseline seed while a
+hand-curated 55-page site — a composed home page, 12 extracted media assets, 86 `ComponentMetadata`
+rows wiring `frommd`/`fromhtml` slots — existed only in a developer's LocalDB, with no path to
+production but re-doing it by hand. `--seed repos` regenerates the *shape* of that site and none of
+the curation.
+
+Two CLI verbs close it:
+
+```pwsh
+dotnet run --project src/MindAttic.Ideas.Blazor -- --export-content site.ideabundle [--slug projects/] [--no-media] [--dry-run]
+dotnet run --project src/MindAttic.Ideas.Blazor -- --import-content site.ideabundle [--dry-run] [--untrusted] [--prune]
+```
+
+A bundle is a zip: `bundle.json` (site, Host/Site settings, pages with their bodies, trust, theme
+pin, plugin selection, SEO meta, role access and slug aliases, plus per-component metadata) and
+`media/` payloads.
+
+**Four decisions worth recording, because each one is a way this could have quietly gone wrong.**
+
+**1. Identity is `Uid` first, `(SiteId, Slug)` second.** Integer ids are environment-local and never
+cross. But uid alone is not enough: a production database that booted on its own already has a
+`frontpage` under a *different* uid, so a uid-only import would hit the unique `(SiteId, Slug)` index
+instead of updating the page the operator meant. The slug fallback is what lets a bundle **adopt** an
+independently seeded row. Measured on the real data: importing the dev bundle into a freshly seeded
+database gave **50 created, 5 updated** — the five baseline pages adopted, not duplicated.
+
+**2. Media uids are remapped, never forced.** `IMediaStore.UploadAsync` mints the uid, so an imported
+item necessarily gets a new one. Writing the row directly to preserve the uid would work for the local
+disk store and quietly corrupt the Azure one, where the blob is addressed *by* uid. So import builds
+an old→new map and rewrites every reference — `/_media/{uid}`, `<Component.MediaImage uid="…">`, and
+uids inside a component's metadata JSON. Uids are hyphenated GUIDs, so a substring swap catches all
+three shapes unambiguously.
+
+**3. Re-import moves nothing.** Media is adopted by SHA-256, pages reconcile rather than insert. The
+second import of the same bundle reported `0 uploaded, 12 already present` and `0 created, 55 updated`.
+
+**4. Author trust is honoured, loudly, and refusable.** [MAI-LAW-5](BIBLE.md#MAI-LAW-5) stamps trust
+at write time from the writer's claim. An import *is* a write, performed by whoever can run a CLI
+against the server — strictly more privileged than an Admin — so the bundle's `Author` trust is
+honoured, exactly as `--install` already trusts a `.idea` from disk. It is never silent: the import
+prints how many pages are being written with raw, unsanitized markup, and `--untrusted` downgrades
+them all. `--prune` (soft-delete pages absent from the bundle) is opt-in, per
+[HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2).
+
+**Verified end to end**, not just unit-tested: 55 pages / 86 metadata rows / 7 settings / 12 media
+exported from the dev database (634 KB), imported into a fresh LocalDB seeded exactly like production
+(5 pages, 0 media), then served — `/frontpage`, `/projects`, `/personas`, `/ideas`, `/chimesh` and
+the project pages all 200, and every remapped `/_media/{uid}` on the front page resolving 200.
