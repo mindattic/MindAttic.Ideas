@@ -122,5 +122,5 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - done: 35  |  partial: 0  |  planned: 5  |  cut: 0
 
 ## Latest amendment
-- MAI-A28 — Brace tokens are retired; the tag form is the composition grammar
+- MAI-A29 — A component can list another page's children; inline media has a migration path
 

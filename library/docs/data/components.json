@@ -275,7 +275,7 @@
       "assembly": "MindAttic.Ideas.Component.ProjectGrid",
       "artifact": "MindAttic.Ideas.Component.ProjectGrid.V1.idea",
       "mount": "/_ideas/Component/projectgrid/1",
-      "notes": "Card grid over the CURRENT page's child pages, enriched from the 'repo' metadata slot (description, language, stargazers, topics, homepage). Resolves IPageTree + IComponentMetadataStore through the render context and degrades to a link list, then to nothing, as those go missing. Topic filter bar; most-starred-first ordering."
+      "notes": "Card grid over child pages, enriched from the 'repo' metadata slot (description, language, stargazers, topics, homepage). From=\"<slug>\" lists ANOTHER page's children (via IPageTree.ChildrenOfSlugAsync) so a home page can show the projects index; Topic, NamePrefix and ExcludeNamePrefix filter, which is how one topic splits into the Software and MindAttic Ecosystem grids. Resolves its host features through the render context and degrades to a link list, then to nothing, as they go missing. Topic filter bar; most-starred-first ordering."
     },
     {
       "id": "component.tabboard",

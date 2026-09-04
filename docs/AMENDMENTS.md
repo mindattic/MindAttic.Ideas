@@ -670,3 +670,31 @@ PascalCase element is lowercased into an inert unknown tag rather than expanded.
 
 > *Corrects prose in [MAI-A26](#MAI-A26) and the bible glossary, both of which described the retired
 > brace form. The kinds, ordinals, and everything else in A26 stand unchanged.*
+
+## MAI-A29 — A component can list another page's children; inline media has a migration path {#MAI-A29}
+
+**What changed (2026-09-04).** Rebuilding the MindAttic home page as composition rather than a pasted
+blob needed two more capabilities.
+
+**1. `IPageTree.ChildrenOfSlugAsync`.** `IPageTree` could only list the *current* page's children, so a
+home page could not show the projects index. The new method takes a **slug**, because a slug is what an
+author can type into a tag attribute. Append-only: it is a default method returning empty, so a host that
+has not implemented it degrades to an empty list rather than breaking; `PageTreeFeature` overrides it.
+Consumed by `Component.projectgrid`'s `From` attribute.
+
+**2. `--extract-media`.** Base64-inlining was the authoring convention of the hand-written MindAttic
+sites, and it is why a page body reached hundreds of kilobytes — 96% of the front page's body was seven
+book covers encoded into its markup. Inlined bytes cannot be cached, shared between pages, or managed.
+
+The CLI walks Data page bodies, uploads each inline image through `IMediaStore`, and rewrites the
+`<img>` as `<Component.MediaImage uid="…" />`. Assets are keyed by SHA-256, so identical bytes upload
+once however many pages reference them. Content is never destroyed: data that matches the base64
+alphabet but fails to decode is left inline and reported as a failure, and a `src` outside that alphabet
+was never an inline image, so it is left untouched and reported as nothing.
+
+Applied to `/frontpage`: **179,321 → 5,202 characters** of body.
+
+**The direction this sets.** A page body is markup; bytes are managed assets served from `/_media/{uid}`.
+Large media that should not live in the database (video) is the open case — `MediaStoreOptions.MediaRoot`
+is the existing disk seam, and an Azure Blob provider behind the same `IMediaStore` is the intended
+route, with the page still referencing an asset rather than a URL.
