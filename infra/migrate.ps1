@@ -41,6 +41,25 @@ $scriptPath = Join-Path ([IO.Path]::GetTempPath()) "ideas-migrate-$(Get-Date -Fo
 
 function Write-Step($text) { Write-Host "`n=== $text ===" -ForegroundColor Cyan }
 
+# See infra/provision.ps1: under $ErrorActionPreference='Stop', PowerShell 5.1 turns any native
+# stderr line into a terminating error even when az exited 0. Judge az by its exit code only.
+function Invoke-Az {
+    $arguments = $args
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & az @arguments 2>&1
+        $code = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = $previous }
+
+    if ($code -ne 0) {
+        $text = ($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+        throw "az $($arguments -join ' ') failed (exit $code):`n$text"
+    }
+    $output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
+}
+
 Write-Step 'Generating the idempotent migration script'
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) { throw 'dotnet is not on PATH.' }
 
@@ -73,8 +92,8 @@ $myIp = (Invoke-RestMethod -Uri 'https://api.ipify.org?format=json').ip
 $ruleName = "migrate-$([Guid]::NewGuid().ToString('N').Substring(0,8))"
 
 Write-Host "Opening the SQL firewall for this machine ($myIp) as '$ruleName'..."
-az sql server firewall-rule create --resource-group $ResourceGroup --server $serverShortName `
-    --name $ruleName --start-ip-address $myIp --end-ip-address $myIp --output none
+Invoke-Az sql server firewall-rule create --resource-group $ResourceGroup --server $serverShortName `
+    --name $ruleName --start-ip-address $myIp --end-ip-address $myIp --output none | Out-Null
 
 try {
     if (-not (Get-Module -ListAvailable -Name SqlServer)) {
@@ -83,7 +102,7 @@ try {
     }
     Import-Module SqlServer
 
-    $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
+    $token = Invoke-Az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
     if (-not $token) { throw 'Could not acquire a SQL access token. Run: az login' }
 
     Invoke-Sqlcmd -ServerInstance $SqlServer -Database $Database -AccessToken $token `
@@ -92,8 +111,10 @@ try {
     Write-Host 'Schema applied.' -ForegroundColor Green
 }
 finally {
-    az sql server firewall-rule delete --resource-group $ResourceGroup --server $serverShortName `
-        --name $ruleName --output none 2>$null
+    $previous = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    & az sql server firewall-rule delete --resource-group $ResourceGroup --server $serverShortName `
+        --name $ruleName --output none 2>&1 | Out-Null
+    $ErrorActionPreference = $previous
     Write-Host "Closed '$ruleName'."
     Remove-Item $scriptPath -ErrorAction SilentlyContinue
 }

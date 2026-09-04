@@ -857,3 +857,60 @@ the app has never run on App Service, and the migrate job has never touched an A
 The `ideas` entry in `MindAttic.Deploy/projects.json → apps[]` therefore ships `disabled: true` with
 a note ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)) and `/deploy` exits 0 without
 half-firing. Runbook: [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
+
+## MAI-A33 — Deployed. Two library bugs only a Linux host could reveal {#MAI-A33}
+
+**What changed (2026-09-04).** The estate from [A32](#MAI-A32) is provisioned and the CMS is running
+at **https://mindattic-ideas.azurewebsites.net**. A32 said "nothing was provisioned"; that is now
+superseded. Getting there surfaced three defects and one platform behaviour, none of which any amount
+of local testing would have found.
+
+**1. MindAttic.Vault aborted the process on Linux (fixed in Vault V3, VLT-A3).**
+`Environment.GetFolderPath` returns an empty string — it does not throw — on a host with no user
+profile, and `VaultPaths` converted that into an exception. Vault sits in the `IConfiguration` chain,
+so the throw landed during **host construction**: SIGABRT before a line of application code ran, with
+a stack trace pointing at `ConfigurationBuilder` rather than at a missing folder. Vault now walks an
+ordered chain (override → `SpecialFolder` → platform convention → `$HOME` → application base) and
+never throws. Windows still resolves to `%APPDATA%\MindAttic`.
+
+**2. App Service on Linux rewrites application-setting names (fixed in Authentication V4).**
+Separators that are illegal in a POSIX variable name are removed or replaced when settings are
+injected as environment variables. Every Security secret arrived misspelled:
+
+| Configured | Delivered to the container |
+|---|---|
+| `…Security__pepper.v1` | `…Security__pepper_v1` |
+| `…Security__bootstrap-token` | `…Security__bootstraptoken` |
+| `…Security__reset-token-key` | `…Security__resettokenkey` |
+| `…Security__dp-kek` | `…Security__dpkek` |
+
+Auth fail-closed on secrets that had been provisioned correctly. The mangling is not invertible, so
+`ConfigAuthSecrets` now matches exact-first, then with both sides reduced to letters and digits;
+two keys differing only by punctuation raise an ambiguity error rather than a guess, because the
+wrong pepper invalidates every stored password hash.
+
+**3. `Compress-Archive` produces a zip Linux cannot unpack.** Windows PowerShell writes `\`
+separators into zip entries, so Kudu's rsync failed on every file with a subdirectory
+(`library\Foo.idea`) and the deployment 400'd. Build the package with forward slashes.
+
+**Also learned.** First boot installs 51 `.idea`s against a 5-DTU Basic database and exceeds the
+default container start limit, so `WEBSITES_CONTAINER_START_TIME_LIMIT=1800` is now part of the
+template; later boots are fast because seeding is idempotent. Separately, `az webapp deploy` gives up
+polling at ten minutes and reports failure while the container is still starting — the site came up
+healthy shortly after a "failed" deploy, so trust `/_health`, not the CLI's verdict.
+
+**Bicep owns every app setting.** `siteConfig.appSettings` is authoritative: anything added
+out-of-band is wiped by the next template deployment. The four Key Vault *references* therefore live
+in the template, while `provision.ps1` only generates the secret *values* — and restarts the app
+afterwards, because a reference cannot resolve until its secret exists.
+
+**Verified live.** `/_health` 200 · `/` 302 → `/frontpage` · `/frontpage` 200 · `/projects` 200 ·
+`/ideas` 200. The database holds **53 content definitions** — the full first-party library installed
+itself through the real install path on first boot — reached over managed identity with no password
+anywhere.
+
+**What is deliberately not there yet.** Production carries **baseline seed content only**: 5 pages,
+0 media, 0 component metadata. The mindattic.com rebuild — 41 GitHub-seeded project pages, the
+composed home page, 12 media assets — was built in the dev database by CLI runs and admin edits, and
+none of that lives in the repo. Moving it over is a content migration (`--seed repos`,
+`--upload-media` against the production connection), not a deployment step.

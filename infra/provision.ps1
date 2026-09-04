@@ -49,6 +49,41 @@ $bicep = Join-Path $PSScriptRoot 'main.bicep'
 
 function Write-Step($text) { Write-Host "`n=== $text ===" -ForegroundColor Cyan }
 
+# az writes warnings and "not found" messages to stderr. Under $ErrorActionPreference='Stop',
+# PowerShell 5.1 wraps every native stderr line in an ErrorRecord and turns it into a TERMINATING
+# error -- even when az exited 0. So never judge az by stderr; judge it by its exit code.
+function Invoke-Az {
+    $arguments = $args
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & az @arguments 2>&1
+        $code = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = $previous }
+
+    if ($code -ne 0) {
+        $text = ($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+        throw "az $($arguments -join ' ') failed (exit $code):`n$text"
+    }
+    $output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
+}
+
+# Same, but a non-zero exit is an answer rather than a failure (existence probes).
+function Test-Az {
+    $arguments = $args
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & az @arguments 2>&1
+        $code = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = $previous }
+
+    if ($code -ne 0) { return $null }
+    ($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) -join ''
+}
+
 # --- Preflight -------------------------------------------------------------------------------
 
 Write-Step 'Preflight'
@@ -59,16 +94,16 @@ if (-not $account) { throw 'Not logged in. Run: az login' }
 Write-Host "Subscription : $($account.name) ($($account.id))"
 Write-Host "Signed in as : $($account.user.name)"
 
-$signedInId = az ad signed-in-user show --query id -o tsv
+$signedInId = Invoke-Az ad signed-in-user show --query id -o tsv
 if (-not $signedInId) { throw 'Could not resolve the signed-in user object id.' }
-$signedInUpn = az ad signed-in-user show --query userPrincipalName -o tsv
+$signedInUpn = Test-Az ad signed-in-user show --query userPrincipalName -o tsv
 if (-not $signedInUpn) { $signedInUpn = $account.user.name }
 Write-Host "Object id    : $signedInId"
 
 # --- Phase 1: infrastructure ------------------------------------------------------------------
 
 Write-Step "Resource group '$ResourceGroup'"
-az group create --name $ResourceGroup --location $Location --output none
+Invoke-Az group create --name $ResourceGroup --location $Location --output none | Out-Null
 Write-Host 'Ready.'
 
 $deployMode = if ($WhatIfPreference) { 'what-if' } else { 'create' }
@@ -134,26 +169,24 @@ $secrets = @(
     @{ Vault = 'bootstrap-token'; Config = 'bootstrap-token'; Generate = { (New-RandomBase64 24) -replace '[+/=]', '' } }
 )
 
+# One list beats four probes: a missing secret makes `secret show` exit non-zero AND write to
+# stderr, which is exactly the combination that is hostile to PowerShell.
+$existing = @(Invoke-Az keyvault secret list --vault-name $keyVaultName --query '[].name' -o tsv)
+
 foreach ($secret in $secrets) {
-    $exists = az keyvault secret show --vault-name $keyVaultName --name $secret.Vault --query id -o tsv 2>$null
-    if ($exists) {
+    if ($existing -contains $secret.Vault) {
         Write-Host "  = $($secret.Vault) already present, left alone"
         continue
     }
     $value = & $secret.Generate
-    az keyvault secret set --vault-name $keyVaultName --name $secret.Vault --value $value --output none
+    Invoke-Az keyvault secret set --vault-name $keyVaultName --name $secret.Vault --value $value --output none | Out-Null
     Write-Host "  + $($secret.Vault) generated"
     $value = $null
 }
 
-Write-Step 'Pointing app settings at those secrets'
-$settings = foreach ($secret in $secrets) {
-    $uri = "https://$keyVaultName.vault.azure.net/secrets/$($secret.Vault)"
-    "MindAttic__Vault__Security__$($secret.Config)=@Microsoft.KeyVault(SecretUri=$uri)"
-}
-az webapp config appsettings set --resource-group $ResourceGroup --name $webAppName `
-    --settings @settings --output none
-Write-Host 'Set.'
+# The references themselves are declared in main.bicep (siteConfig.appSettings is authoritative, so
+# adding them here would only get wiped by the next template deployment). The app cannot resolve a
+# reference until its secret exists, which is why the restart at the end of this script matters.
 
 # --- Phase 3: the SQL contained user for the app's identity ------------------------------------
 
@@ -174,8 +207,8 @@ ALTER ROLE db_datawriter ADD MEMBER [$webAppName];
 $myIp = (Invoke-RestMethod -Uri 'https://api.ipify.org?format=json').ip
 Write-Host "Opening the SQL firewall for this machine ($myIp)..."
 $sqlServerName = $out.sqlServerName.value
-az sql server firewall-rule create --resource-group $ResourceGroup --server $sqlServerName `
-    --name 'provision-script' --start-ip-address $myIp --end-ip-address $myIp --output none
+Invoke-Az sql server firewall-rule create --resource-group $ResourceGroup --server $sqlServerName `
+    --name 'provision-script' --start-ip-address $myIp --end-ip-address $myIp --output none | Out-Null
 
 try {
     if (-not (Get-Module -ListAvailable -Name SqlServer)) {
@@ -184,17 +217,21 @@ try {
     }
     Import-Module SqlServer
 
-    $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
+    $token = Invoke-Az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
     Invoke-Sqlcmd -ServerInstance $sqlServerFqdn -Database $sqlDatabase -AccessToken $token -Query $tsql
     Write-Host "Granted db_datareader + db_datawriter to [$webAppName]."
 }
 finally {
-    az sql server firewall-rule delete --resource-group $ResourceGroup --server $sqlServerName `
-        --name 'provision-script' --output none 2>$null
+    Test-Az sql server firewall-rule delete --resource-group $ResourceGroup --server $sqlServerName `
+        --name 'provision-script' --output none | Out-Null
     Write-Host 'Closed the temporary firewall rule.'
 }
 
 # --- Done ---------------------------------------------------------------------------------------
+
+Write-Step 'Restarting the app so it picks up the new secrets'
+Invoke-Az webapp restart --resource-group $ResourceGroup --name $webAppName --output none | Out-Null
+Write-Host 'Restarted.'
 
 Write-Step 'Provisioned'
 Write-Host @"

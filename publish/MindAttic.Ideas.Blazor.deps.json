@@ -1,0 +1,977 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "MindAttic.Ideas.Blazor/1.0.0": {
+        "dependencies": {
+          "Azure.Extensions.AspNetCore.DataProtection.Blobs": "1.5.3",
+          "Azure.Extensions.AspNetCore.DataProtection.Keys": "1.6.3",
+          "Azure.Identity": "1.21.0",
+          "MindAttic.Authentication": "4.0.0",
+          "MindAttic.Ideas.Core": "1.0.0",
+          "MindAttic.Ideas.Page.Frontpage": "1.0.0",
+          "MindAttic.Ideas.Rendering": "1.0.0",
+          "MindAttic.Legion": "22.0.0",
+          "MindAttic.Media.Azure": "2.0.0",
+          "MindAttic.Vault": "3.0.0"
+        },
+        "runtime": {
+          "MindAttic.Ideas.Blazor.dll": {}
+        }
+      },
+      "AngleSharp/1.7.2": {
+        "runtime": {
+          "lib/net10.0/AngleSharp.dll": {
+            "assemblyVersion": "1.7.2.0",
+            "fileVersion": "1.7.2.0"
+          }
+        }
+      },
+      "AngleSharp.Css/1.0.2": {
+        "dependencies": {
+          "AngleSharp": "1.7.2"
+        },
+        "runtime": {
+          "lib/net10.0/AngleSharp.Css.dll": {
+            "assemblyVersion": "1.0.2.0",
+            "fileVersion": "1.0.2.0"
+          }
+        }
+      },
+      "Azure.Core/1.55.0": {
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "10.0.3",
+          "Microsoft.Identity.Client": "4.84.2",
+          "Microsoft.Identity.Client.Extensions.Msal": "4.83.1",
+          "System.ClientModel": "1.11.0",
+          "System.Memory.Data": "10.0.3"
+        },
+        "runtime": {
+          "lib/net10.0/Azure.Core.dll": {
+            "assemblyVersion": "1.55.0.0",
+            "fileVersion": "1.5500.26.25611"
+          }
+        }
+      },
+      "Azure.Extensions.AspNetCore.DataProtection.Blobs/1.5.3": {
+        "dependencies": {
+          "Azure.Core": "1.55.0",
+          "Azure.Storage.Blobs": "12.29.2"
+        },
+        "runtime": {
+          "lib/net10.0/Azure.Extensions.AspNetCore.DataProtection.Blobs.dll": {
+            "assemblyVersion": "1.5.3.0",
+            "fileVersion": "1.500.326.25802"
+          }
+        }
+      },
+      "Azure.Extensions.AspNetCore.DataProtection.Keys/1.6.3": {
+        "dependencies": {
+          "Azure.Core": "1.55.0",
+          "Azure.Security.KeyVault.Keys": "4.10.0"
+        },
+        "runtime": {
+          "lib/net10.0/Azure.Extensions.AspNetCore.DataProtection.Keys.dll": {
+            "assemblyVersion": "1.6.3.0",
+            "fileVersion": "1.600.326.25802"
+          }
+        }
+      },
+      "Azure.Identity/1.21.0": {
+        "dependencies": {
+          "Azure.Core": "1.55.0"
+        },
+        "runtime": {
+          "lib/net10.0/Azure.Identity.dll": {
+            "assemblyVersion": "1.21.0.0",
+            "fileVersion": "1.2100.26.21009"
+          }
+        }
+      },
+      "Azure.Security.KeyVault.Keys/4.10.0": {
+        "dependencies": {
+          "Azure.Core": "1.55.0"
+        },
+        "runtime": {
+          "lib/net10.0/Azure.Security.KeyVault.Keys.dll": {
+            "assemblyVersion": "4.10.0.0",
+            "fileVersion": "4.1000.26.25602"
+          }
+        }
+      },
+      "Azure.Storage.Blobs/12.29.2": {
+        "dependencies": {
+          "Azure.Core": "1.55.0",
+          "Azure.Storage.Common": "12.28.0"
+        },
+        "runtime": {
+          "lib/net10.0/Azure.Storage.Blobs.dll": {
+            "assemblyVersion": "12.29.2.0",
+            "fileVersion": "12.2900.226.42409"
+          }
+        }
+      },
+      "Azure.Storage.Common/12.28.0": {
+        "dependencies": {
+          "Azure.Core": "1.55.0",
+          "System.IO.Hashing": "10.0.3"
+        },
+        "runtime": {
+          "lib/net10.0/Azure.Storage.Common.dll": {
+            "assemblyVersion": "12.28.0.0",
+            "fileVersion": "12.2800.26.30406"
+          }
+        }
+      },
+      "BCrypt.Net-Next/4.0.3": {
+        "runtime": {
+          "lib/net6.0/BCrypt.Net-Next.dll": {
+            "assemblyVersion": "4.0.3.0",
+            "fileVersion": "4.0.3.0"
+          }
+        }
+      },
+      "HtmlSanitizer/9.2.1039": {
+        "dependencies": {
+          "AngleSharp": "1.7.2",
+          "AngleSharp.Css": "1.0.2"
+        },
+        "runtime": {
+          "lib/net8.0/HtmlSanitizer.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.2.1039.0"
+          }
+        }
+      },
+      "Konscious.Security.Cryptography.Argon2/1.3.1": {
+        "dependencies": {
+          "Konscious.Security.Cryptography.Blake2": "1.1.1"
+        },
+        "runtime": {
+          "lib/net8.0/Konscious.Security.Cryptography.Argon2.dll": {
+            "assemblyVersion": "1.3.1.0",
+            "fileVersion": "1.3.1.0"
+          }
+        }
+      },
+      "Konscious.Security.Cryptography.Blake2/1.1.1": {
+        "runtime": {
+          "lib/net8.0/Konscious.Security.Cryptography.Blake2.dll": {
+            "assemblyVersion": "1.1.1.0",
+            "fileVersion": "1.1.1.0"
+          }
+        }
+      },
+      "Microsoft.Bcl.AsyncInterfaces/10.0.3": {
+        "runtime": {
+          "lib/netstandard2.1/Microsoft.Bcl.AsyncInterfaces.dll": {
+            "assemblyVersion": "10.0.0.3",
+            "fileVersion": "10.0.326.7603"
+          }
+        }
+      },
+      "Microsoft.Data.SqlClient/6.1.6": {
+        "dependencies": {
+          "Azure.Core": "1.55.0",
+          "Azure.Identity": "1.21.0",
+          "Microsoft.Data.SqlClient.SNI.runtime": "6.0.2",
+          "Microsoft.Identity.Client": "4.84.2",
+          "Microsoft.Identity.Client.Broker": "4.84.2",
+          "Microsoft.IdentityModel.JsonWebTokens": "7.7.1",
+          "Microsoft.IdentityModel.Protocols.OpenIdConnect": "7.7.1",
+          "Microsoft.SqlServer.Server": "1.0.0",
+          "System.Configuration.ConfigurationManager": "9.0.11",
+          "System.IdentityModel.Tokens.Jwt": "7.7.1"
+        },
+        "runtime": {
+          "lib/net9.0/Microsoft.Data.SqlClient.dll": {
+            "assemblyVersion": "6.0.0.0",
+            "fileVersion": "6.16.26175.8"
+          }
+        },
+        "resources": {
+          "lib/net9.0/cs/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/net9.0/de/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "de"
+          },
+          "lib/net9.0/es/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "es"
+          },
+          "lib/net9.0/fr/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/net9.0/it/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "it"
+          },
+          "lib/net9.0/ja/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/net9.0/ko/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/net9.0/pl/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/net9.0/pt-BR/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/net9.0/ru/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/net9.0/tr/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/net9.0/zh-Hans/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/net9.0/zh-Hant/Microsoft.Data.SqlClient.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/unix/lib/net9.0/Microsoft.Data.SqlClient.dll": {
+            "rid": "unix",
+            "assetType": "runtime",
+            "assemblyVersion": "6.0.0.0",
+            "fileVersion": "6.16.26175.8"
+          },
+          "runtimes/win/lib/net9.0/Microsoft.Data.SqlClient.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "6.0.0.0",
+            "fileVersion": "6.16.26175.8"
+          }
+        }
+      },
+      "Microsoft.Data.SqlClient.SNI.runtime/6.0.2": {
+        "runtimeTargets": {
+          "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "6.2.0.0"
+          },
+          "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "6.2.0.0"
+          },
+          "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "6.2.0.0"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore/10.0.11": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Abstractions": "10.0.11"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.EntityFrameworkCore.dll": {
+            "assemblyVersion": "10.0.11.0",
+            "fileVersion": "10.0.1126.37416"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.Abstractions/10.0.11": {
+        "runtime": {
+          "lib/net10.0/Microsoft.EntityFrameworkCore.Abstractions.dll": {
+            "assemblyVersion": "10.0.11.0",
+            "fileVersion": "10.0.1126.37416"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.Relational/10.0.11": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "10.0.11"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.EntityFrameworkCore.Relational.dll": {
+            "assemblyVersion": "10.0.11.0",
+            "fileVersion": "10.0.1126.37416"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.SqlServer/10.0.11": {
+        "dependencies": {
+          "Microsoft.Data.SqlClient": "6.1.6",
+          "Microsoft.EntityFrameworkCore.Relational": "10.0.11"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.EntityFrameworkCore.SqlServer.dll": {
+            "assemblyVersion": "10.0.11.0",
+            "fileVersion": "10.0.1126.37416"
+          }
+        }
+      },
+      "Microsoft.Identity.Client/4.84.2": {
+        "dependencies": {
+          "Microsoft.IdentityModel.Abstractions": "8.14.0"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Identity.Client.dll": {
+            "assemblyVersion": "4.84.2.0",
+            "fileVersion": "4.84.2.0"
+          }
+        }
+      },
+      "Microsoft.Identity.Client.Broker/4.84.2": {
+        "dependencies": {
+          "Microsoft.Identity.Client": "4.84.2",
+          "Microsoft.Identity.Client.NativeInterop": "0.20.6"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Microsoft.Identity.Client.Broker.dll": {
+            "assemblyVersion": "4.84.2.0",
+            "fileVersion": "4.84.2.0"
+          }
+        }
+      },
+      "Microsoft.Identity.Client.Extensions.Msal/4.83.1": {
+        "dependencies": {
+          "Microsoft.Identity.Client": "4.84.2",
+          "System.Security.Cryptography.ProtectedData": "9.0.11"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Identity.Client.Extensions.Msal.dll": {
+            "assemblyVersion": "4.83.1.0",
+            "fileVersion": "4.83.1.0"
+          }
+        }
+      },
+      "Microsoft.Identity.Client.NativeInterop/0.20.6": {
+        "runtime": {
+          "lib/net9.0/Microsoft.Identity.Client.NativeInterop.dll": {
+            "assemblyVersion": "0.20.6.0",
+            "fileVersion": "0.20.6.0"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/linux-x64/native/libmsalruntime.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-arm64/native/msalruntime_arm64.dylib": {
+            "rid": "osx-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-x64/native/msalruntime.dylib": {
+            "rid": "osx-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-arm64/native/msalruntime_arm64.dll": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/msalruntime.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x86/native/msalruntime_x86.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "Microsoft.IdentityModel.Abstractions/8.14.0": {
+        "runtime": {
+          "lib/net9.0/Microsoft.IdentityModel.Abstractions.dll": {
+            "assemblyVersion": "8.14.0.0",
+            "fileVersion": "8.14.0.60815"
+          }
+        }
+      },
+      "Microsoft.IdentityModel.JsonWebTokens/7.7.1": {
+        "dependencies": {
+          "Microsoft.IdentityModel.Tokens": "7.7.1"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.IdentityModel.JsonWebTokens.dll": {
+            "assemblyVersion": "7.7.1.0",
+            "fileVersion": "7.7.1.50719"
+          }
+        }
+      },
+      "Microsoft.IdentityModel.Logging/7.7.1": {
+        "dependencies": {
+          "Microsoft.IdentityModel.Abstractions": "8.14.0"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.IdentityModel.Logging.dll": {
+            "assemblyVersion": "7.7.1.0",
+            "fileVersion": "7.7.1.50719"
+          }
+        }
+      },
+      "Microsoft.IdentityModel.Protocols/7.7.1": {
+        "dependencies": {
+          "Microsoft.IdentityModel.Tokens": "7.7.1"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.IdentityModel.Protocols.dll": {
+            "assemblyVersion": "7.7.1.0",
+            "fileVersion": "7.7.1.50719"
+          }
+        }
+      },
+      "Microsoft.IdentityModel.Protocols.OpenIdConnect/7.7.1": {
+        "dependencies": {
+          "Microsoft.IdentityModel.Protocols": "7.7.1",
+          "System.IdentityModel.Tokens.Jwt": "7.7.1"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll": {
+            "assemblyVersion": "7.7.1.0",
+            "fileVersion": "7.7.1.50719"
+          }
+        }
+      },
+      "Microsoft.IdentityModel.Tokens/7.7.1": {
+        "dependencies": {
+          "Microsoft.IdentityModel.Logging": "7.7.1"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.IdentityModel.Tokens.dll": {
+            "assemblyVersion": "7.7.1.0",
+            "fileVersion": "7.7.1.50719"
+          }
+        }
+      },
+      "Microsoft.SqlServer.Server/1.0.0": {
+        "runtime": {
+          "lib/netstandard2.0/Microsoft.SqlServer.Server.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "MindAttic.Authentication/4.0.0": {
+        "dependencies": {
+          "BCrypt.Net-Next": "4.0.3",
+          "Konscious.Security.Cryptography.Argon2": "1.3.1",
+          "Microsoft.EntityFrameworkCore.Relational": "10.0.11",
+          "MindAttic.Vault": "3.0.0"
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Authentication.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.0.0"
+          }
+        }
+      },
+      "MindAttic.Ideas.Page.Frontpage/1.0.0": {
+        "runtime": {
+          "lib/net10.0/MindAttic.Ideas.Page.Frontpage.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "MindAttic.Legion/22.0.0": {
+        "dependencies": {
+          "MindAttic.Vault": "3.0.0"
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Legion.dll": {
+            "assemblyVersion": "21.0.0.0",
+            "fileVersion": "21.0.0.0"
+          }
+        }
+      },
+      "MindAttic.Media/2.0.0": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.SqlServer": "10.0.11"
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Media.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.0.0"
+          }
+        }
+      },
+      "MindAttic.Media.Azure/2.0.0": {
+        "dependencies": {
+          "Azure.Identity": "1.21.0",
+          "Azure.Storage.Blobs": "12.29.2",
+          "MindAttic.Media": "2.0.0"
+        },
+        "runtime": {
+          "lib/net10.0/MindAttic.Media.Azure.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.0.0"
+          }
+        }
+      },
+      "MindAttic.Vault/3.0.0": {
+        "runtime": {
+          "lib/net10.0/MindAttic.Vault.dll": {
+            "assemblyVersion": "3.0.0.0",
+            "fileVersion": "3.0.0.0"
+          }
+        }
+      },
+      "System.ClientModel/1.11.0": {
+        "dependencies": {
+          "System.Memory.Data": "10.0.3"
+        },
+        "runtime": {
+          "lib/net10.0/System.ClientModel.dll": {
+            "assemblyVersion": "1.11.0.0",
+            "fileVersion": "1.1100.26.25505"
+          }
+        }
+      },
+      "System.Configuration.ConfigurationManager/9.0.11": {
+        "dependencies": {
+          "System.Security.Cryptography.ProtectedData": "9.0.11"
+        },
+        "runtime": {
+          "lib/net9.0/System.Configuration.ConfigurationManager.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.1125.51716"
+          }
+        }
+      },
+      "System.IdentityModel.Tokens.Jwt/7.7.1": {
+        "dependencies": {
+          "Microsoft.IdentityModel.JsonWebTokens": "7.7.1",
+          "Microsoft.IdentityModel.Tokens": "7.7.1"
+        },
+        "runtime": {
+          "lib/net8.0/System.IdentityModel.Tokens.Jwt.dll": {
+            "assemblyVersion": "7.7.1.0",
+            "fileVersion": "7.7.1.50719"
+          }
+        }
+      },
+      "System.IO.Hashing/10.0.3": {
+        "runtime": {
+          "lib/net10.0/System.IO.Hashing.dll": {
+            "assemblyVersion": "10.0.0.3",
+            "fileVersion": "10.0.326.7603"
+          }
+        }
+      },
+      "System.Memory.Data/10.0.3": {
+        "runtime": {
+          "lib/net10.0/System.Memory.Data.dll": {
+            "assemblyVersion": "10.0.0.3",
+            "fileVersion": "10.0.326.7603"
+          }
+        }
+      },
+      "System.Reflection.MetadataLoadContext/9.0.0": {
+        "runtime": {
+          "lib/net9.0/System.Reflection.MetadataLoadContext.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.24.52809"
+          }
+        }
+      },
+      "System.Security.Cryptography.ProtectedData/9.0.11": {
+        "runtime": {
+          "lib/net9.0/System.Security.Cryptography.ProtectedData.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.1125.51716"
+          }
+        }
+      },
+      "MindAttic.Ideas.Abstractions/1.0.0": {
+        "runtime": {
+          "MindAttic.Ideas.Abstractions.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "MindAttic.Ideas.Core/1.0.0": {
+        "dependencies": {
+          "AngleSharp": "1.7.2",
+          "BCrypt.Net-Next": "4.0.3",
+          "HtmlSanitizer": "9.2.1039",
+          "Microsoft.EntityFrameworkCore.SqlServer": "10.0.11",
+          "MindAttic.Authentication": "4.0.0",
+          "MindAttic.Ideas.Abstractions": "1.0.0",
+          "MindAttic.Ideas.Packaging": "1.0.0",
+          "MindAttic.Media": "2.0.0"
+        },
+        "runtime": {
+          "MindAttic.Ideas.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "MindAttic.Ideas.Packaging/1.0.0": {
+        "dependencies": {
+          "MindAttic.Ideas.Abstractions": "1.0.0",
+          "System.Reflection.MetadataLoadContext": "9.0.0"
+        },
+        "runtime": {
+          "MindAttic.Ideas.Packaging.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "MindAttic.Ideas.Rendering/1.0.0": {
+        "dependencies": {
+          "MindAttic.Ideas.Core": "1.0.0"
+        },
+        "runtime": {
+          "MindAttic.Ideas.Rendering.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "MindAttic.Ideas.Blazor/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "AngleSharp/1.7.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-r1rb5Qo/0KPzmP0nbSiXPDVfh4Ctu0B+y1RyyUq73g4sgAmEW7q10RDyTq2ZsILwtO9O2LAvMrUles7eD4zz1g==",
+      "path": "anglesharp/1.7.2",
+      "hashPath": "anglesharp.1.7.2.nupkg.sha512"
+    },
+    "AngleSharp.Css/1.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-XeBxh0h/73+MWFsGfeMwiK7xbzAK3YeHFdUIrMH1P90amIrDFD/vUDIrPlF3CixqaMH5MRIUvT6Ux+2zvhJ3SA==",
+      "path": "anglesharp.css/1.0.2",
+      "hashPath": "anglesharp.css.1.0.2.nupkg.sha512"
+    },
+    "Azure.Core/1.55.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-c7femvYS/xEUrLP1sNZN+DoQZmx3X+G3ZXtOOz0RL/7cGMCM3JVqepVmRd3AwM4IK8AtTGS4GOigCO+d/zaSsQ==",
+      "path": "azure.core/1.55.0",
+      "hashPath": "azure.core.1.55.0.nupkg.sha512"
+    },
+    "Azure.Extensions.AspNetCore.DataProtection.Blobs/1.5.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-owDEPihK2GwyOUWsj6Ae1M5dXqcJyKTWwPx1kYb7FWemMLB4Iox3xrcb2ev6dBTSQjpQWcsVFwpIuAGmOD8RXw==",
+      "path": "azure.extensions.aspnetcore.dataprotection.blobs/1.5.3",
+      "hashPath": "azure.extensions.aspnetcore.dataprotection.blobs.1.5.3.nupkg.sha512"
+    },
+    "Azure.Extensions.AspNetCore.DataProtection.Keys/1.6.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-zALqsKe49Jde/fWGv0yCW5awfql23ZpWdhVVhOeF46h6SQGg843cJGUHiHjWn+sQPly6c6V1+2n+/pCXA7CVGw==",
+      "path": "azure.extensions.aspnetcore.dataprotection.keys/1.6.3",
+      "hashPath": "azure.extensions.aspnetcore.dataprotection.keys.1.6.3.nupkg.sha512"
+    },
+    "Azure.Identity/1.21.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-GeFv8sGwRKvDKwI2WFy8r0mhmlxEVZg24Sit2NogTjiSO8RVjllWM65OT6e1sKjOvG8V74y7hAbaELUUPjZQSw==",
+      "path": "azure.identity/1.21.0",
+      "hashPath": "azure.identity.1.21.0.nupkg.sha512"
+    },
+    "Azure.Security.KeyVault.Keys/4.10.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-R5iW7mH0EXdl3wqLQ7qglFQXl5JPGmmYXxDxKFT/TraCw6yRhlt5/G3NCc0Wb98P2P3lRZEI8lqF3BY0m9RkNA==",
+      "path": "azure.security.keyvault.keys/4.10.0",
+      "hashPath": "azure.security.keyvault.keys.4.10.0.nupkg.sha512"
+    },
+    "Azure.Storage.Blobs/12.29.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-NeZmk7bphspT2BYn8XaNCTV4/9vQG+ea79F85MBTi2o2WiXIIJNsRBtFyeBrzK2HIk476rfSqLNwPt4vXgOEkQ==",
+      "path": "azure.storage.blobs/12.29.2",
+      "hashPath": "azure.storage.blobs.12.29.2.nupkg.sha512"
+    },
+    "Azure.Storage.Common/12.28.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-5l8YhNrks38zKLGFW2BBFLwieyamH/xauABSASsdpZv79G0f+n2n22IjkRmUqCmALSupkwRHh2LOhbW3yj5Qgw==",
+      "path": "azure.storage.common/12.28.0",
+      "hashPath": "azure.storage.common.12.28.0.nupkg.sha512"
+    },
+    "BCrypt.Net-Next/4.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-W+U9WvmZQgi5cX6FS5GDtDoPzUCV4LkBLkywq/kRZhuDwcbavOzcDAr3LXJFqHUi952Yj3LEYoWW0jbEUQChsA==",
+      "path": "bcrypt.net-next/4.0.3",
+      "hashPath": "bcrypt.net-next.4.0.3.nupkg.sha512"
+    },
+    "HtmlSanitizer/9.2.1039": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PKxy1hYknAij8YlHCC2a9GSqzUd4bh3IvY+abJBvOH1FKcZpbyafEHtdFcXQBt12Y7hNPkNEOP6Qa7uKNSs/yA==",
+      "path": "htmlsanitizer/9.2.1039",
+      "hashPath": "htmlsanitizer.9.2.1039.nupkg.sha512"
+    },
+    "Konscious.Security.Cryptography.Argon2/1.3.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-T+OAGwzYYXftahpOxO7J4xA5K6urxwGnWQf3M+Jpi+76Azv/0T3M5SuN+h7/QvXuiqNw3ZEZ5QqVLI5ygDAylw==",
+      "path": "konscious.security.cryptography.argon2/1.3.1",
+      "hashPath": "konscious.security.cryptography.argon2.1.3.1.nupkg.sha512"
+    },
+    "Konscious.Security.Cryptography.Blake2/1.1.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-odwOyzj/J/lHJZNwFWJGU/LRecBShupAJ2S8TQqZfhUe9niHzu/voBYK5wuVKsvSpzbfupKQYZguVyIk1sgOkQ==",
+      "path": "konscious.security.cryptography.blake2/1.1.1",
+      "hashPath": "konscious.security.cryptography.blake2.1.1.1.nupkg.sha512"
+    },
+    "Microsoft.Bcl.AsyncInterfaces/10.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-TV62UsrJZPX6gbt3c4WrtXh7bmaDIcMqf9uft1cc4L6gJXOU07hDGEh+bFQh/L2Az0R1WVOkiT66lFqS6G2NmA==",
+      "path": "microsoft.bcl.asyncinterfaces/10.0.3",
+      "hashPath": "microsoft.bcl.asyncinterfaces.10.0.3.nupkg.sha512"
+    },
+    "Microsoft.Data.SqlClient/6.1.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6abRPXrjjEWxcNkTomBIzBdGolYnwD0ykP+6YAynaEEfKlGe94ZSQd58pggucusp28xUA7wLo9XcvzU92ZuF6Q==",
+      "path": "microsoft.data.sqlclient/6.1.6",
+      "hashPath": "microsoft.data.sqlclient.6.1.6.nupkg.sha512"
+    },
+    "Microsoft.Data.SqlClient.SNI.runtime/6.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-f+pRODTWX7Y67jXO3T5S2dIPZ9qMJNySjlZT/TKmWVNWe19N8jcWmHaqHnnchaq3gxEKv1SWVY5EFzOD06l41w==",
+      "path": "microsoft.data.sqlclient.sni.runtime/6.0.2",
+      "hashPath": "microsoft.data.sqlclient.sni.runtime.6.0.2.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore/10.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-VOSGU8en6HZJs8t7UMFN+9vGcRgVOOn6fA44Ngcg2NyvJ3P1KE94iAb0XzaVaGhXGtt+qaM/VtEn0/hzluQJeg==",
+      "path": "microsoft.entityframeworkcore/10.0.11",
+      "hashPath": "microsoft.entityframeworkcore.10.0.11.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.Abstractions/10.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6auJR+9+9VunznKfH7WGrHMrnrmA0F7JZ22EXzwXvVhjfnbu9Xq7NSIWaOf3KJsOanM2qf5ajJ2JR5TlcPZTLA==",
+      "path": "microsoft.entityframeworkcore.abstractions/10.0.11",
+      "hashPath": "microsoft.entityframeworkcore.abstractions.10.0.11.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.Relational/10.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-grznnTJgEYxaWpdKAsTzg6j+89jHgCXWYp+QGtlX5O92+w/VuhWM6JLPYb+uw8M9VhGUvOTsO76dYOy9vNPd5Q==",
+      "path": "microsoft.entityframeworkcore.relational/10.0.11",
+      "hashPath": "microsoft.entityframeworkcore.relational.10.0.11.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.SqlServer/10.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-LClSs5cNN6za2Uk7IeH7RAP4Qe5EMXxFsD9i53ncPx21TVg04IEjoFyxvvsSNkq2/Ux9HyJsJ2qEO8Tl7Gcrrg==",
+      "path": "microsoft.entityframeworkcore.sqlserver/10.0.11",
+      "hashPath": "microsoft.entityframeworkcore.sqlserver.10.0.11.nupkg.sha512"
+    },
+    "Microsoft.Identity.Client/4.84.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Va9FjmABSgj/lcUfHH0pBNQkmS7SNyepz2ERV7Yynp6QgEYpFdSqR6Vzy1WWipN8GS5pBHuXoZbqaDWuARCrHQ==",
+      "path": "microsoft.identity.client/4.84.2",
+      "hashPath": "microsoft.identity.client.4.84.2.nupkg.sha512"
+    },
+    "Microsoft.Identity.Client.Broker/4.84.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-928ySLeGz1xtvydwq6h9tv7TbxrtA4ZzavLKUqRJh0PW6BGcEJwpI8W8vf2PlQdYemGm/oyGjdzYzdY/I8r/4A==",
+      "path": "microsoft.identity.client.broker/4.84.2",
+      "hashPath": "microsoft.identity.client.broker.4.84.2.nupkg.sha512"
+    },
+    "Microsoft.Identity.Client.Extensions.Msal/4.83.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-I3k4J4Hj4KbLEFanjeUzzDOVecukETaTgEkJ7h2pP/Yazs6SLp6TVUTo/Eo+ptPXMwvc+iX7rBFtMSUrA7R+Mg==",
+      "path": "microsoft.identity.client.extensions.msal/4.83.1",
+      "hashPath": "microsoft.identity.client.extensions.msal.4.83.1.nupkg.sha512"
+    },
+    "Microsoft.Identity.Client.NativeInterop/0.20.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-noyfdMfVxyWpM6xUDmlW6gUvZ5ci24z7Qoy15JvynTQfZV5vTD2NEdsnT5Gy4ngViwgdIp5iRjRy10jAKXFAgw==",
+      "path": "microsoft.identity.client.nativeinterop/0.20.6",
+      "hashPath": "microsoft.identity.client.nativeinterop.0.20.6.nupkg.sha512"
+    },
+    "Microsoft.IdentityModel.Abstractions/8.14.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-iwbCpSjD3ehfTwBhtSNEtKPK0ICun6ov7Ibx6ISNA9bfwIyzI2Siwyi9eJFCJBwxowK9xcA1mj+jBWiigeqgcQ==",
+      "path": "microsoft.identitymodel.abstractions/8.14.0",
+      "hashPath": "microsoft.identitymodel.abstractions.8.14.0.nupkg.sha512"
+    },
+    "Microsoft.IdentityModel.JsonWebTokens/7.7.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3Izi75UCUssvo8LPx3OVnEeZay58qaFicrtSnbtUt7q8qQi0gy46gh4V8VUTkMVMKXV6VMyjBVmeNNgeCUJuIw==",
+      "path": "microsoft.identitymodel.jsonwebtokens/7.7.1",
+      "hashPath": "microsoft.identitymodel.jsonwebtokens.7.7.1.nupkg.sha512"
+    },
+    "Microsoft.IdentityModel.Logging/7.7.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-BZNgSq/o8gsKExdYoBKPR65fdsxW0cTF8PsdqB8y011AGUJJW300S/ZIsEUD0+sOmGc003Gwv3FYbjrVjvsLNQ==",
+      "path": "microsoft.identitymodel.logging/7.7.1",
+      "hashPath": "microsoft.identitymodel.logging.7.7.1.nupkg.sha512"
+    },
+    "Microsoft.IdentityModel.Protocols/7.7.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-h+fHHBGokepmCX+QZXJk4Ij8OApCb2n2ktoDkNX5CXteXsOxTHMNgjPGpAwdJMFvAL7TtGarUnk3o97NmBq2QQ==",
+      "path": "microsoft.identitymodel.protocols/7.7.1",
+      "hashPath": "microsoft.identitymodel.protocols.7.7.1.nupkg.sha512"
+    },
+    "Microsoft.IdentityModel.Protocols.OpenIdConnect/7.7.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-yT2Hdj8LpPbcT9C9KlLVxXl09C8zjFaVSaApdOwuecMuoV4s6Sof/mnTDz/+F/lILPIBvrWugR9CC7iRVZgbfQ==",
+      "path": "microsoft.identitymodel.protocols.openidconnect/7.7.1",
+      "hashPath": "microsoft.identitymodel.protocols.openidconnect.7.7.1.nupkg.sha512"
+    },
+    "Microsoft.IdentityModel.Tokens/7.7.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-fQ0VVCba75lknUHGldi3iTKAYUQqbzp1Un8+d9cm9nON0Gs8NAkXddNg8iaUB0qi/ybtAmNWizTR4avdkCJ9pQ==",
+      "path": "microsoft.identitymodel.tokens/7.7.1",
+      "hashPath": "microsoft.identitymodel.tokens.7.7.1.nupkg.sha512"
+    },
+    "Microsoft.SqlServer.Server/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-N4KeF3cpcm1PUHym1RmakkzfkEv3GRMyofVv40uXsQhCQeglr2OHNcUk2WOG51AKpGO8ynGpo9M/kFXSzghwug==",
+      "path": "microsoft.sqlserver.server/1.0.0",
+      "hashPath": "microsoft.sqlserver.server.1.0.0.nupkg.sha512"
+    },
+    "MindAttic.Authentication/4.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-D92gJKT87zaYztDsRML6TmVFCOIuu4j5L6O+qke7Cawg6aNr+dcNedw/tskAdH8faW+f0gVAN5EsfreLmLU7Dw==",
+      "path": "mindattic.authentication/4.0.0",
+      "hashPath": "mindattic.authentication.4.0.0.nupkg.sha512"
+    },
+    "MindAttic.Ideas.Page.Frontpage/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-yr12U5T19Ucf8FxVqRoZLwSaHYyPaXgPkMMufZwNdPpN1+04EHFpU2+b01hdtnk/zu6x3VglgonLYb7oi+oEXw==",
+      "path": "mindattic.ideas.page.frontpage/1.0.0",
+      "hashPath": "mindattic.ideas.page.frontpage.1.0.0.nupkg.sha512"
+    },
+    "MindAttic.Legion/22.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-+QQSLGNMj59J1JIfPBmwqfWqCb3iRZM57S44UejlZxIzssMRFdi+/vNvto39stQ0viQXMoPy35RRuyFeYz1DRg==",
+      "path": "mindattic.legion/22.0.0",
+      "hashPath": "mindattic.legion.22.0.0.nupkg.sha512"
+    },
+    "MindAttic.Media/2.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-W/glF+Gj6Od+YRjZWW4Ilf+8JODVb1qymOpzMOL9UWM6lzRgmsvls4tvBNxZF87wyMMAP/1FO9Nko3bmIFtA0w==",
+      "path": "mindattic.media/2.0.0",
+      "hashPath": "mindattic.media.2.0.0.nupkg.sha512"
+    },
+    "MindAttic.Media.Azure/2.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-kj9+yPEjiVAi6U1yRBOVAvYwp2VvFjU7zvlfCIzGjTD2khiwR1ojRPPyQZ5gnBYcy3/PETC5vmR2XRck0RHYgQ==",
+      "path": "mindattic.media.azure/2.0.0",
+      "hashPath": "mindattic.media.azure.2.0.0.nupkg.sha512"
+    },
+    "MindAttic.Vault/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-VEfLgiZutWTCRCyjRheOR8zRVGyGInBPVchX6nlaWz4pscZUA1/quDOy/Rrxy/mF3MFvtWfiutksoWy/6MmrCA==",
+      "path": "mindattic.vault/3.0.0",
+      "hashPath": "mindattic.vault.3.0.0.nupkg.sha512"
+    },
+    "System.ClientModel/1.11.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-1Wl32zh7TbvN+HAO8NqDuaN0Ao2Qu/0j0NJSrXGDtpUQsTXQYJ3C6hd9/Ds2IrgP4agMQYFoXB35GZfC21ByHw==",
+      "path": "system.clientmodel/1.11.0",
+      "hashPath": "system.clientmodel.1.11.0.nupkg.sha512"
+    },
+    "System.Configuration.ConfigurationManager/9.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-vPinosRgEk1CGjohbv0pDuz6gPprkWo5xvBTjOJjks5JOgOEWvPndq5NngGxiTcBcy1+k9GwzZ1c3Bp2fU5ezw==",
+      "path": "system.configuration.configurationmanager/9.0.11",
+      "hashPath": "system.configuration.configurationmanager.9.0.11.nupkg.sha512"
+    },
+    "System.IdentityModel.Tokens.Jwt/7.7.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-rQkO1YbAjLwnDJSMpRhRtrc6XwIcEOcUvoEcge+evurpzSZM3UNK+MZfD3sKyTlYsvknZ6eJjSBfnmXqwOsT9Q==",
+      "path": "system.identitymodel.tokens.jwt/7.7.1",
+      "hashPath": "system.identitymodel.tokens.jwt.7.7.1.nupkg.sha512"
+    },
+    "System.IO.Hashing/10.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-La6ICwsdTKhVX+LKN+pvFjQRR3LhLwq3uKdi2knjLzRyPYBSydF4cjXidYxIiTcDD6XVYdsBWQEI8ZxiZ/OdIg==",
+      "path": "system.io.hashing/10.0.3",
+      "hashPath": "system.io.hashing.10.0.3.nupkg.sha512"
+    },
+    "System.Memory.Data/10.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-MaGhRfGunmrj/nHjtsi9XkhlYJ/ERGWrbA+BiSKNtGnAjc9XlG5EhAvak6VRcX5LYzPF6pBO8nJ613dTgzabig==",
+      "path": "system.memory.data/10.0.3",
+      "hashPath": "system.memory.data.10.0.3.nupkg.sha512"
+    },
+    "System.Reflection.MetadataLoadContext/9.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-nGdCUVhEQ9/CWYqgaibYEDwIJjokgIinQhCnpmtZfSXdMS6ysLZ8p9xvcJ8VPx6Xpv5OsLIUrho4B9FN+VV/tw==",
+      "path": "system.reflection.metadataloadcontext/9.0.0",
+      "hashPath": "system.reflection.metadataloadcontext.9.0.0.nupkg.sha512"
+    },
+    "System.Security.Cryptography.ProtectedData/9.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-s8yUYuYYu+PAwvBdhLG1KyrGrk9gkYeuPxfAsXsTqqWyepwSyEw8hAaflW4nO98NG52YpYI1am2+9o+79h2RtQ==",
+      "path": "system.security.cryptography.protecteddata/9.0.11",
+      "hashPath": "system.security.cryptography.protecteddata.9.0.11.nupkg.sha512"
+    },
+    "MindAttic.Ideas.Abstractions/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "MindAttic.Ideas.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "MindAttic.Ideas.Packaging/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "MindAttic.Ideas.Rendering/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

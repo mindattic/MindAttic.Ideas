@@ -117,7 +117,7 @@ deleted). Once the infra exists and the secrets are set, flip it to `disabled: f
 
 ## The NuGet problem, and why `lib/local-packages/` is in git
 
-Ideas references six private packages — `MindAttic.Vault`, `MindAttic.Legion`,
+Ideas references six private packages — `MindAttic.Vault` (V3+), `MindAttic.Legion`,
 `MindAttic.Authentication`, `MindAttic.Media`, `MindAttic.Media.Azure` and
 `MindAttic.Ideas.Page.Frontpage`. On a dev box those come from `C:\LocalNuGet` and `..\local-feed`.
 **A GitHub runner has neither**, and NuGet tolerates a missing local source *silently* — so without
@@ -183,3 +183,22 @@ falls back to streaming, which then finds no bytes.
 
 **Migrate job cannot reach SQL.** The firewall rule is per-run and torn down in an `always()` step.
 If a run was killed mid-flight, delete the leftover `gh-<runid>` rule on the SQL server.
+
+**`az webapp deploy` reports failure but the site is fine.** The CLI stops polling at ten minutes;
+first boot installs 51 `.idea`s against a 5-DTU database and takes longer. Trust `/_health`, not the
+CLI's verdict — the template sets `WEBSITES_CONTAINER_START_TIME_LIMIT=1800` so the container itself
+is allowed to finish.
+
+**Deployment 400s with rsync "Invalid argument" errors.** The zip was built by PowerShell's
+`Compress-Archive`, which writes `\` path separators that Linux cannot unpack. Build the package with
+forward slashes (`dotnet publish` then a zip tool that uses `/`).
+
+**A secret you definitely set is "not found" on Linux.** App Service rewrites application-setting
+names when injecting them as environment variables: hyphens are dropped and dots become underscores,
+so `…Security__pepper.v1` arrives as `…Security__pepper_v1`. MindAttic.Authentication V4 matches
+these by reducing both sides to letters and digits ([A33](AMENDMENTS.md#MAI-A33)); older versions
+fail-closed on a secret that is genuinely present. Prefer alphanumeric setting names.
+
+**App aborts at startup with a stack trace inside `ConfigurationBuilder`.** MindAttic.Vault below V3
+threw when the host had no user profile, which on Linux is during host construction — SIGABRT before
+any application code runs. V3 resolves a root on every OS instead ([VLT-A3](../../MindAttic.Vault/docs/AMENDMENTS.md)).

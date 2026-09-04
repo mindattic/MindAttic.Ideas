@@ -325,21 +325,25 @@ updated: 2026-06-16
   in the build would notice. Live: the full suite stayed green across the bump, a sweep of 48 pages
   returned all 200 with zero `ma-missing`, and `dotnet list package --vulnerable --include-transitive`
   reports none.)*
-- **MAI-US-J4 🟡 As an Operator, I can stand the whole estate up with one command**
+- **MAI-US-J4 ✅ As an Operator, I can stand the whole estate up with one command**
   (`./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas`), passwordless throughout: Entra-only
   SQL, no storage shared keys, managed-identity RBAC, and the auth Security bucket generated into
   Key Vault. *`infra/main.bicep` compiles and **validates against the live subscription**
   (`provisioningState: Succeeded`); what-if enumerates the 16 resources; both scripts parse under
-  Windows PowerShell 5.1.* **🟡 because nothing has been provisioned** — no resources exist and the
-  app has never run on App Service ([HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8):
-  verified, not asserted).
+  Windows PowerShell 5.1.* **Provisioned and live 2026-09-04** at
+  https://mindattic-ideas.azurewebsites.net — 16 resources, 53 content definitions installed on first
+  boot, reached over managed identity with no password anywhere
+  ([A33](AMENDMENTS.md#MAI-A33)). *(test: `DeploymentPackagingTests` guards the packaging and
+  configuration contract the estate depends on.)*
 - **MAI-US-J5 🟡 As a Maintainer, a push to `master` builds, migrates and deploys**, with the deploy
   gated on green tests and on the migration having applied. *`.github/workflows/azure-deploy.yml`;
   the migrate stage opens and closes a single-run SQL firewall rule under an Entra token, and the
   running site holds `db_datareader`/`db_datawriter` only, so it cannot issue DDL even by mistake.*
-  **🟡 because the workflow has never run** — it needs the estate plus
-  `AZURE_WEBAPP_PUBLISH_PROFILE`. The `ideas` entry in `MindAttic.Deploy/projects.json → apps[]`
-  ships `disabled: true` with a note ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)).
+  **🟡 because the workflow itself has never run** — the first deploy was driven by hand
+  (`provision.ps1` → `migrate.ps1` → `az webapp deploy`), which proved every stage the workflow
+  automates but not the workflow. It still needs `AZURE_WEBAPP_PUBLISH_PROFILE`, and the `ideas`
+  entry in `MindAttic.Deploy/projects.json → apps[]` stays `disabled: true` until then
+  ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)).
 
 ## Priority backlog
 

@@ -1,0 +1,480 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MindAttic.Ideas.Abstractions</name>
+    </assembly>
+    <members>
+        <member name="P:MindAttic.Ideas.Abstractions.IdeaAttribute.Key">
+            <summary>Override the convention-inferred key (stable lowercase dotted id).</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IdeaAttribute.Version">
+            <summary>Override the convention-inferred whole-number version. 0 = infer from the Vn class name.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IdeaAttribute.Scope">
+            <summary>For Module/Control: Global attaches at theme scope; default Placeable.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IdeaAttribute.Slot">
+            <summary>
+            For a Plugin activated site-wide: whether it renders before or after the theme/body. Read off the
+            TYPE (no instantiation) by the host, so a footer plugin lands at the foot of the page instead of
+            the top. Defaults to BeforeBody, which is where every plugin rendered before this existed.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.UsesAttribute">
+            <summary>
+            Declares a citizen this COMPILED Page/Theme references BY STRING ID at runtime (via
+            <see cref="T:MindAttic.Ideas.Abstractions.CmsInclude"/>) but does NOT compile against. Repeatable. The reflection-only packer emits
+            each one into the manifest's <c>uses[]</c>, so the host can (1) hoist the referenced citizen's css/js
+            into <c>&lt;head&gt;</c> for this compiled page, (2) warn at install when a declared dependency is not
+            installed, and (3) reference-guard it against deletion. This is the declarative dependency model
+            (Orchard-style): a page never compile-references another package, it names what it uses.
+            <paramref name="version"/> 0 = float to the latest enabled version.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.UsesAttribute.#ctor(MindAttic.Ideas.Abstractions.ContentKind,System.String,System.Int32)">
+            <summary>
+            Declares a citizen this COMPILED Page/Theme references BY STRING ID at runtime (via
+            <see cref="T:MindAttic.Ideas.Abstractions.CmsInclude"/>) but does NOT compile against. Repeatable. The reflection-only packer emits
+            each one into the manifest's <c>uses[]</c>, so the host can (1) hoist the referenced citizen's css/js
+            into <c>&lt;head&gt;</c> for this compiled page, (2) warn at install when a declared dependency is not
+            installed, and (3) reference-guard it against deletion. This is the declarative dependency model
+            (Orchard-style): a page never compile-references another package, it names what it uses.
+            <paramref name="version"/> 0 = float to the latest enabled version.
+            </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.UsesAttribute.Version">
+            <summary>Pinned whole-number version; 0 = float to latest.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IdeaSdkVersionAttribute">
+            <summary>
+            Stamped on a content assembly by the SDK packer; the host reads it to gate package loads against
+            <see cref="F:MindAttic.Ideas.Abstractions.Sdk.Version"/>. Whole-number SDK version (no SemVer).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IdeaSdkVersionAttribute.#ctor(System.Int32)">
+            <summary>
+            Stamped on a content assembly by the SDK packer; the host reads it to gate package loads against
+            <see cref="F:MindAttic.Ideas.Abstractions.Sdk.Version"/>. Whole-number SDK version (no SemVer).
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.Sdk">
+            <summary>The frozen Abstractions SDK version. MAJOR pinned at 1 forever; additive-only.</summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.Sdk.Version">
+            <summary>Whole-number SDK version a host advertises and packages gate against.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IdeaBase">
+            <summary>The shared root. Everything an .idea contains derives (transitively) from this.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IdeaBase.Context">
+            <summary>The render context for this placement (provided by the host via a cascade).</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IdeaBase.SafeUrl(System.String)">
+            <summary>
+            Returns the URL unchanged if it is safe to render in an href/src/action attribute.
+            Returns "#" for javascript:, data:, vbscript: and any other scheme that could execute
+            client-side code. Relative URLs (/path, #anchor, ./rel), http:, https:, mailto:, tel:
+            all pass through. Call on every untrusted URL attribute before rendering.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IdeaBase.IsUnsafeUrl(System.String)">
+            <summary>True if the URL could execute script or embed attacker-controlled data.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.PageBase">
+            <summary>Base for a compiled (Code) Page. e.g. <c>MindAttic.Ideas.Page.LegionFrontpage.V2</c>.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.PageBase`1">
+            <summary>Base for a compiled Page with strongly-typed settings.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ThemeBase">
+            <summary>
+            Base for a Theme: layout chrome with a SINGLE <see cref="P:MindAttic.Ideas.Abstractions.ThemeBase.Body"/> hole — NO zones. CSS/script URL
+            lists map onto the fixed cascade (Global -> Theme tiers). e.g. <c>MindAttic.Ideas.Theme.Cyberspace.V4</c>.
+            </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ThemeBase.Body">
+            <summary>The page's free-form content renders here. The only hole; never a zone grid.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ThemeBase.GlobalCssUrls">
+            <summary>Cascade tier "global" CSS (e.g. fonts), emitted before <see cref="P:MindAttic.Ideas.Abstractions.ThemeBase.ThemeCssUrls"/>.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ThemeBase.ThemeCssUrls">
+            <summary>Cascade tier "theme" CSS. Mirror the UiUx deps.json css[] at a pinned tag.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ThemeBase.ScriptUrls">
+            <summary>Theme scripts (e.g. Cyberspace effect loaders). Mirror deps.json scripts[].</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ThemeBase.BodyPreludeHtml">
+            <summary>Optional raw HTML injected at the top of the theme body (e.g. effect layers).</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.PluginBase">
+             <summary>
+             Base for a Plugin: a site-wide .idea that activates a behavior or capability across the entire
+             rendered page without occupying a specific token position. Plugins are selected per-page via the
+             Admin Page Properties Plugin checkbox list; they may also be dropped inline via
+             <c>&lt;Plugin.X /&gt;</c> for one-off pages. e.g. dropping
+             <c>MindAttic.Ideas.Plugin.Tooltip.V1</c> loads tooltip css/js so ANY element with
+             <c>data-tooltip</c>/<c>data-tt</c> shows a tooltip on hover.
+            
+             By default renders no markup — emits <see cref="P:MindAttic.Ideas.Abstractions.PluginBase.StylesheetUrls"/> as &lt;link&gt; and
+             <see cref="P:MindAttic.Ideas.Abstractions.PluginBase.ScriptUrls"/> as &lt;script&gt;. Override <c>BuildRenderTree</c> to add markup.
+             Declare typed <c>[Parameter]</c> properties for configuration; unmatched attributes land in
+             <see cref="P:MindAttic.Ideas.Abstractions.PluginBase.Attributes"/>.
+             </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.PluginBase.Attributes">
+            <summary>
+            Config attributes from the include tag that don't match a typed <c>[Parameter]</c> property.
+            Never throws on an unknown attribute.
+            </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.PluginBase.StylesheetUrls">
+            <summary>Stylesheets this plugin needs (jsDelivr or host-relative). Emitted once.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.PluginBase.ScriptUrls">
+            <summary>Scripts this plugin needs (the behavior engine). Emitted once.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ComponentBase">
+             <summary>
+             Base for a Component: an inline-placed .idea that renders at the exact
+             <c>&lt;Component.X /&gt;</c> tag position in the page body. Components can nest other Components,
+             enabling composite UIs — e.g. <c>MindAttic.Ideas.Component.TabControl</c> nests
+             <c>Component.TabButtonContainer</c>, <c>Component.TabButton</c> instances,
+             <c>Component.TabPageContainer</c>, and <c>Component.TabPage</c> instances (each of which may
+             contain <c>Component.Textbox</c> or other children). Declare sub-component dependencies with
+             <c>[Uses]</c>/<c>uses[]</c>.
+            
+             NOTE: <c>ComponentBase</c> here is <c>MindAttic.Ideas.Abstractions.ComponentBase</c>, NOT Blazor's
+             <c>Microsoft.AspNetCore.Components.ComponentBase</c> — the MindAttic kind wins the bare name.
+             Blazor's base is aliased as <c>BlazorComponentBase</c> in this file (see MAI-A26, MAI-A10).
+             </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ComponentBase.Attributes">
+            <summary>
+            Config attributes from the include tag that don't match a typed <c>[Parameter]</c> property.
+            Never throws on an unknown attribute.
+            </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ComponentBase.StylesheetUrls">
+            <summary>Stylesheets this component needs (jsDelivr or host-relative). Emitted once.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ComponentBase.ScriptUrls">
+            <summary>Scripts this component needs. Emitted once.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.CmsInclude">
+            <summary>
+            Renders another citizen by its string id at runtime (no compile-time package reference). Delegates to
+            the host's <see cref="T:MindAttic.Ideas.Abstractions.IIncludeRenderer"/> feature, resolved from the cascaded <see cref="T:MindAttic.Ideas.Abstractions.IRenderContext"/>;
+            if no host feature is present (e.g. design time) it renders nothing.
+            </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.CmsInclude.Ref">
+            <summary>
+            The include reference in the locked tag form, e.g. <c>"MindAttic.Ideas.Plugin.Tooltip.V1"</c>.
+            Omit the trailing <c>.V{n}</c> (or use <c>.Latest</c>) to float to the latest enabled version.
+            </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.CmsInclude.ChildContent">
+            <summary>Inner content, passed to the resolved citizen as <c>ChildContent</c> when it declares one.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.CmsInclude.Attributes">
+            <summary>Unmatched attributes flow straight through to the resolved citizen (e.g. a Control's input).</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IRenderContext">
+            <summary>Everything a Page/Component/Theme is handed at render time.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IRenderContext.InstanceId">
+            <summary>Unique id for this placement/render instance.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IRenderContext.Services">
+            <summary>Scoped DI for this circuit/request.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IRenderContext.RawSettingsJson">
+            <summary>Raw settings JSON for this placement, if any.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IRenderContext.GetSettings``1">
+            <summary>Deserialize settings using the host's pinned serializer options.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IRenderContext.TryGetFeature``1(``0@)">
+            <summary>
+            Additive-forever escape hatch: resolve an optional host feature without ever changing this
+            interface. Default implementation pulls from <see cref="P:MindAttic.Ideas.Abstractions.IRenderContext.Services"/>.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IPageContext">
+            <summary>The page being rendered.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IPageContext.SeoTitle">
+            <summary>Overrides the browser &lt;title&gt; tag. Null = fall back to <see cref="P:MindAttic.Ideas.Abstractions.IPageContext.Title"/>.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IPageContext.ThemeVersion">
+            <summary>The page's pinned theme version, if it overrides the site default.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IPageContext.Inline">
+            <summary>Free-form author HTML/CSS/JS for this page (cascade tier 3) — Data pages.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ISiteContext">
+            <summary>The site/tenant the page belongs to. Multi-site is a nullable seam from day one.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.ISiteContext.GetSetting(System.String)">
+            <summary>Read a setting through the Host -> Site -> Page override chain.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IInlineMarkup">
+            <summary>
+            The free-form author content for a Data page: cascade tier 3. <see cref="P:MindAttic.Ideas.Abstractions.IInlineMarkup.Trusted"/> is the
+            render-time projection of the page's stored, write-time trust stamp.
+            </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.IInlineMarkup.Trusted">
+            <summary>True =&gt; host emits raw (intentional admin JS); false =&gt; sanitized.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IIncludeRenderer">
+            <summary>
+            Host-provided render seam (resolved via <see cref="M:MindAttic.Ideas.Abstractions.IRenderContext.TryGetFeature``1(``0@)"/>): turns a
+            string-id include reference — e.g. <c>"MindAttic.Ideas.Plugin.Tooltip.V1"</c> (omit the version or
+            use <c>.Latest</c> to float) — into a render fragment, using the SAME catalog resolution, Missing/
+            Disabled degradation, and Admin-Inbox alerting as a data page's <c>&lt;MindAttic.Ideas.…/&gt;</c>
+            include tag. This is what lets a COMPILED Page/Theme compose other citizens BY STRING ID with no
+            compile-time package reference — the <see cref="T:MindAttic.Ideas.Abstractions.CmsInclude"/> primitive delegates to it. The host impl
+            MUST never throw into a render (degrade to a placeholder). APPEND-ONLY interface (default methods only).
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IComponentMetadataStore">
+            <summary>
+            Host-provided seam (resolved via <see cref="M:MindAttic.Ideas.Abstractions.IRenderContext.TryGetFeature``1(``0@)"/>): per-instance
+            metadata store for components that need to persist data beyond a single render — e.g. the
+            FromMd component stores its source file path and cached Markdown here. Keyed by
+            (pageUid, componentKey, slotName) so multiple instances on the same page are isolated.
+            The host impl MUST never throw into a render. APPEND-ONLY interface (default methods only).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IComponentMetadataStore.GetAsync(System.Guid,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Returns the stored metadata JSON for this slot, or null if none exists yet.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IComponentMetadataStore.SaveAsync(System.Guid,System.String,System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Upserts metadata JSON for this slot.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IComponentMetadataStore.GetManyAsync(System.Collections.Generic.IEnumerable{System.Guid},System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Metadata for MANY pages at once, keyed by page uid; pages with no row for this slot are absent.
+            A component that renders a list of other pages (an index, a card grid) needs one lookup, not one per
+            row. The default implementation loops <see cref="M:MindAttic.Ideas.Abstractions.IComponentMetadataStore.GetAsync(System.Guid,System.String,System.String,System.Threading.CancellationToken)"/> so every existing host keeps working;
+            a host SHOULD override it with a single query. MUST never throw into a render.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ChildPage">
+            <summary>
+            One child page in the site tree (for nav / the TableOfContents widget).
+            <paramref name="PageId"/> is the child's stable uid, so a component listing children can look their
+            metadata up through <see cref="T:MindAttic.Ideas.Abstractions.IComponentMetadataStore"/>. Defaulted, and last, to stay additive.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.ChildPage.#ctor(System.String,System.String,System.Boolean,System.Guid)">
+            <summary>
+            One child page in the site tree (for nav / the TableOfContents widget).
+            <paramref name="PageId"/> is the child's stable uid, so a component listing children can look their
+            metadata up through <see cref="T:MindAttic.Ideas.Abstractions.IComponentMetadataStore"/>. Defaulted, and last, to stay additive.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ChildPageNode">
+            <summary>One node in a page sub-tree — carries its own children for recursive rendering.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.ChildPageNode.#ctor(System.String,System.String,System.Collections.Generic.IReadOnlyList{MindAttic.Ideas.Abstractions.ChildPageNode},System.Boolean)">
+            <summary>One node in a page sub-tree — carries its own children for recursive rendering.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IPageTree">
+            <summary>
+            Host-provided render seam (resolved via <see cref="M:MindAttic.Ideas.Abstractions.IRenderContext.TryGetFeature``1(``0@)"/>): the published,
+            enabled child pages of a page, ordered by sort order. Lets a Component (e.g. TableOfContents) render the
+            CURRENT page's children with NO compile-time host reference — it asks the context for this feature and,
+            if present, lists <see cref="T:MindAttic.Ideas.Abstractions.ChildPage"/>s; a Component renders nothing when a page has no children. The
+            host impl MUST never throw into a render. APPEND-ONLY interface (default methods only).
+            </summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IPageTree.ChildrenOfSlugAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            The published, enabled children of the page at <paramref name="slug"/> — for a component that lists
+            SOME OTHER page's children, e.g. a home page showing the projects index. Slug rather than uid because
+            that is what an author can type into a tag attribute.
+            The default implementation returns empty, so a host that has not implemented it degrades to an empty
+            list rather than breaking; the CMS host overrides it. MUST never throw into a render.
+            </summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IPageTree.DescendantsTreeAsync(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the full sub-tree rooted at <paramref name="pageId"/> (children, grandchildren, …)
+            as nested <see cref="T:MindAttic.Ideas.Abstractions.ChildPageNode"/> records. Empty when the page has no descendants.
+            Default implementation falls back to one level via <see cref="M:MindAttic.Ideas.Abstractions.IPageTree.ChildrenOfAsync(System.Guid,System.Threading.CancellationToken)"/>.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ContentDescriptor">
+            <summary>
+            The uniform record every source yields for one citizen. Type is resolved LATE (never stored as
+            identity) via <see cref="T:MindAttic.Ideas.Abstractions.ITypeResolver"/>, so a stale/renamed type degrades to a placeholder
+            instead of crashing. Identity is (<see cref="P:MindAttic.Ideas.Abstractions.ContentDescriptor.Kind"/>, <see cref="P:MindAttic.Ideas.Abstractions.ContentDescriptor.Key"/>, <see cref="P:MindAttic.Ideas.Abstractions.ContentDescriptor.Version"/>).
+            </summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ContentDescriptor.Version">
+            <summary>Whole-number version. Coexists with other versions of the same Key.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ContentDescriptor.Priority">
+            <summary>Higher wins a (Kind,Key,Version) collision. Compiled=100, Package=50 by convention.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ContentDescriptor.ClrTypeName">
+            <summary>For Strategy=ClrType: the resolvable CLR type name. Null/empty =&gt; pure RawMarkup citizen.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ContentDescriptor.RawBundle">
+            <summary>For Strategy=RawMarkup: the inline content bundle (e.g. a pure-CDN UiUx component).</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ContentDescriptor.AssetMount">
+            <summary>Base URL/path under which this citizen's assets are served (opaque to callers).</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ContentDescriptor.AllowOverride">
+            <summary>A package may shadow a compiled key only with this set true PLUS admin confirmation.</summary>
+        </member>
+        <member name="P:MindAttic.Ideas.Abstractions.ContentDescriptor.Extra">
+            <summary>Reserved extensibility bag for additive fields that don't yet warrant a property.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.RawContentBundle">
+            <summary>Raw author markup for a RawMarkup citizen.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.RawContentBundle.#ctor(System.String,System.String,System.String,System.Boolean)">
+            <summary>Raw author markup for a RawMarkup citizen.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ICmsContentSource">
+            <summary>A source of content registrations. Phase 1 ships exactly the compiled-reflection source.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ITypeResolver">
+            <summary>
+            The ONE class that absorbs all CLR/ALC/framework churn: resolve a descriptor to a Type.
+            Phase-1 impl uses the default load context; the Phase-5 impl is ALC-aware behind this same
+            interface — no other code learns about assembly loading. Returns null =&gt; render a placeholder.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IPackageAssetSource">
+            <summary>
+            Serves a runtime package's <c>wwwroot</c> asset. RESERVED — the Phase-1 implementation returns
+            null for everything; the Phase-5 implementation reads from extracted package files.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IContentCatalog">
+            <summary>The unified, queryable catalog of all registered citizens.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IContentCatalog.Find(MindAttic.Ideas.Abstractions.ContentKind,System.String,System.Int32)">
+            <summary>Find a specific pinned version.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IContentCatalog.FindLatest(MindAttic.Ideas.Abstractions.ContentKind,System.String)">
+            <summary>Find the highest enabled version of a key (when a tag doesn't pin one).</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.IContentCatalog.ResolveTag(MindAttic.Ideas.Abstractions.ContentKind,System.String,System.Nullable{System.Int32})">
+            <summary>
+            Resolve an include tag to a render outcome (APPEND-ONLY default method — frozen-interface safe).
+            The default can only report Resolved/Missing (it sees enabled winners only); a concrete catalog
+            that tracks a disabled-identity snapshot OVERRIDES this to also report <see cref="F:MindAttic.Ideas.Abstractions.ContentResolution.Disabled"/>,
+            so the render guard can distinguish "turned off" from "never existed".
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ContentResolution">
+            <summary>The outcome of resolving an include tag. APPEND-ONLY.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ResolvedContent">
+            <summary>The result of <see cref="M:MindAttic.Ideas.Abstractions.IContentCatalog.ResolveTag(MindAttic.Ideas.Abstractions.ContentKind,System.String,System.Nullable{System.Int32})"/>.</summary>
+        </member>
+        <member name="M:MindAttic.Ideas.Abstractions.ResolvedContent.#ctor(MindAttic.Ideas.Abstractions.ContentResolution,System.Type,MindAttic.Ideas.Abstractions.ContentDescriptor)">
+            <summary>The result of <see cref="M:MindAttic.Ideas.Abstractions.IContentCatalog.ResolveTag(MindAttic.Ideas.Abstractions.ContentKind,System.String,System.Nullable{System.Int32})"/>.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IRenderAlertSink">
+            <summary>
+            Render-time alert seam: a page that resolves a missing or disabled dependency raises an admin alert
+            (so "a page must never be invalid" surfaces to the Admin Inbox instead of silently degrading). The
+            host implementation MUST be fire-and-forget and exception-swallowing — never block or crash a render.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.IRawContentGate">
+            <summary>
+            The SOLE place a <see cref="T:Microsoft.AspNetCore.Components.MarkupString"/> is constructed from author content (analyzer-enforced
+            in Core). Author trust =&gt; raw passthrough; Untrusted =&gt; sanitized.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.SharedContracts">
+            <summary>
+            The ALC unification linchpin for Phase 5: a per-package collectible AssemblyLoadContext MUST
+            defer these assembly-name prefixes to the host's default context so a package's CmsPageBase
+            unifies by reference identity with the host's. The .idea packer is forbidden from shipping them.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ContentKind">
+            <summary>
+            The content kinds. The kind is determined by which base a type derives from
+            (<see cref="T:MindAttic.Ideas.Abstractions.PageBase"/> / <see cref="T:MindAttic.Ideas.Abstractions.PluginBase"/> / <see cref="T:MindAttic.Ideas.Abstractions.ThemeBase"/> / <see cref="T:MindAttic.Ideas.Abstractions.ComponentBase"/>).
+            "Idea" is the package format (<c>.idea</c>) and the shared base
+            (<see cref="T:MindAttic.Ideas.Abstractions.IdeaBase"/>), never a kind. New kinds may be APPENDED here without a breaking change.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.PageKind">
+            <summary>How a Page renders. A Page row carries exactly one of these.</summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.PageKind.Data">
+            <summary>Free-form author HTML/CSS/JS stored in the DB; rendered dynamically, zero deploy.</summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.PageKind.Code">
+            <summary>A compiled <see cref="T:MindAttic.Ideas.Abstractions.PageBase"/> subclass; deploys once per type.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.CmsRenderMode">
+            <summary>
+            Interactivity mode a content type runs under. WebAssembly is intentionally EXCLUDED: a
+            runtime-loaded <c>.idea</c> assembly cannot reach the browser WASM runtime (a hard .NET boundary).
+            If Blazor ever makes WASM runtime-loadable, a new member is appended here — purely additive.
+            </summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ContentMode">
+            <summary>View vs the shared Edit/Preview chrome (same render path, chrome toggled by mode).</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ContentOrigin">
+            <summary>Where a registration came from. Compiled wins collisions over Package (see Priority).</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.RenderStrategy">
+            <summary>How the host turns a descriptor into rendered output.</summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.RenderStrategy.ClrType">
+            <summary>Resolve a CLR <see cref="T:System.Type"/> and render via <c>DynamicComponent</c>.</summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.RenderStrategy.RawMarkup">
+            <summary>Render free-form author markup through the built-in FreeFormPage / raw-content gate.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.PlacementScope">
+            <summary>Where a placeable content type (Module/Control) attaches.</summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.PlacementScope.Placeable">
+            <summary>Dropped into a page by a <c>&lt;MindAttic.Ideas.…&gt;</c> include tag.</summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.PlacementScope.Global">
+            <summary>Attached globally at theme scope (e.g. a page scrollbar, fonts).</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.PluginSlot">
+            <summary>
+            Where in the page a globally-activated Plugin renders, relative to the theme/body.
+            APPEND-ONLY: ordinals grow by appending; never renumber.
+            </summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.PluginSlot.BeforeBody">
+            <summary>Before the theme/body — headers, nav, font and behavior activators. The default, and
+            the only behavior that existed before this enum, so every existing plugin keeps its position.</summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.PluginSlot.AfterBody">
+            <summary>After the theme/body — footers and anything that must close the page.</summary>
+        </member>
+        <member name="T:MindAttic.Ideas.Abstractions.ContentTrust">
+            <summary>
+            The trust line for author-supplied raw markup/JS. Stamped at WRITE time from the author's claim,
+            never re-evaluated at render against the current viewer.
+            </summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.ContentTrust.Untrusted">
+            <summary>Sanitized on render (HtmlSanitizer).</summary>
+        </member>
+        <member name="F:MindAttic.Ideas.Abstractions.ContentTrust.Author">
+            <summary>Rendered verbatim — intentional admin-authored HTML/JS is honored.</summary>
+        </member>
+    </members>
+</doc>

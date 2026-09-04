@@ -59,7 +59,7 @@ var roleStorageBlobDataContributor = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 var roleKeyVaultCryptoUser = '12338af0-0e69-4776-bea7-57ae8d297424'
 var roleKeyVaultSecretsUser = '4633458b-17de-408a-b874-0445c86b69e6'
 var roleKeyVaultCryptoOfficer = '14b46e9e-c2b7-41b4-b07b-48a6ebf60603'
-var roleKeyVaultSecretsOfficer = 'b86a8fe4-44ce-4948-aee7-eccb2c155cd7'
+var roleKeyVaultSecretsOfficer = 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
 
 // ---------------------------------------------------------------------------------------------
 // Storage — media blobs and the Data Protection key ring.
@@ -262,6 +262,14 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
           value: 'Production'
         }
         {
+          // First boot discovers every citizen, seeds the CMS and installs 51 bundled .idea packages
+          // through the real install path -- against a 5-DTU Basic database that is minutes of work,
+          // and the default 230s start limit kills the container mid-seed. Later boots are fast
+          // because seeding is idempotent, but the first one has to be allowed to finish.
+          name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
+          value: '1800'
+        }
+        {
           // Entra-authenticated, passwordless. Microsoft.Data.SqlClient picks up the app's managed
           // identity through DefaultAzureCredential semantics.
           name: 'ConnectionStrings__Ideas'
@@ -290,6 +298,26 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'Media__Azure__SignedUrlMinutes'
           value: '60'
+        }
+        // The auth Security bucket. MindAttic.Authentication fail-closes without these. The secret
+        // VALUES are generated into Key Vault by infra/provision.ps1; only the references live here,
+        // because siteConfig.appSettings is authoritative -- anything added out-of-band would be
+        // wiped by the next template deployment.
+        {
+          name: 'MindAttic__Vault__Security__pepper.v1'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVault.properties.vaultUri}secrets/pepper-v1)'
+        }
+        {
+          name: 'MindAttic__Vault__Security__bootstrap-token'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVault.properties.vaultUri}secrets/bootstrap-token)'
+        }
+        {
+          name: 'MindAttic__Vault__Security__reset-token-key'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVault.properties.vaultUri}secrets/reset-token-key)'
+        }
+        {
+          name: 'MindAttic__Vault__Security__dp-kek'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVault.properties.vaultUri}secrets/dp-kek)'
         }
       ]
     }

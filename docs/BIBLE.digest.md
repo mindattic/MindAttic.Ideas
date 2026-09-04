@@ -119,8 +119,8 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - **UiUx** — MindAttic.UiUx, the build-free canonical source for official content (consumed by pinned-tag URL).
 
 ## Status index (from USER_STORIES.md)
-- done: 43  |  partial: 2  |  planned: 5  |  cut: 0
+- done: 44  |  partial: 1  |  planned: 5  |  cut: 0
 
 ## Latest amendment
-- MAI-A32 — The deployment is code: infra, CI, and a vendored feed
+- MAI-A33 — Deployed. Two library bugs only a Linux host could reveal
 
