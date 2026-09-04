@@ -9,6 +9,8 @@ public sealed class InstalledPackage
 {
     public int Id { get; set; }
     public Guid Uid { get; set; } = Guid.NewGuid();
+    /// <summary>Owning site, or null when shared by every site. Mirrors CmsContentDefinition.SiteId.</summary>
+    public int? SiteId { get; set; }
     public string Category { get; set; } = "";       // Page | Theme | Component
     public string Kind { get; set; } = "";           // data | code
     public string Key { get; set; } = "";

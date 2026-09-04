@@ -132,6 +132,8 @@ public sealed class DiscoveryService(
         Category = x.Category, Origin = x.Origin, Priority = x.Priority, Strategy = x.Strategy,
         RenderMode = x.RenderMode, Scope = x.Scope, ClrTypeName = x.ClrTypeName,
         AssemblyName = x.AssemblyName, AssetMount = x.AssetMount, AllowOverride = x.AllowOverride,
+        // Null = shared by every site; set = owned by one site (a sandbox visitor's own install).
+        SiteId = x.SiteId,
         Extra = x.Origin == ContentOrigin.Package && manifest is not null ? ManifestAssetPacker.PackExtra(manifest) : null,
     };
 }

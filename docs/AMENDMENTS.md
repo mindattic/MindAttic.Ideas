@@ -1038,3 +1038,64 @@ means forwarded headers are accepted from **any** peer — tolerable for `For`/`
 Service, but it would leave zero authentication on the value that now selects a tenant. App Service
 passes the real `Host`, so there is nothing to gain. If a future proxy ever requires it, the safe
 order is: populate `KnownProxies` **first**, then enable the header — never the reverse.
+
+## MAI-A36 — Showroom mode: a sandbox site, and a catalog that knows who is asking {#MAI-A36}
+
+**What changed (2026-09-04).** Ideas needs a place a stranger can be handed admin access to a vanilla
+deployment, upload a `.idea`, watch it go live, and break nothing — the showroom for people
+evaluating Ideas. Demonstrating the product's headline claim requires letting a visitor *actually do*
+the thing, which means the deployment must contain a site whose content is disposable.
+
+**A sandbox is a Site, not a new tenancy axis.** [A35](#MAI-A35) made `SiteId` load-bearing: pages,
+settings and host resolution already run through it. A parallel `InstanceId` would mean every
+tenant-scoped query filtering on two columns that must always agree, with a cross-tenant leak
+wherever one is forgotten — and the schema could not enforce the invariant. So `Site` gained a
+lifecycle instead: `IsSandbox`, `ResetPolicy`, `IdleGraceMinutes`, `LastResetUtc`. One process can
+serve both sites, or two processes can each resolve their own — tenancy lives in the database, not in
+the process.
+
+**The catalog now knows who is asking.** A visitor installing a package was the hard part: the
+catalog was global, so an upload would have changed what *every* site renders.
+`CmsContentDefinition` and `InstalledPackage` gained a nullable `SiteId` — **null means shared**,
+which is what every existing row means. Resolution is site-first, then shared: a site's own citizen
+wins over the shared one of the same identity, and a site that installed nothing sees exactly the
+catalog it saw before. `SiteId` joins both unique indexes, because the shared copy and a sandbox's own
+copy of `(Kind, Key, Version, Origin)` are legitimately different rows.
+
+Two details carry most of the safety:
+
+- **The site-less lookups now mean SHARED-ONLY.** `Find`/`FindLatest`/`ResolveTag` without a site
+  used to match any row. Every caller holding no site is a back door, so if they matched a sandbox
+  row a stranger's upload could surface on the real site through one of them. Shared-only is also
+  exactly what they meant before sites could own citizens.
+- **The Abstractions surface was appended to, never changed** ([MAI-LAW-2](BIBLE.md#MAI-LAW-2)).
+  `ContentDescriptor.SiteId` is a new optional init-only property; the site-aware lookups are default
+  interface methods whose defaults ignore the site and fall through, so a catalog written before this
+  keeps working untouched — pinned by a test that implements only the frozen members.
+
+**The main site is never reset — structurally, and twice.** Showroom mode contains a routine that
+deletes a site's content on a timer, so the safety is not a conditional at the call site.
+`SandboxService.Gate` is the only authority for "may this be reset?", and it refuses unless the site
+is a sandbox, has a reset policy, **and is not the default site** — the default check runs *first and
+independently of the sandbox flag*, so a row hand-edited in SQL to mark the main site as a sandbox is
+still refused. `SiteAdminService` refuses to create that state from either direction: the default
+site cannot be put into Showroom mode, and a showroom site cannot be promoted to default. The idle
+sweep re-gates every candidate rather than trusting its own query predicate, because a predicate that
+drifts from the gate is precisely how the wrong site gets wiped.
+
+**Idle, not "the moment they leave."** A visitor between page loads has no live circuit for a beat;
+wiping the site under them would read as a crash. Liveness comes from the auth package's
+`AuthSession` (`LastSeenUtc`, unrevoked, unexpired) and a per-site grace period. Sessions are not
+site-scoped, so "in use" is measured across the deployment — deliberately conservative, since that
+can only ever *delay* a reset, never cause one.
+
+**Day Zero is a content bundle.** The baseline a showroom resets to is the `.ideabundle` from
+[A34](#MAI-A34): reset = drop the site's own content and packages, then import the baseline scoped to
+that site. The export/import path already reconciles by uid-then-slug and remaps media, so the
+restore mechanism is one that is already tested rather than a second, parallel one.
+
+**Still to come** (this amendment is the foundation): install scoping through `PackageInstallService`,
+per-site asset mounts (additive to the route locked by [MAI-LAW-4](BIBLE.md#MAI-LAW-4) — a sibling
+path, never a change to `/_ideas/{Kind}/{key}/{version}/{**path}`), the reset executor and its
+background sweep, lazy provisioning on first navigation, the guided tour, and the recomposition of
+`/ideas` from a compiled brochure into a Data page built from discrete components.

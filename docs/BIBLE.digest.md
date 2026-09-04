@@ -119,8 +119,8 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - **UiUx** — MindAttic.UiUx, the build-free canonical source for official content (consumed by pinned-tag URL).
 
 ## Status index (from USER_STORIES.md)
-- done: 53  |  partial: 1  |  planned: 6  |  cut: 0
+- done: 56  |  partial: 1  |  planned: 12  |  cut: 0
 
 ## Latest amendment
-- MAI-A35 — One deployment, many domains: `HostBindings` is finally read
+- MAI-A36 — Showroom mode: a sandbox site, and a catalog that knows who is asking
 

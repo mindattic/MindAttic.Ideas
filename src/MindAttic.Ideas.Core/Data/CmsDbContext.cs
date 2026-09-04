@@ -53,6 +53,8 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.Property(x => x.Key).HasMaxLength(100).IsRequired();
             e.Property(x => x.Name).HasMaxLength(200);
             e.Property(x => x.HostBindings).HasMaxLength(1000);
+            e.Property(x => x.ResetPolicy).HasMaxLength(32);
+            e.HasIndex(x => x.IsSandbox);
             e.Property(x => x.DefaultThemeKey).HasMaxLength(120);
             e.Property(x => x.RowVersion).IsRowVersion();
             e.HasQueryFilter(x => !x.IsDeleted);
@@ -155,7 +157,11 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
         {
             e.HasKey(x => x.Id);
             e.HasAlternateKey(x => x.Uid);
-            e.HasIndex(x => new { x.Kind, x.Key, x.Version, x.Origin }).IsUnique();
+            // SiteId is part of the identity: two sites may legitimately hold the same
+            // (Kind, Key, Version, Origin) — the shared one and a sandbox's own copy — and without it
+            // the second install would fail on the unique index rather than land in its own site.
+            e.HasIndex(x => new { x.Kind, x.Key, x.Version, x.Origin, x.SiteId }).IsUnique();
+            e.HasIndex(x => x.SiteId);
             e.Property(x => x.Key).HasMaxLength(120).IsRequired();
             e.Property(x => x.DisplayName).HasMaxLength(200);
             e.Property(x => x.ClrTypeName).HasMaxLength(512);
@@ -173,7 +179,8 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
         {
             e.HasKey(x => x.Id);
             e.HasAlternateKey(x => x.Uid);
-            e.HasIndex(x => new { x.Category, x.Key, x.Version }).IsUnique();
+            e.HasIndex(x => new { x.Category, x.Key, x.Version, x.SiteId }).IsUnique();
+            e.HasIndex(x => x.SiteId);
             e.Property(x => x.Category).HasMaxLength(16);
             e.Property(x => x.Kind).HasMaxLength(16);
             e.Property(x => x.Key).HasMaxLength(120).IsRequired();

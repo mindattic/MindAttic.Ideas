@@ -436,6 +436,46 @@ updated: 2026-06-16
   *(test: `ContentBundleTests.ExportCarriesOneSite_AndImportCreatesThatSiteRatherThanDumpingOntoTheDefault`,
   `ExportTakesOnlyTheNamedSitesPages`, `ExportWithAnUnknownSiteKey_FailsRatherThanExportingTheWrongSite`.)*
 
+## Epic M — Showroom mode (A36)
+
+- **MAI-US-M1 ✅** As an Operator, a package a sandbox visitor installs is invisible to every other
+  site, because the catalog resolves site-first-then-shared and a site-less lookup means shared-only.
+  *Letting a stranger install a `.idea` is the headline claim being demonstrated, so it has to be
+  real — and every caller holding no site is a back door into the live catalog.*
+  *(test: `SiteScopedCatalogTests` — isolation both ways, site-own-wins precedence, version ordering,
+  pinned versions never promoted, Disabled vs Missing preserved, and a catalog implementing only the
+  frozen members still working through the appended default methods.)*
+- **MAI-US-M2 ✅** As the owner, **the main site is never reset**, because the reset gate refuses the
+  default site first and independently of the sandbox flag, and the admin service refuses to create
+  the dangerous state from either direction. *Showroom mode contains a routine that deletes content on
+  a timer; the safety is structural and deliberately redundant, so neither a row hand-edited in SQL
+  nor a future caller that skips the admin service can wipe production.*
+  *(test: `SandboxGuardTests.TheDefaultSiteIsNeverResettable_EvenIfItIsSomehowFlaggedAsASandbox`,
+  `DueForReset_NeverIncludesTheDefaultSite`, `TheDefaultSiteCannotBePutIntoShowroomMode`,
+  `AShowroomSiteCannotBePromotedToDefault`.)*
+- **MAI-US-M3 ✅** As a visitor, the showroom is not wiped while I am using it, because liveness comes
+  from unrevoked, unexpired `AuthSession.LastSeenUtc` and a per-site grace period. *"The moment they
+  leave" would fire between page loads and read as a crash.*
+  *(test: `SandboxGuardTests.ALiveSessionHoldsOffTheReset`, `OnceTheGracePeriodPasses_TheShowroomIsDue`,
+  `ARevokedSessionDoesNotHoldOffTheReset`.)*
+- **MAI-US-M4 ⬜** As a visitor, I can upload a `.idea` into the showroom and watch it render, with the
+  install landing in my site only. *Needs `PackageInstallService` site scoping, a per-site asset mount
+  added alongside the route locked by [MAI-LAW-4](BIBLE.md#MAI-LAW-4), and ALC keying that includes
+  the site so two sites holding the same key+version of different bytes cannot collide.*
+- **MAI-US-M5 ⬜** As a visitor, the showroom returns to Day Zero once I log off, restored from the
+  baseline `.ideabundle` ([A34](AMENDMENTS.md#MAI-A34)) by a background sweep.
+- **MAI-US-M6 ⬜** As a visitor, the showroom fires up on first navigation, provisioned from the
+  baseline rather than kept warm.
+- **MAI-US-M7 ⬜** As a visitor, the admin area explains itself — a guided tour with coach marks on
+  each panel. *Built raw as a Plugin reusing `Plugin.Tooltip`'s edge-aware positioning rather than
+  taking an intro.js dependency, so the tour is CONTENT the showroom activates rather than markup
+  baked into admin.*
+- **MAI-US-M8 ⬜** As a visitor, I can download sample `.idea` files to upload, so the demo has
+  something to demonstrate with.
+- **MAI-US-M9 ⬜** As a reader, `/ideas` is a Data page composed of discrete components rather than one
+  compiled `Component.IdeasBrochure`. *A brochure that cannot be edited without a redeploy argues
+  against the very claim it is making.*
+
 ## Priority backlog
 
 **Entries from Epic H** — A26 taxonomy refactor (2026-06-16, [A26](AMENDMENTS.md#MAI-A26)). The headline goal is met:

@@ -74,6 +74,7 @@ public static class ServiceCollectionExtensions
         // per call rather than holding one.
         services.AddSingleton<ISiteResolver, SiteResolver>();
         services.AddScoped<ISiteAdminService, SiteAdminService>();
+        services.AddScoped<ISandboxService, SandboxService>();
 
         // Phase-5: .idea package install (validate + persist bytes + extract + register rows + ALC resolve).
         // Local file store/extractor by default; the ADR's Azure Blob backing slots in behind IPackageBlobStore.
