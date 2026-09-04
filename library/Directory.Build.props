@@ -23,6 +23,12 @@
     <!-- A distributable .idea citizen: never a NuGet package, never built by the CMS solution. -->
     <IsPackable>false</IsPackable>
 
+    <!-- Copy a citizen's THIRD-PARTY NuGet dependencies (e.g. Markdig for Component.FromMd) into bin/ so
+         the packer can ship them and the package is self-contained at runtime. Host/framework assemblies
+         are still excluded: Abstractions is Private=false + ExcludeAssets=runtime below, and the packer
+         (and the manifest validator) drop anything matching SharedContracts.DeferToDefaultPrefixes. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
     <!-- Path to the CMS Abstractions project in the sibling src/ tree (same repo). -->
     <IdeasAbstractionsProject Condition="'$(IdeasAbstractionsProject)' == ''">$(MSBuildThisFileDirectory)..\src\MindAttic.Ideas.Abstractions\MindAttic.Ideas.Abstractions.csproj</IdeasAbstractionsProject>
   </PropertyGroup>

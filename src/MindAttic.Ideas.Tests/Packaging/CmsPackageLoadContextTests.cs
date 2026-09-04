@@ -70,4 +70,82 @@ public class CmsPackageLoadContextTests
             Assert.That(AssemblyLoadContext.GetLoadContext(asm), Is.Not.SameAs(AssemblyLoadContext.Default));
         });
     }
+
+    // ---- flat bin/ probing (an extracted .idea has no NuGet-shaped deps.json) ----
+
+    /// <summary>
+    /// Pick a real assembly beside the test that is (a) not a host-deferred name and (b) not already loaded
+    /// in Default — the only shape where the probe, rather than deferral, decides the outcome.
+    /// </summary>
+    private static string UnloadedPrivateDll()
+    {
+        foreach (var dll in Directory.EnumerateFiles(AppContext.BaseDirectory, "*.dll"))
+        {
+            var name = Path.GetFileNameWithoutExtension(dll);
+            if (AlcDeferralPolicy.ShouldDefer(name, IsLoadedInDefault)) continue;
+            return dll;
+        }
+        Assert.Ignore("No unloaded private assembly available beside the test assembly.");
+        return null!;
+
+        static bool IsLoadedInDefault(string simpleName) =>
+            AssemblyLoadContext.Default.Assemblies.Any(a =>
+                string.Equals(a.GetName().Name, simpleName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Test]
+    public void PrivateDependency_ResolvesFromFlatBinDir_WithoutDepsJson()
+    {
+        // An extracted .idea is a FLAT bin/: the entry DLL plus its non-host dependencies, no deps.json.
+        // AssemblyDependencyResolver cannot resolve that layout, so the context must probe its own directory.
+        var privateDll = UnloadedPrivateDll();
+        var binDir = Path.Combine(Path.GetTempPath(), "ma-idea-alc-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(binDir);
+        try
+        {
+            var entryPath = Path.Combine(binDir, "Entry.dll");
+            File.Copy(typeof(CmsPackageLoadContextTests).Assembly.Location, entryPath);
+            var depPath = Path.Combine(binDir, Path.GetFileName(privateDll));
+            File.Copy(privateDll, depPath);
+            Assert.That(Directory.EnumerateFiles(binDir, "*.deps.json"), Is.Empty, "guard: the layout under test has no deps.json");
+
+            var ctx = new CmsPackageLoadContext(entryPath);
+
+            var asm = ctx.LoadFromAssemblyName(new AssemblyName(Path.GetFileNameWithoutExtension(depPath)));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(asm, Is.Not.Null);
+                Assert.That(asm.Location, Is.EqualTo(depPath).IgnoreCase, "must load the copy inside the package's own bin/");
+                Assert.That(AssemblyLoadContext.GetLoadContext(asm), Is.SameAs(ctx));
+            });
+        }
+        finally { try { Directory.Delete(binDir, recursive: true); } catch { } }
+    }
+
+    [Test]
+    public void ProbeIsScopedToThePackageBinDir_NotTheHostDirectory()
+    {
+        // The probe must only see the package's OWN bin/. An assembly that exists beside the host (here,
+        // beside the test) but was never packed into the .idea must not resolve — otherwise a package would
+        // silently bind to whatever the host happens to ship.
+        var privateDll = UnloadedPrivateDll();
+        var binDir = Path.Combine(Path.GetTempPath(), "ma-idea-alc-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(binDir);
+        try
+        {
+            var entryPath = Path.Combine(binDir, "Entry.dll");
+            File.Copy(typeof(CmsPackageLoadContextTests).Assembly.Location, entryPath);
+            // NOTE: privateDll is deliberately NOT copied into binDir.
+            var ctx = new CmsPackageLoadContext(entryPath);
+
+            // Load() finds nothing in bin/ and returns null, so the runtime falls back to Default. The
+            // assembly may still resolve there — what must NOT happen is it loading into the package context.
+            var asm = ctx.LoadFromAssemblyName(new AssemblyName(Path.GetFileNameWithoutExtension(privateDll)));
+
+            Assert.That(AssemblyLoadContext.GetLoadContext(asm), Is.Not.SameAs(ctx),
+                "an assembly absent from the package's bin/ must never load into the package context");
+        }
+        finally { try { Directory.Delete(binDir, recursive: true); } catch { } }
+    }
 }

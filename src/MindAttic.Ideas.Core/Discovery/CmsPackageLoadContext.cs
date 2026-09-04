@@ -30,11 +30,13 @@ public static class AlcDeferralPolicy
 public sealed class CmsPackageLoadContext : AssemblyLoadContext
 {
     private readonly AssemblyDependencyResolver _resolver;
+    private readonly string _binDir;
 
     public CmsPackageLoadContext(string entryAssemblyPath)
         : base(name: "ma-idea:" + Path.GetFileNameWithoutExtension(entryAssemblyPath), isCollectible: true)
     {
         _resolver = new AssemblyDependencyResolver(entryAssemblyPath);
+        _binDir = Path.GetDirectoryName(Path.GetFullPath(entryAssemblyPath))!;
     }
 
     protected override Assembly? Load(AssemblyName assemblyName)
@@ -44,8 +46,23 @@ public sealed class CmsPackageLoadContext : AssemblyLoadContext
             return null;
 
         // Otherwise this is a private package dependency — load it into THIS context.
-        var path = _resolver.ResolveAssemblyToPath(assemblyName);
+        // AssemblyDependencyResolver only succeeds when a NuGet-shaped .deps.json sits beside the entry
+        // assembly. An extracted .idea is a FLAT bin/ (the packer copies every non-host dependency next to
+        // the entry DLL, no deps.json, no package layout), so the directory probe below is the path that
+        // actually resolves a package's third-party libraries (e.g. Markdig for Component.FromMd).
+        var path = _resolver.ResolveAssemblyToPath(assemblyName) ?? ProbeBinDir(assemblyName.Name);
         return path is null ? null : LoadFromAssemblyPath(path);
+    }
+
+    /// <summary>Resolve <c>&lt;simpleName&gt;.dll</c> from the package's own extracted bin/ directory.</summary>
+    private string? ProbeBinDir(string? simpleName)
+    {
+        if (string.IsNullOrEmpty(simpleName)) return null;
+        var candidate = Path.Combine(_binDir, simpleName + ".dll");
+        // Guard traversal: a hostile simple name must not escape the package's own bin/.
+        var full = Path.GetFullPath(candidate);
+        if (!full.StartsWith(_binDir + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) return null;
+        return File.Exists(full) ? full : null;
     }
 
     private static bool IsLoadedInDefault(string simpleName) =>

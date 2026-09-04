@@ -18,6 +18,11 @@
     <ProjectReference Include="..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj" Condition="'$(Configuration)' == 'Debug' AND Exists('..\..\..\MindAttic.Authentication\src\MindAttic.Authentication\MindAttic.Authentication.csproj')" />
     <!-- PROD Data Protection key-ring persistence + at-rest protection (DefaultAzureCredential ->
          Blob + Key Vault). Only the production code path uses these; dev persists to the file system. -->
+    <!-- Design-time only: required by the dotnet-ef tools when this is the startup project. Never ships. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.3" />
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" Version="1.6.3" />
