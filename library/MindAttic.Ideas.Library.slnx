@@ -30,6 +30,7 @@
     <Project Path="Components/Card/MindAttic.Ideas.Component.Card.csproj" />
     <Project Path="Components/ProjectGrid/MindAttic.Ideas.Component.ProjectGrid.csproj" />
     <Project Path="Components/AppLaunch/MindAttic.Ideas.Component.AppLaunch.csproj" />
+    <Project Path="Components/ProjectBrochure/MindAttic.Ideas.Component.ProjectBrochure.csproj" />
     <Project Path="Components/Accordion/MindAttic.Ideas.Component.Accordion.csproj" />
     <Project Path="Components/Tabs/MindAttic.Ideas.Component.Tabs.csproj" />
     <Project Path="Components/TabBoard/MindAttic.Ideas.Component.TabBoard.csproj" />

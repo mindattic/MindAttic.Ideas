@@ -274,3 +274,35 @@ canvas app; both would affect a router-based SPA.
 **Solution count.** **8 Themes + 14 Plugins + 30 Components = 52 `.idea`s.**
 
 > *Supersedes the count in [MAIL-A8](#MAIL-A8); the Plugin/Component classification is unchanged.*
+
+## MAIL-A10 — ProjectBrochure: one shell, 34 projects (53 `.idea`s) {#MAIL-A10}
+
+**What changed (2026-09-04).** Every MindAttic project needs a brochure page, and the projects have
+almost nothing in common: a Three.js gallery, a Babylon.js world, an ASP.NET log view, and NuGet
+libraries with no screen at all. `Component.ProjectBrochure` is the one thing they *do* share — an
+identity: name, claim, status, what it is built from, where to get it, and one lead image.
+
+**It is a shell, not a page.** It renders the masthead and the lead figure, then hands `ChildContent`
+back so the author composes the rest from what that project actually needs — `<Component.FromMd />`
+for a README, `<Component.AppLaunch />` for something runnable, a rendered flowchart for a library
+with no UI. Trying to make one component render all 34 would have meant a parameter per project.
+
+**`widehero` exists because evidence has two shapes.** A 16:9 screenshot is happy inside the reading
+column; a flowchart is a 5:1 banner and becomes an unreadable smear there. `widehero` breaks the
+figure out to viewport width while keeping the *caption* in the column, where prose belongs.
+
+**Two bugs worth recording, both found by looking at the page rather than the exit code.**
+
+1. **A rendered diagram displayed as alt text.** The `.svg` served `200 image/svg+xml` and the
+   capture tool said `ok`, but `<img src="…svg">` parses SVG as **strict XML**, where the file was
+   invalid twice over: the driver injected a second `style` attribute onto an `<svg>` that already
+   had one, and mermaid's `htmlLabels` (which must be disabled at the ROOT, not just per-diagram)
+   emitted `<foreignObject>` HTML containing unclosed `<br>`. Both are legal HTML and fatal XML,
+   which is why every preview looked right. The driver now **parses its own output as XML before
+   writing it**, in the same browser that will later render it.
+2. **Mojibake in every em-dash.** `sqlcmd` reads a UTF-8 script as ANSI unless told otherwise, so
+   `—` became `â€"` throughout the page copy. Write the file with a BOM, or pass `-f 65001`.
+
+**Solution count.** **8 Themes + 14 Plugins + 31 Components = 53 `.idea`s.**
+
+> *Supersedes the count in [MAIL-A9](#MAIL-A9).*

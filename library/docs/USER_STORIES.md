@@ -113,6 +113,15 @@ updated: 2026-06-09
   200 `text/html`, the 6.65 MB entry chunk 200 `text/javascript`, `favicon.svg` 200, Babylon booted
   with a live WebGL context and a 1280×720 canvas rendering inside the fullscreen overlay.)*
 
+- **MAIL-US-F3 ✅** As a reader, every project gets a brochure page that opens the same way, because
+  `Component.ProjectBrochure` renders the identity all 34 share and hands the body back for whatever
+  that project needs ([MAIL-A10](AMENDMENTS.md#MAIL-A10)).
+  *(verified by demo against a live host: `/projects/mindattic-vault` renders a status pill, tagline,
+  tech badges, Source link, a full-bleed flowchart with its caption held in the reading column, and
+  the README below — a library with NO UI carried entirely by explanation. `/projects/hyperspace`,
+  `/projects/experimentrts` and `/projects/prose` render the same shell with a screenshot and a
+  working `<Component.AppLaunch />`. All four: zero `ma-missing` placeholders.)*
+
 ## Priority backlog
 
 1. **MAIL-US-B2** — a standalone-Blazor-app smoke harness ([RFC 0001](rfc/0001-component-test-harness.md))

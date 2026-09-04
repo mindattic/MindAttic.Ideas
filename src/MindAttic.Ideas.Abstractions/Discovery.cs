@@ -138,7 +138,7 @@ public enum ContentResolution
     Disabled = 2,
 }
 
-/// <summary>The result of <see cref="IContentCatalog.ResolveTag"/>.</summary>
+/// <summary>The result of <see cref="IContentCatalog.ResolveTag(ContentKind, string, int?)"/>.</summary>
 public readonly record struct ResolvedContent(ContentResolution Outcome, Type? Type, ContentDescriptor? Descriptor);
 
 /// <summary>

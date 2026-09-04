@@ -1,0 +1,198 @@
+@namespace MindAttic.Ideas.Component.ProjectBrochure
+@using System.Text.Json
+@inherits ComponentBase
+@attribute [Idea(DisplayName = "Project Brochure")]
+
+@* MindAttic.Ideas.Component.ProjectBrochure.V1 — the masthead every project page opens with.
+
+   It is a SHELL, not a whole page: it renders the identity of a project (name, what it is, how to
+   reach it, what it is built from) and a lead image, then hands the body back to the page so the
+   author composes the rest from whatever the project needs — a README via <Component.FromMd />, a
+   flowchart for a library with no UI, an <Component.AppLaunch /> for something you can actually run.
+   That is the point of the page grammar: 34 projects have nothing in common except an identity.
+
+   <Component.ProjectBrochure title="Hyperspace" tagline="A field guide to the impossible."
+                              herouid="1787c0d0-…" repo="https://github.com/mindattic/Hyperspace"
+                              tech="Three.js, WebGL" status="Shipping">
+     <Component.FromMd />
+   </Component.ProjectBrochure>
+*@
+
+<article class="ma-brochure @CssClass" style="@_outerStyle">
+
+    <header class="ma-brochure-head">
+        @if (!string.IsNullOrWhiteSpace(_status))
+        {
+            <span class="ma-brochure-status" data-status="@_statusKey">@_status</span>
+        }
+
+        <h1 class="ma-brochure-title">@Title</h1>
+
+        @if (!string.IsNullOrWhiteSpace(Tagline))
+        {
+            <p class="ma-brochure-tagline">@Tagline</p>
+        }
+
+        @if (_tech.Count > 0)
+        {
+            <ul class="ma-brochure-tech" aria-label="Built with">
+                @foreach (var t in _tech)
+                {
+                    <li>@t</li>
+                }
+            </ul>
+        }
+
+        @if (_links.Count > 0)
+        {
+            <nav class="ma-brochure-links" aria-label="Project links">
+                @foreach (var (label, href, primary) in _links)
+                {
+                    <a class="@(primary ? "ma-brochure-link primary" : "ma-brochure-link")"
+                       href="@href" rel="noopener">@label</a>
+                }
+            </nav>
+        }
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(_heroSrc))
+    {
+        <figure class="ma-brochure-figure @(_wide ? "wide" : "")">
+            @* A screenshot is evidence, so it is never decorative: it gets a real alt and a caption
+               saying what you are looking at. *@
+            <img src="@_heroSrc" alt="@(_heroAlt)" loading="lazy" decoding="async" />
+            @if (!string.IsNullOrWhiteSpace(Caption))
+            {
+                <figcaption>@Caption</figcaption>
+            }
+        </figure>
+    }
+
+    @if (ChildContent is not null)
+    {
+        <div class="ma-brochure-body">@ChildContent</div>
+    }
+</article>
+
+@code {
+    private const string Mount = "/_ideas/Component/projectbrochure/1";
+
+    public override IReadOnlyList<string> StylesheetUrls { get; } = new[] { Mount + "/projectbrochure.css" };
+
+    /// <summary>The project's name — the page's one h1.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>One line saying what it is. Not a description; a claim.</summary>
+    [Parameter] public string? Tagline { get; set; }
+
+    /// <summary>Managed-media uid of the lead image (a screenshot or a rendered diagram).</summary>
+    [Parameter] public string? HeroUid { get; set; }
+
+    /// <summary>Lead image URL. Ignored when <see cref="HeroUid"/> is set.</summary>
+    [Parameter] public string? HeroUrl { get; set; }
+
+    /// <summary>Alt text for the lead image. Defaults to naming the project.</summary>
+    [Parameter] public string? HeroAlt { get; set; }
+
+    /// <summary>Caption under the lead image — what the reader is looking at.</summary>
+    [Parameter] public string? Caption { get; set; }
+
+    /// <summary>
+    /// Let the lead image break out to near-viewport width. A 16:9 screenshot is happy inside the
+    /// reading column; a flowchart is a 5:1 banner and becomes unreadable there.
+    /// </summary>
+    [Parameter] public bool? WideHero { get; set; }
+
+    /// <summary>Repository URL.</summary>
+    [Parameter] public string? Repo { get; set; }
+
+    /// <summary>A running instance, if there is one.</summary>
+    [Parameter] public string? Live { get; set; }
+
+    /// <summary>Package/download URL (a NuGet page, a release).</summary>
+    [Parameter] public string? Package { get; set; }
+
+    /// <summary>Comma-separated technologies, rendered as badges.</summary>
+    [Parameter] public string? Tech { get; set; }
+
+    /// <summary>e.g. "Shipping", "Experiment", "Archived" — colours the pill.</summary>
+    [Parameter] public string? Status { get; set; }
+
+    /// <summary>JSON blob carrying any of the above (camel- or pascal-case). Explicit parameters win.</summary>
+    [Parameter] public string? Config { get; set; }
+
+    /// <summary>The rest of the page: README, diagrams, galleries, a launcher.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public string? CssStyle { get; set; }
+    [Parameter] public string? Padding { get; set; }
+    [Parameter] public string? Margin { get; set; }
+    [Parameter] public string? Align { get; set; }
+
+    private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
+
+    private sealed class BrochureConfig
+    {
+        public string? Title { get; set; }
+        public string? Tagline { get; set; }
+        public string? HeroUid { get; set; }
+        public string? HeroUrl { get; set; }
+        public string? HeroAlt { get; set; }
+        public string? Caption { get; set; }
+        public bool? WideHero { get; set; }
+        public string? Repo { get; set; }
+        public string? Live { get; set; }
+        public string? Package { get; set; }
+        public string? Tech { get; set; }
+        public string? Status { get; set; }
+    }
+
+    private bool _wide;
+    private string? _heroSrc;
+    private string _heroAlt = "";
+    private string? _status;
+    private string _statusKey = "";
+    private List<string> _tech = [];
+    private List<(string Label, string Href, bool Primary)> _links = [];
+
+    protected override void OnParametersSet()
+    {
+        BrochureConfig? cfg = null;
+        if (!string.IsNullOrEmpty(Config))
+            try { cfg = JsonSerializer.Deserialize<BrochureConfig>(Config, JsonOpts); } catch { }
+
+        var title = First(Title, cfg?.Title) ?? "Project";
+
+        var uid = First(HeroUid, cfg?.HeroUid);
+        _heroSrc = !string.IsNullOrWhiteSpace(uid)
+            ? "/_media/" + uid.Trim()
+            : First(HeroUrl, cfg?.HeroUrl) is { } u ? SafeUrl(u) : null;
+        _heroAlt = First(HeroAlt, cfg?.HeroAlt) ?? $"{title} running";
+        _wide = WideHero ?? cfg?.WideHero ?? false;
+
+        _status = First(Status, cfg?.Status);
+        _statusKey = (_status ?? "").Trim().ToLowerInvariant();
+
+        _tech = (First(Tech, cfg?.Tech) ?? "")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+
+        // Order is deliberate: the thing you can DO comes before the thing you can read.
+        _links = [];
+        if (First(Live, cfg?.Live) is { Length: > 0 } live) _links.Add(("Open it", SafeUrl(live), true));
+        if (First(Package, cfg?.Package) is { Length: > 0 } pkg) _links.Add(("Package", SafeUrl(pkg), false));
+        if (First(Repo, cfg?.Repo) is { Length: > 0 } repo) _links.Add(("Source", SafeUrl(repo), false));
+    }
+
+    private static string? First(params string?[] values) =>
+        values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+    private string _outerStyle => string.Join(";", new[]
+    {
+        string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
+        string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+        string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        CssStyle,
+    }.Where(s => s is not null));
+}

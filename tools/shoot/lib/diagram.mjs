@@ -86,22 +86,42 @@ export async function renderMermaid(browser, source, { theme = 'dark', scale = 1
     await page.addScriptTag({ path: bundle });
 
     const conf = THEMES[theme] ?? THEMES.dark;
-    const svg = await page.evaluate(async ({ src, themeVariables, bg }) => {
+    const svg = await page.evaluate(async ({ src, themeVariables }) => {
       // eslint-disable-next-line no-undef
       const m = window.mermaid;
       m.initialize({
         startOnLoad: false,
         theme: 'base',
         themeVariables,
-        securityLevel: 'strict',      // no click handlers / html labels from diagram source
+        securityLevel: 'strict',   // no click handlers from diagram source
+        // htmlLabels MUST be off at the ROOT, not just per-diagram. With it on, mermaid renders
+        // labels as HTML inside <foreignObject> — including unclosed <br> — which is perfectly legal
+        // HTML and FATAL XML. The file then loads fine in a page but renders nothing through
+        // <img src="…svg">, which is how a brochure shows it.
+        htmlLabels: false,
         flowchart: { curve: 'basis', htmlLabels: false, padding: 14 },
         sequence: { useMaxWidth: true },
       });
       const { svg } = await m.render('d' + Math.random().toString(36).slice(2), src);
-      return svg.replace('<svg ', `<svg style="background:${bg}" `);
-    }, { src: source, themeVariables: conf.variables, bg: conf.background });
+      // Do NOT inject a style attribute here: mermaid already emits one (max-width), and a second
+      // would make the file invalid XML. An HTML parser shrugs that off — which is exactly how it
+      // survives a preview — but an <img src="...svg"> parses strictly and renders NOTHING, so the
+      // diagram silently becomes alt text on the live page. Transparent is the SVG default anyway;
+      // the surface behind it belongs to the page's CSS.
+      return svg;
+    }, { src: source, themeVariables: conf.variables });
 
     if (errors.length) throw new Error(errors.join(' | '));
+
+    // An <img src="…svg"> parses STRICTLY: one stray unclosed tag and the diagram silently becomes
+    // alt text on the live page while every check here still says "ok". So the output is parsed as
+    // XML before it is allowed out, in the same browser that will later have to render it.
+    const parseError = await page.evaluate((markup) => {
+      const doc = new DOMParser().parseFromString(markup, 'image/svg+xml');
+      return doc.querySelector('parsererror')?.textContent?.trim().split('\n')[0] ?? null;
+    }, svg);
+    if (parseError) throw new Error(`rendered SVG is not valid XML — it would not display in an <img>: ${parseError}`);
+
     return svg;
   } finally {
     await ctx.close();

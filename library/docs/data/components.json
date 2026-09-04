@@ -278,6 +278,17 @@
       "notes": "Full-featured Blazor modal component. Parameters: IsOpen (bool, default true), Title, ShowClose (bool?, default true), ShowHeader, ShowFooter, ConfirmText, CancelText, WrapForm (wraps dialog in <form> for submit), Size (sm/md/lg/xl/full, default md), Config (JSON string — fallback defaults; typed params win), ChildContent, OnClose, OnConfirm, OnCancel. CSS always emitted so .ma-modal* classes work for plain-HTML callers. Standalone modalpopup.js retained for non-Blazor Escape/backdrop delegation."
     },
     {
+      "id": "component.projectbrochure",
+      "key": "projectbrochure",
+      "kind": "Component",
+      "version": 1,
+      "displayName": "Project Brochure",
+      "assembly": "MindAttic.Ideas.Component.ProjectBrochure",
+      "artifact": "MindAttic.Ideas.Component.ProjectBrochure.V1.idea",
+      "mount": "/_ideas/Component/projectbrochure/1",
+      "notes": "The masthead a project page opens with (MAIL-A10): status, tagline, tech badges, links and a lead image, then ChildContent for whatever that project needs. A SHELL, not a page -- 34 projects share only an identity. widehero breaks a 5:1 flowchart out of the reading column."
+    },
+    {
       "id": "component.projectgrid",
       "key": "projectgrid",
       "kind": "Component",

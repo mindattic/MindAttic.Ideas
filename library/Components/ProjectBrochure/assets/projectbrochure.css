@@ -1,0 +1,183 @@
+/* MindAttic.Ideas.Component.ProjectBrochure
+ *
+ * Inherits colour from the theme rather than setting its own palette — the same brochure has to read
+ * on Cyberspace, Dark and Light. Everything tunable is a custom property so a page can retheme one
+ * brochure without a stylesheet.
+ */
+
+.ma-brochure {
+  --ma-br-gap: 1.4rem;
+  --ma-br-line: color-mix(in srgb, currentColor 18%, transparent);
+  --ma-br-muted: color-mix(in srgb, currentColor 68%, transparent);
+  --ma-br-radius: 14px;
+  display: block;
+  max-width: var(--ma-br-width, 78ch);
+  margin-inline: auto;
+}
+
+/* ---- masthead ------------------------------------------------------------------------------ */
+
+.ma-brochure-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding-bottom: var(--ma-br-gap);
+}
+
+.ma-brochure-title {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.ma-brochure-tagline {
+  margin: 0;
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  line-height: 1.45;
+  color: var(--ma-br-muted);
+  max-width: 60ch;
+}
+
+/* A status pill. Unknown values fall back to the neutral styling rather than vanishing. */
+.ma-brochure-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.2em 0.7em;
+  border: 1px solid var(--ma-br-line);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ma-br-muted);
+}
+
+.ma-brochure-status::before {
+  content: "";
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ma-brochure-status[data-status="shipping"] { color: #43c98a; border-color: #43c98a55; }
+.ma-brochure-status[data-status="experiment"] { color: #d9a441; border-color: #d9a44155; }
+.ma-brochure-status[data-status="archived"] { color: #8b93a1; border-color: #8b93a155; }
+
+/* ---- tech badges --------------------------------------------------------------------------- */
+
+.ma-brochure-tech {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ma-brochure-tech li {
+  padding: 0.16em 0.6em;
+  border: 1px solid var(--ma-br-line);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: var(--ma-br-muted);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+/* ---- links ---------------------------------------------------------------------------------- */
+
+.ma-brochure-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.5rem;
+}
+
+.ma-brochure-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5em 1.05em;
+  border: 1px solid var(--ma-br-line);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ma-brochure-link:hover,
+.ma-brochure-link:focus-visible {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.ma-brochure-link.primary {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+/* ---- the lead image -------------------------------------------------------------------------- */
+
+.ma-brochure-figure {
+  margin: 0 0 var(--ma-br-gap);
+}
+
+/* Full-bleed past the text column: a screenshot is the evidence, so it gets the room. */
+.ma-brochure-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--ma-br-line);
+  border-radius: var(--ma-br-radius);
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.ma-brochure-figure figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ma-br-muted);
+}
+
+/* ---- body ------------------------------------------------------------------------------------ */
+
+.ma-brochure-body {
+  padding-top: 0.4rem;
+}
+
+.ma-brochure-body > :first-child { margin-top: 0; }
+
+/* A rendered diagram is a wide SVG; let it use the full column and scroll rather than shrink to
+   illegibility on a phone. */
+.ma-brochure-body img[src*="/_media/"],
+.ma-brochure-body svg {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (min-width: 1100px) {
+  .ma-brochure { --ma-br-width: 82ch; }
+  /* The figure breaks out of the reading column — text stays readable, evidence stays large. */
+  .ma-brochure-figure { width: min(112%, 100vw - 4rem); margin-inline: auto; }
+
+  /* A wide diagram is a 5:1 banner: inside a reading column it is a smear. Break it right out to
+     the viewport, and keep the CAPTION in the column where prose belongs. */
+  .ma-brochure-figure.wide {
+    width: calc(100vw - 3rem);
+    margin-left: calc(50% - 50vw + 1.5rem);
+    margin-right: calc(50% - 50vw + 1.5rem);
+  }
+  .ma-brochure-figure.wide figcaption {
+    max-width: var(--ma-br-width, 82ch);
+    margin-inline: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ma-brochure-link { transition: none; }
+}
