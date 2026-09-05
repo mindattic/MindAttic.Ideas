@@ -1211,3 +1211,66 @@ Two defects surfaced in doing that, both of which the reset would have triggered
 existed but nothing exposed it. The Sites panel now carries the toggle, its grace settings, and a
 two-click *Reset to baseline now*; `--reset-sandbox <key>` is the operator-facing form of the sweep.
 Configuration is `Showroom:{Enabled,IntervalMinutes,BaselineBundle}`, absent by default.
+
+---
+
+## MAI-A39 — Showroom mode is withdrawn: a demo is a DEPLOYMENT, not a feature {#MAI-A39}
+
+**Supersedes [A36](#MAI-A36), [A37](#MAI-A37) and [A38](#MAI-A38)** (2026-09-05). Those three built a
+sandbox site *inside* the real deployment: a site lifecycle, a per-site catalog, a reset executor and an
+idle sweep. All of it is removed. A showroom is a **separate, vanilla install of Ideas** — its own app,
+its own database, reset by its own operator — and needs no product code at all.
+
+**Why the earlier reading was wrong.** The clearest evidence was in the shape of the code A36–A38
+produced: three redundant guards, a gate asked twice, a default-site refusal checked first and
+independently of every other flag, and a whole test fixture whose stated purpose was to make one
+sentence true — *the main site is never reset*. None of that defends against a hazard in the product.
+It defends against a hazard **the design introduced**, by putting a routine that deletes content into
+the same process and database as the live site. A separate deployment has nothing to defend: there is
+no production content in reach.
+
+It is also the weaker demo. Ideas' claim is that one deployment hosts many pages and goes live the
+moment a `.idea` is uploaded. A visitor evaluating that should meet an actual Ideas install doing
+exactly that — not a tenancy-scoped imitation of it inside somebody's real site, with a subset of
+admin and an upload path that behaves differently from the real one.
+
+And the cost was carried by the whole product, not the demo: every catalog lookup gained a site-aware
+overload, shadowing became per-site, package bytes and extraction directories and ALC keys all grew a
+site segment, and the asset route grew a sibling — for a scenario (two sites holding the same key and
+version of *different bytes*) that a single-tenant deployment never reaches.
+
+**What was removed.** `Site.IsSandbox` / `ResetPolicy` / `IdleGraceMinutes` / `LastResetUtc`;
+`SandboxService`, `SandboxResetService`, `SandboxResetSweep`, `ISandboxBaselineSource`, `InstallScope`;
+`SiteId` on `CmsContentDefinition` and `InstalledPackage` and every lookup, shadow group, blob path,
+extraction root, ALC key and asset mount that read it; `SiteAdminService.SetSandboxAsync` and its two
+guards; the Sites-panel showroom UI; `--reset-sandbox` and `--install --site`; the `Showroom:*`
+configuration. Migration `RemoveSandboxAndSiteScopedCatalog` drops the columns and returns both unique
+indexes to their pre-A36 shape.
+
+**A pre-1.0 withdrawal from the frozen SDK.** `ContentDescriptor.SiteId` and the site-aware
+`IContentCatalog` default methods were appended under [MAI-LAW-2](BIBLE.md#MAI-LAW-2) and are now
+*removed*, which append-only would otherwise forbid. The precedent is [A19](#MAI-A19), which removed the
+`Control` kind pre-1.0 and retired its ordinal. The same reasoning holds: MAJOR is still 1, nothing
+outside this repo has ever consumed either member, and leaving dead API on a surface that is frozen
+*forever* is a worse outcome than withdrawing it in the window where withdrawal is still possible. As
+with `Control`, this is a withdrawal, not a licence — the surface remains append-only.
+
+**Three things survive, because they were defects the showroom work merely uncovered:**
+
+- **`--into-site` copies rather than moves.** Import reconciled a page on `Uid` first with no site
+  filter. A uid is the portable identity and therefore global, while a page belongs to exactly one site
+  — so importing a bundle into site B, on a deployment that already held those pages under site A, would
+  re-point site A's rows instead of giving B its own. Both lookups are site-scoped and a page whose uid
+  is already taken gets a fresh one. This is a live [A34](#MAI-A34)/[A35](#MAI-A35) bug independent of
+  any showroom. *(test: `ContentBundleTests.IntoSite_CopiesThePagesRatherThanMovingThemOffTheSiteThatHasThem`)*
+- **`ContentBundleImporter` stays in Core.** The import half no longer lives inside a CLI verb; the verb
+  is argument parsing and console reporting over it. Better structure on its own merits.
+- **The `SharedRowUniqueIndexes` reasoning is retired, not forgotten.** Those filtered indexes existed
+  only because a nullable `SiteId` had joined the key, and a unique index over a nullable column is
+  filtered to `IS NOT NULL` on SQL Server — which had silently left every shared row unconstrained. With
+  the column gone the plain unique index covers every row again. The lesson stands for the next time a
+  nullable column is added to a unique index.
+
+**What a showroom deployment actually needs from this repo:** nothing new. It is an Ideas install; it
+gets back to Day Zero the way any environment does — `--import-content <bundle> --prune`, or a database
+restore. How and when that runs is a deployment decision, recorded wherever that deployment is, not here.

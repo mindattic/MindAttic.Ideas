@@ -12,13 +12,6 @@ namespace MindAttic.Ideas.Core.Entities;
 public sealed class CmsContentDefinition
 {
     public int Id { get; set; }
-    /// <summary>
-    /// The site that owns this citizen, or null when it is SHARED by every site (compiled citizens
-    /// and the first-party library). Set for a package a sandbox visitor installed, so their upload
-    /// changes only their own site. Resolution prefers a site's own row, then falls back to shared.
-    /// </summary>
-    public int? SiteId { get; set; }
-
     public Guid Uid { get; set; } = Guid.NewGuid();
 
     public ContentKind Kind { get; set; }

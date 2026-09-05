@@ -34,48 +34,26 @@ public sealed class ContentCatalog(ITypeResolver resolver) : IContentCatalog
 
     public IReadOnlyCollection<ContentDescriptor> All => _snapshot.All;
 
-    // The site-less lookups mean SHARED-ONLY. That is what they meant before sites could own citizens
-    // (every row was shared), and it is the safe reading now: if they matched any row, a package a
-    // sandbox visitor installed could surface on the real site through any caller that has no site in
-    // hand — a cross-tenant leak through the back door.
     public ContentDescriptor? Find(ContentKind kind, string key, int version) =>
-        Find(kind, key, version, siteId: null);
+        _snapshot.All.FirstOrDefault(d => d.Kind == kind && d.Key == key && d.Version == version);
 
     public ContentDescriptor? FindLatest(ContentKind kind, string key) =>
-        FindLatest(kind, key, siteId: null);
+        _snapshot.All
+            .Where(d => d.Kind == kind && d.Key == key)
+            .OrderByDescending(d => d.Version)
+            .FirstOrDefault();
 
     public Type? ResolveType(ContentDescriptor descriptor) => resolver.Resolve(descriptor);
 
-    // ---- site-scoped lookups (MAI-A36) -----------------------------------------------------------
-    //
-    // A sandbox site lets visitors install their own packages, so a lookup has to be able to say WHO
-    // is asking. The rule is site-first, then shared: a site's own citizen wins over the shared one of
-    // the same (Kind, Key, Version), and a site that installed nothing sees exactly the shared catalog
-    // it saw before this existed. Passing siteId: null asks only for shared citizens.
-
-    /// <summary>Shared rows plus this site's own; a site's own row of the same identity wins.</summary>
-    private static bool Visible(ContentDescriptor d, int? siteId) => d.SiteId is null || d.SiteId == siteId;
-
-    /// <summary>Orders candidates so a site's OWN citizen is preferred over the shared one.</summary>
-    private static int Ownership(ContentDescriptor d) => d.SiteId is null ? 0 : 1;
-
-    public ContentDescriptor? Find(ContentKind kind, string key, int version, int? siteId) =>
-        _snapshot.All
-            .Where(d => d.Kind == kind && d.Key == key && d.Version == version && Visible(d, siteId))
-            .OrderByDescending(Ownership)
-            .FirstOrDefault();
-
-    public ContentDescriptor? FindLatest(ContentKind kind, string key, int? siteId) =>
-        _snapshot.All
-            .Where(d => d.Kind == kind && d.Key == key && Visible(d, siteId))
-            // Highest version wins; within one version, the site's own copy wins over the shared one.
-            .OrderByDescending(d => d.Version).ThenByDescending(Ownership)
-            .FirstOrDefault();
-
-    public ResolvedContent ResolveTag(ContentKind kind, string key, int? version, int? siteId)
+    /// <summary>
+    /// Version-aware resolution: a pinned version is resolved exactly or reported Disabled/Missing — never
+    /// silently promoted to the latest enabled version. A floating reference (version == null) resolves to
+    /// the latest enabled version as before.
+    /// </summary>
+    public ResolvedContent ResolveTag(ContentKind kind, string key, int? version)
     {
         var snap = _snapshot;   // single read — consistent enabled+disabled pair
-        var desc = version is int v ? Find(kind, key, v, siteId) : FindLatest(kind, key, siteId);
+        var desc = version is int v ? Find(kind, key, v) : FindLatest(kind, key);
         if (desc is not null)
         {
             var type = ResolveType(desc);
@@ -89,12 +67,4 @@ public sealed class ContentCatalog(ITypeResolver resolver) : IContentCatalog
             : snap.Disabled.Any(d => d.Kind == kind && d.Key == key);
         return new ResolvedContent(known ? ContentResolution.Disabled : ContentResolution.Missing, null, null);
     }
-
-    /// <summary>
-    /// Version-aware resolution: a pinned version is resolved exactly or reported Disabled/Missing — never
-    /// silently promoted to the latest enabled version. A floating reference (version == null) resolves to
-    /// the latest enabled version as before.
-    /// </summary>
-    public ResolvedContent ResolveTag(ContentKind kind, string key, int? version) =>
-        ResolveTag(kind, key, version, siteId: null);
 }

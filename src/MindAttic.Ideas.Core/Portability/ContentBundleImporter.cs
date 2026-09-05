@@ -23,17 +23,6 @@ public sealed record BundleImportOptions
 
     /// <summary>Site key to import into, overriding the one the bundle names. Null uses the bundle's.</summary>
     public string? IntoSiteKey { get; init; }
-
-    /// <summary>
-    /// Import into this site id, whatever the bundle says — and never touch the site row itself.
-    /// <para>
-    /// This is the sandbox-restore door. A showroom's baseline is a bundle exported from a REAL site, so
-    /// applying its <c>site</c> block would rename the sandbox, overwrite its host bindings and wipe its
-    /// showroom lifecycle flags — turning a routine reset into the loss of the sandbox itself. When this
-    /// is set, <see cref="BundleImportOptions.IntoSiteKey"/> is ignored and the site row is left alone.
-    /// </para>
-    /// </summary>
-    public int? IntoSiteId { get; init; }
 }
 
 /// <summary>What an import did. Counts are reported even for a dry run.</summary>
@@ -47,9 +36,8 @@ public sealed record BundleImportResult(
 }
 
 /// <summary>
-/// Applies a <see cref="ContentBundle"/> to this environment. Lifted out of the CLI verb so that the
-/// showroom reset restores Day Zero through the SAME path an operator's <c>--import-content</c> takes —
-/// a second, parallel restore mechanism is one that is only ever exercised by the thing that breaks.
+/// Applies a <see cref="ContentBundle"/> to this environment. The work behind the
+/// <c>--import-content</c> CLI verb, which is argument parsing and console reporting over it.
 /// <para>
 /// Re-runnable by construction. Pages reconcile on <c>Uid</c> first and <c>(SiteId, Slug)</c> second, both
 /// WITHIN the target site; the slug fallback is what lets a bundle land on a database seeded
@@ -150,13 +138,7 @@ public sealed class ContentBundleImporter(CmsDbContext db, IMediaStore media)
 
         // ---- 2. site -------------------------------------------------------------------------
         Site? site;
-        if (options.IntoSiteId is int pinned)
-        {
-            // Pinned by the caller (the sandbox restore). The site row is deliberately NOT touched.
-            site = await db.Sites.FirstOrDefaultAsync(s => s.Id == pinned, ct);
-            if (site is null) return BundleImportResult.Failed($"No site with id {pinned} to import into.");
-        }
-        else if (bundle.Site is { } bs)
+        if (bundle.Site is { } bs)
         {
             // Match on the site KEY, and CREATE when it is absent rather than falling back to the
             // default site. Since A35 a deployment can host several domains, so quietly redirecting
@@ -216,9 +198,9 @@ public sealed class ContentBundleImporter(CmsDbContext db, IMediaStore media)
         foreach (var bp in bundle.Pages)
         {
             // BOTH lookups are scoped to the target site. Uid is portable and therefore GLOBAL, so an
-            // unscoped uid match would adopt another site's page and re-point its SiteId — importing a
-            // bundle exported from the main site into a sandbox would MOVE production's pages into the
-            // sandbox, and the showroom reset does exactly that import on a timer.
+            // unscoped uid match would adopt ANOTHER site's page and re-point its SiteId: importing a
+            // bundle with --into-site, on a deployment that already holds those pages under a different
+            // site, would MOVE them rather than copy them (MAI-A39).
             var page = await db.Pages.IgnoreQueryFilters().Include(p => p.MetaTags)
                            .FirstOrDefaultAsync(p => p.Uid == bp.Uid && p.SiteId == siteId, ct)
                        ?? await db.Pages.IgnoreQueryFilters().Include(p => p.MetaTags)
@@ -228,7 +210,7 @@ public sealed class ContentBundleImporter(CmsDbContext db, IMediaStore media)
             if (page is null)
             {
                 // A uid is unique across the deployment, so a page landing in a DIFFERENT site than one
-                // that already holds this uid needs its own — the bundle's copy, not a move of the original.
+                // that already holds this uid needs its own — a copy of the bundle's page, not a move.
                 var uidTaken = await db.Pages.IgnoreQueryFilters().AnyAsync(p => p.Uid == bp.Uid, ct);
                 page = new CmsPage { Uid = uidTaken ? Guid.NewGuid() : bp.Uid, CreatedUtc = DateTime.UtcNow };
                 if (!dryRun) db.Pages.Add(page);

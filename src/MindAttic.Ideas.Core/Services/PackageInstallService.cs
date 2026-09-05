@@ -20,18 +20,11 @@ public interface IPackageInstallService
     /// deferred Phase-5/B ALC loader; until then the descriptor's CLR type stays unresolved and the
     /// citizen degrades to a render placeholder rather than crashing. Throws <see cref="InstallException"/>
     /// for an invalid/blocked/downgrade package.
-    /// <para>
-    /// <paramref name="siteId"/> is the OWNER of the install: null installs it shared (what every caller
-    /// meant before sites could own citizens), and a site id installs it into that site alone — the
-    /// sandbox upload path (MAI-A36). Every lookup this method makes is scoped the same way, so a
-    /// visitor's upload is planned against, collides with, and resolves its dependencies from only what
-    /// that site can actually see.
-    /// </para>
     /// </summary>
-    Task<InstallPlan> InstallAsync(Stream ideaBytes, bool allowOverride, int? siteId = null, CancellationToken ct = default);
+    Task<InstallPlan> InstallAsync(Stream ideaBytes, bool allowOverride, CancellationToken ct = default);
 
     /// <summary>Soft-disable an installed version: flip Enabled=false on both rows and reload. Bytes/rows remain.</summary>
-    Task DisableAsync(string category, string key, int version, int? siteId = null, CancellationToken ct = default);
+    Task DisableAsync(string category, string key, int version, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -46,7 +39,7 @@ public sealed class PackageInstallService(
     IPackageExtractor extractor,
     IRenderAlertSink alerts) : IPackageInstallService
 {
-    public async Task<InstallPlan> InstallAsync(Stream ideaBytes, bool allowOverride, int? siteId = null, CancellationToken ct = default)
+    public async Task<InstallPlan> InstallAsync(Stream ideaBytes, bool allowOverride, CancellationToken ct = default)
     {
         // Buffer once: we need the bytes for both the hash and the (seekable) archive read.
         using var buffer = new MemoryStream();
@@ -69,25 +62,15 @@ public sealed class PackageInstallService(
 
         await using var db = await dbFactory.CreateDbContextAsync(ct);
 
-        // Scoped to the OWNER: a shared install is planned against the shared rows, a site's install
-        // against that site's own. Otherwise a sandbox visitor uploading V1 of a key the real site already
-        // holds at V2 would be planned as a downgrade of somebody else's package.
         var installedRows = await db.InstalledPackages
-            .Where(p => p.Key == manifest.Key && p.Category == manifest.Category && p.SiteId == siteId)
+            .Where(p => p.Key == manifest.Key && p.Category == manifest.Category)
             .ToListAsync(ct);
         var installedRefs = installedRows
             .Select(p => new InstalledRef(p.Category, p.Key, p.Version, p.Enabled, p.IsActiveVersion))
             .ToList();
 
-        // The override prompt exists to stop a package silently replacing a COMPILED citizen for the whole
-        // deployment. A site-owned install cannot do that: it wins only inside its own site, through the
-        // catalog's site-first ordering. So the collision domain is the owner's own rows — which for a site
-        // never includes a compiled one, because compiled citizens are always shared. A visitor may
-        // therefore upload a package whose key matches a shipped one and watch their copy take over their
-        // sandbox, changing nothing anywhere else.
-        var compiledKeyExists = siteId is null && await db.ContentDefinitions.AnyAsync(
-            c => c.Origin == ContentOrigin.Compiled && c.Kind == kind && c.Key == manifest.Key
-                 && c.SiteId == null && c.IsActive, ct);
+        var compiledKeyExists = await db.ContentDefinitions.AnyAsync(
+            c => c.Origin == ContentOrigin.Compiled && c.Kind == kind && c.Key == manifest.Key && c.IsActive, ct);
 
         var plan = PackageVersionResolver.Plan(manifest, installedRefs, compiledKeyExists, allowOverride);
         switch (plan.Action)
@@ -111,10 +94,8 @@ public sealed class PackageInstallService(
                     $"(expected 'Kind.key' or 'Kind.key@version'). Update the package manifest.");
         foreach (var (depKind, depKey, depVer) in IncludeReferenceParser.ParseUses(manifest.Requires))
         {
-            // Site-visible, exactly as the catalog resolves: shared citizens plus this site's own.
             var present = await db.ContentDefinitions.AnyAsync(
                 c => c.Kind == depKind && c.Key == depKey && c.Enabled && c.IsActive
-                     && (c.SiteId == null || c.SiteId == siteId)
                      && (depVer == null || c.Version == depVer), ct);
             if (!present)
                 throw new InstallException(
@@ -123,12 +104,11 @@ public sealed class PackageInstallService(
         }
 
         // Persist the verbatim bytes (content-addressed path, safe to save before the DB row).
-        var blobPath = await blobStore.SaveAsync(manifest.Category, manifest.Key, manifest.Version, bytes, siteId, ct);
+        var blobPath = await blobStore.SaveAsync(manifest.Category, manifest.Key, manifest.Version, bytes, ct);
 
         // ---- Registry row (idempotent upsert by the unique (Category,Key,Version)). ----
         var pkg = installedRows.FirstOrDefault(p => p.Version == manifest.Version)
                   ?? AddNew(db, new InstalledPackage());
-        pkg.SiteId = siteId;                              // null = shared; set = this site's own copy
         pkg.Category = manifest.Category;
         pkg.Kind = manifest.Kind;
         pkg.Key = manifest.Key;
@@ -151,11 +131,8 @@ public sealed class PackageInstallService(
 
         // ---- Mirrored catalog row (Origin=Package) so the citizen is registered without the ALC loader. ----
         var def = await db.ContentDefinitions.FirstOrDefaultAsync(
-            c => c.Origin == ContentOrigin.Package && c.Kind == kind && c.Key == manifest.Key
-                 && c.Version == manifest.Version && c.SiteId == siteId, ct)
+            c => c.Origin == ContentOrigin.Package && c.Kind == kind && c.Key == manifest.Key && c.Version == manifest.Version, ct)
             ?? AddNew(db, new CmsContentDefinition());
-        def.SiteId = siteId;                              // joins the unique index: the shared copy and a
-                                                          // site's own copy are legitimately distinct rows
         def.Kind = kind;
         def.Key = manifest.Key;
         def.Version = manifest.Version;
@@ -167,11 +144,7 @@ public sealed class PackageInstallService(
         def.Scope = ParseScope(manifest.Scope);
         def.ClrTypeName = manifest.EntryType;             // resolves only once the ALC loader (B) lands
         def.AssemblyName = manifest.AssemblyName;
-        // A SIBLING path, never a change to the route MAI-LAW-4 locks at
-        // /_ideas/{Kind}/{key}/{version}/{**path} — a site's assets mount one level in, under /_ideas/sites/{id}.
-        def.AssetMount = siteId is int mountSite
-            ? $"/_ideas/sites/{mountSite}/{manifest.Category}/{manifest.Key}/{manifest.Version}"
-            : $"/_ideas/{manifest.Category}/{manifest.Key}/{manifest.Version}";
+        def.AssetMount = $"/_ideas/{manifest.Category}/{manifest.Key}/{manifest.Version}";   // served by the /_ideas route
         def.Priority = 50;                                // Package < Compiled(100)
         def.IsActive = true;
         def.Enabled = true;
@@ -190,14 +163,14 @@ public sealed class PackageInstallService(
         // Extract bin/ only after the DB row is committed so a concurrent-install race that returns
         // NoOpAlreadyInstalled above never leaves orphaned bin/ directories on disk.
         if (string.Equals(manifest.Kind, "code", StringComparison.Ordinal))
-            extractor.Extract(archive, manifest.Category, manifest.Key, manifest.Version, siteId);
+            extractor.Extract(archive, manifest.Category, manifest.Key, manifest.Version);
 
         // ---- Seed-on-install: a Page (code) package may carry data/page.json to make itself routable on
         // upload (idempotent by (SiteId, Slug); never clobbers a row another package or an admin owns). ----
         if (kind == ContentKind.Page && string.Equals(manifest.Kind, "code", StringComparison.Ordinal)
             && archive.ReadPageSeed() is { Slug.Length: > 0 } seed)
         {
-            await ApplyPageSeedAsync(db, pkg, manifest, seed, now, siteId, ct);
+            await ApplyPageSeedAsync(db, pkg, manifest, seed, now, ct);
             try { await db.SaveChangesAsync(ct); }
             catch (DbUpdateException) { /* idempotent — slug already occupied by another package or admin page */ }
         }
@@ -209,7 +182,6 @@ public sealed class PackageInstallService(
         {
             var present = await db.ContentDefinitions.AnyAsync(
                 c => c.Kind == depKind && c.Key == depKey && c.Enabled && c.IsActive
-                     && (c.SiteId == null || c.SiteId == siteId)
                      && (depVer == null || c.Version == depVer), ct);
             if (!present)
                 try { alerts.RaiseMissing(depKind, depKey, depVer, Guid.Empty, $"install:{manifest.Key}@{manifest.Version}"); }
@@ -229,17 +201,11 @@ public sealed class PackageInstallService(
     /// package is never clobbered.
     /// </summary>
     private static async Task ApplyPageSeedAsync(
-        CmsDbContext db, InstalledPackage pkg, IdeaManifest manifest, PageSeed seed, DateTime now,
-        int? owningSiteId, CancellationToken ct)
+        CmsDbContext db, InstalledPackage pkg, IdeaManifest manifest, PageSeed seed, DateTime now, CancellationToken ct)
     {
-        // A site-owned install seeds its page into THAT site, whatever the manifest asks for. In the sandbox
-        // case the manifest is the visitor's own file, so honouring its siteKey would let an upload plant a
-        // page on the real site — the one thing site-scoping exists to prevent.
-        var site = owningSiteId is int owningSite
-            ? await db.Sites.FirstOrDefaultAsync(s => s.Id == owningSite, ct)
-            : seed.SiteKey is { Length: > 0 } sk
-                ? await db.Sites.FirstOrDefaultAsync(s => s.Key == sk, ct)
-                : await db.Sites.FirstOrDefaultAsync(s => s.IsDefault, ct) ?? await db.Sites.FirstOrDefaultAsync(ct);
+        var site = seed.SiteKey is { Length: > 0 } sk
+            ? await db.Sites.FirstOrDefaultAsync(s => s.Key == sk, ct)
+            : await db.Sites.FirstOrDefaultAsync(s => s.IsDefault, ct) ?? await db.Sites.FirstOrDefaultAsync(ct);
         if (site is null) return;   // nothing to attach to yet — skip rather than invent a site
         var siteId = site.Id;
         var slug = seed.Slug.Trim('/').ToLowerInvariant();
@@ -297,22 +263,19 @@ public sealed class PackageInstallService(
         // else: a DIFFERENT package (or an admin) owns this slug — leave it untouched (no clobber).
     }
 
-    public async Task DisableAsync(string category, string key, int version, int? siteId = null, CancellationToken ct = default)
+    public async Task DisableAsync(string category, string key, int version, CancellationToken ct = default)
     {
         if (!Enum.TryParse<ContentKind>(category, ignoreCase: true, out var kind))
             throw new InstallException($"category '{category}' is not a known ContentKind.");
 
         await using var db = await dbFactory.CreateDbContextAsync(ct);
 
-        // Scoped to the owner in BOTH directions: disabling inside a sandbox must not reach the shared copy,
-        // and a shared disable must not silently reach into a site's own.
         var pkg = await db.InstalledPackages.FirstOrDefaultAsync(
-            p => p.Category == category && p.Key == key && p.Version == version && p.SiteId == siteId, ct);
+            p => p.Category == category && p.Key == key && p.Version == version, ct);
         if (pkg is not null) pkg.Enabled = false;
 
         var def = await db.ContentDefinitions.FirstOrDefaultAsync(
-            c => c.Origin == ContentOrigin.Package && c.Kind == kind && c.Key == key
-                 && c.Version == version && c.SiteId == siteId, ct);
+            c => c.Origin == ContentOrigin.Package && c.Kind == kind && c.Key == key && c.Version == version, ct);
         if (def is not null) def.Enabled = false;
 
         if (pkg is null && def is null) return;

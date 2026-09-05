@@ -53,8 +53,6 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.Property(x => x.Key).HasMaxLength(100).IsRequired();
             e.Property(x => x.Name).HasMaxLength(200);
             e.Property(x => x.HostBindings).HasMaxLength(1000);
-            e.Property(x => x.ResetPolicy).HasMaxLength(32);
-            e.HasIndex(x => x.IsSandbox);
             e.Property(x => x.DefaultThemeKey).HasMaxLength(120);
             e.Property(x => x.RowVersion).IsRowVersion();
             e.HasQueryFilter(x => !x.IsDeleted);
@@ -157,23 +155,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
         {
             e.HasKey(x => x.Id);
             e.HasAlternateKey(x => x.Uid);
-            // SiteId is part of the identity: two sites may legitimately hold the same
-            // (Kind, Key, Version, Origin) — the shared one and a sandbox's own copy — and without it
-            // the second install would fail on the unique index rather than land in its own site.
-            //
-            // TWO indexes, because one cannot cover both cases. A unique index over a nullable column is
-            // filtered to IS NOT NULL on SQL Server (NULLs would otherwise collide with each other), which
-            // leaves every SHARED row — that is, every row that existed before A36, and every row the
-            // library seeder installs — outside the constraint. The install path's concurrency guard is a
-            // caught DbUpdateException from exactly this index, so losing it silently turns a race into two
-            // live rows of one identity, which DiscoveryService then throws on when it keys them. The
-            // complementary IS NULL index restores the pre-A36 guarantee for shared rows.
-            e.HasIndex(x => new { x.Kind, x.Key, x.Version, x.Origin, x.SiteId })
-                .IsUnique().HasFilter("[SiteId] IS NOT NULL");
-            e.HasIndex(x => new { x.Kind, x.Key, x.Version, x.Origin })
-                .IsUnique().HasFilter("[SiteId] IS NULL")
-                .HasDatabaseName("IX_ContentDefinitions_Kind_Key_Version_Origin_Shared");
-            e.HasIndex(x => x.SiteId);
+            e.HasIndex(x => new { x.Kind, x.Key, x.Version, x.Origin }).IsUnique();
             e.Property(x => x.Key).HasMaxLength(120).IsRequired();
             e.Property(x => x.DisplayName).HasMaxLength(200);
             e.Property(x => x.ClrTypeName).HasMaxLength(512);
@@ -191,13 +173,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
         {
             e.HasKey(x => x.Id);
             e.HasAlternateKey(x => x.Uid);
-            // Two complementary filtered indexes — see the note on CmsContentDefinition above.
-            e.HasIndex(x => new { x.Category, x.Key, x.Version, x.SiteId })
-                .IsUnique().HasFilter("[SiteId] IS NOT NULL");
-            e.HasIndex(x => new { x.Category, x.Key, x.Version })
-                .IsUnique().HasFilter("[SiteId] IS NULL")
-                .HasDatabaseName("IX_InstalledPackages_Category_Key_Version_Shared");
-            e.HasIndex(x => x.SiteId);
+            e.HasIndex(x => new { x.Category, x.Key, x.Version }).IsUnique();
             e.Property(x => x.Category).HasMaxLength(16);
             e.Property(x => x.Kind).HasMaxLength(16);
             e.Property(x => x.Key).HasMaxLength(120).IsRequired();

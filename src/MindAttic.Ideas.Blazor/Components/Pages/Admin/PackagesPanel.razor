@@ -1,16 +1,8 @@
 @attribute [Authorize(Policy = MaPolicies.Admin)]
-@using MindAttic.Ideas.Core.Sites
-@using MindAttic.Ideas.Core.Data
-@using Microsoft.EntityFrameworkCore
 @inject IPackageRegistryService Registry
-@inject ISiteResolver SiteResolver
-@inject IDbContextFactory<CmsDbContext> DbFactory
-@inject NavigationManager Nav
-@inject IHttpContextAccessor Http
 
-@* Packages panel — browses the .idea blobs this SITE can see: the shared ones plus its own (MAI-A36).
-   The download link hits the admin-protected /_ideas/packages/{category}/{key}/{version} endpoint, or
-   its /_ideas/sites/{id}/… sibling for a package a single site owns. *@
+@* Packages panel — browses every installed .idea blob (for download / SHA-256 verification / rollback).
+   The download link hits the admin-protected /_ideas/packages/{category}/{key}/{version} endpoint. *@
 
 @if (packages is null)
 {
@@ -47,13 +39,8 @@ else
                     <td>
                         @if (!string.IsNullOrEmpty(p.BlobPath))
                         {
-                            @* A site-owned package lives under its own prefix; the shared route below is untouched. *@
-                            <a class="admin-link" download
-                               href="@(p.SiteId is int s
-                                       ? $"/_ideas/sites/{s}/packages/{p.Category}/{p.Key}/{p.Version}"
-                                       : $"/_ideas/packages/{p.Category}/{p.Key}/{p.Version}")">Download</a>
+                            <a class="admin-link" href="/_ideas/packages/@p.Category/@p.Key/@p.Version" download>Download</a>
                         }
-                        @if (p.SiteId is not null)  { <span class="admin-badge">this site only</span> }
                         @if (!p.IsActiveVersion) { <span class="admin-badge">superseded</span> }
                         @if (!p.Enabled)         { <span class="admin-badge">disabled</span>   }
                     </td>
@@ -66,11 +53,6 @@ else
 @code {
     private IReadOnlyList<PackageSummary>? packages;
 
-    protected override async Task OnInitializedAsync()
-    {
-        var requestHost = RequestSite.HostOf(Nav.BaseUri) ?? Http.HttpContext?.Request.Host.Value;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var site = await SiteResolver.ResolveAsync(requestHost, db);
-        packages = await Registry.ListAsync(site?.Id);
-    }
+    protected override async Task OnInitializedAsync() =>
+        packages = await Registry.ListAsync();
 }

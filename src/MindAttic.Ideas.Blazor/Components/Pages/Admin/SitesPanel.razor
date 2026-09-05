@@ -1,6 +1,5 @@
 @attribute [Authorize(Policy = MaPolicies.Admin)]
 @inject ISiteAdminService SitesSvc
-@inject ISandboxResetService SandboxReset
 
 @* Sites panel — one deployment, many domains (MAI-A35). A site's HostBindings decide which requests
    land on it; the default site answers everything unclaimed, which is why a single-site install needs
@@ -76,59 +75,6 @@
             {
                 <p class="admin-hint">★ This is the default site: it answers any hostname no binding claims.</p>
             }
-            else if (!isNew)
-            {
-                @* Showroom mode (MAI-A36). Deliberately absent on the default site: SandboxService.Gate and
-                   SiteAdminService both refuse that state, and offering a switch that cannot be thrown reads
-                   as a bug. Save the site first — the toggle acts on a row that exists. *@
-                <div class="admin-area" style="border:1px dashed #2d7d46;border-radius:6px;padding:.6rem .75rem;">
-                    <label class="admin-flags">
-                        <input type="checkbox" checked="@editing.IsSandbox"
-                               @onchange="e => ToggleSandbox(e.Value is true)" />
-                        <strong>Showroom mode</strong> — a disposable sandbox
-                    </label>
-                    <small>
-                        Visitors may author pages and install their own <code>.idea</code> packages here, and
-                        see none of it anywhere else. Its content is wiped back to the baseline once nobody
-                        has been seen for the grace period below. The default site can never be put into this
-                        mode, whatever its row says.
-                    </small>
-                    @if (editing.IsSandbox)
-                    {
-                        <div class="admin-row" style="margin-top:.5rem">
-                            <label class="admin-area">Reset policy
-                                <input @bind="editing.ResetPolicy" placeholder="when-idle" />
-                                <small>Empty means never reset.</small>
-                            </label>
-                            <label class="admin-area">Idle grace (minutes)
-                                <input type="number" min="1" @bind="editing.IdleGraceMinutes" />
-                            </label>
-                        </div>
-                        <button class="admin-save" @onclick="SaveSandbox">Save showroom settings</button>
-
-                        @* Reset on demand, so the showroom is not only restorable by waiting for the
-                           sweep. Two clicks, because one click that deletes a site's content is a
-                           mis-click waiting to happen — and the executor re-gates regardless. *@
-                        @if (!resetArmed)
-                        {
-                            <button class="admin-link danger" @onclick="() => resetArmed = true">Reset to baseline now…</button>
-                        }
-                        else
-                        {
-                            <div class="admin-status err">
-                                This deletes every page, setting and package <strong>@editing.Name</strong> owns and
-                                restores its baseline. Content in this sandbox is not recoverable.
-                                <button class="admin-link danger" @onclick="ResetNow">Yes, reset it</button>
-                                <button class="admin-link" @onclick="() => resetArmed = false">Cancel</button>
-                            </div>
-                        }
-                        @if (editing.LastResetUtc is { } last)
-                        {
-                            <p class="admin-hint">Last reset @last.ToLocalTime().ToString("yyyy-MM-dd HH:mm").</p>
-                        }
-                    }
-                </div>
-            }
         }
 
         <div class="admin-editor-head" style="margin-top:1.5rem">
@@ -156,13 +102,7 @@
         public string DefaultThemeKey { get; set; } = "";
         public int DefaultThemeVersion { get; set; } = 1;
         public bool IsDefault { get; set; }
-        public bool IsSandbox { get; set; }
-        public string ResetPolicy { get; set; } = "";
-        public int IdleGraceMinutes { get; set; } = 10;
-        public DateTime? LastResetUtc { get; set; }
     }
-
-    private bool resetArmed;
 
     private IReadOnlyList<SiteSummary> sites = [];
     private SiteEdit? editing;
@@ -188,10 +128,7 @@
             Id = s.Id, Key = s.Key, Name = s.Name, HostBindings = s.HostBindings,
             DefaultThemeKey = s.DefaultThemeKey, DefaultThemeVersion = s.DefaultThemeVersion,
             IsDefault = s.IsDefault,
-            IsSandbox = s.IsSandbox, ResetPolicy = s.ResetPolicy ?? "", IdleGraceMinutes = s.IdleGraceMinutes,
-            LastResetUtc = s.LastResetUtc,
         };
-        resetArmed = false;
         isNew = false; status = "";
     }
 
@@ -219,45 +156,6 @@
         var (ok, error, _) = await SitesSvc.CreateAsync(editing!.Key, editing.Name, editing.HostBindings,
                                                         editing.DefaultThemeKey, editing.DefaultThemeVersion);
         return (ok, error);
-    }
-
-    /// <summary>Flip Showroom mode. SiteAdminService is the authority on whether the state is legal.</summary>
-    private async Task ToggleSandbox(bool on)
-    {
-        if (editing is null || isNew) return;
-        editing.IsSandbox = on;
-        await SaveSandbox();
-    }
-
-    private async Task SaveSandbox()
-    {
-        if (editing is null || isNew) return;
-        var (ok, error) = await SitesSvc.SetSandboxAsync(
-            editing.Id, editing.IsSandbox, editing.ResetPolicy, editing.IdleGraceMinutes);
-        statusBad = !ok;
-        status = ok
-            ? (editing.IsSandbox ? "Showroom mode is on for this site." : "Showroom mode is off.")
-            : (error ?? "Could not change showroom mode.");
-        await Load();
-        var refreshed = sites.FirstOrDefault(x => x.Id == editing.Id);
-        if (refreshed is not null) Edit(refreshed);
-    }
-
-    /// <summary>
-    /// Reset on demand. The panel does not decide anything: the executor asks the gate again, so a site
-    /// this button should never have offered is still refused, and the refusal is shown rather than
-    /// swallowed.
-    /// </summary>
-    private async Task ResetNow()
-    {
-        if (editing is null || isNew) return;
-        resetArmed = false;
-        var outcome = await SandboxReset.ResetAsync(editing.Id, DateTime.UtcNow);
-        statusBad = !outcome.Ok;
-        status = outcome.Explanation;
-        await Load();
-        var refreshed = sites.FirstOrDefault(x => x.Id == editing.Id);
-        if (refreshed is not null) Edit(refreshed);
     }
 
     private async Task MakeDefault()

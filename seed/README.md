@@ -19,9 +19,8 @@ off a clipboard, and a re-capture produces different bytes anyway, so it gets a 
 referencing the old one would need regenerating. A seed that only half-restores is not a seed. The
 file is ~18 MB and that is the price of it actually working on a clone.
 
-This is also the natural **Day Zero baseline** for a showroom sandbox
-([A36](../docs/AMENDMENTS.md#MAI-A36)): resetting one means dropping its content and importing this
-scoped to that site.
+It is also what a second, vanilla deployment of Ideas would restore from to get to a known state —
+`--import-content seed/mindattic-site.ideabundle --prune` ([A39](../docs/AMENDMENTS.md#MAI-A39)).
 
 ## Refreshing it
 

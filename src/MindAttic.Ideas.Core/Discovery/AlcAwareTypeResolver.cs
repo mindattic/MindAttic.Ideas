@@ -25,13 +25,7 @@ public sealed class AlcAwareTypeResolver(DefaultTypeResolver inner, IPackageExtr
         if (string.IsNullOrEmpty(descriptor.ClrTypeName) || string.IsNullOrEmpty(descriptor.AssemblyName))
             return null;
 
-        // Site-owned packages extract under their own root, so the entry path already carries the site.
-        // That is what keys the load context by site as well: two sites holding the same
-        // (category, key, version) of DIFFERENT bytes resolve through two distinct paths, hence two
-        // distinct contexts and two distinct type-cache entries — one site's assembly can never be
-        // handed back for the other's descriptor (MAI-A36).
-        var entryPath = extractor.EntryDllPath(
-            descriptor.Category, descriptor.Key, descriptor.Version, descriptor.AssemblyName, descriptor.SiteId);
+        var entryPath = extractor.EntryDllPath(descriptor.Category, descriptor.Key, descriptor.Version, descriptor.AssemblyName);
         if (string.IsNullOrEmpty(entryPath) || !File.Exists(entryPath))
             return null;   // not extracted yet -> placeholder
 

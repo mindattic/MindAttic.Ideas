@@ -42,14 +42,6 @@ public sealed record ContentDescriptor
     /// <summary>A package may shadow a compiled key only with this set true PLUS admin confirmation.</summary>
     public bool AllowOverride { get; init; }
 
-    /// <summary>
-    /// The site this citizen belongs to, or null when it is SHARED by every site (the compiled
-    /// citizens and the first-party library). A sandbox site installs into its own id so a visitor
-    /// uploading a <c>.idea</c> cannot alter what any other site renders. Appended per MAI-LAW-2:
-    /// optional, init-only, and null means exactly what the catalog meant before it existed.
-    /// </summary>
-    public int? SiteId { get; init; }
-
     /// <summary>Reserved extensibility bag for additive fields that don't yet warrant a property.</summary>
     public IReadOnlyDictionary<string, string>? Extra { get; init; }
 }
@@ -113,21 +105,6 @@ public interface IContentCatalog
 
     // ---- site-scoped lookups (APPEND-ONLY default methods — frozen-interface safe) ----------------
     //
-    // A deployment can host several sites, and one of them may be a SANDBOX whose visitors install
-    // their own packages. Those installs must not change what another site renders, so a lookup can
-    // name the site asking. The defaults below IGNORE the site and fall through to the shared
-    // behaviour, so every existing catalog implementation keeps working unchanged; the concrete
-    // ContentCatalog overrides them to prefer a site's own citizen over the shared one.
-
-    /// <summary>Find a pinned version, preferring <paramref name="siteId"/>'s own copy over the shared one.</summary>
-    ContentDescriptor? Find(ContentKind kind, string key, int version, int? siteId) => Find(kind, key, version);
-
-    /// <summary>Latest enabled version, preferring <paramref name="siteId"/>'s own copy over the shared one.</summary>
-    ContentDescriptor? FindLatest(ContentKind kind, string key, int? siteId) => FindLatest(kind, key);
-
-    /// <summary>Resolve an include tag on behalf of a specific site.</summary>
-    ResolvedContent ResolveTag(ContentKind kind, string key, int? version, int? siteId) =>
-        ResolveTag(kind, key, version);
 }
 
 /// <summary>The outcome of resolving an include tag. APPEND-ONLY.</summary>

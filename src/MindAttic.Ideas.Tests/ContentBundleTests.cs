@@ -477,6 +477,40 @@ public class ContentBundleTests
     }
 
     [Test]
+    public async Task IntoSite_CopiesThePagesRatherThanMovingThemOffTheSiteThatHasThem()
+    {
+        // A uid is the PORTABLE identity, so it is global across the deployment — while a page belongs to
+        // exactly one site. Reconciling on uid without a site filter would find the page this deployment
+        // already has under another site and re-point its SiteId, so --into-site would MOVE a site's pages
+        // instead of giving the target its own copy (MAI-A39).
+        var source = NewEnv();
+        await SeedSiteAsync(source);
+        var original = await AddPageAsync(source, "frontpage", "<h1>original</h1>");
+        Assert.That(await ExportAsync(source), Is.Zero);
+
+        // The target already holds that very page, on its own default site.
+        var target = NewEnv();
+        await SeedSiteAsync(target);
+        var mainSiteId = (await target.Db().Sites.SingleAsync()).Id;
+        await AddPageAsync(target, "frontpage", "<h1>original</h1>", uid: original.Uid);
+
+        Assert.That(await ImportAsync(target, "--into-site", "microsite"), Is.Zero);
+
+        await using var read = target.Db();
+        var microsite = await read.Sites.SingleAsync(x => x.Key == "microsite");
+        Assert.Multiple(async () =>
+        {
+            Assert.That(await read.Pages.CountAsync(p => p.SiteId == mainSiteId), Is.EqualTo(1),
+                "the site that already had the page keeps it");
+            Assert.That(await read.Pages.CountAsync(p => p.SiteId == microsite.Id), Is.EqualTo(1),
+                "and the named site gets its own copy");
+            Assert.That(await read.Pages.CountAsync(), Is.EqualTo(2));
+            Assert.That(await read.Pages.Select(p => p.Uid).Distinct().CountAsync(), Is.EqualTo(2),
+                "a copy needs its own uid — the portable identity is unique deployment-wide");
+        });
+    }
+
+    [Test]
     public async Task NotABundle_IsReportedRatherThanThrowing()
     {
         await File.WriteAllBytesAsync(BundlePath, System.Text.Encoding.UTF8.GetBytes("not a zip"));

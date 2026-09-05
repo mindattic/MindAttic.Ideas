@@ -7,9 +7,7 @@ namespace MindAttic.Ideas.Core.Services;
 
 public sealed record SiteSummary(
     int Id, string Key, string Name, string HostBindings,
-    string DefaultThemeKey, int DefaultThemeVersion, bool IsDefault, int PageCount,
-    bool IsSandbox = false, string? ResetPolicy = null, int IdleGraceMinutes = 10,
-    DateTime? LastResetUtc = null);
+    string DefaultThemeKey, int DefaultThemeVersion, bool IsDefault, int PageCount);
 
 /// <summary>
 /// Site CRUD for the Admin "Sites" panel. Without this, a second domain could only be added by hand
@@ -27,12 +25,6 @@ public interface ISiteAdminService
     /// <summary>Which site a given host would resolve to right now — the panel's "test a hostname" box.</summary>
     Task<SiteSummary?> WhichSiteAsync(string host, CancellationToken ct = default);
 
-    /// <summary>
-    /// Turn Showroom mode on or off for a site. Refuses on the DEFAULT site: showroom content is
-    /// wiped on a timer, and the site that answers every unclaimed host is the real one.
-    /// </summary>
-    Task<(bool Ok, string? Error)> SetSandboxAsync(int id, bool isSandbox, string? resetPolicy,
-        int idleGraceMinutes, CancellationToken ct = default);
 }
 
 public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
@@ -96,13 +88,6 @@ public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
         var target = sites.FirstOrDefault(s => s.Id == id);
         if (target is null) return (false, "Site not found.");
 
-        // The other half of the showroom safety. Promoting a sandbox to default would point a
-        // self-wiping site at every unclaimed host — the exact outcome the sandbox gate exists to
-        // prevent, reached from the opposite direction.
-        if (target.IsSandbox)
-            return (false, $"\"{target.Key}\" is a showroom sandbox and its content is wiped on a timer. "
-                         + "Turn Showroom mode off before making it the default site.");
-
         // Exactly one default: it is the answer for every unbound hostname, so two would make
         // resolution depend on row order.
         foreach (var s in sites) s.IsDefault = s.Id == id;
@@ -127,26 +112,6 @@ public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
         return (true, null);
     }
 
-    public async Task<(bool Ok, string? Error)> SetSandboxAsync(int id, bool isSandbox, string? resetPolicy,
-        int idleGraceMinutes, CancellationToken ct = default)
-    {
-        var site = await db.Sites.FirstOrDefaultAsync(s => s.Id == id, ct);
-        if (site is null) return (false, "Site not found.");
-
-        // The main site can never be put into Showroom mode. This is the write-time half of the
-        // guarantee; SandboxService.Gate refuses the same case again at reset time, so neither a bad
-        // flag in the database nor a future caller that skips this method can wipe the real site.
-        if (isSandbox && site.IsDefault)
-            return (false, $"\"{site.Key}\" is the default site. The default site can never be a showroom "
-                         + "sandbox — its content would be wiped whenever the site went idle.");
-
-        site.IsSandbox = isSandbox;
-        site.ResetPolicy = isSandbox ? (string.IsNullOrWhiteSpace(resetPolicy) ? SandboxService.WhenIdle : resetPolicy.Trim()) : null;
-        site.IdleGraceMinutes = idleGraceMinutes <= 0 ? 10 : idleGraceMinutes;
-        site.ModifiedUtc = DateTime.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return (true, null);
-    }
 
     public async Task<SiteSummary?> WhichSiteAsync(string host, CancellationToken ct = default)
     {
@@ -180,6 +145,5 @@ public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
     private static string CleanBindings(string? raw) => string.Join(", ", HostBinding.Split(raw).Distinct());
 
     private static SiteSummary ToSummary(Site s, int pageCount) => new(
-        s.Id, s.Key, s.Name, s.HostBindings, s.DefaultThemeKey, s.DefaultThemeVersion, s.IsDefault, pageCount,
-        s.IsSandbox, s.ResetPolicy, s.IdleGraceMinutes, s.LastResetUtc);
+        s.Id, s.Key, s.Name, s.HostBindings, s.DefaultThemeKey, s.DefaultThemeVersion, s.IsDefault, pageCount);
 }

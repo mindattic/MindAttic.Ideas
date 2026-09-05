@@ -436,64 +436,22 @@ updated: 2026-06-16
   *(test: `ContentBundleTests.ExportCarriesOneSite_AndImportCreatesThatSiteRatherThanDumpingOntoTheDefault`,
   `ExportTakesOnlyTheNamedSitesPages`, `ExportWithAnUnknownSiteKey_FailsRatherThanExportingTheWrongSite`.)*
 
-## Epic M — Showroom mode (A36)
+## Epic M — Showroom mode 🗑️ CUT ([A39](AMENDMENTS.md#MAI-A39))
 
-- **MAI-US-M1 ✅** As an Operator, a package a sandbox visitor installs is invisible to every other
-  site, because the catalog resolves site-first-then-shared and a site-less lookup means shared-only.
-  *Letting a stranger install a `.idea` is the headline claim being demonstrated, so it has to be
-  real — and every caller holding no site is a back door into the live catalog.*
-  *(test: `SiteScopedCatalogTests` — isolation both ways, site-own-wins precedence, version ordering,
-  pinned versions never promoted, Disabled vs Missing preserved, and a catalog implementing only the
-  frozen members still working through the appended default methods.)*
-- **MAI-US-M2 ✅** As the owner, **the main site is never reset**, because the reset gate refuses the
-  default site first and independently of the sandbox flag, and the admin service refuses to create
-  the dangerous state from either direction. *Showroom mode contains a routine that deletes content on
-  a timer; the safety is structural and deliberately redundant, so neither a row hand-edited in SQL
-  nor a future caller that skips the admin service can wipe production.*
-  *(test: `SandboxGuardTests.TheDefaultSiteIsNeverResettable_EvenIfItIsSomehowFlaggedAsASandbox`,
-  `DueForReset_NeverIncludesTheDefaultSite`, `TheDefaultSiteCannotBePutIntoShowroomMode`,
-  `AShowroomSiteCannotBePromotedToDefault`.)*
-- **MAI-US-M3 ✅** As a visitor, the showroom is not wiped while I am using it, because liveness comes
-  from unrevoked, unexpired `AuthSession.LastSeenUtc` and a per-site grace period. *"The moment they
-  leave" would fire between page loads and read as a crash.*
-  *(test: `SandboxGuardTests.ALiveSessionHoldsOffTheReset`, `OnceTheGracePeriodPasses_TheShowroomIsDue`,
-  `ARevokedSessionDoesNotHoldOffTheReset`.)*
-- **MAI-US-M4 ✅** As a visitor, I can upload a `.idea` into the showroom and watch it render, with the
-  install landing in my site only, because the install takes an OWNER and every lookup it makes is scoped
-  the same way — rows, planning, dependencies, bytes, extraction, assets and the ALC
-  ([A37](AMENDMENTS.md#MAI-A37)). *Letting a stranger install a package is the headline claim being
-  demonstrated; an install that leaks to the shared scope is a stranger changing what production renders,
-  and one that collides on bytes or on the shadow computation is one site serving another site's package.*
-  *(test: `SiteScopedInstallTests` — owner stamped on both rows with a sibling asset mount and a site
-  blob path, the shared install unchanged, two sites holding one identity without colliding, both copies
-  staying live through a PER-SITE shadow computation, disable not crossing the boundary, planning against
-  own versions only, no override needed to beat a compiled citizen while a shared install still needs one,
-  `requires[]` never satisfied by another site, a seeded page landing in the owning site whatever its
-  manifest names, separate extraction roots and asset resolution, `InstallScope.OwnerFor`, and a
-  site-visible registry listing.)*
-- **MAI-US-M5 ✅** As a visitor, the showroom returns to Day Zero once I log off, restored from the
-  baseline `.ideabundle` ([A34](AMENDMENTS.md#MAI-A34)) by a background sweep — through the same
-  importer an operator's `--import-content` runs ([A38](AMENDMENTS.md#MAI-A38)). *The sweep decides
-  nothing: the executor re-asks the gate immediately before the first delete, so the main site is
-  refused from every direction, including a button that should never have offered it.*
-  *(test: `SandboxResetTests` — the default site refused with nothing touched even when hand-flagged as
-  a sandbox, a policy-less sandbox refused, only the site's own pages/settings/packages dropped while
-  the shared library and the real site stand, hard-delete so the baseline can reclaim its slugs,
-  `ComponentMetadata` following the pages it keys on, Day Zero restored from a real exported bundle, the
-  sandbox's key/name/bindings/sandbox flags surviving that restore, a restore never stealing another
-  site's page of the same uid, an unreadable baseline reported rather than swallowed, `LastResetUtc`
-  stamped, and the sweep resetting an idle showroom while leaving a live one alone.)*
-- **MAI-US-M6 ⬜** As a visitor, the showroom fires up on first navigation, provisioned from the
-  baseline rather than kept warm.
-- **MAI-US-M7 ⬜** As a visitor, the admin area explains itself — a guided tour with coach marks on
-  each panel. *Built raw as a Plugin reusing `Plugin.Tooltip`'s edge-aware positioning rather than
-  taking an intro.js dependency, so the tour is CONTENT the showroom activates rather than markup
-  baked into admin.*
-- **MAI-US-M8 ⬜** As a visitor, I can download sample `.idea` files to upload, so the demo has
-  something to demonstrate with.
+**Cut in full on 2026-09-05.** M1–M9 built a sandbox site inside the real deployment. A showroom is a
+**separate, vanilla install of Ideas** — its own app, its own database, reset by its own operator — so
+none of it belongs in the product. The tell was the shape of the code: three redundant guards and a
+gate asked twice, all defending against a hazard the design itself introduced by putting a
+content-deleting routine in the live site's process. See [A39](AMENDMENTS.md#MAI-A39) for what was
+removed and for the three defects it uncovered that were kept.
+
+- **MAI-US-M1 🗑️** site-scoped catalog · **M2 🗑️** the main site is never reset · **M3 🗑️** idle
+  detection · **M4 🗑️** site-scoped install · **M5 🗑️** Day Zero reset · **M6 🗑️** lazy provisioning ·
+  **M7 🗑️** guided tour · **M8 🗑️** sample `.idea` downloads.
 - **MAI-US-M9 ⬜** As a reader, `/ideas` is a Data page composed of discrete components rather than one
   compiled `Component.IdeasBrochure`. *A brochure that cannot be edited without a redeploy argues
-  against the very claim it is making.*
+  against the very claim it is making.* **Kept** — it was only ever filed here by proximity; it is about
+  the marketing page, not the showroom.
 
 ## Priority backlog
 

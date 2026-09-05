@@ -10,8 +10,7 @@ namespace MindAttic.Ideas.Blazor.Cli;
 /// <see cref="ExportContentCli"/> to this environment.
 /// <para>
 /// Argument parsing and console reporting only — the work is
-/// <see cref="ContentBundleImporter"/> in Core, which the showroom reset also restores Day Zero
-/// through, so an operator's import and an automatic one can never drift apart.
+/// <see cref="ContentBundleImporter"/> in Core.
 /// </para>
 /// Usage: <c>dotnet run --project src/MindAttic.Ideas.Blazor -- --import-content site.ideabundle
 /// [--into-site &lt;key&gt;] [--dry-run] [--untrusted] [--prune]</c>

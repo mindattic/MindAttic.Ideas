@@ -43,25 +43,6 @@ builder.Services.AddIdeasCore(
     typeof(Program).Assembly,
     typeof(MindAttic.Ideas.Page.Frontpage.V1).Assembly);
 
-// --- Showroom mode (A38): a sandbox site that returns to Day Zero once nobody is using it. OFF unless
-//     configured, because the sweep it starts is a loop that deletes content. The baseline path is
-//     resolved against the content root so configuration can name it relatively.
-//     "Showroom": { "Enabled": true, "IntervalMinutes": 2, "BaselineBundle": "seed/mindattic-site.ideabundle" }
-var showroomCfg = builder.Configuration.GetSection("Showroom");
-if (showroomCfg.Exists())
-{
-    builder.Services.AddShowroom(o =>
-    {
-        o.Enabled = showroomCfg.GetValue("Enabled", false);
-        var minutes = showroomCfg.GetValue("IntervalMinutes", 2);
-        o.Interval = TimeSpan.FromMinutes(minutes <= 0 ? 2 : minutes);
-        if (showroomCfg["BaselineBundle"] is { Length: > 0 } baseline)
-            o.BaselineBundlePath = Path.IsPathRooted(baseline)
-                ? baseline
-                : Path.Combine(builder.Environment.ContentRootPath, baseline);
-    });
-}
-
 // --- Media store (A31): local disk by default, Azure Blob when Media:Provider=azure. AddIdeasCore
 //     already registered the local store; the Azure registration replaces it. The page-facing contract
 //     is /_media/{uid} either way, so switching the backing store changes no page markup. Blob-backed
@@ -200,19 +181,6 @@ app.MapGet("/_ideas/{category}/{key}/{version:int}/{**path}",
         var contentType = assetContentTypes.TryGetContentType(file, out var ct) ? ct : "application/octet-stream";
         return Results.File(File.OpenRead(file), contentType);
     });
-// A SITE-OWNED package's assets: /_ideas/sites/{siteId}/{category}/{key}/{version}/{**path} (MAI-A36).
-// Deliberately a SIBLING of the route MAI-LAW-4 locks, never a change to it: the shared route above still
-// answers exactly what it did, and a site's own copy of the same identity mounts one level in. There is no
-// ambiguity between them — a request to the shared route would have to present "sites" as a category and a
-// category name as an {version:int}, which cannot match.
-app.MapGet("/_ideas/sites/{siteId:int}/{category}/{key}/{version:int}/{**path}",
-    IResult (int siteId, string category, string key, int version, string path, IPackageExtractor extractor) =>
-    {
-        var file = extractor.ResolveAsset(category, key, version, path, siteId);
-        if (file is null) return Results.NotFound();
-        var contentType = assetContentTypes.TryGetContentType(file, out var ct) ? ct : "application/octet-stream";
-        return Results.File(File.OpenRead(file), contentType);
-    });
 // Admin-only: download the raw .idea blob (for rollback / re-share). Auth guard is enforced by RequireAuthorization.
 app.MapGet("/_ideas/packages/{category}/{key}/{version:int}",
     async (string category, string key, int version, IPackageBlobStore blobs, CancellationToken ct) =>
@@ -222,15 +190,6 @@ app.MapGet("/_ideas/packages/{category}/{key}/{version:int}",
         if (stream is null) return Results.NotFound();
         var filename = $"{key}.V{version}.idea";
         return Results.File(stream, "application/octet-stream", filename);
-    }).RequireAuthorization("Admin");
-// The same download for a site-owned package. Admin-guarded like its shared sibling.
-app.MapGet("/_ideas/sites/{siteId:int}/packages/{category}/{key}/{version:int}",
-    async (int siteId, string category, string key, int version, IPackageBlobStore blobs, CancellationToken ct) =>
-    {
-        var blobPath = LocalFilePackageBlobStore.BlobPathFor(category, key, version, siteId);
-        var stream = await blobs.OpenAsync(blobPath, ct);
-        if (stream is null) return Results.NotFound();
-        return Results.File(stream, "application/octet-stream", $"{key}.V{version}.idea");
     }).RequireAuthorization("Admin");
 app.MapGet("/_ideas/{*path}", () => Results.NotFound());   // anything else under /_ideas
 
@@ -253,11 +212,8 @@ app.MapRazorComponents<App>()
 // MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
 app.MapMindAtticAuthEndpoints();
 
-// ---- CLI mode: --install <file.idea> [--site <key>] -----------------------------------------
-// dotnet run --project src/MindAttic.Ideas.Blazor -- --install path/to/Foo.V1.idea [--site showroom]
-// Without --site the package installs SHARED, exactly as this verb always did. With it the package is
-// owned by that site alone (MAI-A37) — the scripted equivalent of a showroom visitor's upload, and how
-// a sandbox baseline gets loaded without a browser.
+// ---- CLI mode: --install <file.idea> --------------------------------------------------------
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --install path/to/Foo.V1.idea
 var installIdx = Array.IndexOf(args, "--install");
 if (installIdx >= 0)
 {
@@ -268,60 +224,11 @@ if (installIdx >= 0)
         Environment.Exit(1);
     }
     using var cliScope = app.Services.CreateScope();
-    var cliSp = cliScope.ServiceProvider;
-
-    int? owningSiteId = null;
-    var siteIdx = Array.IndexOf(args, "--site");
-    if (siteIdx >= 0)
-    {
-        var siteKey = siteIdx + 1 < args.Length ? args[siteIdx + 1] : null;
-        await using var cliDb = await cliSp.GetRequiredService<IDbContextFactory<CmsDbContext>>().CreateDbContextAsync();
-        var target = siteKey is { Length: > 0 }
-            ? await cliDb.Sites.FirstOrDefaultAsync(x => x.Key == siteKey)
-            : null;
-        if (target is null)
-        {
-            var known = string.Join(", ", await cliDb.Sites.Select(x => x.Key).ToListAsync());
-            Console.Error.WriteLine($"[install] No site with key \"{siteKey ?? "(none)"}\". Known keys: {known}");
-            Environment.Exit(1);
-        }
-        owningSiteId = target!.Id;
-    }
-
-    var installer = cliSp.GetRequiredService<MindAttic.Ideas.Core.Services.IPackageInstallService>();
+    var installer = cliScope.ServiceProvider.GetRequiredService<MindAttic.Ideas.Core.Services.IPackageInstallService>();
     await using var bytes = File.OpenRead(ideaPath);
-    var plan = await installer.InstallAsync(bytes, allowOverride: true, owningSiteId);
-    var scope = owningSiteId is int sid ? $" (site {sid} only)" : " (shared)";
-    Console.WriteLine($"[install] {Path.GetFileName(ideaPath)} -> {plan.Action}{scope}");
+    var plan = await installer.InstallAsync(bytes, allowOverride: true);
+    Console.WriteLine($"[install] {Path.GetFileName(ideaPath)} -> {plan.Action}");
     Environment.Exit(0);
-}
-
-// ---- CLI mode: --reset-sandbox <site key> ---------------------------------------------------
-// dotnet run --project src/MindAttic.Ideas.Blazor -- --reset-sandbox showroom
-// The operator-facing form of what the idle sweep does. It decides nothing: SandboxResetService asks
-// the gate again, so this refuses the default site exactly as the sweep would (MAI-A38).
-var resetIdx = Array.IndexOf(args, "--reset-sandbox");
-if (resetIdx >= 0)
-{
-    var siteKey = resetIdx + 1 < args.Length && !args[resetIdx + 1].StartsWith("--") ? args[resetIdx + 1] : null;
-    using var resetScope = app.Services.CreateScope();
-    var resetSp = resetScope.ServiceProvider;
-
-    await using var resetDb = await resetSp.GetRequiredService<IDbContextFactory<CmsDbContext>>().CreateDbContextAsync();
-    var target = siteKey is { Length: > 0 } ? await resetDb.Sites.FirstOrDefaultAsync(x => x.Key == siteKey) : null;
-    if (target is null)
-    {
-        var known = string.Join(", ", await resetDb.Sites.Select(x => x.Key).ToListAsync());
-        Console.Error.WriteLine($"[reset-sandbox] No site with key \"{siteKey ?? "(none)"}\". Known keys: {known}");
-        Environment.Exit(1);
-    }
-
-    var outcome = await resetSp.GetRequiredService<ISandboxResetService>().ResetAsync(target!.Id, DateTime.UtcNow);
-    Console.WriteLine($"[reset-sandbox] {outcome.Explanation}");
-    if (outcome.Ok)
-        Console.WriteLine($"[reset-sandbox] dropped {outcome.PagesRemoved} page(s), {outcome.PackagesRemoved} package(s)"
-                        + (outcome.Restored is { } r ? $"; restored {r.PagesCreated} page(s)." : "."));
-    Environment.Exit(outcome.Ok ? 0 : 1);
 }
 
 // ---- CLI mode: --extract-media -------------------------------------------------------------

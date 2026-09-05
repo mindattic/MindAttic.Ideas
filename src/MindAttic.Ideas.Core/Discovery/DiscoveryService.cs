@@ -33,18 +33,13 @@ public sealed class DiscoveryService(
 
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         var existing = await db.ContentDefinitions.ToListAsync(ct);
-        // SiteId joins the identity because it joins the unique index (MAI-A36): a site's own copy of
-        // (Kind, Key, Version, Origin) is a different row from the shared one, so keying without it would
-        // throw on the first sandbox install that shadowed a discovered key. Sources discover SHARED
-        // citizens only — a site owns a row solely by installing into it — so every row this loop upserts
-        // has SiteId null.
-        var byIdentity = existing.ToDictionary(e => (e.Kind, e.Key, e.Version, e.Origin, e.SiteId));
+        var byIdentity = existing.ToDictionary(e => (e.Kind, e.Key, e.Version, e.Origin));
         var now = DateTime.UtcNow;
-        var seen = new HashSet<(ContentKind, string, int, ContentOrigin, int?)>();
+        var seen = new HashSet<(ContentKind, string, int, ContentOrigin)>();
 
         foreach (var d in discovered)
         {
-            var id = (d.Kind, d.Key, d.Version, d.Origin, (int?)null);
+            var id = (d.Kind, d.Key, d.Version, d.Origin);
             seen.Add(id);
             if (byIdentity.TryGetValue(id, out var row))
             {
@@ -71,8 +66,8 @@ public sealed class DiscoveryService(
         // discovery must never deactivate an installed package — otherwise every restart (which runs only the
         // compiled sources) would flip installed .idea packages inactive and drop them from the catalog.
         var ownedOrigins = sources.Select(s => s.Origin).ToHashSet();
-        foreach (var row in existing.Where(e => ownedOrigins.Contains(e.Origin) && e.SiteId is null
-                     && !seen.Contains((e.Kind, e.Key, e.Version, e.Origin, e.SiteId))))
+        foreach (var row in existing.Where(e => ownedOrigins.Contains(e.Origin)
+                     && !seen.Contains((e.Kind, e.Key, e.Version, e.Origin))))
             row.IsActive = false;
 
         await db.SaveChangesAsync(ct);
@@ -94,13 +89,8 @@ public sealed class DiscoveryService(
 
         // Collision resolution: within a (Kind,Key,Version) the highest Priority active row wins; the
         // rest are shadowed (a Package may only win over Compiled when AllowOverride was confirmed).
-        // Grouped PER SITE. Shadowing decides which of several rows of one identity is the live one, and
-        // a sandbox's own copy and the shared copy are not competitors: the catalog already prefers a site's
-        // own at lookup time. Grouping them together would let a visitor's upload shadow the shared row for
-        // the whole deployment — or be shadowed by it and never render — which is the leak site-scoping exists
-        // to close (MAI-A36).
         var all = await db.ContentDefinitions.Where(x => x.IsActive).ToListAsync(ct);
-        foreach (var grp in all.GroupBy(x => (x.SiteId, x.Kind, x.Key, x.Version)))
+        foreach (var grp in all.GroupBy(x => (x.Kind, x.Key, x.Version)))
         {
             // Enabled rows always beat disabled rows of the same identity — an admin who explicitly
             // disabled a high-priority Compiled citizen should not have it shadow an enabled Package row.
@@ -115,10 +105,10 @@ public sealed class DiscoveryService(
         // surface them onto the in-memory descriptor's Extra bag so PageAssetCollector can hoist them into
         // <head>. One corrupt manifest degrades only that citizen's head assets to empty — never aborts the
         // reload. (Compiled citizens carry no manifest; their Extra stays null exactly as before.)
-        var manifestByIdentity = new Dictionary<(int? SiteId, string Category, string Key, int Version), IdeaManifest>();
+        var manifestByIdentity = new Dictionary<(string Category, string Key, int Version), IdeaManifest>();
         foreach (var pkg in await db.InstalledPackages.Where(p => p.Enabled).ToListAsync(ct))
         {
-            try { manifestByIdentity[(pkg.SiteId, pkg.Category, pkg.Key, pkg.Version)] = ManifestReader.Read(pkg.ManifestJson); }
+            try { manifestByIdentity[(pkg.Category, pkg.Key, pkg.Version)] = ManifestReader.Read(pkg.ManifestJson); }
             catch (JsonException) { /* leave this identity unmapped -> Extra null -> empty head assets */ }
         }
 
@@ -133,8 +123,8 @@ public sealed class DiscoveryService(
     }
 
     private static IdeaManifest? LookupManifest(
-        CmsContentDefinition x, IReadOnlyDictionary<(int?, string, string, int), IdeaManifest> map) =>
-        x.Origin == ContentOrigin.Package && map.TryGetValue((x.SiteId, x.Category, x.Key, x.Version), out var m) ? m : null;
+        CmsContentDefinition x, IReadOnlyDictionary<(string, string, int), IdeaManifest> map) =>
+        x.Origin == ContentOrigin.Package && map.TryGetValue((x.Category, x.Key, x.Version), out var m) ? m : null;
 
     private static ContentDescriptor ToDescriptor(CmsContentDefinition x, IdeaManifest? manifest) => new()
     {
@@ -142,8 +132,6 @@ public sealed class DiscoveryService(
         Category = x.Category, Origin = x.Origin, Priority = x.Priority, Strategy = x.Strategy,
         RenderMode = x.RenderMode, Scope = x.Scope, ClrTypeName = x.ClrTypeName,
         AssemblyName = x.AssemblyName, AssetMount = x.AssetMount, AllowOverride = x.AllowOverride,
-        // Null = shared by every site; set = owned by one site (a sandbox visitor's own install).
-        SiteId = x.SiteId,
         Extra = x.Origin == ContentOrigin.Package && manifest is not null ? ManifestAssetPacker.PackExtra(manifest) : null,
     };
 }
