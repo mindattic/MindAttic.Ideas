@@ -40,14 +40,21 @@ public sealed class ContentCatalog(ITypeResolver resolver) : IContentCatalog
     public ContentDescriptor? FindLatest(ContentKind kind, string key) =>
         FindLatest(_snapshot, kind, key);
 
+    // Keys match case-INSENSITIVELY, as they do everywhere else a key is compared (the include-reference
+    // parser, the manifest uses[] grammar, the delete guard). Discovery lowercases the keys it derives,
+    // but a key can also arrive verbatim from a free-text field — Site.DefaultThemeKey in the Admin Sites
+    // panel above all — and an ordinal compare made "Cyberspace" a MISSING theme for a whole site, which
+    // then silently rendered under the bootstrap fallback.
     private static ContentDescriptor? Find(CatalogSnapshot snap, ContentKind kind, string key, int version) =>
-        snap.All.FirstOrDefault(d => d.Kind == kind && d.Key == key && d.Version == version);
+        snap.All.FirstOrDefault(d => d.Kind == kind && KeyEquals(d.Key, key) && d.Version == version);
 
     private static ContentDescriptor? FindLatest(CatalogSnapshot snap, ContentKind kind, string key) =>
         snap.All
-            .Where(d => d.Kind == kind && d.Key == key)
+            .Where(d => d.Kind == kind && KeyEquals(d.Key, key))
             .OrderByDescending(d => d.Version)
             .FirstOrDefault();
+
+    private static bool KeyEquals(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
     public Type? ResolveType(ContentDescriptor descriptor) => resolver.Resolve(descriptor);
 
@@ -73,8 +80,8 @@ public sealed class ContentCatalog(ITypeResolver resolver) : IContentCatalog
         }
 
         var known = version is int pinned
-            ? snap.Disabled.Any(d => d.Kind == kind && d.Key == key && d.Version == pinned)
-            : snap.Disabled.Any(d => d.Kind == kind && d.Key == key);
+            ? snap.Disabled.Any(d => d.Kind == kind && KeyEquals(d.Key, key) && d.Version == pinned)
+            : snap.Disabled.Any(d => d.Kind == kind && KeyEquals(d.Key, key));
         return new ResolvedContent(known ? ContentResolution.Disabled : ContentResolution.Missing, null, null);
     }
 }

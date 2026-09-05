@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Discovery;
@@ -94,6 +94,25 @@ public class ContentLifecycleServiceTests
         // Another version remains → float moves there → allowed.
         Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "navmenu", 1, pages, new[] { 2 }),
             Is.Empty);
+    }
+
+    [Test]
+    public void ActivePluginsJson_FloatingRef_IsMatchedThroughTheUsesGrammar()
+    {
+        // Regression: the floating-plugin check was an ad-hoc string compare against "Plugin." + key, so
+        // any ref the uses[] grammar accepts but that string does not — a padded entry, or the explicit
+        // "@latest" float — slipped the guard and the page's last enabled plugin version could be deleted.
+        foreach (var json in new[] { """[" Plugin.navmenu "]""", """["Plugin.navmenu@latest"]""" })
+        {
+            var pages = new[]
+            {
+                new PageRef("p", null, null, null, Enabled: true, IsPublished: true, ActivePluginsJson: json),
+            };
+            Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "navmenu", 1, pages, Array.Empty<int>()),
+                Is.EquivalentTo(new[] { "p" }), $"floating plugin ref {json} must block the last enabled version");
+            Assert.That(ContentLifecycleService.FindBlockingPages(ContentKind.Plugin, "navmenu", 1, pages, new[] { 2 }),
+                Is.Empty, $"floating plugin ref {json} must float to a remaining version");
+        }
     }
 
     [Test]

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.RenderTree;
 using MindAttic.Ideas.Abstractions;
@@ -262,6 +262,53 @@ public class RenderGuardTests
             }
         }
         Assert.That(scriptFound, Is.False, "untrusted <script> element must be omitted entirely from the render tree");
+    }
+
+    [Test]
+    public void Untrusted_LiteralMaComponentTag_DoesNotResolveAComponent()
+    {
+        // Regression: UpgradePascalCaseTags is skipped for untrusted content precisely so an untrusted
+        // author cannot embed component tags — but RenderNodes matched <ma-component> unconditionally, so
+        // writing the post-upgrade tag BY HAND smuggled a live citizen past the trust gate (MAI-LAW-5).
+        const string html = """<ma-component data-key="tooltip" kind="Plugin"></ma-component>""";
+
+        var catalog = new FakeCatalog { Outcome = ContentResolution.Resolved };
+        var builder = new RenderTreeBuilder();
+        var seq = 1;
+        IncludeExpander.Expand(builder, ref seq, html, catalog, new PassGate(), ContentTrust.Untrusted,
+            pageId: Guid.NewGuid(), slug: "test");
+
+        var frames = builder.GetFrames();
+        var resolved = false;
+        for (var i = 0; i < frames.Count; i++)
+            if (frames.Array[i].FrameType == RenderTreeFrameType.Component &&
+                frames.Array[i].ComponentType == typeof(DummyComponent))
+                resolved = true;
+
+        Assert.That(resolved, Is.False,
+            "untrusted content must never resolve a citizen through a hand-written <ma-component> tag");
+    }
+
+    [Test]
+    public void Author_LiteralMaComponentTag_StillResolves()
+    {
+        // The Author path is unchanged: the upgrade pass emits exactly this shape, so it must still bind.
+        const string html = """<ma-component data-key="tooltip" kind="Plugin"></ma-component>""";
+
+        var catalog = new FakeCatalog { Outcome = ContentResolution.Resolved };
+        var builder = new RenderTreeBuilder();
+        var seq = 1;
+        IncludeExpander.Expand(builder, ref seq, html, catalog, new PassGate(), ContentTrust.Author,
+            pageId: Guid.NewGuid(), slug: "test");
+
+        var frames = builder.GetFrames();
+        var resolved = false;
+        for (var i = 0; i < frames.Count; i++)
+            if (frames.Array[i].FrameType == RenderTreeFrameType.Component &&
+                frames.Array[i].ComponentType == typeof(DummyComponent))
+                resolved = true;
+
+        Assert.That(resolved, Is.True, "author-trusted <ma-component> must still resolve");
     }
 
     // ---- Nested PascalCase XML tags <Outer><Inner>…</Inner></Outer> ----

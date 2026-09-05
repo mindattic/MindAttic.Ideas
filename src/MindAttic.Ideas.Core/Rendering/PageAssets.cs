@@ -89,13 +89,20 @@ public static class PageAssets
         return new([], []);
     }
 
-    // Prefix a relative asset path with the package's mount; leave already-absolute (or unmounted) paths as-is.
+    // Prefix a relative asset path with the package's mount; leave already-absolute (or unmounted) paths
+    // as-is. "Absolute" is not just a leading "/": a manifest may name an off-package URL (a CDN
+    // stylesheet, a protocol-relative "//host/x.css"), and mounting one produced a guaranteed 404 like
+    // "/_ideas/Plugin/x/1/https://cdn.example/lib.css".
     private static IReadOnlyList<string> Mount(IReadOnlyList<string> rels, string mount)
     {
         if (mount.Length == 0) return rels;
         var outp = new List<string>(rels.Count);
         foreach (var r in rels)
-            outp.Add(r.StartsWith('/') ? r : $"{mount}/{r}");
+            outp.Add(IsAbsolute(r) ? r : $"{mount}/{r}");
         return outp;
     }
+
+    /// <summary>Root-relative ("/x.css"), protocol-relative ("//host/x.css"), or scheme-qualified ("https://…").</summary>
+    private static bool IsAbsolute(string url) =>
+        url.StartsWith('/') || Uri.IsWellFormedUriString(url, UriKind.Absolute);
 }

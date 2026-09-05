@@ -206,8 +206,11 @@ public sealed class ContentLifecycleService(IDbContextFactory<CmsDbContext> dbFa
                              || IncludeReferenceParser.UsesPinsVersion(p.Uses, kind, key, version)
                              // Versioned plugin refs in ActivePluginsJson (e.g. "Plugin.navmenu@1") must also block.
                              || IncludeReferenceParser.UsesPinsVersion(activePlugins, kind, key, version);
-                var activePluginFloating = activePlugins is not null
-                    && activePlugins.Any(r => string.Equals(r, "Plugin." + key, StringComparison.OrdinalIgnoreCase));
+                // Parse the selection through the SAME uses[] grammar the pin check above uses, rather than
+                // string-comparing against "Plugin.<key>": that ad-hoc compare missed every ref the grammar
+                // accepts but the literal does not (a padded entry, an explicit "@latest" float), letting the
+                // last enabled version be deleted out from under a page that still selects it.
+                var activePluginFloating = IncludeReferenceParser.UsesFloatsKey(activePlugins, kind, key);
                 var floating = floatingOrphans
                                && (IncludeReferenceParser.BodyFloatsKey(p.BodyHtml, kind, key)
                                    || IncludeReferenceParser.UsesFloatsKey(p.Uses, kind, key)

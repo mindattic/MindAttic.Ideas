@@ -1,4 +1,4 @@
-using MindAttic.Ideas.Abstractions;
+﻿using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Rendering;
 using MindAttic.Ideas.Packaging;
 
@@ -80,6 +80,35 @@ public class PageAssetsTests
         {
             Assert.That(assets.Css, Contains.Item($"{mount}/tooltip.css"));
             Assert.That(assets.Scripts, Contains.Item($"{mount}/tooltip.js"));
+        });
+    }
+
+    [Test]
+    public void PackagePlugin_AbsoluteAssetUrls_AreNotMounted()
+    {
+        // Regression: Mount() only recognised a leading "/" as already-absolute, so a manifest that
+        // names a CDN stylesheet came out as "/_ideas/Plugin/x/1/https://cdn.example/lib.css" — a 404
+        // for an asset that was never meant to be served from the package at all.
+        const string mount = "/_ideas/Plugin/cdn/1";
+        var desc = new ContentDescriptor
+        {
+            Kind = ContentKind.Plugin, Key = "cdn", Version = 1, DisplayName = "Cdn",
+            Origin = ContentOrigin.Package, AssetMount = mount,
+            Extra = ManifestAssetPacker.PackExtra(new IdeaManifest
+            {
+                Category = "Plugin", Kind = "code", Key = "cdn", Version = 1, DisplayName = "Cdn",
+                Css = ["https://cdn.example/lib.css", "//cdn.example/proto-relative.css", "local.css"],
+                Scripts = ["http://cdn.example/lib.js"], Uses = [],
+            }),
+        };
+        var assets = PageAssets.AllAssetsOf(desc, new FakeCatalog(null));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(assets.Css, Contains.Item("https://cdn.example/lib.css"));
+            Assert.That(assets.Css, Contains.Item("//cdn.example/proto-relative.css"));
+            Assert.That(assets.Css, Contains.Item($"{mount}/local.css"));
+            Assert.That(assets.Scripts, Contains.Item("http://cdn.example/lib.js"));
         });
     }
 }

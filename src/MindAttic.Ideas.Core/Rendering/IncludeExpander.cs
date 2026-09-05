@@ -138,7 +138,12 @@ public static class IncludeExpander
                 // An optional kind="Plugin|Component|Theme|Page" attribute on the original tag resolves
                 // conflicts when the same key exists in more than one kind; without it, Component is tried
                 // first and Plugin is the fallback.
-                case IElement el when el.LocalName == "ma-component":
+                // AUTHOR TRUST ONLY (MAI-LAW-5). The upgrade pass above already skips untrusted content so
+                // that PascalCase tags stay inert HTML — but "ma-component" is a legal custom element, so
+                // an untrusted author could hand-write the POST-upgrade shape and bind a live citizen
+                // anyway. Gating the case on trust closes that door: for untrusted content the tag falls
+                // through to the generic element arm and renders as the inert unknown element it is.
+                case IElement el when el.LocalName == "ma-component" && ctx.Trust == ContentTrust.Author:
                 {
                     var key = el.GetAttribute("data-key") ?? "";
                     if (string.IsNullOrEmpty(key)) break; // malformed tag — skip silently

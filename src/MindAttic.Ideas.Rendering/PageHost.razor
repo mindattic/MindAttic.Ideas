@@ -94,6 +94,29 @@ else if (_context is not null)
     private static string? HostOf(string? absoluteUri) =>
         Uri.TryCreate(absoluteUri, UriKind.Absolute, out var u) ? u.Authority : null;
 
+    /// <summary>
+    /// Drop everything the LAST page put on this circuit. PageHost is a long-lived route component, so on
+    /// an in-circuit navigation every field below still holds the previous page's value — and
+    /// &lt;HeadContent&gt; renders unconditionally, outside the _status switch. Without this reset a 404
+    /// (or a Forbidden) kept serving the previous page's theme stylesheets, hoisted component css/js and
+    /// meta description; on the Forbidden path that also named the citizens of a restricted page to a
+    /// viewer who is not allowed to see it. Every early return from OnParametersSetAsync calls this.
+    /// </summary>
+    private void ClearPageState()
+    {
+        _context = null;
+        _themeType = null;
+        _themeParams = null;
+        _bodyType = typeof(FreeFormPage);
+        _pluginTypesBeforeBody = [];
+        _pluginTypesAfterBody = [];
+        _themeGlobalCss = Array.Empty<string>();
+        _themeCss = Array.Empty<string>();
+        _themeScripts = Array.Empty<string>();
+        _componentCss = Array.Empty<string>();
+        _componentScripts = Array.Empty<string>();
+    }
+
     private enum Status { Pending, Ok, NotFound, Forbidden }
     private Status _status = Status.Pending;
 
@@ -153,9 +176,7 @@ else if (_context is not null)
         // handled by endpoint routing).
         if (slug.StartsWith("admin", StringComparison.OrdinalIgnoreCase) || slug.StartsWith('_'))
         {
-            // Drop the previous page's context too — <HeadContent> reads it, so leaving it in place
-            // emits the last page's meta description on this response.
-            _context = null;
+            ClearPageState();
             _status = Status.NotFound;
             return;
         }
@@ -207,7 +228,7 @@ else if (_context is not null)
                 Nav.NavigateTo("/" + redirect.TargetSlug, forceLoad: true);
                 return;
             }
-            _context = null;
+            ClearPageState();
             _status = Status.NotFound;
             return;
         }
@@ -256,7 +277,7 @@ else if (_context is not null)
 
             if (!hasAccess)
             {
-                _context = null;
+                ClearPageState();
                 _status = Status.Forbidden;
                 return;
             }
@@ -329,7 +350,8 @@ else if (_context is not null)
         // theme FIRST: PageHost is a long-lived route component, so on an in-circuit navigation these
         // fields still hold the last page's values. Without the reset a page that declares no theme
         // (and whose site has no default) rendered inside the previously visited page's theme, with
-        // that theme's stylesheets still hoisted into <head>.
+        // that theme's stylesheets still hoisted into <head>. (The early-return paths get the same
+        // reset, plus the rest of the per-page state, from ClearPageState.)
         _themeType = null;
         _themeGlobalCss = Array.Empty<string>();
         _themeCss = Array.Empty<string>();
