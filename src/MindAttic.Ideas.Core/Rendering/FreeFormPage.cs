@@ -21,11 +21,18 @@ public sealed class FreeFormPage : PageBase
         var trust = inline.Trusted ? ContentTrust.Author : ContentTrust.Untrusted;
         var seq = 0;
 
-        // Cascade tier 3: page-level stylesheet.
+        // Cascade tier 3: page-level stylesheet. Trust-keyed like every other raw emission (MAI-LAW-5):
+        // an Author's CSS goes in verbatim, but Untrusted CSS has its "</" sequences escaped so it cannot
+        // close the <style> block and smuggle a <script> past the body sanitizer — the same breakout guard
+        // CmsHead applies to the global stylesheet setting. PageCss reaches an Untrusted page through a
+        // bundle import (--untrusted), a history restore by a non-raw-markup author, or an admin whose
+        // AuthorRawMarkup claim is withheld pending MFA.
         if (!string.IsNullOrWhiteSpace(inline.Css))
         {
             builder.OpenElement(seq++, "style");
-            builder.AddMarkupContent(seq++, inline.Css);
+            builder.AddMarkupContent(seq++, trust == ContentTrust.Author
+                ? inline.Css
+                : inline.Css!.Replace("</", "<\\/", StringComparison.OrdinalIgnoreCase));
             builder.CloseElement();
         }
 

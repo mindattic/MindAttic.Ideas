@@ -127,8 +127,28 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         var slug = (model.Slug ?? "").Trim().Trim('/').ToLowerInvariant();
         await using var db = await dbFactory.CreateDbContextAsync(ct);
 
-        var site = await db.Sites.FirstOrDefaultAsync(s => s.IsDefault, ct) ?? await db.Sites.FirstOrDefaultAsync(ct);
-        var siteId = site?.Id;
+        // An EXISTING page keeps its OWN site; only a new page lands in the default one. Deriving the site
+        // from IsDefault for every save pointed the (SiteId, Slug) uniqueness check — and the
+        // DbUpdateException discriminator below — at the wrong site whenever the edited page belonged to
+        // another one: a real collision in the page's own site slipped past the friendly pre-check and came
+        // back as "Save failed — please try again.", while an unrelated slug in the default site produced a
+        // spurious "already exists".
+        var found = model.Id == 0
+            ? null
+            : await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == model.Id, ct);
+        if (model.Id != 0 && found is null)
+            return new PageSaveResult(false, model.Id, default, "Page not found.");
+
+        int? siteId;
+        if (found is not null)
+        {
+            siteId = found.SiteId;
+        }
+        else
+        {
+            var site = await db.Sites.FirstOrDefaultAsync(s => s.IsDefault, ct) ?? await db.Sites.FirstOrDefaultAsync(ct);
+            siteId = site?.Id;
+        }
 
         // Slug uniqueness pre-check (friendly error before the DB unique index fires).
         // IgnoreQueryFilters: the unique index covers ALL rows including soft-deleted, so the pre-check must too.
@@ -139,16 +159,13 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         var now = DateTime.UtcNow;
 
         Page page;
-        if (model.Id == 0)
+        if (found is null)
         {
             page = new Page { SiteId = siteId, CreatedUtc = now };
             db.Pages.Add(page);
         }
         else
         {
-            var found = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == model.Id, ct);
-            if (found is null) return new PageSaveResult(false, model.Id, default, "Page not found.");
-
             // Auto-301: record the old slug before overwriting it, so the router can redirect stale links.
             // The empty-string guard is intentionally absent: renaming the home page (slug="") must also
             // produce a history entry so the old "/" can redirect to the new slug.

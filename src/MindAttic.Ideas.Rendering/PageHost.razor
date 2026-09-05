@@ -153,6 +153,9 @@ else if (_context is not null)
         // handled by endpoint routing).
         if (slug.StartsWith("admin", StringComparison.OrdinalIgnoreCase) || slug.StartsWith('_'))
         {
+            // Drop the previous page's context too — <HeadContent> reads it, so leaving it in place
+            // emits the last page's meta description on this response.
+            _context = null;
             _status = Status.NotFound;
             return;
         }
@@ -204,6 +207,7 @@ else if (_context is not null)
                 Nav.NavigateTo("/" + redirect.TargetSlug, forceLoad: true);
                 return;
             }
+            _context = null;
             _status = Status.NotFound;
             return;
         }
@@ -252,6 +256,7 @@ else if (_context is not null)
 
             if (!hasAccess)
             {
+                _context = null;
                 _status = Status.Forbidden;
                 return;
             }
@@ -320,7 +325,16 @@ else if (_context is not null)
             _bodyType = typeof(FreeFormPage);
         }
 
-        // Theme: page override -> site default -> null (floating/latest).
+        // Theme: page override -> site default -> null (floating/latest). Clear the previous page's
+        // theme FIRST: PageHost is a long-lived route component, so on an in-circuit navigation these
+        // fields still hold the last page's values. Without the reset a page that declares no theme
+        // (and whose site has no default) rendered inside the previously visited page's theme, with
+        // that theme's stylesheets still hoisted into <head>.
+        _themeType = null;
+        _themeGlobalCss = Array.Empty<string>();
+        _themeCss = Array.Empty<string>();
+        _themeScripts = Array.Empty<string>();
+
         var themeKey = page.ThemeKey ?? site?.DefaultThemeKey;
         var themeVersion = page.ThemeVersion ?? site?.DefaultThemeVersion;
         if (!string.IsNullOrWhiteSpace(themeKey))

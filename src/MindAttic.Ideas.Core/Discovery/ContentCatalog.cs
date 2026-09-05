@@ -35,10 +35,16 @@ public sealed class ContentCatalog(ITypeResolver resolver) : IContentCatalog
     public IReadOnlyCollection<ContentDescriptor> All => _snapshot.All;
 
     public ContentDescriptor? Find(ContentKind kind, string key, int version) =>
-        _snapshot.All.FirstOrDefault(d => d.Kind == kind && d.Key == key && d.Version == version);
+        Find(_snapshot, kind, key, version);
 
     public ContentDescriptor? FindLatest(ContentKind kind, string key) =>
-        _snapshot.All
+        FindLatest(_snapshot, kind, key);
+
+    private static ContentDescriptor? Find(CatalogSnapshot snap, ContentKind kind, string key, int version) =>
+        snap.All.FirstOrDefault(d => d.Kind == kind && d.Key == key && d.Version == version);
+
+    private static ContentDescriptor? FindLatest(CatalogSnapshot snap, ContentKind kind, string key) =>
+        snap.All
             .Where(d => d.Kind == kind && d.Key == key)
             .OrderByDescending(d => d.Version)
             .FirstOrDefault();
@@ -52,8 +58,12 @@ public sealed class ContentCatalog(ITypeResolver resolver) : IContentCatalog
     /// </summary>
     public ResolvedContent ResolveTag(ContentKind kind, string key, int? version)
     {
-        var snap = _snapshot;   // single read — consistent enabled+disabled pair
-        var desc = version is int v ? Find(kind, key, v) : FindLatest(kind, key);
+        // ONE volatile read, then every lookup below runs against that same snapshot. The public
+        // Find/FindLatest re-read the field, so calling them here would let a concurrent LoadSnapshot
+        // pair a NEW enabled list with the OLD disabled list — reporting Missing for a citizen that
+        // the reload had only just disabled (or vice versa).
+        var snap = _snapshot;
+        var desc = version is int v ? Find(snap, kind, key, v) : FindLatest(snap, kind, key);
         if (desc is not null)
         {
             var type = ResolveType(desc);

@@ -49,7 +49,14 @@ public static class IncludeReferenceParser
                     {
                         var kindStr = el.GetAttribute("kind");
                         ContentKind kind = ContentKind.Component; // default; Plugin is a fallback at render time
-                        if (kindStr is not null) Enum.TryParse(kindStr, ignoreCase: true, out kind);
+                        // Only an attribute that PARSES overrides the default. Enum.TryParse writes
+                        // default(ContentKind) — i.e. Page — into its out param when it fails, so an
+                        // unrecognised kind (a typo, or a retired name like "Widget") used to be recorded
+                        // as a Page reference: the delete guard then protected the wrong citizen, while
+                        // IncludeExpander ignored the bad attribute and resolved Component-then-Plugin.
+                        if (kindStr is not null
+                            && Enum.TryParse<ContentKind>(kindStr, ignoreCase: true, out var parsedKind))
+                            kind = parsedKind;
                         int? version = null;
                         if (int.TryParse(el.GetAttribute("data-version"), out var v)) version = v;
                         acc.Add((kind, key, version));

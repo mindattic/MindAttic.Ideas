@@ -477,4 +477,87 @@ public class PageAdminServiceTests
         Assert.That(acl, Has.Count.EqualTo(1), "PageRoleAccess entry must be persisted");
         Assert.That(acl[0].RoleName, Is.EqualTo("Editor"));
     }
+
+    // ---- multi-site: an existing page keeps its OWN site (MAI-A35 host-bound sites) ----
+
+    /// <summary>Adds a second, non-default site and returns its id.</summary>
+    private static async Task<int> AddSecondSiteAsync(InMemoryFactory factory)
+    {
+        await using var db = factory.CreateDbContext();
+        var site = new Site { Key = "other", Name = "Other", IsDefault = false, CreatedUtc = DateTime.UtcNow };
+        db.Sites.Add(site);
+        await db.SaveChangesAsync();
+        return site.Id;
+    }
+
+    private static async Task<int> InsertPageAsync(InMemoryFactory factory, int siteId, string slug)
+    {
+        await using var db = factory.CreateDbContext();
+        var page = new MindAttic.Ideas.Core.Entities.Page
+        {
+            SiteId = siteId, Slug = slug, Title = slug,
+            Kind = PageKind.Data, BodyTrust = ContentTrust.Untrusted,
+            IsPublished = true, Enabled = true, CreatedUtc = DateTime.UtcNow,
+        };
+        db.Pages.Add(page);
+        await db.SaveChangesAsync();
+        return page.Id;
+    }
+
+    [Test]
+    public async Task Save_ExistingPageInNonDefaultSite_DetectsCollisionInItsOwnSite()
+    {
+        // Regression: SaveAsync derived the site from IsDefault for EVERY save, so editing a page that
+        // lives in another site checked the DEFAULT site's slugs. A genuine collision inside the page's
+        // own site slipped past the friendly pre-check and surfaced as "Save failed - please try again."
+        var (svc, factory) = await NewServiceWithFactoryAsync();
+        var otherSiteId = await AddSecondSiteAsync(factory);
+        await InsertPageAsync(factory, otherSiteId, "taken");
+        var editing = await InsertPageAsync(factory, otherSiteId, "movable");
+
+        var result = await svc.SaveAsync(
+            new PageEditModel { Id = editing, Slug = "taken", Title = "Movable" }, Author(withClaim: true));
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.Error, Does.Contain("already exists"),
+            "the collision inside the page's own site must produce the friendly error");
+    }
+
+    [Test]
+    public async Task Save_ExistingPageInNonDefaultSite_IgnoresSameSlugInTheDefaultSite()
+    {
+        // The mirror image: a slug that is taken in the DEFAULT site says nothing about a page living in
+        // another site, so the save must go through (the unique index is on (SiteId, Slug)).
+        var (svc, factory) = await NewServiceWithFactoryAsync();
+        var otherSiteId = await AddSecondSiteAsync(factory);
+        await using (var db = factory.CreateDbContext())
+        {
+            var defaultSiteId = db.Sites.First(s => s.IsDefault).Id;
+            await InsertPageAsync(factory, defaultSiteId, "shared-slug");
+        }
+        var editing = await InsertPageAsync(factory, otherSiteId, "temp");
+
+        var result = await svc.SaveAsync(
+            new PageEditModel { Id = editing, Slug = "shared-slug", Title = "Shared" }, Author(withClaim: true));
+
+        Assert.That(result.Ok, Is.True, result.Error);
+        await using var verify = factory.CreateDbContext();
+        var saved = await verify.Pages.IgnoreQueryFilters().FirstAsync(p => p.Id == editing);
+        Assert.Multiple(() =>
+        {
+            Assert.That(saved.Slug, Is.EqualTo("shared-slug"));
+            Assert.That(saved.SiteId, Is.EqualTo(otherSiteId), "the page must stay in its own site");
+        });
+    }
+
+    [Test]
+    public async Task Save_UnknownId_ReturnsPageNotFound()
+    {
+        var svc = await NewServiceAsync();
+        var result = await svc.SaveAsync(new PageEditModel { Id = 4242, Slug = "ghost", Title = "Ghost" },
+            Author(withClaim: true));
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.Error, Does.Contain("not found"));
+    }
 }

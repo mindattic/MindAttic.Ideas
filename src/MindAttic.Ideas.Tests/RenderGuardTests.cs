@@ -302,6 +302,23 @@ public class RenderGuardTests
     }
 
     [Test]
+    public void Parse_PascalTag_WithUnrecognisedKind_StillDefaultsToComponent()
+    {
+        // Regression: Walk() called Enum.TryParse with the default already assigned to the out param.
+        // TryParse writes default(ContentKind) - i.e. Page - on failure, so an unrecognised kind (a typo,
+        // or a retired name like "Widget", MAI-A26) was recorded as a PAGE reference: the delete guard
+        // then protected the wrong citizen while IncludeExpander ignored the bad attribute and resolved
+        // Component-then-Plugin. An unparseable kind must leave the documented Component default intact.
+        foreach (var bad in new[] { "Widget", "Control", "nonsense" })
+        {
+            var refs = IncludeReferenceParser.Parse($"<Alert kind=\"{bad}\" />");
+            Assert.That(refs, Has.Count.EqualTo(1), bad);
+            Assert.That(refs[0].Kind, Is.EqualTo(ContentKind.Component), $"kind=\"{bad}\" must not become Page");
+            Assert.That(refs[0].Key, Is.EqualTo("alert"), bad);
+        }
+    }
+
+    [Test]
     public void Parse_PascalTag_WithoutKindAttribute_DefaultsToComponent()
     {
         // <Alert /> without kind — Parse defaults the reported kind to Component (render-time
