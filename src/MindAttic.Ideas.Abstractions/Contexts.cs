@@ -160,6 +160,18 @@ public interface IPageTree
         => Task.FromResult<IReadOnlyList<ChildPage>>(Array.Empty<ChildPage>());
 
     /// <summary>
+    /// The same lookup, scoped to one site. PREFER THIS OVERLOAD: a slug is unique only within a site
+    /// (the CMS keys pages on <c>(SiteId, Slug)</c>), so the slug-only form above can answer with ANOTHER
+    /// domain's page when one deployment serves several sites. Pass
+    /// <see cref="ISiteContext.SiteId"/> from the render context — the site uid every citizen already has.
+    /// <see cref="Guid.Empty"/> means "site unknown" and falls back to the unscoped lookup.
+    /// The default implementation delegates to the slug-only overload so an existing host keeps working
+    /// unchanged; the CMS host overrides it. MUST never throw into a render.
+    /// </summary>
+    Task<IReadOnlyList<ChildPage>> ChildrenOfSlugAsync(Guid siteId, string slug, CancellationToken ct = default)
+        => ChildrenOfSlugAsync(slug, ct);
+
+    /// <summary>
     /// Returns the full sub-tree rooted at <paramref name="pageId"/> (children, grandchildren, …)
     /// as nested <see cref="ChildPageNode"/> records. Empty when the page has no descendants.
     /// Default implementation falls back to one level via <see cref="ChildrenOfAsync"/>.

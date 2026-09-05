@@ -124,9 +124,11 @@
         if (Context is null) return;
         if (!Context.TryGetFeature<IPageTree>(out var tree) || tree is null) return;
 
+        // From= names another page BY SLUG, and a slug is unique only within a site — pass the site uid
+        // so a multi-site deployment cannot answer with a same-slug page from another domain.
         var children = string.IsNullOrWhiteSpace(From)
             ? await tree.ChildrenOfAsync(Context.Page.PageId)
-            : await tree.ChildrenOfSlugAsync(From!);
+            : await tree.ChildrenOfSlugAsync(Context.Site.SiteId, From!);
         if (children.Count == 0) return;
 
         // One lookup for the whole list — GetManyAsync exists precisely so an index page isn't N+1.

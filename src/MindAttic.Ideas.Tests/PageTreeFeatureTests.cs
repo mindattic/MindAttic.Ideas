@@ -125,4 +125,104 @@ public class PageTreeFeatureTests
 
         Assert.That(await feature.ChildrenOfSlugAsync("no-such-page"), Is.Empty);
     }
+
+    // ---- multi-site: a slug is unique only within a site (MAI-A35 host-bound sites) ----
+
+    /// <summary>
+    /// Two sites, each with a page at the SAME slug and its own children. Returns the feature plus both
+    /// site uids so a test can ask for one site's tree and prove it did not get the other's.
+    /// </summary>
+    private static async Task<(PageTreeFeature Feature, Guid SiteAUid, Guid SiteBUid)> SeedTwoSitesAsync()
+    {
+        var factory = new InMemoryFactory("tree_" + Guid.NewGuid().ToString("N"));
+        await using var db = factory.CreateDbContext();
+
+        var siteA = new Site { Key = "a", Name = "A", IsDefault = true, CreatedUtc = DateTime.UtcNow };
+        var siteB = new Site { Key = "b", Name = "B", IsDefault = false, CreatedUtc = DateTime.UtcNow };
+        db.Sites.AddRange(siteA, siteB);
+        await db.SaveChangesAsync();
+
+        CmsPage Parent(int siteId) => new()
+        {
+            SiteId = siteId, Slug = "projects", Title = "Projects",
+            Kind = PageKind.Data, IsPublished = true, Enabled = true, CreatedUtc = DateTime.UtcNow,
+        };
+        var parentA = Parent(siteA.Id);
+        var parentB = Parent(siteB.Id);
+        db.Pages.AddRange(parentA, parentB);
+        await db.SaveChangesAsync();
+
+        db.Pages.Add(new CmsPage { SiteId = siteA.Id, ParentId = parentA.Id, Slug = "a-one", Title = "A One", Kind = PageKind.Data, IsPublished = true, Enabled = true, CreatedUtc = DateTime.UtcNow });
+        db.Pages.Add(new CmsPage { SiteId = siteB.Id, ParentId = parentB.Id, Slug = "b-one", Title = "B One", Kind = PageKind.Data, IsPublished = true, Enabled = true, CreatedUtc = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+
+        return (new PageTreeFeature(factory), siteA.Uid, siteB.Uid);
+    }
+
+    [Test]
+    public async Task ChildrenOfSlug_ScopedToSite_ReturnsOnlyThatSitesChildren()
+    {
+        // Regression: the lookup matched on Slug alone, but the Pages unique index is (SiteId, Slug) —
+        // so <Component.ProjectGrid From="projects" /> on site B could list site A's pages, picked by
+        // nothing more principled than row order.
+        var (feature, siteAUid, siteBUid) = await SeedTwoSitesAsync();
+
+        var fromA = await feature.ChildrenOfSlugAsync(siteAUid, "projects");
+        var fromB = await feature.ChildrenOfSlugAsync(siteBUid, "projects");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(fromA.Select(c => c.Slug), Is.EqualTo(new[] { "a-one" }));
+            Assert.That(fromB.Select(c => c.Slug), Is.EqualTo(new[] { "b-one" }));
+        });
+    }
+
+    [Test]
+    public async Task ChildrenOfSlug_UnknownSite_FallsBackToTheUnscopedLookup()
+    {
+        // Guid.Empty means "site unknown" (an ISiteContext with no resolved site). Rather than blanking a
+        // host's nav, it degrades to the pre-existing unscoped behaviour — now deterministic, so it is
+        // always the lowest-id site's page that answers.
+        var (feature, siteAUid, _) = await SeedTwoSitesAsync();
+
+        var unscoped = await feature.ChildrenOfSlugAsync(Guid.Empty, "projects");
+        var siteA = await feature.ChildrenOfSlugAsync(siteAUid, "projects");
+
+        Assert.That(unscoped.Select(c => c.Slug), Is.EqualTo(siteA.Select(c => c.Slug)));
+    }
+
+    [Test]
+    public async Task ChildrenOfSlug_SiteWithNoSuchSlug_ReturnsEmpty_NotAnotherSitesPage()
+    {
+        // Site B has no "solo" page; site A does. Scoped to B the answer is empty — never A's children.
+        var (feature, siteAUid, siteBUid) = await SeedTwoSitesAsync();
+
+        var onlyInA = await feature.ChildrenOfSlugAsync(siteAUid, "projects");
+        Assert.That(onlyInA, Is.Not.Empty, "guard: site A really does have this page");
+
+        var inB = await feature.ChildrenOfSlugAsync(siteBUid, "no-such-page");
+        Assert.That(inB, Is.Empty);
+    }
+
+    [Test]
+    public void IPageTree_DefaultOverload_DelegatesToTheSlugOnlyForm()
+    {
+        // The SDK is append-only (MAI-LAW-2): the new overload ships as a DEFAULT method, so a host that
+        // implements only the slug-only form still answers rather than breaking.
+        IPageTree legacy = new LegacySlugOnlyTree();
+
+        var viaOverload = legacy.ChildrenOfSlugAsync(Guid.NewGuid(), "anything").GetAwaiter().GetResult();
+
+        Assert.That(viaOverload.Select(c => c.Slug), Is.EqualTo(new[] { "legacy" }));
+    }
+
+    /// <summary>A host predating the site-scoped overload: implements only the slug-only form.</summary>
+    private sealed class LegacySlugOnlyTree : IPageTree
+    {
+        public Task<IReadOnlyList<ChildPage>> ChildrenOfAsync(Guid pageId, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<ChildPage>>(Array.Empty<ChildPage>());
+
+        public Task<IReadOnlyList<ChildPage>> ChildrenOfSlugAsync(string slug, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<ChildPage>>([new ChildPage("legacy", "Legacy")]);
+    }
 }

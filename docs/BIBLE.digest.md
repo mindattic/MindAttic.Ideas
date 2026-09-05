@@ -122,5 +122,5 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - done: 53  |  partial: 1  |  planned: 7  |  cut: 1
 
 ## Latest amendment
-- MAI-A39 — Showroom mode is withdrawn: a demo is a DEPLOYMENT, not a feature
+- MAI-A40 — A slug is only unique inside a site: `IPageTree` grows a scoped lookup
 

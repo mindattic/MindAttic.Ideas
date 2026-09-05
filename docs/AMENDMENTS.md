@@ -1274,3 +1274,39 @@ with `Control`, this is a withdrawal, not a licence — the surface remains appe
 **What a showroom deployment actually needs from this repo:** nothing new. It is an Ideas install; it
 gets back to Day Zero the way any environment does — `--import-content <bundle> --prune`, or a database
 restore. How and when that runs is a deployment decision, recorded wherever that deployment is, not here.
+
+---
+
+## MAI-A40 — A slug is only unique inside a site: `IPageTree` grows a scoped lookup {#MAI-A40}
+
+**Appends to the frozen SDK under [MAI-LAW-2](BIBLE.md#MAI-LAW-2)** (2026-09-04). `IPageTree` gains one
+default method:
+
+```csharp
+Task<IReadOnlyList<ChildPage>> ChildrenOfSlugAsync(Guid siteId, string slug, CancellationToken ct = default)
+    => ChildrenOfSlugAsync(slug, ct);
+```
+
+**The defect.** `ChildrenOfSlugAsync(slug)` resolved its parent with `p.Slug == slug` and nothing else.
+But a slug has never been globally unique — the Pages unique index is `(SiteId, Slug)`, and has been
+since migration #1. That mismatch was harmless while one deployment meant one site; [A35](#MAI-A35) made
+the deployment answer on many domains and turned it into a real bug. `<Component.ProjectGrid
+From="projects" />` on site B could list **site A's** child pages, chosen by nothing more principled
+than which row the database returned first.
+
+**Why an overload rather than a fix in place.** The slug-only signature carries no site, and the render
+context has had one all along — `ISiteContext.SiteId`, the site uid every citizen can already read. So
+the host cannot infer the answer; the caller has to say. The new overload is the one to prefer;
+`Guid.Empty` means "site unknown" and falls back to the unscoped lookup, which is now at least *ordered*
+so its answer is deterministic rather than down to row order.
+
+**This is growth, not a break.** The surface is append-only, and a default method is exactly how
+LAW-2 permits an interface to grow: a host that implements only the slug-only form keeps compiling and
+keeps answering, through the delegating default. `PageTreeFeature` overrides it; `Component.ProjectGrid`
+passes `Context.Site.SiteId` and was repacked. Nothing else in the library consumed the slug-only form —
+`Component.TableOfContents` walks by uid, which is global and was never affected.
+
+*(tests: `PageTreeFeatureTests.ChildrenOfSlug_ScopedToSite_ReturnsOnlyThatSitesChildren`,
+`.ChildrenOfSlug_SiteWithNoSuchSlug_ReturnsEmpty_NotAnotherSitesPage`,
+`.ChildrenOfSlug_UnknownSite_FallsBackToTheUnscopedLookup`,
+`.IPageTree_DefaultOverload_DelegatesToTheSlugOnlyForm`)*

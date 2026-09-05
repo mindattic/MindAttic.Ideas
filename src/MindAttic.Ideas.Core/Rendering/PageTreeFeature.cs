@@ -32,13 +32,34 @@ public sealed class PageTreeFeature(IDbContextFactory<CmsDbContext> factory) : I
         }
     }
 
-    public async Task<IReadOnlyList<ChildPage>> ChildrenOfSlugAsync(string slug, CancellationToken ct = default)
+    public Task<IReadOnlyList<ChildPage>> ChildrenOfSlugAsync(string slug, CancellationToken ct = default) =>
+        ChildrenOfSlugAsync(Guid.Empty, slug, ct);
+
+    /// <summary>
+    /// Slug lookups are scoped to a site because a slug is unique only within one: the Pages unique index
+    /// is on <c>(SiteId, Slug)</c>, so an unscoped match can return ANOTHER domain's page on a deployment
+    /// that serves several sites (MAI-A35). <see cref="Guid.Empty"/> keeps the legacy unscoped behaviour
+    /// for the slug-only overload — now at least ORDERED, so which page answers is deterministic instead
+    /// of down to row order.
+    /// </summary>
+    public async Task<IReadOnlyList<ChildPage>> ChildrenOfSlugAsync(Guid siteId, string slug, CancellationToken ct = default)
     {
         try
         {
             slug = (slug ?? "").Trim('/');
             await using var db = await factory.CreateDbContextAsync(ct);
-            var parent = await db.Pages.FirstOrDefaultAsync(p => p.Slug == slug && !p.IsDeleted, ct);
+
+            // An unknown site uid falls through to the unscoped lookup rather than returning nothing, so a
+            // host that cannot name its site degrades to the old behaviour instead of losing its nav.
+            int? scopeId = siteId == Guid.Empty
+                ? null
+                : await db.Sites.Where(s => s.Uid == siteId).Select(s => (int?)s.Id).FirstOrDefaultAsync(ct);
+
+            var parent = await db.Pages
+                .Where(p => p.Slug == slug && !p.IsDeleted && (scopeId == null || p.SiteId == scopeId))
+                .OrderBy(p => p.SiteId).ThenBy(p => p.Id)
+                .FirstOrDefaultAsync(ct);
+
             return parent is null ? Array.Empty<ChildPage>() : await ChildrenOfAsync(parent.Uid, ct);
         }
         catch
