@@ -75,6 +75,38 @@
             {
                 <p class="admin-hint">★ This is the default site: it answers any hostname no binding claims.</p>
             }
+            else if (!isNew)
+            {
+                @* Showroom mode (MAI-A36). Deliberately absent on the default site: SandboxService.Gate and
+                   SiteAdminService both refuse that state, and offering a switch that cannot be thrown reads
+                   as a bug. Save the site first — the toggle acts on a row that exists. *@
+                <div class="admin-area" style="border:1px dashed #2d7d46;border-radius:6px;padding:.6rem .75rem;">
+                    <label class="admin-flags">
+                        <input type="checkbox" checked="@editing.IsSandbox"
+                               @onchange="e => ToggleSandbox(e.Value is true)" />
+                        <strong>Showroom mode</strong> — a disposable sandbox
+                    </label>
+                    <small>
+                        Visitors may author pages and install their own <code>.idea</code> packages here, and
+                        see none of it anywhere else. Its content is wiped back to the baseline once nobody
+                        has been seen for the grace period below. The default site can never be put into this
+                        mode, whatever its row says.
+                    </small>
+                    @if (editing.IsSandbox)
+                    {
+                        <div class="admin-row" style="margin-top:.5rem">
+                            <label class="admin-area">Reset policy
+                                <input @bind="editing.ResetPolicy" placeholder="when-idle" />
+                                <small>Empty means never reset.</small>
+                            </label>
+                            <label class="admin-area">Idle grace (minutes)
+                                <input type="number" min="1" @bind="editing.IdleGraceMinutes" />
+                            </label>
+                        </div>
+                        <button class="admin-save" @onclick="SaveSandbox">Save showroom settings</button>
+                    }
+                </div>
+            }
         }
 
         <div class="admin-editor-head" style="margin-top:1.5rem">
@@ -102,6 +134,9 @@
         public string DefaultThemeKey { get; set; } = "";
         public int DefaultThemeVersion { get; set; } = 1;
         public bool IsDefault { get; set; }
+        public bool IsSandbox { get; set; }
+        public string ResetPolicy { get; set; } = "";
+        public int IdleGraceMinutes { get; set; } = 10;
     }
 
     private IReadOnlyList<SiteSummary> sites = [];
@@ -128,6 +163,7 @@
             Id = s.Id, Key = s.Key, Name = s.Name, HostBindings = s.HostBindings,
             DefaultThemeKey = s.DefaultThemeKey, DefaultThemeVersion = s.DefaultThemeVersion,
             IsDefault = s.IsDefault,
+            IsSandbox = s.IsSandbox, ResetPolicy = s.ResetPolicy ?? "", IdleGraceMinutes = s.IdleGraceMinutes,
         };
         isNew = false; status = "";
     }
@@ -156,6 +192,28 @@
         var (ok, error, _) = await SitesSvc.CreateAsync(editing!.Key, editing.Name, editing.HostBindings,
                                                         editing.DefaultThemeKey, editing.DefaultThemeVersion);
         return (ok, error);
+    }
+
+    /// <summary>Flip Showroom mode. SiteAdminService is the authority on whether the state is legal.</summary>
+    private async Task ToggleSandbox(bool on)
+    {
+        if (editing is null || isNew) return;
+        editing.IsSandbox = on;
+        await SaveSandbox();
+    }
+
+    private async Task SaveSandbox()
+    {
+        if (editing is null || isNew) return;
+        var (ok, error) = await SitesSvc.SetSandboxAsync(
+            editing.Id, editing.IsSandbox, editing.ResetPolicy, editing.IdleGraceMinutes);
+        statusBad = !ok;
+        status = ok
+            ? (editing.IsSandbox ? "Showroom mode is on for this site." : "Showroom mode is off.")
+            : (error ?? "Could not change showroom mode.");
+        await Load();
+        var refreshed = sites.FirstOrDefault(x => x.Id == editing.Id);
+        if (refreshed is not null) Edit(refreshed);
     }
 
     private async Task MakeDefault()

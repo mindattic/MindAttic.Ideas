@@ -458,10 +458,19 @@ updated: 2026-06-16
   leave" would fire between page loads and read as a crash.*
   *(test: `SandboxGuardTests.ALiveSessionHoldsOffTheReset`, `OnceTheGracePeriodPasses_TheShowroomIsDue`,
   `ARevokedSessionDoesNotHoldOffTheReset`.)*
-- **MAI-US-M4 ⬜** As a visitor, I can upload a `.idea` into the showroom and watch it render, with the
-  install landing in my site only. *Needs `PackageInstallService` site scoping, a per-site asset mount
-  added alongside the route locked by [MAI-LAW-4](BIBLE.md#MAI-LAW-4), and ALC keying that includes
-  the site so two sites holding the same key+version of different bytes cannot collide.*
+- **MAI-US-M4 ✅** As a visitor, I can upload a `.idea` into the showroom and watch it render, with the
+  install landing in my site only, because the install takes an OWNER and every lookup it makes is scoped
+  the same way — rows, planning, dependencies, bytes, extraction, assets and the ALC
+  ([A37](AMENDMENTS.md#MAI-A37)). *Letting a stranger install a package is the headline claim being
+  demonstrated; an install that leaks to the shared scope is a stranger changing what production renders,
+  and one that collides on bytes or on the shadow computation is one site serving another site's package.*
+  *(test: `SiteScopedInstallTests` — owner stamped on both rows with a sibling asset mount and a site
+  blob path, the shared install unchanged, two sites holding one identity without colliding, both copies
+  staying live through a PER-SITE shadow computation, disable not crossing the boundary, planning against
+  own versions only, no override needed to beat a compiled citizen while a shared install still needs one,
+  `requires[]` never satisfied by another site, a seeded page landing in the owning site whatever its
+  manifest names, separate extraction roots and asset resolution, `InstallScope.OwnerFor`, and a
+  site-visible registry listing.)*
 - **MAI-US-M5 ⬜** As a visitor, the showroom returns to Day Zero once I log off, restored from the
   baseline `.ideabundle` ([A34](AMENDMENTS.md#MAI-A34)) by a background sweep.
 - **MAI-US-M6 ⬜** As a visitor, the showroom fires up on first navigation, provisioned from the

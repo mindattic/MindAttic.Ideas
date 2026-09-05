@@ -1,8 +1,14 @@
 @attribute [Authorize(Policy = MaPolicies.Admin)]
 @using MindAttic.Ideas.Packaging
 @using Microsoft.AspNetCore.WebUtilities
+@using MindAttic.Ideas.Core.Sites
+@using MindAttic.Ideas.Core.Data
+@using Microsoft.EntityFrameworkCore
 @inject IPackageInstallService Installer
 @inject NavigationManager Nav
+@inject ISiteResolver SiteResolver
+@inject IDbContextFactory<CmsDbContext> DbFactory
+@inject IHttpContextAccessor Http
 
 @* Upload Idea panel — hosted by AdminShell's "Upload Idea" tab (no own route). *@
 
@@ -13,6 +19,15 @@
            reference, so the admin knows exactly which .idea this upload should provide. *@
         <div class="admin-status" style="border:1px dashed #c0392b;border-radius:6px;padding:.5rem .75rem;">
             A page is waiting on <code>@_missingKey</code> — upload the <code>.idea</code> that provides it.
+        </div>
+    }
+    @if (_sandboxName is { Length: > 0 })
+    {
+        @* The showroom. Saying so is the point of the demo: a visitor should be able to see that what
+           they upload is theirs, and that nothing they do here reaches the real site. *@
+        <div class="admin-status" style="border:1px dashed #2d7d46;border-radius:6px;padding:.5rem .75rem;">
+            You are in the <strong>@_sandboxName</strong> showroom. Anything you install lands in this
+            sandbox only — no other site can see it, and it is cleared when the showroom goes idle.
         </div>
     }
     <p class="admin-sub">
@@ -54,13 +69,26 @@
     private string? _missingKey;
     private readonly List<Result> results = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         // ?missing=<reference> — set by the clickable upload-to-fix placeholder (MissingContent).
         var query = new Uri(Nav.Uri).Query;
         if (QueryHelpers.ParseQuery(query).TryGetValue("missing", out var v))
             _missingKey = v.ToString();
+
+        // Which site is this upload for? NavigationManager first, exactly as PageHost does: this panel is
+        // InteractiveServer, so HttpContext exists during prerender and is null on every later interaction —
+        // reading it alone would scope the FIRST upload correctly and every subsequent one to the default site.
+        var requestHost = RequestSite.HostOf(Nav.BaseUri) ?? Http.HttpContext?.Request.Host.Value;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var site = await SiteResolver.ResolveAsync(requestHost, db);
+        _owningSiteId = InstallScope.OwnerFor(site);
+        if (_owningSiteId is not null) _sandboxName = site!.Name is { Length: > 0 } n ? n : site.Key;
     }
+
+    /// <summary>Null = shared (the real site's operator installing for everyone); set = this sandbox only.</summary>
+    private int? _owningSiteId;
+    private string? _sandboxName;
 
     private sealed record Result(string Name, bool Ok, string Message);
 
@@ -82,7 +110,7 @@
                         await rs.CopyToAsync(buffer);
                     buffer.Position = 0;
 
-                    var plan = await Installer.InstallAsync(buffer, allowOverride);
+                    var plan = await Installer.InstallAsync(buffer, allowOverride, _owningSiteId);
                     var ok = plan.Action is InstallAction.Install
                                  or InstallAction.NoOpAlreadyInstalled
                                  or InstallAction.RequiresOverrideConfirmation;

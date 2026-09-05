@@ -1099,3 +1099,64 @@ per-site asset mounts (additive to the route locked by [MAI-LAW-4](BIBLE.md#MAI-
 path, never a change to `/_ideas/{Kind}/{key}/{version}/{**path}`), the reset executor and its
 background sweep, lazy provisioning on first navigation, the guided tour, and the recomposition of
 `/ideas` from a compiled brochure into a Data page built from discrete components.
+
+---
+
+## MAI-A37 — A site-owned install: what the visitor's upload may and may not touch {#MAI-A37}
+
+**What changed (2026-09-04).** [A36](#MAI-A36) made the catalog able to say who is asking and left the
+write half to come. This is the write half: `IPackageInstallService.InstallAsync` and `DisableAsync`
+take an **owner** — `null` installs shared, exactly what every caller meant before sites could own
+citizens, and a site id installs into that site alone. Every lookup the install makes moved with it, so
+an upload is planned against, collides with, and resolves its dependencies from only what that site can
+actually see. `MAI-US-M4` is met.
+
+**Four decisions this forced, none of them obvious from A36:**
+
+- **The override prompt does not apply to a site-owned install.** *Allow override* exists to stop a
+  package silently replacing a **compiled** citizen for the whole deployment. A site's install cannot do
+  that — it wins only inside its own site, by the catalog's site-first ordering — so the collision domain
+  is the owner's own rows, which for a site never contains a compiled one, because compiled citizens are
+  always shared. A visitor may therefore upload a package whose key matches a shipped one and watch their
+  copy take over their sandbox, changing nothing anywhere else. Installing *shared* still needs the
+  confirmation it always did.
+
+- **Shadowing is computed per site.** This one was a live defect the moment M4 landed, not a preference:
+  `ReloadCatalogAsync` grouped by `(Kind, Key, Version)`, so a visitor's upload of an identity the real
+  site already had would have been decided against it by Priority — either the upload never renders, or it
+  shadows the shared citizen for **every** site. Grouping by `(SiteId, Kind, Key, Version)` is what makes
+  the two copies non-competitors, which is what the catalog's site-first lookup already assumed. The same
+  correction applies to discovery's identity key and its manifest map.
+
+- **A site-owned install seeds its page into the owning site, whatever `data/page.json` asks for.** In the
+  showroom the manifest is a stranger's file. Honouring its `siteKey` would let an upload plant a page on
+  the real site — the single thing site-scoping exists to prevent. A shared install still honours it: an
+  operator installing for everyone is trusted, and that behaviour predates this.
+
+- **A sandbox owns its uploads; every other site installs shared.** `InstallScope.OwnerFor` is the one
+  home for that rule, because a second upload surface re-deriving its own copy is precisely how a
+  visitor's package ends up shared with production. It excludes the default site explicitly, mirroring
+  `SandboxService.Gate`: a row hand-edited in SQL to flag the main site as a sandbox must not start
+  diverting its operator's installs either.
+
+**Bytes, assemblies and assets are keyed by site.** Two sites may legitimately hold the same
+`(category, key, version)` of *different* bytes, so identity alone is no longer a unique path. Blobs go
+to `sites/{siteId}/…`, extraction to a `sites/{siteId}/` root, and assets mount at
+`/_ideas/sites/{siteId}/{category}/{key}/{version}/{**path}` — a **sibling** of the route
+[MAI-LAW-4](BIBLE.md#MAI-LAW-4) locks, never a change to it; the shared route answers exactly what it did.
+ALC keying comes free rather than as a second mechanism: `AlcAwareTypeResolver` already keys its load
+contexts by the entry-assembly path, so site-keying the extraction directory *is* site-keying the ALC —
+one site's assembly can never be handed back for another site's descriptor of the same identity.
+
+**A defect A36 left behind, fixed here.** Making `SiteId` part of both unique indexes produced a unique
+index over a *nullable* column, which SQL Server filters to `WHERE [SiteId] IS NOT NULL` — so every
+SHARED row, meaning every row predating A36 and every row the library seeder installs, silently fell
+outside the constraint that had covered it since migration #1. The install path’s concurrency guard is a
+caught `DbUpdateException` from precisely that index, so the loss turned a concurrent shared install from
+a clean `NoOpAlreadyInstalled` into two live rows of one identity — which `DiscoveryService` then throws
+on at the next boot when it keys them. Migration `SharedRowUniqueIndexes` adds the complementary
+`WHERE [SiteId] IS NULL` index on each table; the two together cover every row.
+
+**The registry listing became site-visible too.** `IPackageRegistryService.ListAsync` shows shared plus
+the asking site's own. A showroom visitor being shown the real site's inventory is a disclosure the
+demo has no reason to make, and the real site's operator is not looking at a stranger's uploads either.

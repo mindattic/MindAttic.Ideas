@@ -90,10 +90,6 @@ else if (_context is not null)
             ? a.Slot
             : PluginSlot.BeforeBody;
 
-    /// <summary>The "host[:port]" of an absolute URI, or null if it cannot be parsed.</summary>
-    private static string? HostOf(string? absoluteUri) =>
-        Uri.TryCreate(absoluteUri, UriKind.Absolute, out var u) ? u.Authority : null;
-
     private enum Status { Pending, Ok, NotFound, Forbidden }
     private Status _status = Status.Pending;
 
@@ -164,7 +160,7 @@ else if (_context is not null)
         // render after the circuit connects, so reading the host from it would resolve the right site
         // on first paint and the DEFAULT site on every subsequent navigation. BaseUri is set from the
         // originating request and stays correct for the life of the circuit.
-        var requestHost = HostOf(Nav.BaseUri) ?? Http.HttpContext?.Request.Host.Value;
+        var requestHost = RequestSite.HostOf(Nav.BaseUri) ?? Http.HttpContext?.Request.Host.Value;
         var site = await SiteResolver.ResolveAsync(requestHost, db);
         var siteId = site?.Id;
 

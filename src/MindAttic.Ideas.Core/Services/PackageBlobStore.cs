@@ -10,7 +10,18 @@ namespace MindAttic.Ideas.Core.Services;
 public interface IPackageBlobStore
 {
     /// <summary>Persist the package bytes and return the opaque <c>BlobPath</c> to store on the registry row.</summary>
-    Task<string> SaveAsync(string category, string key, int version, ReadOnlyMemory<byte> bytes, CancellationToken ct = default);
+    Task<string> SaveAsync(string category, string key, int version, ReadOnlyMemory<byte> bytes, CancellationToken ct = default) =>
+        SaveAsync(category, key, version, bytes, siteId: null, ct);
+
+    /// <summary>
+    /// Persist a SITE-OWNED package's bytes under that site's own prefix
+    /// (<a href="../../../docs/AMENDMENTS.md">MAI-A36</a>). Two sites may hold the same
+    /// <c>(category, key, version)</c> of different bytes, so the identity alone is not a unique path.
+    /// The default implementation ignores the site and falls through to the shared path, so a store
+    /// written before this keeps working.
+    /// </summary>
+    Task<string> SaveAsync(string category, string key, int version, ReadOnlyMemory<byte> bytes, int? siteId, CancellationToken ct = default) =>
+        SaveAsync(category, key, version, bytes, ct);
 
     /// <summary>Open a previously-saved package by its <c>BlobPath</c>, or null if it is not present.</summary>
     Task<Stream?> OpenAsync(string blobPath, CancellationToken ct = default);
@@ -20,7 +31,8 @@ public interface IPackageBlobStore
 
 /// <summary>
 /// Local-filesystem package store rooted at <c>%APPDATA%\MindAttic\Ideas\packages</c> by default. Layout:
-/// <c>{category}/{key}/{version}.idea</c>. Identity segments are validated upstream (category is a
+/// <c>{category}/{key}/{version}.idea</c>, or <c>sites/{siteId}/{category}/{key}/{version}.idea</c> for a
+/// site-owned package. Identity segments are validated upstream (category is a
 /// ContentKind name, key matches the package-key grammar, version is an int), and the resolved path is
 /// re-checked to sit under the root — so a crafted identity can't escape the store.
 /// </summary>
@@ -35,11 +47,19 @@ public sealed class LocalFilePackageBlobStore : IPackageBlobStore
             "MindAttic", "Ideas", "packages"));
     }
 
-    public static string BlobPathFor(string category, string key, int version) => $"{category}/{key}/{version}.idea";
+    /// <summary>The store-relative path for a package. The literal <c>sites</c> segment cannot collide
+    /// with a category, which is always a ContentKind name.</summary>
+    public static string BlobPathFor(string category, string key, int version, int? siteId = null) =>
+        siteId is int id
+            ? $"sites/{id}/{category}/{key}/{version}.idea"
+            : $"{category}/{key}/{version}.idea";
 
-    public async Task<string> SaveAsync(string category, string key, int version, ReadOnlyMemory<byte> bytes, CancellationToken ct = default)
+    public Task<string> SaveAsync(string category, string key, int version, ReadOnlyMemory<byte> bytes, CancellationToken ct = default) =>
+        SaveAsync(category, key, version, bytes, siteId: null, ct);
+
+    public async Task<string> SaveAsync(string category, string key, int version, ReadOnlyMemory<byte> bytes, int? siteId, CancellationToken ct = default)
     {
-        var blobPath = BlobPathFor(category, key, version);
+        var blobPath = BlobPathFor(category, key, version, siteId);
         var full = Resolve(blobPath) ?? throw new IOException($"refusing to write outside the package store: {blobPath}");
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
         await File.WriteAllBytesAsync(full, bytes.ToArray(), ct);
