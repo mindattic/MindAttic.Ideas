@@ -119,8 +119,8 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
 - **UiUx** — MindAttic.UiUx, the build-free canonical source for official content (consumed by pinned-tag URL).
 
 ## Status index (from USER_STORIES.md)
-- done: 57  |  partial: 1  |  planned: 11  |  cut: 0
+- done: 58  |  partial: 1  |  planned: 10  |  cut: 0
 
 ## Latest amendment
-- MAI-A37 — A site-owned install: what the visitor's upload may and may not touch
+- MAI-A38 — Day Zero: the reset executor, and what a restore must never touch
 

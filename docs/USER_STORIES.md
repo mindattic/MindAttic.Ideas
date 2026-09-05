@@ -471,8 +471,18 @@ updated: 2026-06-16
   `requires[]` never satisfied by another site, a seeded page landing in the owning site whatever its
   manifest names, separate extraction roots and asset resolution, `InstallScope.OwnerFor`, and a
   site-visible registry listing.)*
-- **MAI-US-M5 ⬜** As a visitor, the showroom returns to Day Zero once I log off, restored from the
-  baseline `.ideabundle` ([A34](AMENDMENTS.md#MAI-A34)) by a background sweep.
+- **MAI-US-M5 ✅** As a visitor, the showroom returns to Day Zero once I log off, restored from the
+  baseline `.ideabundle` ([A34](AMENDMENTS.md#MAI-A34)) by a background sweep — through the same
+  importer an operator's `--import-content` runs ([A38](AMENDMENTS.md#MAI-A38)). *The sweep decides
+  nothing: the executor re-asks the gate immediately before the first delete, so the main site is
+  refused from every direction, including a button that should never have offered it.*
+  *(test: `SandboxResetTests` — the default site refused with nothing touched even when hand-flagged as
+  a sandbox, a policy-less sandbox refused, only the site's own pages/settings/packages dropped while
+  the shared library and the real site stand, hard-delete so the baseline can reclaim its slugs,
+  `ComponentMetadata` following the pages it keys on, Day Zero restored from a real exported bundle, the
+  sandbox's key/name/bindings/sandbox flags surviving that restore, a restore never stealing another
+  site's page of the same uid, an unreadable baseline reported rather than swallowed, `LastResetUtc`
+  stamped, and the sweep resetting an idle showroom while leaving a live one alone.)*
 - **MAI-US-M6 ⬜** As a visitor, the showroom fires up on first navigation, provisioned from the
   baseline rather than kept warm.
 - **MAI-US-M7 ⬜** As a visitor, the admin area explains itself — a guided tour with coach marks on

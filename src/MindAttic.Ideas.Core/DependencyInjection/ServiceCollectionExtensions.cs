@@ -7,6 +7,7 @@ using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Rendering;
 using MindAttic.Ideas.Core.Services;
 using MindAttic.Ideas.Core.Sites;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MindAttic.Media;
 
 namespace MindAttic.Ideas.Core.DependencyInjection;
@@ -76,6 +77,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISiteAdminService, SiteAdminService>();
         services.AddScoped<ISandboxService, SandboxService>();
 
+        // Showroom reset (MAI-A38). Registered with the OFF default so a deployment that never calls
+        // AddShowroom still resolves everything — but runs no background loop whose job is deleting
+        // content. An operator-triggered reset works either way.
+        services.TryAddSingleton(new SandboxSweepOptions());
+        services.TryAddSingleton<ISandboxBaselineSource, FileSandboxBaselineSource>();
+        services.AddScoped<ISandboxResetService, SandboxResetService>();
+        services.AddHostedService<SandboxResetSweep>();
+
         // Phase-5: .idea package install (validate + persist bytes + extract + register rows + ALC resolve).
         // Local file store/extractor by default; the ADR's Azure Blob backing slots in behind IPackageBlobStore.
         services.AddSingleton<IPackageBlobStore>(_ => new LocalFilePackageBlobStore());
@@ -86,6 +95,19 @@ public static class ServiceCollectionExtensions
         // Media asset storage. Caller configures MediaStoreOptions.MediaRoot (done in Program.cs).
         services.AddMedia<CmsDbContext>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Turns on Showroom mode for this deployment: which baseline an idle sandbox restores to, and how
+    /// often to look. Call AFTER <see cref="AddIdeasCore"/> — it replaces the off-by-default options that
+    /// registers, so the switch is one explicit call rather than a registration-order accident.
+    /// </summary>
+    public static IServiceCollection AddShowroom(this IServiceCollection services, Action<SandboxSweepOptions> configure)
+    {
+        var options = new SandboxSweepOptions();
+        configure(options);
+        services.Replace(ServiceDescriptor.Singleton(options));
         return services;
     }
 }

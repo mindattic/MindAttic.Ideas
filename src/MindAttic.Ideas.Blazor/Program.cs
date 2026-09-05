@@ -43,6 +43,25 @@ builder.Services.AddIdeasCore(
     typeof(Program).Assembly,
     typeof(MindAttic.Ideas.Page.Frontpage.V1).Assembly);
 
+// --- Showroom mode (A38): a sandbox site that returns to Day Zero once nobody is using it. OFF unless
+//     configured, because the sweep it starts is a loop that deletes content. The baseline path is
+//     resolved against the content root so configuration can name it relatively.
+//     "Showroom": { "Enabled": true, "IntervalMinutes": 2, "BaselineBundle": "seed/mindattic-site.ideabundle" }
+var showroomCfg = builder.Configuration.GetSection("Showroom");
+if (showroomCfg.Exists())
+{
+    builder.Services.AddShowroom(o =>
+    {
+        o.Enabled = showroomCfg.GetValue("Enabled", false);
+        var minutes = showroomCfg.GetValue("IntervalMinutes", 2);
+        o.Interval = TimeSpan.FromMinutes(minutes <= 0 ? 2 : minutes);
+        if (showroomCfg["BaselineBundle"] is { Length: > 0 } baseline)
+            o.BaselineBundlePath = Path.IsPathRooted(baseline)
+                ? baseline
+                : Path.Combine(builder.Environment.ContentRootPath, baseline);
+    });
+}
+
 // --- Media store (A31): local disk by default, Azure Blob when Media:Provider=azure. AddIdeasCore
 //     already registered the local store; the Azure registration replaces it. The page-facing contract
 //     is /_media/{uid} either way, so switching the backing store changes no page markup. Blob-backed
@@ -275,6 +294,34 @@ if (installIdx >= 0)
     var scope = owningSiteId is int sid ? $" (site {sid} only)" : " (shared)";
     Console.WriteLine($"[install] {Path.GetFileName(ideaPath)} -> {plan.Action}{scope}");
     Environment.Exit(0);
+}
+
+// ---- CLI mode: --reset-sandbox <site key> ---------------------------------------------------
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --reset-sandbox showroom
+// The operator-facing form of what the idle sweep does. It decides nothing: SandboxResetService asks
+// the gate again, so this refuses the default site exactly as the sweep would (MAI-A38).
+var resetIdx = Array.IndexOf(args, "--reset-sandbox");
+if (resetIdx >= 0)
+{
+    var siteKey = resetIdx + 1 < args.Length && !args[resetIdx + 1].StartsWith("--") ? args[resetIdx + 1] : null;
+    using var resetScope = app.Services.CreateScope();
+    var resetSp = resetScope.ServiceProvider;
+
+    await using var resetDb = await resetSp.GetRequiredService<IDbContextFactory<CmsDbContext>>().CreateDbContextAsync();
+    var target = siteKey is { Length: > 0 } ? await resetDb.Sites.FirstOrDefaultAsync(x => x.Key == siteKey) : null;
+    if (target is null)
+    {
+        var known = string.Join(", ", await resetDb.Sites.Select(x => x.Key).ToListAsync());
+        Console.Error.WriteLine($"[reset-sandbox] No site with key \"{siteKey ?? "(none)"}\". Known keys: {known}");
+        Environment.Exit(1);
+    }
+
+    var outcome = await resetSp.GetRequiredService<ISandboxResetService>().ResetAsync(target!.Id, DateTime.UtcNow);
+    Console.WriteLine($"[reset-sandbox] {outcome.Explanation}");
+    if (outcome.Ok)
+        Console.WriteLine($"[reset-sandbox] dropped {outcome.PagesRemoved} page(s), {outcome.PackagesRemoved} package(s)"
+                        + (outcome.Restored is { } r ? $"; restored {r.PagesCreated} page(s)." : "."));
+    Environment.Exit(outcome.Ok ? 0 : 1);
 }
 
 // ---- CLI mode: --extract-media -------------------------------------------------------------

@@ -8,7 +8,8 @@ namespace MindAttic.Ideas.Core.Services;
 public sealed record SiteSummary(
     int Id, string Key, string Name, string HostBindings,
     string DefaultThemeKey, int DefaultThemeVersion, bool IsDefault, int PageCount,
-    bool IsSandbox = false, string? ResetPolicy = null, int IdleGraceMinutes = 10);
+    bool IsSandbox = false, string? ResetPolicy = null, int IdleGraceMinutes = 10,
+    DateTime? LastResetUtc = null);
 
 /// <summary>
 /// Site CRUD for the Admin "Sites" panel. Without this, a second domain could only be added by hand
@@ -180,5 +181,5 @@ public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
 
     private static SiteSummary ToSummary(Site s, int pageCount) => new(
         s.Id, s.Key, s.Name, s.HostBindings, s.DefaultThemeKey, s.DefaultThemeVersion, s.IsDefault, pageCount,
-        s.IsSandbox, s.ResetPolicy, s.IdleGraceMinutes);
+        s.IsSandbox, s.ResetPolicy, s.IdleGraceMinutes, s.LastResetUtc);
 }

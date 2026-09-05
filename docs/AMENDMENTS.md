@@ -1160,3 +1160,54 @@ on at the next boot when it keys them. Migration `SharedRowUniqueIndexes` adds t
 **The registry listing became site-visible too.** `IPackageRegistryService.ListAsync` shows shared plus
 the asking site's own. A showroom visitor being shown the real site's inventory is a disclosure the
 demo has no reason to make, and the real site's operator is not looking at a stranger's uploads either.
+
+---
+
+## MAI-A38 — Day Zero: the reset executor, and what a restore must never touch {#MAI-A38}
+
+**What changed (2026-09-05).** [A36](#MAI-A36) defined when a showroom may be reset;
+[A37](#MAI-A37) made a visitor's install land in their site alone. This is the routine that actually
+deletes: `SandboxResetService` drops everything a sandbox site owns and restores its baseline, and
+`SandboxResetSweep` runs it for every site idle past its grace period. `MAI-US-M5` is met.
+
+**One authority, asked twice.** The sweep does not decide anything — it asks
+`ISandboxService.DueForResetAsync` which sites qualify, and the executor asks
+`ISandboxService.Gate` **again**, immediately before the first delete, rather than trusting whatever
+called it. A caller that gated a minute ago, a sweep predicate that has drifted, the Sites-panel button
+and the `--reset-sandbox` CLI verb all meet the same refusal. The sweep is also **off by default**: a
+deployment with no showroom must not run a background loop whose job is deleting content.
+
+**A reset hard-deletes, and that is the exception it looks like.** [HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)
+makes disable-not-delete the rule, and soft rows are for content someone might want back. A sandbox
+reset exists precisely to make the visitor's work unrecoverable, and rows kept forever would collide
+with the baseline's slugs on the very next restore. This is the one routine allowed to do it, which is
+why it sits behind three separate flags and the default-site refusal.
+
+**Two things deliberately survive.** *Media* is not site-scoped by the media package, so deleting a
+visitor's uploads would mean deleting from a store the real site shares — a stale image in a sandbox is
+a far smaller price than a live site losing its pictures. *Shared citizens* — the whole first-party
+library — are untouched, because they were never the sandbox's to drop; only what the site itself owns
+goes.
+
+**The restore path is the operator's own, not a second one.** The import half of
+[A34](#MAI-A34) moved out of `ImportContentCli` into `ContentBundleImporter` in Core; the CLI is now
+argument parsing and console reporting over it. A parallel restore mechanism is one that only ever runs
+when something has already gone wrong, so the reset takes the path an operator exercises by hand.
+
+Two defects surfaced in doing that, both of which the reset would have triggered on a timer:
+
+- **A restore could steal another site's pages.** Import reconciled a page on `Uid` first with no site
+  filter. A uid is portable and therefore GLOBAL, and a showroom's baseline is a bundle exported from
+  the *real* site — carrying the real site's uids. Restoring it would have matched production's rows and
+  re-pointed their `SiteId` into the sandbox. Both lookups are now scoped to the target site, and a page
+  whose uid is already taken elsewhere gets a fresh one, so the sandbox receives a *copy* rather than a
+  move.
+- **A restore could overwrite the sandbox's own identity.** Applying the bundle's `site` block would
+  rename the sandbox, give it production's host bindings, and clear the flags that make it a sandbox —
+  losing the showroom on the routine meant to refresh it. `BundleImportOptions.IntoSiteId` pins the
+  target by id and leaves the site row alone; it is the sandbox-restore door and nothing else uses it.
+
+**Reachability.** Showroom mode could previously only be entered by editing SQL — `SetSandboxAsync`
+existed but nothing exposed it. The Sites panel now carries the toggle, its grace settings, and a
+two-click *Reset to baseline now*; `--reset-sandbox <key>` is the operator-facing form of the sweep.
+Configuration is `Showroom:{Enabled,IntervalMinutes,BaselineBundle}`, absent by default.
