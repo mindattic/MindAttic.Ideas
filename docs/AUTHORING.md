@@ -117,6 +117,66 @@ is arbitrary-depth; the page drops only the **top** Plugin or Component's tag.
 > is live with **no separate app pool**. Declare it with
 > `@attribute [Idea(RenderMode = CmsRenderMode.InteractiveServer)]`.
 
+### Shadow DOM isolation (opt-in)
+
+A Component can render its internal markup inside a real browser Shadow DOM shadow root, so Page/Theme
+CSS cannot reach in via ordinary selectors regardless of the cascade-layer order (MAI-A44). This is
+**opt-in per component** — every existing citizen is unaffected unless it deliberately turns it on.
+
+**The recipe** (see `library/Components/Textbox/V1.razor` for the reference port):
+
+1. Override `protected override bool UseShadowDom => true;` (the base default on `ComponentBase` is `false`).
+2. Put `@ref="_root"` on the component's single root element.
+3. Add two things to the component's own `.csproj`: a compile-only reference (`Microsoft.AspNetCore.Components.Web`,
+   `ExcludeAssets="runtime"` — the same pattern `ModalPopup` already uses for `KeyboardEventArgs`, needed
+   here for `IJSRuntime`/`IJSObjectReference`) and a linked-source include of the shared helper:
+   `<Compile Include="$(MSBuildThisFileDirectory)..\..\_Shared\ShadowDomAttach.cs" Link="ShadowDomAttach.cs" />`
+   (linked, not a project reference — `library/Directory.Build.props` limits every citizen to depending
+   on Abstractions alone, and the package validator forbids host assemblies in a packed `bin/`).
+4. Call the helper from `OnAfterRenderAsync`, guarded so it only ever runs once, interactively:
+   ```csharp
+   protected override async Task OnAfterRenderAsync(bool firstRender)
+   {
+       if (firstRender && UseShadowDom && RendererInfo.IsInteractive)
+           await ShadowDomAttach.AttachAsync(JS, _root, CssUrls);
+   }
+   ```
+
+**The hard authoring rule: the `@ref`'d root's immediate children must be structurally STABLE across
+re-renders — no top-level `@if` and no element-type swap directly under the ref.** The attach script
+moves the root's already-rendered children into the new shadow root exactly once; Blazor's diffing then
+targets the DOM nodes it originally created, and it throws if it ever tries to insert/remove an immediate
+child of a root whose parent relationship it moved out from under it. Changes at any DEEPER level (a
+grandchild, or the root's own attributes) remain completely safe forever — only the root's immediate
+children must be unconditional.
+
+- **Pass:** `Textbox`'s root (`<div class="ma-field">`) always renders the same two children
+  (`<input>`, `<label>`) — no `@if`, no swap. Safe to isolate as-is.
+- **Fail (would need a refactor first):** `ModalPopup`'s outer element is wrapped in `@if (_open) { }`
+  (so the root doesn't exist at all across some renders) and its inner dialog swaps between `<form>` and
+  `<div>` depending on `WrapForm` — TWO separate violations of the rule, discovered when attempting to
+  port it. Fixing the first (toggle a `hidden` attribute on an always-rendered root instead of an `@if`)
+  is mechanical; fixing the second correctly would change real `<form>` submission semantics (native
+  Enter-to-submit, autofill, form-associated accessibility), which is a genuine behavior change, not a
+  structural one — so `ModalPopup` is **not** shadow-isolated yet. Don't force the opt-in onto a
+  component whose root isn't already stable; fix the structure first, or leave it un-isolated.
+
+**Delivering the shadow root's own stylesheet** — two patterns, matching how the component already
+serves CSS:
+- **Inline `<style>` authors** (most existing citizens): keep the `<style>` block as-is; when the root's
+  children move into the shadow root, the `<style>` moves with them, giving free per-instance scoping
+  with no other change.
+- **`StylesheetUrls`/hardcoded `<link>` authors** (e.g. `Textbox`): keep the light-DOM `<link>`
+  unconditional (so a failed/skipped attach still renders fully styled — MAI-LAW-7), and ALSO pass the
+  same URL(s) to `ShadowDomAttach.AttachAsync`'s `cssUrls` parameter — the JS module adopts them into the
+  shadow root via `adoptedStyleSheets` (falling back to an internal `<link>` if unsupported), fetching
+  and parsing each URL once and sharing the result across every shadow root that adopts it.
+
+**Degradation is automatic, not something you write:** the component's `.razor` markup always renders
+its complete, correctly-styled light-DOM output first — shadow attachment is a best-effort JS-side
+enhancement layered on top, skipped entirely during static prerender (`RendererInfo.IsInteractive ==
+false`) and swallowed on any JS/interop failure. A page is never invalid because of this feature.
+
 ### Build, pack, verify
 
 From the `MindAttic.Ideas.Library` repo (the CMS SDK CLI is in the sibling repo):

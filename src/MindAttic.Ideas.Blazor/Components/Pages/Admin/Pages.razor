@@ -134,6 +134,19 @@
             {
                 <label class="admin-area">Body HTML<MonacoEditor @bind-Value="editing.BodyHtml" /></label>
                 <label class="admin-area">Page CSS<textarea rows="5" @bind="editing.PageCss"></textarea></label>
+                @if (cssLintWarnings.Count > 0)
+                {
+                    <div class="admin-lint-banner" role="status">
+                        <button type="button" class="admin-lint-dismiss" @onclick="() => cssLintWarnings = []">×</button>
+                        <strong>CSS advisory</strong>
+                        <ul>
+                            @foreach (var w in cssLintWarnings)
+                            {
+                                <li>@w.Message</li>
+                            }
+                        </ul>
+                    </div>
+                }
                 <label class="admin-area">Page JS (only runs when saved as Author)<textarea rows="5" @bind="editing.PageJs"></textarea></label>
 
                 @if (Catalog.All.Any(d => d.Kind == ContentKind.Component))
@@ -218,6 +231,7 @@
     private bool isNew;
     private string status = "";
     private bool statusBad;
+    private IReadOnlyList<CssLintWarning> cssLintWarnings = [];
 
     // Drag state (the dragged page + the row currently hovered as a drop target).
     private int? dragId;
@@ -306,6 +320,7 @@
     private async Task Save()
     {
         if (editing is null) return;
+        cssLintWarnings = CssShorthandLinter.Scan(editing.PageCss);
         var principal = AuthState is null ? new ClaimsPrincipal() : (await AuthState).User;
         var result = await PagesSvc.SaveAsync(editing, principal);
         if (!result.Ok)

@@ -16,6 +16,15 @@ using MindAttic.Media;
 using MindAttic.Vault.Configuration;
 using MindAttic.Vault.DependencyInjection;
 
+// ---- CLI mode: --expand-css-shorthand -------------------------------------------------------
+// Pure filesystem migration (MAI-A44) -- runs before any Vault/DB wiring since it needs no
+// configured secrets and no running app; rewrites library/**/*.css in place via CssConflictMerger.
+// dotnet run --project src/MindAttic.Ideas.Blazor -- --expand-css-shorthand [--path library] [--dry-run]
+if (args.Contains("--expand-css-shorthand"))
+{
+    Environment.Exit(await ExpandCssShorthandCli.RunAsync(args));
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // --- MindAttic.Vault: all credentials/config flow through the Vault chain (A6). No User Secrets. ---

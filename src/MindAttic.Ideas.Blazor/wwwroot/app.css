@@ -286,6 +286,11 @@ h1:focus {
 .admin-status{padding:.5rem .7rem;border-radius:8px;margin:.6rem 0;font-size:.85rem;}
 .admin-status.ok{background:rgba(46,125,50,.18);}
 .admin-status.err{background:rgba(226,35,26,.18);}
+.admin-lint-banner{position:relative;padding:.5rem .7rem .5rem 1.9rem;border-radius:8px;margin:.4rem 0 .8rem;font-size:.78rem;background:rgba(255,180,0,.14);}
+.admin-lint-banner strong{display:block;margin-bottom:.15rem;}
+.admin-lint-banner ul{margin:0;padding-left:1.1rem;}
+.admin-lint-dismiss{position:absolute;top:.3rem;right:.4rem;background:none;border:none;color:inherit;font-size:1rem;line-height:1;cursor:pointer;opacity:.7;}
+.admin-lint-dismiss:hover{opacity:1;}
 .admin-two-pane{display:flex;gap:1.25rem;align-items:flex-start;}
 .admin-list{flex:0 0 16rem;display:flex;flex-direction:column;gap:.35rem;}
 .admin-new{padding:.5rem .8rem;border:1px dashed #888;border-radius:8px;background:none;color:inherit;cursor:pointer;}

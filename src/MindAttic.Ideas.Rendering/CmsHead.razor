@@ -1,25 +1,30 @@
 @namespace MindAttic.Ideas.Rendering
-@* Emits CSS in the FROZEN cascade order: GLOBAL -> THEME -> COMPONENT. Page-level CSS (tier 3) is emitted
-   by the page body in <body>, and inline style="" is tier 4 by DOM nature — so document order yields the
-   locked Global -> Theme -> Component -> Page -> inline cascade. ComponentCss/ComponentScripts are the
-   deduped package-citizen head assets hoisted by PageAssetCollector (empty unless a package citizen with
-   assets is on the page, so existing pages render byte-identically). This order lives in exactly ONE place. *@
+@* Emits CSS in the FROZEN cascade order (MAI-LAW-4, reordered by MAI-A44): GLOBAL -> THEME -> PAGE ->
+   COMPONENT. Component now beats Page (MAI-A44 reversed A43's order: a Page author's PageCss can no
+   longer out-rank a Component citizen's own stylesheet, since a Component is meant to guarantee its own
+   presentation regardless of what a page composes around it). Cascade layers make that order win by
+   LAYER PRECEDENCE rather than by accidental document-order + matching specificity: an explicit
+   "@layer global, theme, page, component;" statement is emitted first, and every tier's CSS is
+   attributed to its named layer -- inline text via "@layer name { }", and externally-hosted
+   Theme/Component stylesheets (never rewritten by this app) via "@import url(...) layer(name);", the
+   only standards-compliant way to layer an unmodified external file (no <link> attribute exists for
+   this). FreeFormPage wraps page-level CSS the same way, in "@layer page { }". Inline style="" and
+   !important both sit outside/above the entire layered cascade per spec, so DOM-inline still wins
+   unconditionally as MAI-LAW-4 requires. ComponentCss/ComponentScripts are the deduped package-citizen
+   head assets hoisted by PageAssetCollector (empty unless a package citizen with assets is on the page,
+   so existing pages render byte-identically). This order lives in exactly ONE place. *@
+<style>@LayerOrderStatement</style>
 @if (!string.IsNullOrWhiteSpace(GlobalCss))
 {
     @* Escape any </style sequence so a rogue setting value cannot break out of the style block. *@
-    <style>@((MarkupString)GlobalCss!.Replace("</", "<\\/", StringComparison.OrdinalIgnoreCase))</style>
+    <style>@((MarkupString)WrapInLayer("global", EscapeStyleText(GlobalCss!)))</style>
 }
-@foreach (var url in ThemeGlobalCss)
-{
-    <link rel="stylesheet" href="@url" />
+@{
+    var imports = BuildLayeredImports();
 }
-@foreach (var url in ThemeCss)
+@if (imports.Length > 0)
 {
-    <link rel="stylesheet" href="@url" />
-}
-@foreach (var url in ComponentCss)
-{
-    <link rel="stylesheet" href="@url" />
+    <style>@((MarkupString)imports)</style>
 }
 @foreach (var url in ThemeScripts)
 {
@@ -39,4 +44,37 @@
     [Parameter] public IReadOnlyList<string> ComponentCss { get; set; } = Array.Empty<string>();
     /// <summary>Deduped package-citizen scripts, hoisted after the theme scripts.</summary>
     [Parameter] public IReadOnlyList<string> ComponentScripts { get; set; } = Array.Empty<string>();
+
+    private const string LayerOrderStatement = "@layer global, theme, page, component;";
+
+    private static string WrapInLayer(string layerName, string css) => $"@layer {layerName} {{\n{css}\n}}";
+
+    private static string EscapeStyleText(string text) =>
+        text.Replace("</", "<\\/", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Theme/Component CSS ships as external URLs this app never owns or rewrites, so the only
+    /// standards-compliant way to put an unmodified external stylesheet into a named cascade layer is
+    /// "@import url(...) layer(name);" -- a &lt;link&gt; has no layer attribute. One combined &lt;style&gt;
+    /// block keeps every @import as the block's first rules (required by the CSS spec for @import).
+    /// </summary>
+    private string BuildLayeredImports()
+    {
+        if (ThemeGlobalCss.Count == 0 && ThemeCss.Count == 0 && ComponentCss.Count == 0)
+            return string.Empty;
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var url in ThemeGlobalCss)
+            sb.Append("@import url(\"").Append(EscapeCssUrl(url)).Append("\") layer(global);\n");
+        foreach (var url in ThemeCss)
+            sb.Append("@import url(\"").Append(EscapeCssUrl(url)).Append("\") layer(theme);\n");
+        foreach (var url in ComponentCss)
+            sb.Append("@import url(\"").Append(EscapeCssUrl(url)).Append("\") layer(component);\n");
+        return sb.ToString();
+    }
+
+    private static string EscapeCssUrl(string url) =>
+        url.Replace("\\", "\\\\")
+           .Replace("\"", "\\\"")
+           .Replace("</", "<\\/", StringComparison.OrdinalIgnoreCase);
 }

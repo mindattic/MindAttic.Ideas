@@ -154,6 +154,16 @@ public abstract class ComponentBase : IdeaBase
     /// <summary>Scripts this component needs. Emitted once.</summary>
     public virtual IReadOnlyList<string> ScriptUrls => Array.Empty<string>();
 
+    /// <summary>
+    /// Opt-in: true to isolate this component's rendered markup inside a real browser Shadow DOM shadow
+    /// root (mode "open"), so Page/Theme CSS cannot reach in via ordinary selectors. Default false --
+    /// every existing Component citizen is unaffected. A component that opts in must give its `@ref`'d
+    /// root element structurally STABLE immediate children (no top-level `@if`/element-type-swap
+    /// directly under the ref) -- see docs/AUTHORING.md "Shadow DOM isolation" for the attach recipe,
+    /// the authoring rule, and why.
+    /// </summary>
+    protected virtual bool UseShadowDom => false;
+
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         var seq = 0;

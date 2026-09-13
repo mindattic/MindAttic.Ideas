@@ -4,4 +4,17 @@
   <PropertyGroup>
     <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compile-only: IJSRuntime/IJSObjectReference (Microsoft.JSInterop) for the Shadow DOM attach
+         helper below. The host CMS supplies the assembly at runtime; ExcludeAssets=runtime keeps it
+         out of the packed bin/ (same pattern ModalPopup uses for KeyboardEventArgs). -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shadow DOM opt-in (MAI-A44/docs/AUTHORING.md): linked source, not a project/package reference,
+         so it compiles into THIS component's own assembly rather than adding a shared runtime dependency. -->
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\_Shared\ShadowDomAttach.cs" Link="ShadowDomAttach.cs" />
+  </ItemGroup>
 </Project>

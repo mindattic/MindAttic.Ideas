@@ -27,12 +27,20 @@ public sealed class FreeFormPage : PageBase
         // CmsHead applies to the global stylesheet setting. PageCss reaches an Untrusted page through a
         // bundle import (--untrusted), a history restore by a non-raw-markup author, or an admin whose
         // AuthorRawMarkup claim is withheld pending MFA.
+        //
+        // The trust-gated text is wrapped in "@layer page { }" so it beats Global/Theme CSS by
+        // cascade-layer precedence regardless of selector specificity, with no !important needed — but
+        // Component now beats Page (MAI-A44 reversed MAI-A43's order: a Component citizen's own
+        // stylesheet outranks whatever a Page author writes, since a Component is meant to guarantee its
+        // own presentation). The wrapper is renderer-owned literal text added AFTER the trust decision
+        // above, so it changes neither the verbatim-vs-escaped choice nor the escaped text itself.
         if (!string.IsNullOrWhiteSpace(inline.Css))
         {
-            builder.OpenElement(seq++, "style");
-            builder.AddMarkupContent(seq++, trust == ContentTrust.Author
+            var css = trust == ContentTrust.Author
                 ? inline.Css
-                : inline.Css!.Replace("</", "<\\/", StringComparison.OrdinalIgnoreCase));
+                : inline.Css!.Replace("</", "<\\/", StringComparison.OrdinalIgnoreCase);
+            builder.OpenElement(seq++, "style");
+            builder.AddMarkupContent(seq++, $"@layer page {{\n{css}\n}}");
             builder.CloseElement();
         }
 

@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="bunit" Version="2.11.3" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.11" />
@@ -28,6 +29,12 @@
     <ProjectReference Include="..\MindAttic.Ideas.Core\MindAttic.Ideas.Core.csproj" />
     <ProjectReference Include="..\MindAttic.Ideas.Blazor\MindAttic.Ideas.Blazor.csproj" />
     <ProjectReference Include="..\MindAttic.Ideas.Packaging\MindAttic.Ideas.Packaging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Same linked-source helper library Component citizens opt into (library/_Shared/), so
+         ShadowDomAttachTests exercises the real code, not a re-implementation of it. -->
+    <Compile Include="..\..\library\_Shared\ShadowDomAttach.cs" Link="ShadowDomAttach.cs" />
   </ItemGroup>
 
 </Project>

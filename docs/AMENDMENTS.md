@@ -1310,3 +1310,306 @@ passes `Context.Site.SiteId` and was repacked. Nothing else in the library consu
 `.ChildrenOfSlug_SiteWithNoSuchSlug_ReturnsEmpty_NotAnotherSitesPage`,
 `.ChildrenOfSlug_UnknownSite_FallsBackToTheUnscopedLookup`,
 `.IPageTree_DefaultOverload_DelegatesToTheSlugOnlyForm`)*
+
+---
+
+## MAI-A41 — `.ideabundle` retired, replaced by `.idealist` {#MAI-A41}
+
+**What changed (2026-09-12).** [A34](#MAI-A34)'s `.ideabundle` moved authored content between
+environments — pages, settings, per-component metadata, media. It said nothing about which `.idea`
+citizens a fresh instance should even have; that was always "whatever's physically in `library/`", with
+no way to name a curated subset for a specific deployment. `.idealist` **retires** `.ideabundle` and
+replaces it entirely: one zip carrying a deployment-wide **Packages** list alongside the exact
+site/settings/pages/media content `.ideabundle` carried — still exactly one site per file, never
+multi-site. `--export-idealist`/`--import-idealist` replace `--export-content`/`--import-content`, with
+every existing flag (`--site`, `--slug`, `--no-media`, `--dry-run`, `--into-site`, `--untrusted`,
+`--prune`) unchanged in meaning. A new `--compose-idealist` verb builds a packages-only (or, with
+`--from-site`, packages + content) idealist without hand-editing `idealist.json`.
+
+```pwsh
+dotnet run --project src/MindAttic.Ideas.Blazor -- --export-idealist site.idealist [--site key] [--slug prefix] [--no-media] [--dry-run]
+dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist site.idealist [--into-site key] [--dry-run] [--untrusted] [--prune] [--packages-dir dir]
+dotnet run --project src/MindAttic.Ideas.Blazor -- --compose-idealist provision.idealist --package Kind.key@version [--from-site key] [--dry-run]
+```
+
+**Packages[] and the stricter per-page Uses[].** `Packages` is a flat list of `Kind.key@version`
+entries — the exact grammar `IncludeReferenceParser.TryParseUse` already parses for a package's
+`requires[]`/`uses[]` — but the version is MANDATORY here: a provisioning list pins an exact build, it
+never floats to latest. Every exported page also carries its own `Uses`: every citizen its
+body/theme/active-plugins actually reference, auto-discovered at export time and pinned to the version
+active then. `PackageInstallService.InstallAsync`'s own `uses[]` check stays advisory
+(`IRenderAlertSink.RaiseMissing`, never blocking) because a package's string references are late-bound
+and may resolve after install. A page's `Uses[]` inside an `.idealist` is not late-bound — Packages[]
+finishes installing before any page is written — so an unmet entry throws, with **nothing written**,
+rather than degrading through [MAI-LAW-7](BIBLE.md#MAI-LAW-7)'s placeholder+Admin-Inbox path. That path
+is unchanged for ordinary runtime rendering; it is simply not what a curated instance should rely on at
+provisioning time.
+
+**Packages install before content, in listed order, and a failure aborts the whole apply.** Each package
+install stays individually idempotent (unchanged `PackageInstallService` semantics), so a re-run after a
+partial failure is safe. Every page's `Uses[]` is then validated as a whole — every entry across every
+page, collected in full — before any media/site/settings/page/component-metadata row is written. There
+is no DB transaction wrapping this (neither EF InMemory nor the prior `ContentBundleImporter` used one);
+"no partial apply" is enforced by ordering the destructive work behind a pure read-only pre-flight, not
+by inventing transactional machinery this codebase didn't already have.
+
+**`Packages[]` is purely referential — a `.idealist` never carries package bytes.** [MAI-LAW-9](BIBLE.md#MAI-LAW-9):
+`library/` is already the first-party citizen pool boot resolves against, so an `.idealist` names
+`Kind.key@version` and expects it resolvable from there — or from any directory in
+`Ideas:PackagesDirs`/`--packages-dir`, searched in order — matched by opening each candidate's manifest,
+never by filename (a third-party package does not follow the first-party
+`MindAttic.Ideas.{Category}.{Key}.V{n}.idea` convention). [MAI-A42](#MAI-A42) gives every `.idea` its own
+independent NuGet package, so distributing one no longer needs a bytes-embedding escape hatch at all —
+one wasn't kept, since it would only have duplicated what a real package feed already solves generally.
+
+**Boot decides vanilla vs. custom by one setting.** `Ideas:Idealist` (env `IDEAS_IDEALIST`) names a file
+to apply at boot; `Ideas:PackagesDirs` (default `[library/]`) names where its Packages[] resolve from.
+Absent = **vanilla**: today's install-everything-in-`library/` loop, best-effort, unchanged. Present =
+**custom**: the named `.idealist` is applied and any failure — a missing package, an unmet `Uses[]`, a
+malformed manifest — **aborts startup**. A curated instance failing loudly at boot is the intended
+failure mode; a half-applied one silently serving broken pages is not. The boot decision moved out of
+`Program.cs`'s top-level statements into `BootProvisioning.ApplyAsync`, so both paths carry real NUnit
+coverage.
+
+**What carries forward unchanged from [A39](#MAI-A39).** The one A37-motivated fix that survived that
+withdrawal — `--into-site` copying rather than moving a page already owned by another site, via
+site-scoped `Uid`-then-`(SiteId,Slug)` lookups — moves into `IdeaListImporter` verbatim. It was never
+about package site-ownership (the feature A39 fully withdrew); it is a general importer correctness fix
+and stays exactly as it was.
+
+**What is retired.** `ContentBundle`, `ContentBundleImporter`, `ExportContentCli`, `ImportContentCli`,
+`--export-content`, `--import-content`, the `.ideabundle` file extension, `bundle.json`. Replaced by
+`IdeaList`, `IdeaListImporter`, `IdeaListExporter`, `ExportIdeaListCli`, `ImportIdeaListCli`,
+`ComposeIdeaListCli`, `--export-idealist`, `--import-idealist`, `--compose-idealist`, `.idealist`,
+`idealist.json`.
+
+**Data migration.** None — no schema changed. This is a portability-artifact and CLI-surface retirement,
+not a persisted-entity change.
+
+*(tests: `IdeaListTests` — the full `ContentBundleTests` suite ported onto `.idealist`, plus
+`Packages_InstallInListedOrder_LaterEntryCanRequireAnEarlierOne`,
+`PackagesFailure_AbortsBeforeAnyPageIsWritten`, `PageUsesUnmet_FailsLoudly_NoPartialApply`,
+`PageUsesSatisfiedByJustInstalledPackage_Succeeds`,
+`PackageResolver_SearchesMultipleDirectoriesInOrder_FirstMatchWins`, `Prune_SoftDeletesPagesAbsentFromTheIdeaList`,
+`ComposeIdealist_PackagesOnly_ProducesAnEmptySiteContentFreeArtifact`; `BootProvisioningTests` for the
+vanilla-fallback and abort-on-bad-idealist boot paths.)*
+
+---
+
+## MAI-A42 — Each `.idea` distributes on its own via NuGet, content-signed independently of it {#MAI-A42}
+
+**What changed (2026-09-12).** [A41](#MAI-A41) made `Packages[]` a pure pointer list, but the only place
+those pointers could resolve from was a folder physically present beside the host (`library/`, or
+`--packages-dir`). Every `.idea` citizen — one `(Kind, Key)` — now distributes on its own as an
+independent NuGet package: id `MindAttic.Ideas.{Category}.{Key}`, whole-number citizen version `n` as
+NuGet version `{n}.0.0` (NuGet's own SemVer requirement, not a change to whole-number versioning itself
+— the CMS-facing identity stays the integer). The `.idea` zip rides inside the `.nupkg` unmodified, at
+`content/{key}.idea`; NuGet is purely a transport, never a rival package format.
+
+**A `.idea`'s content signature is independent of NuGet's own package signing — deliberately.** NuGet
+ships a package-signing feature (`NuGet.Packaging.Signing`, `dotnet nuget trust`), and it was considered
+and rejected for three reasons: its runtime verification API is fragile and largely CLI-oriented, not
+built for embedding in a running app; whether GitHub Packages preserves an author signature untouched on
+round-trip is unconfirmed; and verifying NuGet's own signature would only ever protect packages that
+happened to arrive via a NuGet fetch — not `library/`, not `--install`, not an admin upload. Instead,
+every `.idea` carries its OWN content signature (`PackageSigner`, `MindAttic.Ideas.Packaging`): RSA-2048,
+RSASSA-PSS/SHA-256, over a canonical manifest (every zip entry's path + lowercase-hex SHA-256, ordinally
+sorted, tab-joined, newline-joined — everything except the signature entry itself), stored as
+`idea.sig.json` (`{algorithm, signerThumbprint, signature}`) at the zip root. This is verified at the
+ONE choke point every install path already shares — `PackageInstallService.InstallAsync`, immediately
+after opening the archive and BEFORE its manifest is even trusted for parsing — so a tampered or
+unsigned `.idea` is rejected uniformly regardless of where its bytes came from.
+
+**The signature entry carries a signer THUMBPRINT only, never the full certificate.** If the archive
+carried its own signer cert, an attacker could embed a self-issued cert alongside a matching signature
+and it would "verify" cleanly — trust would be reading itself out of untrusted bytes. The RSA public key
+actually used to verify always comes from the host's own configured trust
+(`IPackageSigningTrust.TrustedCertificate`, Vault-backed — see below); the thumbprint in the signature
+entry is a cheap diagnostic checked first, not the trust decision itself. A verification failure throws
+`PackageSignatureException` (a new `InstallException` subtype, so every existing catch site keeps
+working unchanged) naming which of `NotSigned` / `Malformed` / `UntrustedSigner` / `BadSignature`
+occurred.
+
+**The install-time hash used for conflict detection is a CONTENT hash, not a whole-file hash — a
+correctness fix caught while implementing, not part of the original design.** RSASSA-PSS signatures are
+randomized: re-signing byte-identical `.idea` content twice produces two different whole-file byte
+sequences. Hashing the whole file (as `PackageInstallService` always had) would make every legitimate
+re-sign/re-publish of unchanged content look like a content conflict. The hash now stored on
+`InstalledPackage.Sha256` and compared for conflict detection is `SHA256(PackageSigner.CanonicalManifest(archive))`
+— the exact bytes the signature itself covers — so it is stable across re-signs and still changes the
+moment the actual content changes.
+
+**Same version, different content, is now a hard reject — never a silent no-op.** `InstalledRef` gains
+a `Sha256` field; `PackageVersionResolver.Plan` takes the candidate's content hash and, when a
+`(Category,Key,Version)` slot is already occupied and `allowOverride` is false, compares hashes before
+deciding: identical content is still `NoOpAlreadyInstalled` exactly as before; different content is a
+new `InstallAction.HashConflict` — nothing is written, and `PackageInstallService` raises it in the
+Admin Inbox (`IAdminInboxService.RaiseAsync`, dedup key `package-hash-conflict:{category}:{key}:{version}`)
+before throwing, so an operator sees it and resolves which version is authoritative.
+`allowOverride=true` bypasses this entirely — a deliberate rebuild-at-the-same-slot push is expected to
+differ in hash.
+
+**The signing cert lives in MindAttic.Vault, following the exact blueprint `MindAttic.Authentication`
+already uses for the pepper and Data-Protection key** (`ConfigAuthSecrets.GetRequiredBytes`: base64
+bytes under a Vault bucket, decoded on read). A new `PackageSigning` bucket carries
+`signing-cert-public` (base64 DER of the public cert — the only thing the running host ever needs, since
+it only verifies) and, only on whatever machine publishes packages, `signing-cert-pfx` +
+`signing-cert-password`. `VaultPackageSigningTrust` (`Core/Secrets`) is the `IPackageSigningTrust`
+reader; a GitHub PAT for the feed fits the existing `Tokens` bucket, no new bucket needed for that.
+
+**`NuGetIdeaListPackageResolver` composes alongside the filesystem resolver, not instead of it.**
+`FileSystemIdeaListPackageResolver` (unchanged from [A41](#MAI-A41)) is tried first — fast, no network,
+first-party dev citizens — and a NuGet-backed resolver fills in anything not found locally, composed by
+a new `CompositeIdeaListPackageResolver` (first match wins) rather than growing
+`IIdeaListPackageResolver` itself into an ordered-list shape (four call sites already depend on its
+single-resolver signature). The resolver caches a downloaded `.nupkg` locally by exact id+version
+(`library/.nuget-cache/`, collision-free since version is always `{n}.0.0`) and pulls
+`content/{key}.idea` back out with a plain `ZipArchive` — no `NuGet.Packaging.Signing` anywhere, since a
+`.idea`'s own signature is what's actually trusted. The real GitHub-Packages-talking half
+(`GitHubPackagesNupkgFetcher`, wrapping `NuGet.Protocol`'s `FindPackageByIdResource.CopyNupkgToStreamAsync`)
+sits behind a narrow `INupkgFetcher` seam specifically so the resolver's own logic — id/version mapping,
+caching, unzipping — is unit-tested against a fake fetcher with no real network involved; GitHub
+Packages requires authentication even to read its own service index (unlike nuget.org), which is a
+plausible failure mode worth verifying by hand against a live feed before relying on it in production,
+rather than assuming full nuget.org parity.
+
+**Publish-side tooling** (`library/tools/publish-nuget.ps1`, plus two new `ma-idea` verbs): `pack-all.ps1`
+→ `ma-idea sign <file> --pfx <cert> --password <pw>` (calls `PackageSigner.SignFile`) →
+`ma-idea nupkg --idea <file> --out <dir>` (uses `NuGet.Packaging.PackageBuilder` to wrap the signed
+`.idea` into a valid OPC `.nupkg` at `content/{key}.idea`) → `dotnet nuget push --skip-duplicate` against
+the configured feed. GitHub Packages' own version immutability (rejects a re-push of the same id+version
+with different bytes) is a second, independent layer on top of the install-time hash-conflict check.
+
+**The `.idealist` embed-bytes escape hatch, mentioned in [A41](#MAI-A41), was never kept.** Once every
+`.idea` can distribute on its own via a feed, embedding bytes directly inside a `.idealist` would only
+duplicate what the feed already solves generally — so `IdeaList.PackagesFolder`,
+`--embed-packages`/`--embed-package`, and the corresponding export/import code paths were removed before
+ever landing in a release; `Packages[]` is exactly the flat referential list A41 described, nothing more.
+
+**Data migration.** None to the schema shape — `InstalledPackage.Sha256` already existed as a column;
+only what gets computed into it changed (canonical-content hash instead of whole-file hash).
+
+*(tests: `PackageSignerTests` — sign/verify round-trip, tamper detection, wrong-signer rejection,
+malformed/missing signature, idempotent re-sign. `PackageVersionResolverTests` —
+`SameVersion_DifferentHash_IsAConflict_NotANoOp`, `SameVersion_SameHash_IsStillAPlainNoOp`,
+`SameVersion_DifferentHash_WithAllowOverride_InstallsRatherThanConflicting`. `PackageInstallServiceTests` —
+`Install_UnsignedPackage_ThrowsPackageSignatureException_NoRowsWritten`,
+`Install_TamperedPackage_ThrowsPackageSignatureException_NoRowsWritten`,
+`Install_UntrustedSigner_ThrowsPackageSignatureException`,
+`Install_HashConflict_ThrowsInstallException_AndRaisesAdminInboxAlert`,
+`Install_SameVersion_SameContent_ReSignedDifferently_IsStillANoOp` (the re-sign/no-false-conflict
+regression). `NuGetIdeaListPackageResolverTests` — id/version mapping, cache hit/miss, missing-entry
+handling, against a fake `INupkgFetcher`; the real fetcher is a manual smoke-test item, not unit-tested.)*
+
+---
+
+## MAI-A43 — Cascade layers enforce the MAI-LAW-4 tier order; no tier or emission-order change {#MAI-A43}
+
+**What changed (2026-09-13).** `CmsHead` (the single emission point MAI-LAW-4 already locks) now emits
+an explicit `@layer global, theme, component, page;` statement before any tier's CSS, and wraps each
+tier's CSS in its named layer — inline text via `@layer <name> { ... }` (GlobalCss, PageCss), external
+Theme/Component/Plugin stylesheets via `@import url(...) layer(<name>);` (never by rewriting `<link>` or
+any `.idea`'s own `.css` file). This makes the FIXED ordinal order (0 GLOBAL → 100 THEME → [reserved gap]
+COMPONENT → 200 PAGE → 300+ DOM INLINE) win by cascade-layer precedence — which the CSS spec always
+evaluates before selector specificity — instead of by accidental document-order + matching-specificity,
+which previously forced Page authors to reach for `!important` to reliably beat a higher-specificity
+Theme rule. **The named tier order itself is unchanged**; this amendment only changes HOW that order is
+guaranteed to win, reinforcing MAI-LAW-4 rather than amending it. Inline `style=""` and any `!important`
+declaration remain outside/above the entire layered cascade per spec, unaffected — tier 300+ still wins
+unconditionally as MAI-LAW-4 already required.
+
+**Author-facing consequence, not a cascade-order change.** Within a single layer, normal specificity and
+source-order rules still apply — a shorthand property (`margin: 10px`) still overwrites all of that
+layer's earlier longhand declarations (`margin-left`) regardless of layers. A save-time advisory linter
+(`CssShorthandLinter`, non-blocking, never alters or rejects a save) flags this specific pattern — a
+shorthand co-occurring with some but not all of its longhand siblings anywhere in `PageCss` — in the
+Admin Page CSS editor.
+
+*(tests: `CmsHeadCssLayerTests` — the layer-order statement is emitted exactly once and first; GlobalCss,
+ThemeGlobalCss/ThemeCss/ComponentCss URLs, and PageCss each land in their named layer, with URL/text
+breakout escaping intact. `CssShorthandLinterTests` — true-positive (shorthand + one longhand sibling
+co-present) and false-positive guards (shorthand alone; shorthand + all longhand siblings; comments/string
+literals ignored). `FreeFormPageCssTests` — both pre-existing assertions (untrusted breakout guard, Author
+verbatim byte-for-byte) still hold with the new `@layer page { }` wrapper present.)*
+
+---
+
+## MAI-A44 — Component now beats Page; a save-time merge engine collapses same-selector conflicts within one CSS text {#MAI-A44}
+
+**This amendment REVERSES part of MAI-LAW-4's tier order — it does not merely reinforce it, unlike
+[A43](#MAI-A43).** The named order was Global(0) → Theme(100) → Component(reserved gap) → Page(200) →
+DOM-inline(300+); it is now Global(0) → Theme(100) → Page(150) → Component(200) → DOM-inline(300+).
+Component-authored CSS (a package citizen's own stylesheet) now wins over Page-authored CSS for any
+conflicting rule — a Component is meant to guarantee its own presentation regardless of what a page
+composes around it. Page is demoted into the numeric slot Component used to occupy implicitly; Component
+is promoted to Page's old ordinal.
+
+**Mechanism (unchanged from A43, only reordered).** `CmsHead`'s single `LayerOrderStatement` const
+changes from `"@layer global, theme, component, page;"` to `"@layer global, theme, page, component;"` —
+the sole line that determines precedence, since layer precedence follows this statement's declaration
+order, not source position of the wrapped rules. Every tier's own wrapping mechanism is unchanged.
+
+**A second, independent mechanism — `CssConflictMerger` (`MindAttic.Ideas.Core/Services`) — now also
+physically collapses a bounded class of same-selector conflicts, rather than leaving even readability to
+the browser's cascade.** Scope, deliberately narrow: it operates on ONE CSS text at a time — `Page.PageCss`
+at save time, and ONLY for that page's own accumulated text, never Theme/Component (external files this
+app doesn't own) or the shared `GlobalCss` host setting (mutating a value shared by every page as a side
+effect of saving one page would corrupt every other page). The browser already resolves two separate
+same-selector rule blocks correctly on its own (same specificity/origin → source order decides, per
+longhand property) — this isn't fixing a rendering bug, it's readability: a human editing PageCss sees one
+authoritative block per selector with dead, superseded declarations physically removed, instead of having
+to mentally simulate the cascade across scattered duplicate blocks.
+
+**Implementation, and two real correctness pitfalls found and guarded against while building it.**
+`CssConflictMerger.Normalize` does a MINIMAL-DIFF rewrite: a hand-rolled, comment/string-aware top-level
+tokenizer finds only the rule blocks that are part of an EXACT (trimmed, byte-identical) selector-text
+duplicate group; everything else — comments, `@media`/`@font-face`/`@keyframes` blocks, single-occurrence
+rules, whitespace — passes through byte-for-byte untouched. (An earlier version ran the WHOLE text through
+`AngleSharp.Css`'s parse+reserialize round-trip; simpler, but confirmed to destroy every comment — its
+CSSOM has no concept of one — and reformat every value it touches, even on rules with nothing to merge.
+Rejected after finding real library theme files with dozens of section comments.) For an actual duplicate
+group, `AngleSharp.Css` (now an explicit `PackageReference`, previously only transitive via `HtmlSanitizer`)
+computes the merged per-longhand values, applying real CSS "later wins, but a later non-important
+declaration never displaces an earlier `!important` one" semantics — its parser already expands shorthand
+into true spec-defined longhand form (margin/padding → 4-way; border → 12-way per-side width/style/color,
+recursively through its own border-width/-style/-color sub-shorthands; border-radius → 4 corners;
+background → its per-layer longhands; font/transition/animation/etc. likewise); `box-shadow`/`text-shadow`
+are the one family with no real longhand, so they stay a single atomic value, matching the product decision
+never to invent a non-standard decomposition for them.
+
+Two failure modes were found empirically against real library CSS and are guarded against by refusing to
+merge (leaving every occurrence of that selector completely untouched) rather than risking silent data
+loss: (1) a shorthand whose value is or contains a CSS custom-property reference, e.g.
+`background: var(--bg)`, cannot be resolved into concrete longhand values without knowing what `--bg`
+evaluates to — AngleSharp represents every synthesized longhand slot as an EMPTY value in that case, and
+the shorthand's own name never appears in its property enumeration at all; (2) a vendor-prefixed or
+otherwise-unrecognized property, e.g. `-webkit-font-smoothing: antialiased`, is silently dropped from the
+parsed rule ENTIRELY by AngleSharp, with no error. Rather than special-case each, the merger does a general
+round-trip check: every property name the ORIGINAL text visibly declares (found via a plain regex,
+independent of AngleSharp) must be covered — literally, or via a full real-longhand expansion, recursively
+— by what AngleSharp actually resolved with a non-empty value; anything short of that aborts the merge for
+the whole selector group.
+
+**Save-time wiring, and the trust boundary.** `PageAdminService.SaveAsync` runs the merger only when
+`trust == ContentTrust.Untrusted`; Author-trusted `PageCss` is stored exactly as submitted, unchanged,
+preserving `FreeFormPageCssTests.AuthorPageCss_IsEmittedVerbatim` (MAI-LAW-5) unbroken. `CssShorthandLinter`
+(A43) is kept, not retired — it remains the only signal for Author-trusted pages, non-exact-selector
+conflicts, and any group the merger declined to touch.
+
+**A one-time migration CLI verb, `--expand-css-shorthand` (`ExpandCssShorthandCli`, wired into
+`MindAttic.Ideas.Blazor`'s `Program.cs` ahead of all Vault/DB wiring since it's a pure filesystem
+operation), runs the same engine over existing `library/**/*.css` files.** Run against this library
+(48 files) at the time of this amendment: every duplicate-selector group found also co-occurred with
+`-webkit-font-smoothing` in the same rule, so the safety guard above correctly declined every one of
+them — zero files changed. This is the correct, safe outcome, not a bug: the engine is available and
+tested, and will act on future duplicates (in the library, re-run the CLI verb; in Untrusted PageCss,
+automatically on every save) that don't hit an unresolvable value.
+
+*(tests: `CmsHeadCssLayerTests` — layer-order literal updated to `"@layer global, theme, page,
+component;"`; a new assertion pins `component` after `page`. `FreeFormPageCssTests` — unchanged
+assertions still hold; a new assertion pins the `@layer page {` wrapper regardless of tier order.
+`CssConflictMergerTests` — duplicate-selector merges (shorthand-then-longhand, longhand-then-shorthand,
+border's 12-way expansion, `!important` precedence in both directions); non-exact-selector pairs and
+`@media`-nested rules left untouched; comments before/between/after a merged group preserved verbatim;
+a file with no duplicates returned byte-for-byte identical; the `var()`-in-shorthand and vendor-prefixed
+-property regressions above, each asserting the input passes through completely unchanged.)*

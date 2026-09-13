@@ -194,8 +194,13 @@ These are the **project-specific** laws (the cross-cutting invariants the founda
   `FreeFormPage` through the single `PageHost` catch-all resolving `(SiteId, Slug)`. No zones/panes/slots/grids;
   no per-page routes.
 - **{#MAI-LAW-4} Fixed CSS cascade, enforced in one place (`CmsHead`).** Ordinal 0 GLOBAL → 100 THEME →
-  200 PAGE → 300+DOM INLINE; reserved gaps allow additive tiers; never reorder. Asset route is locked at
-  `/_ideas/{Kind}/{key}/{version}/{**path}`.
+  150 PAGE → 200 COMPONENT → 300+DOM INLINE; reserved gaps allow additive tiers. Component overtaking
+  Page is the one deliberate, explicitly-declared reordering ([A44](AMENDMENTS.md#MAI-A44)) — otherwise
+  never reorder. Asset route is locked at `/_ideas/{Kind}/{key}/{version}/{**path}`. Cascade layers
+  (`@layer`) make this order win by layer precedence rather than by selector specificity, so no tier ever
+  needs `!important` to beat a lower one ([A43](AMENDMENTS.md#MAI-A43)). A server-side merge engine
+  (`CssConflictMerger`) additionally collapses same-selector shorthand/longhand conflicts within a single
+  Untrusted PageCss text before it's stored ([A44](AMENDMENTS.md#MAI-A44)).
 - **{#MAI-LAW-5} Trust at write time, gated at render.** On save, `BodyTrust = Author` iff the writer holds
   `Cms.AuthorRawMarkup` (Admin), else `Untrusted`. The single `IRawContentGate` is the only place a
   `MarkupString` is born: Author → raw, Untrusted → sanitized. Demotion is a deliberate `AuthorTrustVersion`
