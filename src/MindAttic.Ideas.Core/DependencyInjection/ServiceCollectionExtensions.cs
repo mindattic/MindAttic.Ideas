@@ -1,10 +1,13 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Data;
 using MindAttic.Ideas.Core.Discovery;
+using MindAttic.Ideas.Core.Portability;
 using MindAttic.Ideas.Core.Rendering;
+using MindAttic.Ideas.Core.Secrets;
 using MindAttic.Ideas.Core.Services;
 using MindAttic.Ideas.Core.Sites;
 using MindAttic.Media;
@@ -79,8 +82,24 @@ public static class ServiceCollectionExtensions
         // Local file store/extractor by default; the ADR's Azure Blob backing slots in behind IPackageBlobStore.
         services.AddSingleton<IPackageBlobStore>(_ => new LocalFilePackageBlobStore());
         services.AddSingleton<IPackageExtractor>(_ => new PackageExtractor());
+        // The one trusted public certificate every install verifies a package's content signature
+        // against (MAI: NuGet distribution + signing) — Vault-backed, cached after first read.
+        services.AddSingleton<IPackageSigningTrust, VaultPackageSigningTrust>();
         services.AddScoped<IPackageInstallService, PackageInstallService>();
         services.AddScoped<IPackageRegistryService, PackageRegistryService>();
+
+        // Catalog browsing (admin "Catalog" tab): live GitHub REST enumeration of what's published on
+        // the feed, reusing the same two config keys IdeaListResolverFactory already reads — no new
+        // config surface. Registered even when the feed isn't configured; IPackageCatalogFetcher.IsConfigured
+        // just comes back false and ListAvailableAsync short-circuits without ever calling the API.
+        services.AddSingleton<IPackageCatalogFetcher>(sp =>
+        {
+            var configuration = sp.GetRequiredService<IConfiguration>();
+            var org = ExtractGitHubOrg(configuration["Ideas:NuGetFeedUrl"]);
+            var pat = configuration["MindAttic:Vault:Tokens:github-packages-pat"];
+            return new GitHubPackagesCatalogFetcher(org, pat);
+        });
+        services.AddScoped<IPackageCatalogService, PackageCatalogService>();
 
         // Media asset storage. Caller configures MediaStoreOptions.MediaRoot (done in Program.cs).
         services.AddMedia<CmsDbContext>();
@@ -88,4 +107,14 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>The feed's org from its NuGet v3 index URL, e.g.
+    /// <c>https://nuget.pkg.github.com/MindAttic/index.json</c> -&gt; <c>"MindAttic"</c>. Null when the
+    /// feed isn't configured or the URL doesn't have the expected shape.</summary>
+    private static string? ExtractGitHubOrg(string? feedUrl)
+    {
+        if (string.IsNullOrWhiteSpace(feedUrl)) return null;
+        if (!Uri.TryCreate(feedUrl, UriKind.Absolute, out var uri)) return null;
+        var segment = uri.Segments.FirstOrDefault(s => s.Trim('/').Length > 0);
+        return segment?.Trim('/');
+    }
 }

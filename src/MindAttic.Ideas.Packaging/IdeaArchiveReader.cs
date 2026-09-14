@@ -88,6 +88,36 @@ public sealed class IdeaArchiveReader : IDisposable
         }
     }
 
+    /// <summary>The raw <c>idea.sig.json</c> text, or null if the archive is unsigned.</summary>
+    public string? ReadSignatureJson()
+    {
+        var entry = _zip.GetEntry(PackageSigner.SignatureEntryName);
+        if (entry is null) return null;
+        using var r = new StreamReader(entry.Open());
+        return r.ReadToEnd();
+    }
+
+    /// <summary>
+    /// Path + lowercase-hex SHA-256 of every non-directory entry's decompressed bytes, ordinally sorted
+    /// by path, excluding <paramref name="excludeEntryName"/> (normally <see cref="PackageSigner.SignatureEntryName"/>,
+    /// so the signature never has to sign itself). This is the canonical manifest <see cref="PackageSigner"/>
+    /// signs and verifies — both sides MUST go through this same method so they canonicalize identically.
+    /// </summary>
+    public IReadOnlyList<(string Path, string Sha256Hex)> HashAllEntries(string? excludeEntryName = null)
+    {
+        var result = new List<(string, string)>();
+        foreach (var e in _zip.Entries)
+        {
+            if (e.FullName.EndsWith('/')) continue;   // directory entry, no content to hash
+            if (excludeEntryName is not null && string.Equals(e.FullName, excludeEntryName, StringComparison.Ordinal)) continue;
+
+            using var s = e.Open();
+            result.Add((e.FullName, Sha256Hasher.OfStream(s)));
+        }
+        result.Sort((a, b) => string.CompareOrdinal(a.Item1, b.Item1));
+        return result;
+    }
+
     /// <summary>Entry paths under <c>bin/</c> (the bundled assemblies), relative to that prefix.</summary>
     public IReadOnlyList<string> BinEntries() => EntriesUnder("bin/");
 

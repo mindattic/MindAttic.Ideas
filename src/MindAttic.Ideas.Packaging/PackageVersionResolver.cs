@@ -1,7 +1,7 @@
 namespace MindAttic.Ideas.Packaging;
 
 /// <summary>A snapshot of one installed package version, as the resolver needs to see it.</summary>
-public readonly record struct InstalledRef(string Category, string Key, int Version, bool Enabled, bool IsActiveVersion);
+public readonly record struct InstalledRef(string Category, string Key, int Version, bool Enabled, bool IsActiveVersion, string Sha256);
 
 /// <summary>
 /// The pure version/collision logic behind a package install. No DB, no IO — the host loads the installed
@@ -22,6 +22,7 @@ public static class PackageVersionResolver
 
     public static InstallPlan Plan(
         IdeaManifest candidate,
+        string candidateSha256,
         IReadOnlyList<InstalledRef> installed,
         bool compiledKeyExists,
         bool allowOverride)
@@ -30,11 +31,23 @@ public static class PackageVersionResolver
         var key = candidate.Key;
         var version = candidate.Version;
 
-        // Already installed at this exact version → idempotent no-op unless the caller explicitly
-        // allows override (e.g. CLI push of an updated build at the same version slot).
+        // Already installed at this exact version → idempotent no-op, UNLESS the bytes differ: a
+        // same-version install with a DIFFERENT hash is a real conflict (a stale mirror, a colliding
+        // publish, tampering), not a harmless re-run, and must never be silently swallowed as a no-op.
+        // allowOverride=true bypasses this entirely — a deliberate rebuild-at-the-same-slot push is
+        // expected to differ in hash.
         if (installed.Any(r => Same(r, category, key) && r.Version == version) && !allowOverride)
+        {
+            var existing = installed.First(r => Same(r, category, key) && r.Version == version);
+            if (!string.Equals(existing.Sha256, candidateSha256, StringComparison.Ordinal))
+                return new InstallPlan(InstallAction.HashConflict,
+                    $"{category}/{key} v{version} is already installed with different content (sha256 mismatch) — " +
+                    "this is a real conflict, not a re-run; resolve it manually.",
+                    MakeActiveVersion: false, []);
+
             return new InstallPlan(InstallAction.NoOpAlreadyInstalled,
                 $"{category}/{key} v{version} is already installed.", MakeActiveVersion: false, []);
+        }
 
         // Whole-number versions move forward only.
         var maxInstalled = installed.Where(r => Same(r, category, key)).Select(r => (int?)r.Version).DefaultIfEmpty(null).Max();

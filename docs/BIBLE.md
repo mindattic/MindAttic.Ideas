@@ -155,14 +155,21 @@ is live. The four kinds derive from one shared root `IdeaBase`.
 - **`RawContentGate`** (`Core/Rendering`) — the sole `MarkupString` chokepoint: Author → raw passthrough,
   Untrusted → sanitized.
 - **`PageAssetCollector`** (`Core/Rendering`) — cascade-orders/dedupes a page's citizen css/scripts into `<head>`.
-- **`PackageInstallService`** (`Core/Services`) — validate → register `InstalledPackage` + mirrored catalog
-  row, idempotent, soft-disable, reload catalog.
+- **`PackageInstallService`** (`Core/Services`) — verify content signature → validate → register
+  `InstalledPackage` + mirrored catalog row, idempotent, hash-conflict-rejecting, soft-disable, reload catalog.
+- **`PackageSigner`** (`Packaging`) — signs/verifies a `.idea`'s own content signature (RSA-PSS/SHA-256,
+  independent of NuGet's own signing feature), the one choke point every install path shares.
+- **`NuGetIdeaListPackageResolver` / `CompositeIdeaListPackageResolver`** (`Core/Portability`) — resolve
+  a `.idealist` `Packages[]` entry from a NuGet feed, composed alongside the filesystem resolver.
 - **`ContentLifecycleService`** (`Core/Services`) — enable/disable + reference-guarded version-specific delete.
 - **`AdminInboxService` / `RenderAlertSink`** (`Core/Services`) — DB-backed dedup alerting; the render thread
   fire-and-forgets and never throws.
 - **`PageAdminService` / `PageAuthoring`** (`Core/Services`) — page CRUD, soft-delete, publish, trust stamping,
   SEO metadata round-trip (`SeoMeta` serialize/parse, `PageEditModel.SeoTitle`/`SeoDescription`).
 - **`SeedService`** (`Core/Services`) — idempotent upsert-by-key seed that never clobbers admin edits.
+- **`IdeaListImporter` / `IdeaListExporter`** (`Core/Portability`) — install Packages[] in order, validate
+  every page's Uses[] against the catalog, then apply/gather site/settings/pages/media/component-metadata.
+  Formerly `ContentBundleImporter` ([A34](AMENDMENTS.md#MAI-A34), renamed [A41](AMENDMENTS.md#MAI-A41)).
 
 ## 5. The Laws {#MAI-§5}
 
@@ -308,6 +315,15 @@ Definition of done (a feature is `✅` only when *verified*, never merely assert
 - **ContentKind** — `Page=0 · Plugin=1 · Theme=2 · Component=4` (append-only ordinals; `Control=3`
   removed pre-1.0 and never reused; `Widget=1` retired A26 → became `Plugin=1`).
 - **Data page / Code page** — free-form DB body (zero deploy) vs a compiled `PageBase` subclass.
+- **`.idealist`** — the portable zip artifact ([A41](AMENDMENTS.md#MAI-A41)) serving both deployment
+  provisioning (a purely referential Packages list of `Kind.key@version`, installed in order at boot —
+  each citizen distributes on its own via NuGet, [A42](AMENDMENTS.md#MAI-A42)) and ad-hoc content
+  portability (one site's pages/settings/media — what `.ideabundle` did). Each page carries its own
+  `Uses[]`, validated against the catalog before any page is written; an unmet entry throws, no partial
+  apply. Formerly `.ideabundle` (A34, retired A41).
+- **`.idea` content signature** ([A42](AMENDMENTS.md#MAI-A42)) — an RSA-PSS/SHA-256 signature over every
+  zip entry's path+hash (`idea.sig.json`), independent of NuGet's own package-signing feature and
+  verified at the one `PackageInstallService.InstallAsync` choke point regardless of transport.
 - **Catalog (`CmsContentDefinition`)** — the one persisted registry of all citizens.
 - **ALC** — the per-package collectible `AssemblyLoadContext` used to load `.idea` citizens.
 - **Raw-content gate (`IRawContentGate`)** — the sole `MarkupString` chokepoint; trust-keyed.

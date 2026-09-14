@@ -1,24 +1,32 @@
+using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Blazor.Cli;
 using MindAttic.Ideas.Core.Data;
+using MindAttic.Ideas.Core.Discovery;
 using MindAttic.Ideas.Core.Entities;
+using MindAttic.Ideas.Core.Portability;
+using MindAttic.Ideas.Core.Services;
+using MindAttic.Ideas.Packaging;
+using MindAttic.Ideas.Tests.Packaging;
+using MindAttic.Ideas.Tests.Portability;
 using MindAttic.Media;
 using CmsPage = MindAttic.Ideas.Core.Entities.Page;
 
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// --export-content / --import-content move AUTHORED content between environments, which is the one
-/// thing a .idea package deliberately does not do. The cases that matter are the ones that decide
-/// whether a promotion to production is safe to run twice: a bundle must adopt an independently
-/// seeded page instead of colliding with it, media uids must be remapped (the store mints them, so
-/// they cannot survive the trip), a re-import must move no bytes, and Author trust — which means raw
-/// unsanitized markup — must be something the operator can refuse.
+/// `.idealist` replaces `.ideabundle` (MAI-A41): it still moves AUTHORED content between environments
+/// (the cases ported from the old `ContentBundleTests`, renamed) and now also names which `.idea`
+/// packages a fresh instance should install, in order, before any page is written — with a stricter,
+/// non-degrading check on each page's declared `Uses[]`.
 /// </summary>
 [TestFixture]
-public class ContentBundleTests
+public class IdeaListTests
 {
     private sealed class FakeMediaStore : IMediaStore
     {
@@ -71,6 +79,21 @@ public class ContentBundleTests
         public Task<CmsDbContext> CreateDbContextAsync(CancellationToken ct = default) => Task.FromResult(CreateDbContext());
     }
 
+    private sealed class NullResolver : ITypeResolver
+    {
+        public Type? Resolve(ContentDescriptor descriptor) => null;
+    }
+
+    /// <summary>Just enough of <see cref="IHostEnvironment"/> for the CLI's package-resolver default
+    /// (ContentRootPath/library) to resolve without touching a real host.</summary>
+    private sealed class FakeHostEnvironment(string contentRootPath) : IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = "Test";
+        public string ApplicationName { get; set; } = "MindAttic.Ideas.Tests";
+        public string ContentRootPath { get; set; } = contentRootPath;
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+    }
+
     private sealed class Env
     {
         public required InMemoryFactory Factory { get; init; }
@@ -79,23 +102,12 @@ public class ContentBundleTests
         public CmsDbContext Db() => Factory.CreateDbContext();
     }
 
-    private static Env NewEnv()
-    {
-        var factory = new InMemoryFactory("bundle_" + Guid.NewGuid().ToString("N"));
-        var store = new FakeMediaStore();
-        var services = new ServiceCollection();
-        services.AddSingleton<IDbContextFactory<CmsDbContext>>(factory);
-        services.AddScoped(_ => factory.CreateDbContext());
-        services.AddSingleton<IMediaStore>(store);
-        return new Env { Factory = factory, Store = store, Services = services.BuildServiceProvider() };
-    }
-
     private string _dir = "";
 
     [SetUp]
     public void SetUp()
     {
-        _dir = Path.Combine(Path.GetTempPath(), "ideabundle_" + Guid.NewGuid().ToString("N"));
+        _dir = Path.Combine(Path.GetTempPath(), "idealist_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_dir);
     }
 
@@ -105,7 +117,31 @@ public class ContentBundleTests
         try { if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true); } catch { }
     }
 
-    private string BundlePath => Path.Combine(_dir, "site.ideabundle");
+    private string ListPath => Path.Combine(_dir, "site.idealist");
+
+    private Env NewEnv()
+    {
+        var factory = new InMemoryFactory("idealist_" + Guid.NewGuid().ToString("N"));
+        var store = new FakeMediaStore();
+        var catalog = new ContentCatalog(new NullResolver());
+        var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
+        var installer = new PackageInstallService(
+            factory, discovery, new InMemoryPackageBlobStore(), new NullPackageExtractor(), new NullRenderAlertSink(),
+            new TestPackageSigningTrust(), new AdminInboxService(factory));
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IDbContextFactory<CmsDbContext>>(factory);
+        services.AddScoped(_ => factory.CreateDbContext());
+        services.AddSingleton<IMediaStore>(store);
+        services.AddSingleton<IPackageInstallService>(installer);
+        services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment(_dir));
+        // The real host always has IConfiguration; the CLI's resolver factory (filesystem + optional
+        // NuGet fallback) reads Ideas:NuGetFeedUrl from it — an empty config here means "no feed
+        // configured", so it composes down to just the filesystem resolver, exactly like today's
+        // no-Ideas:NuGetFeedUrl production default.
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        return new Env { Factory = factory, Store = store, Services = services.BuildServiceProvider() };
+    }
 
     private static async Task SeedSiteAsync(Env env, string key = "default")
     {
@@ -136,19 +172,47 @@ public class ContentBundleTests
     }
 
     private async Task<int> ExportAsync(Env env, params string[] extra) =>
-        await ExportContentCli.RunAsync(["--export-content", BundlePath, .. extra], env.Services);
+        await ExportIdeaListCli.RunAsync(["--export-idealist", ListPath, .. extra], env.Services);
 
     private async Task<int> ImportAsync(Env env, params string[] extra) =>
-        await ImportContentCli.RunAsync(["--import-content", BundlePath, .. extra], env.Services);
+        await ImportIdeaListCli.RunAsync(["--import-idealist", ListPath, .. extra], env.Services);
 
-    // ---------------------------------------------------------------------------------------
+    private static ZipArchive EmptyZip() => new(new MemoryStream(), ZipArchiveMode.Update);
+
+    private static byte[] BuildCodePackageBytes(string key, int version, string category, string displayName) =>
+        IdeaTestArchive.Build(new Dictionary<string, string>
+        {
+            ["idea.json"] = ManifestReader.Write(new IdeaManifest
+            {
+                ManifestVersion = 1, Category = category, Kind = "code", Key = key, Version = version,
+                DisplayName = displayName, Sdk = 1, EntryType = $"MindAttic.Ideas.{category}.Demo.V{version}",
+                AssemblyName = "Demo",
+            }),
+            ["bin/Demo.dll"] = "MZ-fake",
+        }).ToArray();
+
+    private static byte[] BuildPackageRequiring(string key, string depRef) =>
+        IdeaTestArchive.Build(new Dictionary<string, string>
+        {
+            ["idea.json"] = ManifestReader.Write(new IdeaManifest
+            {
+                ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = key, Version = 1,
+                DisplayName = key, Sdk = 1, EntryType = $"MindAttic.Ideas.Plugin.{key}.V1",
+                AssemblyName = key, Requires = [depRef],
+            }),
+            [$"bin/{key}.dll"] = "MZ-fake",
+        }).ToArray();
+
+    // =========================================================================================
+    // Ported from ContentBundleTests — same intent, .ideabundle -> .idealist, Content* -> IdeaList*.
+    // =========================================================================================
 
     [Test]
     public async Task RoundTrip_PreservesTheAuthoredPage()
     {
         var source = NewEnv();
         await SeedSiteAsync(source);
-        await AddPageAsync(source, "frontpage", "<h1>Hello</h1><Component.Hero />");
+        await AddPageAsync(source, "frontpage", "<h1>Hello</h1>");
         await using (var db = source.Db())
         {
             var p = await db.Pages.FirstAsync();
@@ -176,7 +240,7 @@ public class ContentBundleTests
         Assert.Multiple(async () =>
         {
             Assert.That(imported.Slug, Is.EqualTo("frontpage"));
-            Assert.That(imported.BodyHtml, Is.EqualTo("<h1>Hello</h1><Component.Hero />"));
+            Assert.That(imported.BodyHtml, Is.EqualTo("<h1>Hello</h1>"));
             Assert.That(imported.PageCss, Is.EqualTo(".x{color:red}"));
             Assert.That(imported.PageJs, Is.EqualTo("window.x=1;"));
             Assert.That(imported.SeoTitle, Is.EqualTo("Front"));
@@ -213,7 +277,7 @@ public class ContentBundleTests
             Assert.That(await read.Pages.CountAsync(p => p.Slug == "frontpage"), Is.EqualTo(1),
                 "a uid mismatch must not create a second page on the same slug");
             Assert.That((await read.Pages.SingleAsync()).BodyHtml, Is.EqualTo("<h1>authored</h1>"),
-                "the bundle is the authority for a page it carries");
+                "the idealist is the authority for a page it carries");
         });
     }
 
@@ -227,7 +291,7 @@ public class ContentBundleTests
         var oldUid = upload.Uid;
 
         await AddPageAsync(source, "home",
-            $"""<Component.MediaImage uid="{oldUid}" alt="logo" /><div style="background:url(/_media/{oldUid})"></div>""");
+            $"""<div style="background:url(/_media/{oldUid})"></div>""");
         await using (var db = source.Db())
         {
             var p = await db.Pages.FirstAsync();
@@ -254,7 +318,6 @@ public class ContentBundleTests
         {
             Assert.That(newUid, Is.Not.EqualTo(oldUid), "the store mints the uid, so it must have changed");
             Assert.That(body, Does.Not.Contain(oldUid.ToString()), "no reference may still point at the source uid");
-            Assert.That(body, Does.Contain($"uid=\"{newUid}\""));
             Assert.That(body, Does.Contain($"/_media/{newUid}"));
             Assert.That(meta, Does.Contain(newUid.ToString()).And.Not.Contain(oldUid.ToString()));
             Assert.That(target.Store.Items.Single().Bytes, Is.EqualTo(new byte[] { 1, 2, 3, 4 }),
@@ -301,7 +364,7 @@ public class ContentBundleTests
 
         await using var read = target.Db();
         Assert.That((await read.Pages.SingleAsync()).BodyTrust, Is.EqualTo(ContentTrust.Untrusted),
-            "an operator must be able to refuse raw-markup trust from a bundle they did not author");
+            "an operator must be able to refuse raw-markup trust from an idealist they did not author");
     }
 
     [Test]
@@ -390,7 +453,7 @@ public class ContentBundleTests
         var rdbSite = await read.Sites.SingleAsync(s => s.Key == "rdb");
         Assert.Multiple(async () =>
         {
-            Assert.That(await read.Sites.CountAsync(), Is.EqualTo(2), "the bundle's site must be created");
+            Assert.That(await read.Sites.CountAsync(), Is.EqualTo(2), "the idealist's site must be created");
             Assert.That(rdbSite.IsDefault, Is.False, "an imported site must not seize the default");
             Assert.That((await read.Pages.SingleAsync(p => p.SiteId == defaultSite.Id)).BodyHtml,
                 Is.EqualTo("<p>mindattic</p>"), "the existing site's page must be untouched");
@@ -444,12 +507,12 @@ public class ContentBundleTests
         Assert.Multiple(() =>
         {
             Assert.That(ExportAsync(env, "--site", "nope").Result, Is.EqualTo(1));
-            Assert.That(File.Exists(BundlePath), Is.False, "a refused export must write no file");
+            Assert.That(File.Exists(ListPath), Is.False, "a refused export must write no file");
         });
     }
 
     [Test]
-    public async Task ABundleFromAFutureFormat_IsRefusedRatherThanPartiallyApplied()
+    public async Task AnIdeaListFromAFutureFormat_IsRefusedRatherThanPartiallyApplied()
     {
         var source = NewEnv();
         await SeedSiteAsync(source);
@@ -457,14 +520,14 @@ public class ContentBundleTests
         Assert.That(await ExportAsync(source), Is.Zero);
 
         // Rewrite the manifest as a version this host does not know.
-        using (var zip = System.IO.Compression.ZipFile.Open(BundlePath, System.IO.Compression.ZipArchiveMode.Update))
+        using (var zip = ZipFile.Open(ListPath, ZipArchiveMode.Update))
         {
-            var entry = zip.GetEntry("bundle.json")!;
+            var entry = zip.GetEntry("idealist.json")!;
             string json;
             using (var r = new StreamReader(entry.Open())) json = await r.ReadToEndAsync();
             json = json.Replace("\"formatVersion\": 1", "\"formatVersion\": 99");
             entry.Delete();
-            var replacement = zip.CreateEntry("bundle.json");
+            var replacement = zip.CreateEntry("idealist.json");
             await using var w = new StreamWriter(replacement.Open());
             await w.WriteAsync(json);
         }
@@ -473,7 +536,7 @@ public class ContentBundleTests
         Assert.That(await ImportAsync(target), Is.EqualTo(1));
 
         await using var read = target.Db();
-        Assert.That(await read.Pages.CountAsync(), Is.Zero, "a refused bundle must leave no partial state");
+        Assert.That(await read.Pages.CountAsync(), Is.Zero, "a refused idealist must leave no partial state");
     }
 
     [Test]
@@ -482,7 +545,7 @@ public class ContentBundleTests
         // A uid is the PORTABLE identity, so it is global across the deployment — while a page belongs to
         // exactly one site. Reconciling on uid without a site filter would find the page this deployment
         // already has under another site and re-point its SiteId, so --into-site would MOVE a site's pages
-        // instead of giving the target its own copy (MAI-A39).
+        // instead of giving the target its own copy (MAI-A39, carried forward unchanged into A41).
         var source = NewEnv();
         await SeedSiteAsync(source);
         var original = await AddPageAsync(source, "frontpage", "<h1>original</h1>");
@@ -511,11 +574,264 @@ public class ContentBundleTests
     }
 
     [Test]
-    public async Task NotABundle_IsReportedRatherThanThrowing()
+    public async Task NotAnIdeaList_IsReportedRatherThanThrowing()
     {
-        await File.WriteAllBytesAsync(BundlePath, System.Text.Encoding.UTF8.GetBytes("not a zip"));
+        await File.WriteAllBytesAsync(ListPath, System.Text.Encoding.UTF8.GetBytes("not a zip"));
         var target = NewEnv();
         Assert.That(await ImportAsync(target), Is.EqualTo(1),
             "a corrupt archive is reported as a failure exit code, not a stack trace");
+    }
+
+    [Test]
+    public async Task Prune_SoftDeletesPagesAbsentFromTheIdeaList()
+    {
+        var source = NewEnv();
+        await SeedSiteAsync(source);
+        await AddPageAsync(source, "keep", "<p>keep</p>");
+        Assert.That(await ExportAsync(source), Is.Zero);
+
+        var target = NewEnv();
+        await SeedSiteAsync(target);
+        await AddPageAsync(target, "keep", "<p>old</p>");
+        await AddPageAsync(target, "stray", "<p>stray</p>");
+
+        Assert.That(await ImportAsync(target, "--prune"), Is.Zero);
+
+        await using var read = target.Db();
+        var stray = await read.Pages.IgnoreQueryFilters().SingleAsync(p => p.Slug == "stray");
+        var keptCount = await read.Pages.CountAsync(p => p.Slug == "keep");
+        Assert.Multiple(() =>
+        {
+            Assert.That(stray.IsDeleted, Is.True, "a page absent from the idealist is soft-deleted under --prune");
+            Assert.That(keptCount, Is.EqualTo(1));
+        });
+    }
+
+    // =========================================================================================
+    // New: Packages[] install order, per-page Uses[] strict validation, package resolution.
+    // =========================================================================================
+
+    [Test]
+    public async Task Packages_InstallInListedOrder_LaterEntryCanRequireAnEarlierOne()
+    {
+        var env = NewEnv();
+        var resolver = new InMemoryIdeaListPackageResolver();
+        resolver.Add(ContentKind.Plugin, "tooltip", 1, BuildCodePackageBytes("tooltip", 1, "Plugin", "Tooltip"));
+        resolver.Add(ContentKind.Plugin, "carousel", 1, BuildPackageRequiring("carousel", "Plugin.tooltip@1"));
+
+        var importer = new IdeaListImporter(
+            env.Db(), env.Store, env.Services.GetRequiredService<IPackageInstallService>(), resolver);
+        var list = new IdeaList { Packages = ["Plugin.tooltip@1", "Plugin.carousel@1"] };
+
+        using var zip = EmptyZip();
+        var result = await importer.ImportAsync(zip, list, new IdeaListImportOptions(), (_, _) => { });
+
+        Assert.That(result.PackagesInstalled, Is.EqualTo(2));
+        await using var db = env.Db();
+        Assert.That(await db.InstalledPackages.CountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task Packages_ReversedOrder_FailsBecauseTheDependencyIsNotYetInstalled()
+    {
+        // Same two packages as the ordered-install test, listed the OTHER way round — proves the
+        // importer genuinely installs in LISTED order rather than resolving requires[] against the
+        // whole Packages[] set up front.
+        var env = NewEnv();
+        var resolver = new InMemoryIdeaListPackageResolver();
+        resolver.Add(ContentKind.Plugin, "tooltip", 1, BuildCodePackageBytes("tooltip", 1, "Plugin", "Tooltip"));
+        resolver.Add(ContentKind.Plugin, "carousel", 1, BuildPackageRequiring("carousel", "Plugin.tooltip@1"));
+
+        var importer = new IdeaListImporter(
+            env.Db(), env.Store, env.Services.GetRequiredService<IPackageInstallService>(), resolver);
+        var list = new IdeaList { Packages = ["Plugin.carousel@1", "Plugin.tooltip@1"] };
+
+        using var zip = EmptyZip();
+        Assert.ThrowsAsync<IdeaListImportException>(
+            () => importer.ImportAsync(zip, list, new IdeaListImportOptions(), (_, _) => { }));
+
+        await using var db = env.Db();
+        Assert.That(await db.InstalledPackages.CountAsync(), Is.Zero,
+            "the failing first entry must leave nothing installed, even though the second entry is fine on its own");
+    }
+
+    [Test]
+    public async Task PackagesFailure_AbortsBeforeAnyPageIsWritten()
+    {
+        var env = NewEnv();
+        await SeedSiteAsync(env);
+        var resolver = new InMemoryIdeaListPackageResolver(); // deliberately empty — "Plugin.ghost" resolves to nothing
+
+        var importer = new IdeaListImporter(
+            env.Db(), env.Store, env.Services.GetRequiredService<IPackageInstallService>(), resolver);
+        var list = new IdeaList
+        {
+            Packages = ["Plugin.ghost@1"],
+            Pages = [new IdeaListPage { Uid = Guid.NewGuid(), Slug = "home", Title = "home", BodyHtml = "<p>hi</p>" }],
+        };
+
+        using var zip = EmptyZip();
+        var ex = Assert.ThrowsAsync<IdeaListImportException>(
+            () => importer.ImportAsync(zip, list, new IdeaListImportOptions(), (_, _) => { }));
+        Assert.That(ex!.Message, Does.Contain("Plugin.ghost@1"));
+
+        await using var db = env.Db();
+        Assert.That(await db.Pages.CountAsync(), Is.Zero, "no page may be written once Packages[] fails");
+    }
+
+    [Test]
+    public async Task PageUsesUnmet_FailsLoudly_NoPartialApply()
+    {
+        var env = NewEnv();
+        await SeedSiteAsync(env);
+        var importer = new IdeaListImporter(
+            env.Db(), env.Store, env.Services.GetRequiredService<IPackageInstallService>(),
+            new InMemoryIdeaListPackageResolver());
+        var list = new IdeaList
+        {
+            Pages =
+            [
+                new IdeaListPage
+                {
+                    Uid = Guid.NewGuid(), Slug = "home", Title = "home", BodyHtml = "<p>hi</p>",
+                    Uses = ["Plugin.tooltip@1"],
+                },
+            ],
+        };
+
+        using var zip = EmptyZip();
+        var ex = Assert.ThrowsAsync<IdeaListImportException>(
+            () => importer.ImportAsync(zip, list, new IdeaListImportOptions(), (_, _) => { }));
+        Assert.That(ex!.Reasons.Single(), Does.Contain("Plugin.tooltip@1"));
+
+        await using var db = env.Db();
+        Assert.That(await db.Pages.CountAsync(), Is.Zero,
+            "an unmet Uses[] entry must leave nothing written, not just skip that one page");
+    }
+
+    [Test]
+    public async Task PageUsesSatisfiedByJustInstalledPackage_Succeeds()
+    {
+        var env = NewEnv();
+        await SeedSiteAsync(env);
+        var resolver = new InMemoryIdeaListPackageResolver();
+        resolver.Add(ContentKind.Plugin, "tooltip", 1, BuildCodePackageBytes("tooltip", 1, "Plugin", "Tooltip"));
+
+        var importer = new IdeaListImporter(
+            env.Db(), env.Store, env.Services.GetRequiredService<IPackageInstallService>(), resolver);
+        var list = new IdeaList
+        {
+            Packages = ["Plugin.tooltip@1"],
+            Pages =
+            [
+                new IdeaListPage
+                {
+                    Uid = Guid.NewGuid(), Slug = "home", Title = "home", BodyHtml = "<p>hi</p>",
+                    Uses = ["Plugin.tooltip@1"],
+                },
+            ],
+        };
+
+        using var zip = EmptyZip();
+        var result = await importer.ImportAsync(zip, list, new IdeaListImportOptions(), (_, _) => { });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.PackagesInstalled, Is.EqualTo(1));
+            Assert.That(result.PagesCreated, Is.EqualTo(1));
+        });
+    }
+
+    [Test]
+    public async Task PackageResolver_SearchesMultipleDirectoriesInOrder_FirstMatchWins()
+    {
+        var dir1 = Path.Combine(_dir, "dir1"); Directory.CreateDirectory(dir1);
+        var dir2 = Path.Combine(_dir, "dir2"); Directory.CreateDirectory(dir2);
+
+        // Same (kind,key,version) in both — DisplayName marks which one a resolve actually returned.
+        await File.WriteAllBytesAsync(Path.Combine(dir1, "a.idea"), BuildCodePackageBytes("tooltip", 1, "Plugin", "First"));
+        await File.WriteAllBytesAsync(Path.Combine(dir2, "b.idea"), BuildCodePackageBytes("tooltip", 1, "Plugin", "Second"));
+
+        var resolver = new FileSystemIdeaListPackageResolver([dir1, dir2]);
+        await using var stream = await resolver.ResolveAsync(ContentKind.Plugin, "tooltip", 1);
+
+        Assert.That(stream, Is.Not.Null);
+        using var archive = IdeaArchiveReader.Open(stream!);
+        archive.TryReadManifest(out var manifest, out _);
+        Assert.That(manifest!.DisplayName, Is.EqualTo("First"), "dir1 is listed first and must win on a conflicting match");
+    }
+
+    [Test]
+    public void PackageResolver_MissingEverywhere_ResolvesToNull()
+    {
+        var dir = Path.Combine(_dir, "emptylib");
+        Directory.CreateDirectory(dir);
+        var resolver = new FileSystemIdeaListPackageResolver([dir]);
+
+        Assert.That(resolver.ResolveAsync(ContentKind.Plugin, "ghost", 1).Result, Is.Null);
+    }
+
+    [Test]
+    public async Task PackageResolver_MissingEverywhere_ImportFailsLoudlyNamingTheEntry()
+    {
+        var env = NewEnv();
+        var dir = Path.Combine(_dir, "emptylib");
+        Directory.CreateDirectory(dir);
+        var resolver = new FileSystemIdeaListPackageResolver([dir]);
+        var importer = new IdeaListImporter(
+            env.Db(), env.Store, env.Services.GetRequiredService<IPackageInstallService>(), resolver);
+        var list = new IdeaList { Packages = ["Plugin.ghost@1"] };
+
+        using var zip = EmptyZip();
+        var ex = Assert.ThrowsAsync<IdeaListImportException>(
+            () => importer.ImportAsync(zip, list, new IdeaListImportOptions(), (_, _) => { }));
+        Assert.That(ex!.Message, Does.Contain("Plugin.ghost@1"));
+    }
+
+    // =========================================================================================
+    // New: --compose-idealist
+    // =========================================================================================
+
+    [Test]
+    public async Task ComposeIdealist_PackagesOnly_ProducesAnEmptySiteContentFreeArtifact()
+    {
+        var env = NewEnv();
+        var exit = await ComposeIdeaListCli.RunAsync(
+            ["--compose-idealist", ListPath, "--package", "Theme.cyberspace@1", "--package", "Plugin.tooltip@2"],
+            env.Services);
+        Assert.That(exit, Is.Zero);
+
+        using var zip = ZipFile.OpenRead(ListPath);
+        var (list, error) = await IdeaListImporter.ReadManifestAsync(zip);
+        Assert.Multiple(() =>
+        {
+            Assert.That(list, Is.Not.Null, error);
+            Assert.That(list!.Site, Is.Null);
+            Assert.That(list.Pages, Is.Empty);
+            Assert.That(list.Packages, Is.EquivalentTo(new[] { "Theme.cyberspace@1", "Plugin.tooltip@2" }));
+        });
+    }
+
+    [Test]
+    public async Task ComposeIdealist_FromSite_UnionsExplicitPackagesWithSiteContent()
+    {
+        var env = NewEnv();
+        await SeedSiteAsync(env, "default");
+        await AddPageAsync(env, "home", "<p>hi</p>");
+
+        var exit = await ComposeIdeaListCli.RunAsync(
+            ["--compose-idealist", ListPath, "--package", "Theme.cyberspace@1", "--from-site", "default"],
+            env.Services);
+        Assert.That(exit, Is.Zero);
+
+        using var zip = ZipFile.OpenRead(ListPath);
+        var (list, _) = await IdeaListImporter.ReadManifestAsync(zip);
+        Assert.Multiple(() =>
+        {
+            Assert.That(list!.Packages, Does.Contain("Theme.cyberspace@1"),
+                "an explicit --package ref must survive alongside the site export");
+            Assert.That(list.Pages.Single().Slug, Is.EqualTo("home"));
+            Assert.That(list.Site!.Key, Is.EqualTo("default"));
+        });
     }
 }

@@ -30,7 +30,8 @@ public class SeedOnInstallTests
     {
         var factory = new InMemoryFactory(db);
         var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), new ContentCatalog(new NullResolver()));
-        var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), new NullPackageExtractor(), new NullRenderAlertSink());
+        var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), new NullPackageExtractor(), new NullRenderAlertSink(),
+            new TestPackageSigningTrust(), new AdminInboxService(factory));
         return (svc, factory);
     }
 

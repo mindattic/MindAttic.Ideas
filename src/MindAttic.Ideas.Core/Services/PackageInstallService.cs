@@ -9,7 +9,11 @@ using MindAttic.Ideas.Packaging;
 namespace MindAttic.Ideas.Core.Services;
 
 /// <summary>A package could not be installed (malformed, invalid, blocked, or a downgrade).</summary>
-public sealed class InstallException(string message) : Exception(message);
+public class InstallException(string message) : Exception(message);
+
+/// <summary>A package's content signature failed verification (missing, malformed, untrusted signer,
+/// or the signature does not match the archive's content) — see <see cref="MindAttic.Ideas.Packaging.PackageSigner"/>.</summary>
+public sealed class PackageSignatureException(string message) : InstallException(message);
 
 public interface IPackageInstallService
 {
@@ -37,17 +41,33 @@ public sealed class PackageInstallService(
     DiscoveryService discovery,
     IPackageBlobStore blobStore,
     IPackageExtractor extractor,
-    IRenderAlertSink alerts) : IPackageInstallService
+    IRenderAlertSink alerts,
+    IPackageSigningTrust signingTrust,
+    IAdminInboxService adminInbox) : IPackageInstallService
 {
     public async Task<InstallPlan> InstallAsync(Stream ideaBytes, bool allowOverride, CancellationToken ct = default)
     {
-        // Buffer once: we need the bytes for both the hash and the (seekable) archive read.
+        // Buffer once: we need the bytes for both the (seekable) archive read and blob storage.
         using var buffer = new MemoryStream();
         await ideaBytes.CopyToAsync(buffer, ct);
         var bytes = buffer.ToArray();
-        var sha = Sha256Hasher.OfBytes(bytes);
 
         using var archive = IdeaArchiveReader.Open(new MemoryStream(bytes));
+
+        // Signature verification comes BEFORE the manifest is even trusted for parsing — every install
+        // path (boot library scan, .idealist import, --install, admin upload, NuGet fetch) funnels
+        // through here, so this is the one place a tampered/unsigned .idea is rejected uniformly.
+        var verify = PackageSigner.Verify(archive, signingTrust.TrustedCertificate);
+        if (verify != PackageSigner.VerifyOutcome.Ok)
+            throw new PackageSignatureException($"package signature check failed: {verify}.");
+
+        // Content identity, NOT a whole-file hash: RSASSA-PSS signatures are randomized, so re-signing
+        // byte-identical content produces different whole-file bytes on every sign. Hashing the same
+        // canonical manifest the signature itself covers means "was this package's actual content
+        // re-published unchanged" stays stable across re-signs, while a genuine content change still
+        // changes the hash — exactly what hash-conflict detection (PackageVersionResolver.Plan) needs.
+        var sha = Sha256Hasher.OfBytes(PackageSigner.CanonicalManifest(archive));
+
         if (!archive.TryReadManifest(out var manifest, out var error) || manifest is null)
             throw new InstallException(error ?? "package manifest could not be read.");
         var rawJson = archive.ReadManifestJson()!;   // non-null: TryReadManifest succeeded
@@ -66,17 +86,24 @@ public sealed class PackageInstallService(
             .Where(p => p.Key == manifest.Key && p.Category == manifest.Category)
             .ToListAsync(ct);
         var installedRefs = installedRows
-            .Select(p => new InstalledRef(p.Category, p.Key, p.Version, p.Enabled, p.IsActiveVersion))
+            .Select(p => new InstalledRef(p.Category, p.Key, p.Version, p.Enabled, p.IsActiveVersion, p.Sha256))
             .ToList();
 
         var compiledKeyExists = await db.ContentDefinitions.AnyAsync(
             c => c.Origin == ContentOrigin.Compiled && c.Kind == kind && c.Key == manifest.Key && c.IsActive, ct);
 
-        var plan = PackageVersionResolver.Plan(manifest, installedRefs, compiledKeyExists, allowOverride);
+        var plan = PackageVersionResolver.Plan(manifest, sha, installedRefs, compiledKeyExists, allowOverride);
         switch (plan.Action)
         {
             case InstallAction.NoOpAlreadyInstalled:
                 return plan;
+            case InstallAction.HashConflict:
+                await adminInbox.RaiseAsync("Error", "PackageInstall",
+                    subject: $"Install conflict: {manifest.Category}/{manifest.Key} v{manifest.Version}",
+                    body: plan.Reason ?? "sha256 mismatch against the already-installed version.",
+                    dedupKey: AdminInboxService.DedupKey("package-hash-conflict", manifest.Category, manifest.Key, manifest.Version.ToString()),
+                    ct);
+                throw new InstallException(plan.Reason ?? "install was rejected: content hash conflict.");
             case InstallAction.Blocked:
             case InstallAction.RejectDowngrade:
                 throw new InstallException(plan.Reason ?? "install was rejected.");

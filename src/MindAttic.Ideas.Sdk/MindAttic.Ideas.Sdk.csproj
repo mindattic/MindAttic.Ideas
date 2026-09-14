@@ -25,8 +25,16 @@
 
   <ItemGroup>
     <!-- The packer + manifest contract + install rules live in the shared Packaging library so the host
-         (Core) and this CLI read exactly one implementation. -->
+         (Core) and this CLI read exactly one implementation. PackageSigner (content signing) lives there
+         too, so `ma-idea sign` reuses the exact same Sign/Verify code the host verifies against. -->
     <ProjectReference Include="..\MindAttic.Ideas.Packaging\MindAttic.Ideas.Packaging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- `ma-idea nupkg`: constructs a valid OPC .nupkg from an already-signed .idea, for publishing to a
+         NuGet feed (GitHub Packages). No NuGet.Packaging.Signing — a .idea's own content signature
+         (PackageSigner) is independent of NuGet's package-signing feature. -->
+    <PackageReference Include="NuGet.Packaging" Version="7.9.0" />
   </ItemGroup>
 
 </Project>

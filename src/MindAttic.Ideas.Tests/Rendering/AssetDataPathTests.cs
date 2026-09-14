@@ -36,7 +36,8 @@ public class AssetDataPathTests
         var factory = new InMemoryFactory("assets_" + Guid.NewGuid().ToString("N"));
         var catalog = new ContentCatalog(new NullResolver());
         var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
-        var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), new NullPackageExtractor(), new NullRenderAlertSink());
+        var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), new NullPackageExtractor(), new NullRenderAlertSink(),
+            new TestPackageSigningTrust(), new AdminInboxService(factory));
 
         var idea = IdeaTestArchive.Build(new Dictionary<string, string>
         {

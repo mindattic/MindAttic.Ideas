@@ -1,4 +1,7 @@
+using System.Security.Cryptography.X509Certificates;
 using MindAttic.Ideas.Packaging;
+using NuGet.Packaging;
+using NuGet.Versioning;
 
 // ma-idea — the .idea CLI.
 //
@@ -7,11 +10,18 @@ using MindAttic.Ideas.Packaging;
 //   ma-idea list    <dir>
 //   ma-idea install <file.idea> [--allow-override]      (OFFLINE validate-only; the host applies installs)
 //   ma-idea upgrade <file.idea>                          (validate + plan against the .idea files beside it)
+//   ma-idea sign    <file.idea> --pfx <cert.pfx> [--password <pw>]      (content-signs in place)
+//   ma-idea nupkg   --idea <file.idea> --out <dir>                     (packs a signed .idea into a .nupkg)
 //
 // pack reads the entry type's identity (Kind, Key, Version) by CONVENTION from its namespace and Vn class
 // name (reflection-only; never executes the assembly). The read verbs (inspect/list/install/upgrade) are
 // pure and offline — they never touch a database. Installing a package into a running site is a host
 // operation (PackageInstallService); disabling likewise. All logic lives in MindAttic.Ideas.Packaging.
+//
+// sign/nupkg are the publish-side half of NuGet distribution (MAI-A41 follow-on): sign stamps a .idea's
+// OWN content signature (PackageSigner — independent of NuGet's own signing feature, verified by every
+// install path); nupkg wraps an already-signed .idea into a `MindAttic.Ideas.{Category}.{Key}` package
+// at version `{n}.0.0`, ready for `dotnet nuget push` against a feed (see library/tools/publish-nuget.ps1).
 
 if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
 {
@@ -33,6 +43,8 @@ try
         "install" => RunInstall(rest),
         "upgrade" => RunUpgrade(rest),
         "disable" => RunDisable(),
+        "sign" => RunSign(rest),
+        "nupkg" => RunNupkg(rest),
         _ => Unknown(verb),
     };
 }
@@ -217,12 +229,16 @@ static int RunUpgrade(ReadOnlySpan<string> rest)
         if (string.Equals(Path.GetFullPath(other), Path.GetFullPath(file), StringComparison.OrdinalIgnoreCase)) continue;
         using var r = IdeaArchiveReader.Open(other);
         if (r.TryReadManifest(out var om, out _) && om is not null)
-            installed.Add(new InstalledRef(om.Category, om.Key, om.Version, Enabled: true, IsActiveVersion: true));
+        {
+            var otherSha = Sha256Hasher.OfBytes(PackageSigner.CanonicalManifest(r));
+            installed.Add(new InstalledRef(om.Category, om.Key, om.Version, Enabled: true, IsActiveVersion: true, otherSha));
+        }
     }
 
-    var plan = PackageVersionResolver.Plan(m!, installed, compiledKeyExists: false, allowOverride: false);
+    var candidateSha = Sha256Hasher.OfBytes(PackageSigner.CanonicalManifest(reader));
+    var plan = PackageVersionResolver.Plan(m!, candidateSha, installed, compiledKeyExists: false, allowOverride: false);
     Console.WriteLine($"ma-idea upgrade: {m!.Key} v{m.Version} -> {plan.Action}{(plan.Reason is null ? "" : " (" + plan.Reason + ")")}");
-    return plan.Action is InstallAction.RejectDowngrade or InstallAction.Blocked ? 1 : 0;
+    return plan.Action is InstallAction.RejectDowngrade or InstallAction.Blocked or InstallAction.HashConflict ? 1 : 0;
 }
 
 static int RunDisable()
@@ -232,6 +248,65 @@ static int RunDisable()
         "Enabled=false; bytes are retained). Use the admin UI / PackageInstallService.DisableAsync — " +
         "the offline CLI cannot reach the site database.");
     return 2;
+}
+
+static int RunSign(ReadOnlySpan<string> rest)
+{
+    if (!TryFile(rest, "sign", out var file)) return 2;
+    var opts = ArgParser.Parse(rest);
+    var pfxPath = opts.GetValueOrDefault("pfx");
+    var password = opts.GetValueOrDefault("password");
+
+    if (string.IsNullOrWhiteSpace(pfxPath))
+    { Console.Error.WriteLine("ma-idea sign: --pfx <cert.pfx> is required."); return 2; }
+    if (!File.Exists(pfxPath))
+    { Console.Error.WriteLine($"ma-idea sign: pfx not found: {pfxPath}"); return 2; }
+
+    using var cert = X509CertificateLoader.LoadPkcs12FromFile(pfxPath, password);
+    PackageSigner.SignFile(file, cert);
+    Console.WriteLine($"ma-idea sign: signed {Path.GetFileName(file)} (signer thumbprint {cert.Thumbprint}).");
+    return 0;
+}
+
+static int RunNupkg(ReadOnlySpan<string> rest)
+{
+    var opts = ArgParser.Parse(rest);
+    var ideaPath = opts.GetValueOrDefault("idea");
+    var outDir = opts.GetValueOrDefault("out");
+    if (string.IsNullOrWhiteSpace(ideaPath) || string.IsNullOrWhiteSpace(outDir))
+    { Console.Error.WriteLine("ma-idea nupkg: --idea <file.idea> and --out <dir> are required."); return 2; }
+    if (!File.Exists(ideaPath))
+    { Console.Error.WriteLine($"ma-idea nupkg: file not found: {ideaPath}"); return 2; }
+
+    using var reader = IdeaArchiveReader.Open(ideaPath);
+    if (!reader.TryReadManifest(out var m, out var err) || m is null)
+    { Console.Error.WriteLine($"ma-idea nupkg: {err}"); return 1; }
+
+    // The one mapping every install path relies on: Kind.key@version <-> MindAttic.Ideas.{Category}.{Key} @ {n}.0.0.
+    var packageId = $"MindAttic.Ideas.{m.Category}.{m.Key}";
+    var nugetVersion = new NuGetVersion(m.Version, 0, 0);
+
+    var builder = new PackageBuilder
+    {
+        Id = packageId,
+        Version = nugetVersion,
+        Description = string.IsNullOrWhiteSpace(m.Description) ? m.DisplayName : m.Description,
+    };
+    builder.Authors.Add("MindAttic");
+    builder.Files.Add(new PhysicalPackageFile
+    {
+        SourcePath = Path.GetFullPath(ideaPath),
+        TargetPath = $"content/{m.Key}.idea",
+    });
+
+    var outDirFull = Path.GetFullPath(outDir);
+    Directory.CreateDirectory(outDirFull);
+    var outPath = Path.Combine(outDirFull, $"{packageId}.{nugetVersion}.nupkg");
+    using (var fs = File.Create(outPath))
+        builder.Save(fs);
+
+    Console.WriteLine($"ma-idea nupkg: wrote {outPath}");
+    return 0;
 }
 
 // ---- small CLI helpers ----
@@ -271,6 +346,8 @@ static void PrintHelp() => Console.WriteLine("""
       ma-idea verify  [dir]
       ma-idea install <file.idea> [--allow-override]
       ma-idea upgrade <file.idea>
+      ma-idea sign    <file.idea> --pfx <cert.pfx> [--password <pw>]
+      ma-idea nupkg   --idea <file.idea> --out <dir>
 
     pack    Pack a built Page/Theme/Plugin/Component RCL into a .idea (reflection-only).
     inspect Print a package's manifest + bin/ + wwwroot/ counts.
@@ -278,4 +355,6 @@ static void PrintHelp() => Console.WriteLine("""
     verify  Check every package's uses[] resolves against the .idea files in a directory (compose-graph check).
     install Validate a package offline (does NOT install — that is a host operation).
     upgrade Validate + preview the install action against the .idea files beside it.
+    sign    Content-sign a .idea in place with a pfx (independent of NuGet's own signing feature).
+    nupkg   Wrap an already-signed .idea into a MindAttic.Ideas.{Category}.{Key} .nupkg for publishing.
     """);

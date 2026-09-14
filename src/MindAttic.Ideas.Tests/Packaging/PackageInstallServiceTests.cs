@@ -29,13 +29,16 @@ public class PackageInstallServiceTests
         public Type? Resolve(ContentDescriptor descriptor) => null;
     }
 
-    private static (PackageInstallService Svc, InMemoryFactory Factory, ContentCatalog Catalog, InMemoryPackageBlobStore Blobs) NewService()
+    private static (PackageInstallService Svc, InMemoryFactory Factory, ContentCatalog Catalog, InMemoryPackageBlobStore Blobs) NewService(
+        IPackageSigningTrust? signingTrust = null)
     {
         var factory = new InMemoryFactory("pkg_" + Guid.NewGuid().ToString("N"));
         var catalog = new ContentCatalog(new NullResolver());
         var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
         var blobs = new InMemoryPackageBlobStore();
-        return (new PackageInstallService(factory, discovery, blobs, new NullPackageExtractor(), new NullRenderAlertSink()), factory, catalog, blobs);
+        var svc = new PackageInstallService(factory, discovery, blobs, new NullPackageExtractor(), new NullRenderAlertSink(),
+            signingTrust ?? new TestPackageSigningTrust(), new AdminInboxService(factory));
+        return (svc, factory, catalog, blobs);
     }
 
     [Test]
@@ -78,7 +81,8 @@ public class PackageInstallServiceTests
             var catalog = new ContentCatalog(new NullResolver());
             var discovery = new DiscoveryService(factory, Array.Empty<ICmsContentSource>(), catalog);
             var extractor = new PackageExtractor(root);
-            var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), extractor, new NullRenderAlertSink());
+            var svc = new PackageInstallService(factory, discovery, new InMemoryPackageBlobStore(), extractor, new NullRenderAlertSink(),
+                new TestPackageSigningTrust(), new AdminInboxService(factory));
 
             await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin"), allowOverride: false);
 
@@ -240,5 +244,103 @@ public class PackageInstallServiceTests
             Assert.That(db.InstalledPackages.Count(), Is.EqualTo(0), "no package row written on rejected install");
             Assert.That(blobs.Saved, Is.Empty, "no bytes persisted on rejected install");
         });
+    }
+
+    // ---- content signing: every install path funnels through PackageInstallService, so verification here
+    // protects all of them uniformly (boot library scan, .idealist import, --install, admin upload). ----
+
+    [Test]
+    public async Task Install_UnsignedPackage_ThrowsPackageSignatureException_NoRowsWritten()
+    {
+        var (svc, factory, _, blobs) = NewService();
+        var unsigned = IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin", sign: false);
+
+        Assert.ThrowsAsync<PackageSignatureException>(async () =>
+            await svc.InstallAsync(unsigned, allowOverride: false));
+
+        await using var db = factory.CreateDbContext();
+        Assert.Multiple(() =>
+        {
+            Assert.That(db.InstalledPackages.Count(), Is.EqualTo(0));
+            Assert.That(blobs.Saved, Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Install_TamperedPackage_ThrowsPackageSignatureException_NoRowsWritten()
+    {
+        var (svc, factory, _, blobs) = NewService();
+        var signed = IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin");
+        var tampered = IdeaTestArchive.Tamper(signed, "bin/Demo.dll", "TAMPERED-CONTENT");
+
+        Assert.ThrowsAsync<PackageSignatureException>(async () =>
+            await svc.InstallAsync(tampered, allowOverride: false));
+
+        await using var db = factory.CreateDbContext();
+        Assert.Multiple(() =>
+        {
+            Assert.That(db.InstalledPackages.Count(), Is.EqualTo(0));
+            Assert.That(blobs.Saved, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void Install_UntrustedSigner_ThrowsPackageSignatureException()
+    {
+        // The service trusts a DIFFERENT cert than the one the package was actually signed with —
+        // simulates a host whose configured trust doesn't match the publisher.
+        var (svc, _, _, _) = NewService(signingTrust: new TestPackageSigningTrust(TestSigningFixture.CreateUntrusted()));
+        var signed = IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin");
+
+        Assert.ThrowsAsync<PackageSignatureException>(async () =>
+            await svc.InstallAsync(signed, allowOverride: false));
+    }
+
+    [Test]
+    public async Task Install_HashConflict_ThrowsInstallException_AndRaisesAdminInboxAlert()
+    {
+        var (svc, factory, _, _) = NewService();
+        await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin"), allowOverride: false);
+
+        // Same (Category,Key,Version) but genuinely DIFFERENT content — a colliding publish, not a re-run.
+        var conflicting = IdeaTestArchive.Build(new Dictionary<string, string>
+        {
+            ["idea.json"] = ManifestReader.Write(new IdeaManifest
+            {
+                ManifestVersion = 1, Category = "Plugin", Kind = "code", Key = "ui.tooltip", Version = 1,
+                DisplayName = "Tooltip", Sdk = 1, EntryType = "MindAttic.Ideas.Plugin.Demo.V1",
+                AssemblyName = "Demo", Assets = ["css/x.css"],
+            }),
+            ["bin/Demo.dll"] = "MZ-fake-BUT-DIFFERENT",
+            ["wwwroot/css/x.css"] = ".x{}",
+        });
+
+        Assert.ThrowsAsync<InstallException>(async () => await svc.InstallAsync(conflicting, allowOverride: false));
+
+        await using var db = factory.CreateDbContext();
+        Assert.Multiple(() =>
+        {
+            Assert.That(db.InstalledPackages.Count(), Is.EqualTo(1), "the original install is untouched");
+            var alert = db.AdminInbox.SingleOrDefault(m =>
+                m.DedupKey == AdminInboxService.DedupKey("package-hash-conflict", "Plugin", "ui.tooltip", "1"));
+            Assert.That(alert, Is.Not.Null, "a hash conflict must be visible in the Admin Inbox");
+        });
+    }
+
+    [Test]
+    public async Task Install_SameVersion_SameContent_ReSignedDifferently_IsStillANoOp()
+    {
+        // RSASSA-PSS signatures are randomized: signing byte-identical content twice yields DIFFERENT
+        // whole-file bytes each time. This proves conflict detection hashes CONTENT, not the file —
+        // a legitimate re-sign/re-publish of unchanged content must never look like a conflict.
+        var (svc, factory, _, _) = NewService();
+        await svc.InstallAsync(IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin"), allowOverride: false);
+
+        var reSigned = IdeaTestArchive.CodePackage("ui.tooltip", 1, "Plugin");   // identical content, fresh signature
+        var plan = await svc.InstallAsync(reSigned, allowOverride: false);
+
+        Assert.That(plan.Action, Is.EqualTo(InstallAction.NoOpAlreadyInstalled));
+        await using var db = factory.CreateDbContext();
+        Assert.That(db.InstalledPackages.Count(), Is.EqualTo(1));
     }
 }

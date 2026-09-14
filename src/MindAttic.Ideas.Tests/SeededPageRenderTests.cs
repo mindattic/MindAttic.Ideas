@@ -275,7 +275,8 @@ public class SeededPageRenderTests
         var catalog   = new ContentCatalog(resolver);
         var discovery = new DiscoveryService(factory, [], catalog);
         var blobs     = new InMemoryPackageBlobStore();
-        var svc       = new PackageInstallService(factory, discovery, blobs, new NullPackageExtractor(), new NullRenderAlertSink());
+        var svc       = new PackageInstallService(factory, discovery, blobs, new NullPackageExtractor(), new NullRenderAlertSink(),
+            new TestPackageSigningTrust(), new AdminInboxService(factory));
         return (svc, catalog);
     }
 }

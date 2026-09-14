@@ -1,10 +1,21 @@
 @attribute [Authorize(Policy = MaPolicies.Admin)]
+@using System.IO.Compression
 @using MindAttic.Ideas.Packaging
+@using MindAttic.Ideas.Core.Data
+@using MindAttic.Ideas.Core.Portability
 @using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.EntityFrameworkCore
 @inject IPackageInstallService Installer
+@inject IDbContextFactory<CmsDbContext> DbFactory
+@inject IMediaStore Media
+@inject IWebHostEnvironment Env
+@inject IConfiguration Configuration
 @inject NavigationManager Nav
 
-@* Upload Idea panel — hosted by AdminShell's "Upload Idea" tab (no own route). *@
+@* Upload Idea panel — hosted by AdminShell's "Upload Idea" tab (no own route). Also accepts an
+   .idealist (detected by its idealist.json manifest entry, not the file extension) — routed through
+   IdeaListImporter, the same engine --import-idealist/boot use, so a Packages[] entry only available
+   on NuGet is resolved/installed the same way a single .idea upload resolves nothing extra. *@
 
 <div class="admin-upload">
     @if (!string.IsNullOrWhiteSpace(_missingKey))
@@ -19,7 +30,10 @@
         Drop in Page / Theme / Plugin / Component <code>.idea</code> packages (legacy Control packages still install) — each is validated and added to
         the general collection of usable pieces. A package that re-declares a key already owned by a compiled
         citizen needs <strong>Allow override</strong>. See the installed collection under the
-        <a href="/admin/content">Idea Library</a> tab.
+        <a href="/admin/content">Idea Library</a> tab. An <code>.idealist</code> is also accepted — its
+        pages/media/settings import and its <code>Packages[]</code> resolve (filesystem, then the
+        NuGet feed) and install the same way <code>--import-idealist</code> does. Browse what's on the
+        feed under the <a href="/admin/catalog">Catalog</a> tab instead of uploading by hand.
     </p>
 
     <label class="admin-flags">
@@ -27,8 +41,8 @@
     </label>
 
     <label class="admin-dropzone">
-        <InputFile OnChange="OnFiles" multiple accept=".idea" />
-        <span class="admin-dropzone-label">Drop <code>.idea</code> packages here</span>
+        <InputFile OnChange="OnFiles" multiple accept=".idea,.idealist" />
+        <span class="admin-dropzone-label">Drop <code>.idea</code> or <code>.idealist</code> files here</span>
         <span class="admin-dropzone-hint">or <strong>click to browse</strong> · multiple files accepted</span>
     </label>
 
@@ -82,12 +96,47 @@
                         await rs.CopyToAsync(buffer);
                     buffer.Position = 0;
 
-                    var plan = await Installer.InstallAsync(buffer, allowOverride);
-                    var ok = plan.Action is InstallAction.Install
-                                 or InstallAction.NoOpAlreadyInstalled
-                                 or InstallAction.RequiresOverrideConfirmation;
-                    var detail = plan.Reason is { Length: > 0 } reason ? $"{plan.Action} ({reason})" : plan.Action.ToString();
-                    results.Add(new Result(file.Name, ok, detail));
+                    IdeaList? idealist = null;
+                    try
+                    {
+                        using var zip = new ZipArchive(buffer, ZipArchiveMode.Read, leaveOpen: true);
+                        (idealist, _) = await IdeaListImporter.ReadManifestAsync(zip);
+                    }
+                    catch (InvalidDataException) { /* not a zip at all — fall through to the plain .idea path, which will report it */ }
+                    buffer.Position = 0;
+
+                    if (idealist is not null)
+                    {
+                        using var zip = new ZipArchive(buffer, ZipArchiveMode.Read, leaveOpen: true);
+                        var resolver = IdeaListResolverFactory.Build([], Env.ContentRootPath, Configuration);
+                        await using var db = await DbFactory.CreateDbContextAsync();
+                        var importer = new IdeaListImporter(db, Media, Installer, resolver);
+
+                        try
+                        {
+                            var importResult = await importer.ImportAsync(zip, idealist, new IdeaListImportOptions(), (_, _) => { });
+                            var ok = importResult.Ok;
+                            var detail = $"{importResult.PackagesInstalled} package(s), "
+                                       + $"{importResult.PagesCreated} page(s) created, {importResult.PagesUpdated} updated, "
+                                       + $"{importResult.MediaUploaded} media uploaded"
+                                       + (importResult.MediaFailed > 0 ? $", {importResult.MediaFailed} media FAILED" : "")
+                                       + (importResult.Error is { Length: > 0 } err ? $" — {err}" : "");
+                            results.Add(new Result(file.Name, ok, detail));
+                        }
+                        catch (IdeaListImportException ex)
+                        {
+                            results.Add(new Result(file.Name, false, $"{ex.Message} ({string.Join("; ", ex.Reasons)})"));
+                        }
+                    }
+                    else
+                    {
+                        var plan = await Installer.InstallAsync(buffer, allowOverride);
+                        var ok = plan.Action is InstallAction.Install
+                                     or InstallAction.NoOpAlreadyInstalled
+                                     or InstallAction.RequiresOverrideConfirmation;
+                        var detail = plan.Reason is { Length: > 0 } reason ? $"{plan.Action} ({reason})" : plan.Action.ToString();
+                        results.Add(new Result(file.Name, ok, detail));
+                    }
                     StateHasChanged();
                 }
                 catch (Exception ex)

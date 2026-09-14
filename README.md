@@ -568,7 +568,7 @@ Two consequences worth knowing:
 
 - The bare route `/` prefers the **Site**-scope `page.frontpage` setting over the Host-scope one, so
   each domain lands on its own front page.
-- A content bundle carries **one** site (`--export-content --site <key>`), and importing creates that
+- An idealist carries **one** site (`--export-idealist --site <key>`), and importing creates that
   site when it is absent rather than folding its pages onto the default site.
 
 Behind a proxy, the real `Host` header must reach the app. `UseForwardedHeaders` deliberately does
@@ -589,34 +589,63 @@ verb runs the normal host startup first, so it sees the same configuration the s
 | `--seed core \| from-html \| from-md \| repos` | Re-runs the baseline seed, or generates pages from HTML / READMEs / the GitHub org. |
 | `--extract-media [--slug s] [--folder f] [--dry-run]` | Lifts inline base64 images out of page bodies into managed media. |
 | `--upload-media <file…> [--folder f] [--media-type t] [--dry-run]` | Streams local files straight into the media store — the path for anything too large for the browser circuit. |
-| `--export-content <file> [--site key] [--slug prefix] [--no-media] [--dry-run]` | Writes ONE site's authored content — pages, Host/Site settings, per-component metadata and media — to a portable `.ideabundle`. |
-| `--import-content <file> [--dry-run] [--untrusted] [--prune] [--into-site key]` | Applies a bundle to this environment. |
+| `--export-idealist <file> [--site key] [--slug prefix] [--no-media] [--dry-run]` | Writes ONE site's authored content — pages, Host/Site settings, per-component metadata and media — plus an auto-discovered Packages[] list, to a portable `.idealist`. |
+| `--import-idealist <file> [--dry-run] [--untrusted] [--prune] [--into-site key] [--packages-dir dir]` | Installs Packages[] (in listed order), validates every page's `Uses[]`, then applies an idealist to this environment. |
+| `--compose-idealist <file> --package Kind.key@version [--from-site key] [--dry-run]` | Builds a packages-only (or, with `--from-site`, packages + content) idealist without hand-editing `idealist.json` — the provisioning-only case. |
 
-### Moving authored content between environments ([A34](docs/AMENDMENTS.md#MAI-A34))
+### Moving authored content between environments, and provisioning a fresh instance ([A41](docs/AMENDMENTS.md#MAI-A41), supersedes [A34](docs/AMENDMENTS.md#MAI-A34))
 
-A `.idea` package moves a **citizen**; a `.ideabundle` moves what an author **built** with citizens.
-`--seed` regenerates the shape of a site, never its curation — so promoting a hand-built site to
-production is an export/import, not a re-do.
+A `.idea` package moves a **citizen**; a `.idealist` moves what an author **built** with citizens, plus
+which citizens a deployment should have installed in the first place. `--seed` regenerates the shape of
+a site, never its curation — so promoting a hand-built site to production is an export/import, not a
+re-do. A "vanilla" deployment ships with no `.idealist` configured (today's install-everything-in-
+`library/` boot behavior, unchanged); a "custom instance" points `Ideas:Idealist`/`IDEAS_IDEALIST` at one.
 
 ```pwsh
 # on the source environment
-dotnet run --project src/MindAttic.Ideas.Blazor -- --export-content D:	mp\site.ideabundle
+dotnet run --project src/MindAttic.Ideas.Blazor -- --export-idealist D:	mp\site.idealist
 
 # on the target: look before you leap, then apply
 $env:ConnectionStrings__Ideas = '<production connection string>'
-dotnet run --project src/MindAttic.Ideas.Blazor -- --import-content D:	mp\site.ideabundle --dry-run
-dotnet run --project src/MindAttic.Ideas.Blazor -- --import-content D:	mp\site.ideabundle
+dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist D:	mp\site.idealist --dry-run
+dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist D:	mp\site.idealist
 ```
 
 Re-runnable by construction: pages reconcile on `Uid` first and `(SiteId, Slug)` second — the slug
-fallback is what lets a bundle **adopt** a page an independently seeded database already has, rather
+fallback is what lets an idealist **adopt** a page an independently seeded database already has, rather
 than colliding with the unique `(SiteId, Slug)` index. Media is adopted by SHA-256, so a second
 import moves no bytes; because the store mints media uids, every `/_media/{uid}` reference is
 rewritten through an old→new map.
 
+Packages install before any page is written, in listed order, and every page's `Uses[]` — the citizens
+its body/theme/active-plugins actually reference — must resolve against the catalog once Packages[]
+finishes, or the whole import throws with nothing written. This is stricter than a package's own
+advisory `uses[]` check: a curated instance should render correctly on first boot, not degrade to a
+placeholder.
+
 Two flags are safety valves. `--untrusted` downgrades `Author`-trust pages (whose HTML/JS is written
 verbatim and rendered unsanitized) — the import always prints how many there are. `--prune`
-soft-deletes pages absent from the bundle, and is opt-in.
+soft-deletes pages absent from the idealist, and is opt-in.
+
+### Each `.idea` distributes on its own via NuGet, content-signed independently of it ([A42](docs/AMENDMENTS.md#MAI-A42))
+
+`Packages[]` is purely referential — a `.idealist` never carries package bytes. Every `.idea` citizen
+distributes as its own NuGet package (id `MindAttic.Ideas.{Category}.{Key}`, version `{n}.0.0`), and a
+resolver composes the local `library/` folder first (fast, no network) with a NuGet feed as fallback,
+configured via `Ideas:NuGetFeedUrl`. Independent of NuGet's own package-signing feature, every `.idea`
+carries its own content signature (`idea.sig.json`, RSA-PSS/SHA-256), verified once at the single
+`PackageInstallService.InstallAsync` choke point — so a tampered or unsigned package is rejected the
+same way whether it arrived via `library/`, `--install`, admin upload, or NuGet. A same-version install
+with genuinely different content is a hard reject raised in the Admin Inbox, never a silent overwrite.
+
+```pwsh
+dotnet run --project src/MindAttic.Ideas.Sdk -- sign path\to\Foo.V1.idea --pfx signing.pfx --password ***
+dotnet run --project src/MindAttic.Ideas.Sdk -- nupkg --idea path\to\Foo.V1.idea --out dist\nupkg
+dotnet nuget push dist\nupkg\MindAttic.Ideas.Plugin.foo.1.0.0.nupkg --source <feed> --api-key <pat> --skip-duplicate
+```
+
+`library/tools/publish-nuget.ps1` chains pack → sign → nupkg → push for the whole first-party library in
+one pass, pulling the signing cert and feed PAT from MindAttic.Vault.
 
 ---
 

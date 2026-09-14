@@ -13,6 +13,9 @@ public enum InstallAction
     Blocked,
     /// <summary>A compiled citizen owns this key and the package requested an override (admin already confirmed via allowOverride).</summary>
     RequiresOverrideConfirmation,
+    /// <summary>This exact (category,key,version) is already installed, but with DIFFERENT content —
+    /// a real conflict, not a harmless re-run. Rejected outright; an operator must resolve it.</summary>
+    HashConflict,
 }
 
 /// <summary>
