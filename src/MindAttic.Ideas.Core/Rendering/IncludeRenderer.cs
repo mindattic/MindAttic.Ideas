@@ -35,6 +35,16 @@ public sealed class IncludeRenderer(IContentCatalog catalog, IRenderAlertSink al
             }
 
             var attrs = ToAttrList(attributes);
+            // A Plugin a compiled Theme/Page composes by string id is still a per-page INSTANCE (MAI-A45):
+            // its stored slot overrides whatever defaults the composing author passed as attributes.
+            if (kind == ContentKind.Plugin && context.GetInstanceSettingsJson(InstanceSlots.Plugin(key)) is { } slotJson
+                && catalog.ResolveTag(kind, key, version) is { Outcome: ContentResolution.Resolved, Type: { } pluginType })
+            {
+                var stored = InstanceSettingsBinder.ToParameters(pluginType, slotJson);
+                attrs = attrs.Where(a => !stored.ContainsKey(a.Key))
+                    .Concat(stored.Select(s => new KeyValuePair<string, object?>(s.Key, s.Value)))
+                    .ToList();
+            }
             var seq = 0;
             IncludeExpander.EmitInclude(builder, ref seq, kind, key, version, reference, catalog,
                 attrs, childContent, alerts, pageId, slug);

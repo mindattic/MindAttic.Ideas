@@ -7,50 +7,86 @@
    live as inline base64 CSS classes in the page's CSS — pass that class via imageclass= (image=
    also accepts a URL/data: URI). Drop several tokens inside <div class="ma-cards"> (a grid helper
    this widget's css ships) for a responsive card row:
-   <Component.Card title="Docs" text="Read the guides" href="/docs" imageclass="img-docs" /> *@
+   <Component.Card title="Docs" text="Read the guides" href="/docs" imageclass="img-docs" />
+   Visual settings (MAI-A45) are emitted as --ma-card-* custom properties on the root, only when set. *@
 <link rel="stylesheet" href="/_ideas/Component/card/1/card.css" />
 @if (string.IsNullOrWhiteSpace(Href))
 {
-    <article class="ma-card @CssClass" style="@_outerStyle">@Inner</article>
+    <article class="ma-card @_modClass @CssClass" style="@_outerStyle">@Inner</article>
 }
 else
 {
-    <a class="ma-card ma-card-link @CssClass" href="@SafeUrl(Href)" style="@_outerStyle">@Inner</a>
+    <a class="ma-card ma-card-link @_modClass @CssClass" href="@SafeUrl(Href)" style="@_outerStyle"
+       target="@(OpenInNewTab ? "_blank" : null)" rel="@(OpenInNewTab ? "noopener" : null)">@Inner</a>
 }
 
 @code {
     /// <summary>Card heading.</summary>
-    [Parameter] public string? Title { get; set; }
+    [Parameter, Setting("Title", Group = "Content", Order = 1, Copyable = false)] public string? Title { get; set; }
 
     /// <summary>Body text (plain text; for rich bodies write free-form HTML around the card).</summary>
-    [Parameter] public string? Text { get; set; }
+    [Parameter, Setting("Text", Group = "Content", Order = 2, Copyable = false, Multiline = true)] public string? Text { get; set; }
 
     /// <summary>A page CSS class carrying the base64 background-image (the authoring convention).</summary>
-    [Parameter] public string? ImageClass { get; set; }
+    [Parameter, Setting("Image CSS class", Group = "Content", Order = 3, Copyable = false)] public string? ImageClass { get; set; }
 
     /// <summary>Optional image URL or data: URI (alternative to ImageClass).</summary>
-    [Parameter] public string? Image { get; set; }
+    [Parameter, Setting("Image URL", Group = "Content", Order = 4, Copyable = false)] public string? Image { get; set; }
 
     /// <summary>Optional link target — makes the whole card clickable.</summary>
-    [Parameter] public string? Href { get; set; }
+    [Parameter, Setting("Link", Group = "Content", Order = 5, Copyable = false)] public string? Href { get; set; }
 
     /// <summary>Optional small footer line (e.g. a date or category).</summary>
-    [Parameter] public string? Footer { get; set; }
+    [Parameter, Setting("Footer", Group = "Content", Order = 6, Copyable = false)] public string? Footer { get; set; }
 
     /// <summary>Additional CSS classes appended to the root element.</summary>
-    [Parameter] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
 
     /// <summary>Inline CSS appended to the root element's style attribute.</summary>
-    [Parameter] public string? CssStyle { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
 
     /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
-    [Parameter] public string? Padding { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1)] public string? Padding { get; set; }
 
     /// <summary>CSS margin shorthand.</summary>
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2)] public string? Margin { get; set; }
 
     /// <summary>text-align or flex justification (e.g. "center", "left", "right").</summary>
-    [Parameter] public string? Align { get; set; }
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 3)] public string? Align { get; set; }
+
+    [Parameter, Setting("Max width", Group = "Layout", Order = 4)] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Body padding", Group = "Layout", Order = 5, Description = "Default 1rem")] public string? BodyPadding { get; set; }
+    [Parameter, Setting("Body gap", Group = "Layout", Order = 6, Description = "Space between title, text and footer (default .5rem)")] public string? BodyGap { get; set; }
+    [Parameter, Setting("Image aspect ratio", Group = "Layout", Order = 7, Description = "Default 16 / 9")] public string? ImageRatio { get; set; }
+    [Parameter, Setting("Image fit", Group = "Layout", Order = 8, Description = "background-size: cover (default), contain, …")] public string? ImageFit { get; set; }
+    [Parameter, Setting("Image position", Group = "Layout", Order = 9, Description = "Default center")] public string? ImagePosition { get; set; }
+    [Parameter, Setting("Title font size", Group = "Layout", Order = 10, Description = "Default 1.15rem")] public string? TitleSize { get; set; }
+    [Parameter, Setting("Text opacity", Group = "Layout", Order = 11, Description = "Default .8")] public string? TextOpacity { get; set; }
+
+    [Parameter, Setting("Corner radius", Group = "Colors", Order = 1, Description = "Default .6rem")] public string? Radius { get; set; }
+    [Parameter, Setting("Background", Group = "Colors", Order = 2, Description = "Default rgba(128,128,128,.06)")] public string? Background { get; set; }
+    [Parameter, Setting("Border", Group = "Colors", Order = 3, Description = "CSS border shorthand (default 1px solid rgba(128,128,128,.3))")] public string? Border { get; set; }
+    [Parameter, Setting("Shadow", Group = "Colors", Order = 4, Description = "CSS box-shadow at rest (default none)")] public string? Shadow { get; set; }
+    [Parameter, Setting("Hover shadow", Group = "Colors", Order = 5, Description = "Linked cards (default 0 .5rem 1.25rem rgba(0,0,0,.15))")] public string? HoverShadow { get; set; }
+    [Parameter, Setting("Text color", Group = "Colors", Order = 6)] public string? TextColor { get; set; }
+
+    [Parameter, Setting("Show image", Group = "Behavior", Order = 1)] public bool ShowImage { get; set; } = true;
+    [Parameter, Setting("Hover lift", Group = "Behavior", Order = 2, Description = "Linked cards rise on hover/focus")] public bool HoverLift { get; set; } = true;
+    [Parameter, Setting("Animations", Group = "Behavior", Order = 3, Description = "Hover transition")] public bool Animations { get; set; } = true;
+    [Parameter, Setting("Open link in new tab", Group = "Behavior", Order = 4)] public bool OpenInNewTab { get; set; }
+
+    private string? _modClass
+    {
+        get
+        {
+            var m = string.Join(" ", new[]
+            {
+                HoverLift ? null : "ma-card--no-lift",
+                Animations ? null : "ma-card--no-anim",
+            }.Where(s => s is not null));
+            return m.Length > 0 ? m : null;
+        }
+    }
 
     // Single quotes are not HTML-encoded by Blazor, so escape them to keep Image inside the url('…') string.
     private string? BackgroundStyle => string.IsNullOrWhiteSpace(Image)
@@ -62,15 +98,32 @@ else
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        string.IsNullOrEmpty(MaxWidth) ? null : $"max-width:{MaxWidth}",
+        string.IsNullOrEmpty(TextColor) ? null : $"color:{TextColor}",
+        Var("--ma-card-radius", Radius),
+        Var("--ma-card-bg", Background),
+        Var("--ma-card-border", Border),
+        Var("--ma-card-shadow", Shadow),
+        Var("--ma-card-hover-shadow", HoverShadow),
+        Var("--ma-card-body-padding", BodyPadding),
+        Var("--ma-card-body-gap", BodyGap),
+        Var("--ma-card-image-ratio", ImageRatio),
+        Var("--ma-card-image-fit", ImageFit),
+        Var("--ma-card-image-position", ImagePosition),
+        Var("--ma-card-title-size", TitleSize),
+        Var("--ma-card-text-opacity", TextOpacity),
         CssStyle,
     }.Where(s => s is not null));
 
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
     private RenderFragment Inner => @<text>
-        @if (!string.IsNullOrWhiteSpace(ImageClass))
+        @if (ShowImage && !string.IsNullOrWhiteSpace(ImageClass))
         {
             <div class="ma-card-image @ImageClass" role="img" aria-label="@(Title ?? "")"></div>
         }
-        else if (!string.IsNullOrWhiteSpace(Image))
+        else if (ShowImage && !string.IsNullOrWhiteSpace(Image))
         {
             <div class="ma-card-image" role="img" aria-label="@(Title ?? "")"
                  style="@BackgroundStyle"></div>

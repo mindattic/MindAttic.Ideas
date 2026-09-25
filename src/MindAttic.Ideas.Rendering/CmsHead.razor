@@ -17,14 +17,16 @@
 @if (!string.IsNullOrWhiteSpace(GlobalCss))
 {
     @* Escape any </style sequence so a rogue setting value cannot break out of the style block. *@
-    <style>@((MarkupString)WrapInLayer("global", EscapeStyleText(GlobalCss!)))</style>
+    @* Whole element as one markup string (see FreeFormPage): a markup CHILD of <style> is re-parsed
+       outside raw-text context on interactive render, turning "<tag>" text into elements. *@
+    @((MarkupString)$"<style>{WrapInLayer("global", EscapeStyleText(GlobalCss!))}</style>")
 }
 @{
     var imports = BuildLayeredImports();
 }
 @if (imports.Length > 0)
 {
-    <style>@((MarkupString)imports)</style>
+    @((MarkupString)$"<style>{imports}</style>")
 }
 @foreach (var url in ThemeScripts)
 {

@@ -100,6 +100,7 @@ builder.Services.AddMindAtticAuthentication<CmsDbContext>(builder.Configuration,
 
 // Re-emit the Ideas Cms.AuthorRawMarkup claim at sign-in for trusted authors (Admins).
 builder.Services.AddScoped<IMaClaimsAugmentor, IdeasClaimsAugmentor>();
+builder.Services.AddScoped<InstanceClipboard>();
 
 var app = builder.Build();
 

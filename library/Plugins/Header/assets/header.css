@@ -3,20 +3,20 @@
 
 /* ── Fixed header — flex container. Columns are .mah-col children. ─────── */
 .mah-root {
-    position: fixed;
+    position: var(--mah-position, fixed);
     top: 0;
     left: 0;
     right: 0;
-    height: 48px;
+    height: var(--mah-height, 48px);
     display: flex;
     align-items: center;
     padding: 0 1.25rem;
-    gap: 1rem;
-    background: rgba(10, 12, 10, 0.88);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(60, 70, 60, 0.4);
-    z-index: 200;
+    gap: var(--mah-gap, 1rem);
+    background: var(--mah-bg, rgba(10, 12, 10, 0.88));
+    backdrop-filter: var(--mah-blur, blur(8px));
+    -webkit-backdrop-filter: var(--mah-blur, blur(8px));
+    border-bottom: var(--mah-border, 1px solid rgba(60, 70, 60, 0.4));
+    z-index: var(--mah-z, 200);
     box-sizing: border-box;
 }
 
@@ -31,12 +31,12 @@
 .mah-col--fill { flex: 1; min-width: 0; }
 
 .mah-logo-link {
-    font-size: .85rem;
-    font-weight: 600;
-    color: #e7eaf0;
+    font-size: var(--mah-logo-size, .85rem);
+    font-weight: var(--mah-logo-weight, 600);
+    color: var(--mah-logo-color, #e7eaf0);
     text-decoration: none;
-    letter-spacing: .04em;
-    opacity: .8;
+    letter-spacing: var(--mah-logo-spacing, .04em);
+    opacity: var(--mah-logo-opacity, .8);
     transition: opacity .15s;
 }
 .mah-logo-link:hover { opacity: 1; }
@@ -48,9 +48,9 @@
 }
 
 .mah-uc-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    width: var(--mah-avatar-size, 36px);
+    height: var(--mah-avatar-size, 36px);
+    border-radius: var(--mah-avatar-radius, 50%);
     border: none;
     cursor: pointer;
     display: flex;
@@ -58,8 +58,8 @@
     justify-content: center;
     font-weight: 600;
     font-size: .85rem;
-    color: #fff;
-    background: #e2231a;
+    color: var(--mah-avatar-color, #fff);
+    background: var(--mah-avatar-bg, #e2231a);
     line-height: 1;
     padding: 0;
 }
@@ -69,12 +69,12 @@
 .mah-uc-menu {
     display: none;
     position: absolute;
-    top: calc(36px + 8px);
+    top: calc(var(--mah-avatar-size, 36px) + 8px);
     right: 0;
     min-width: 12rem;
-    background: #14171c;
-    border: 1px solid #2a2f37;
-    border-radius: 10px;
+    background: var(--mah-menu-bg, #14171c);
+    border: 1px solid var(--mah-menu-border, #2a2f37);
+    border-radius: var(--mah-menu-radius, 10px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, .45);
     padding: .4rem;
     z-index: 1000;
@@ -86,8 +86,8 @@
 .mah-uc-email {
     padding: .4rem .6rem .35rem;
     font-size: .75rem;
-    color: #9aa3af;
-    border-bottom: 1px solid #2a2f37;
+    color: var(--mah-menu-muted, #9aa3af);
+    border-bottom: 1px solid var(--mah-menu-border, #2a2f37);
     margin-bottom: .25rem;
     white-space: nowrap;
     overflow: hidden;
@@ -107,7 +107,7 @@
     text-align: left;
     background: none;
     border: none;
-    color: #e7eaf0;
+    color: var(--mah-menu-text, #e7eaf0);
     padding: .5rem .6rem;
     border-radius: 6px;
     cursor: pointer;
@@ -116,7 +116,11 @@
     text-decoration: none;
     box-sizing: border-box;
 }
-.mah-uc-item:hover { background: #1d2128; color: #e7eaf0; }
+.mah-uc-item:hover { background: var(--mah-menu-hover, #1d2128); color: var(--mah-menu-text, #e7eaf0); }
 
 .mah-uc-signout { color: #c9d0dc; }
 .mah-uc-signout:hover { color: #e7eaf0; }
+
+/* ── Instance-setting modifiers (MAI-A45) — added to .mah-root by V1.razor when a toggle is off ── */
+.mah-root.mah-root--no-anim .mah-logo-link { transition: none; }
+.mah-root.mah-root--no-hover .mah-logo-link:hover { opacity: var(--mah-logo-opacity, .8); }

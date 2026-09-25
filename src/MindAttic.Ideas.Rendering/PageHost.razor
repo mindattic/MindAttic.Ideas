@@ -61,23 +61,35 @@ else if (_context is not null)
     <PageTitle>@(_context.Page.SeoTitle ?? _context.Page.Title)</PageTitle>
 
     <CascadingValue Value="_context" IsFixed="true">
-        @foreach (var pt in _pluginTypesBeforeBody)
-        {
-            <DynamicComponent Type="pt" />
-        }
         @if (_themeType is not null)
         {
+            @* Plugins render INSIDE the theme's Body hole (see _themeParams) so .page wraps everything. *@
             <DynamicComponent Type="_themeType" Parameters="_themeParams" />
         }
         else
         {
-            <DynamicComponent Type="_bodyType" />
-        }
-        @foreach (var pt in _pluginTypesAfterBody)
-        {
-            <DynamicComponent Type="pt" />
+            @foreach (var pt in _pluginTypesBeforeBody)
+            {
+                <DynamicComponent Type="pt" Parameters="PluginParams(pt)" />
+            }
+            <DynamicComponent Type="_bodyType" Parameters="_bodyParams" />
+            @foreach (var pt in _pluginTypesAfterBody)
+            {
+                <DynamicComponent Type="pt" Parameters="PluginParams(pt)" />
+            }
         }
     </CascadingValue>
+
+    @if (_adminPageId is int adminPageId)
+    {
+        @* Admin-only, invisible until hovered: jumps to this page's configuration in Admin. Styled inline
+           (not by any theme/plugin CSS) so no page's cascade can hide or restyle it. *@
+        <a class="ma-admin-cog" href="/admin/pages?page=@adminPageId" title="Configure this page in Admin"
+           aria-label="Configure this page in Admin" data-enhance-nav="false"
+           style="position:fixed;left:.6rem;bottom:.6rem;z-index:2147483000;width:2.25rem;height:2.25rem;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:1.35rem;line-height:1;text-decoration:none;color:#fff;background:rgba(0,0,0,.55);opacity:0;transition:opacity .15s ease;"
+           onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0'"
+           onfocus="this.style.opacity='1'" onblur="this.style.opacity='0'">⚙</a>
+    }
 }
 
 @code {
@@ -89,6 +101,9 @@ else if (_context is not null)
         t.GetCustomAttributes(typeof(IdeaAttribute), inherit: false) is [IdeaAttribute a, ..]
             ? a.Slot
             : PluginSlot.BeforeBody;
+
+    /// <summary>A page plugin's stored instance settings as render parameters (MAI-A45); empty when none.</summary>
+    private IDictionary<string, object>? PluginParams(Type t) => _pluginParams.GetValueOrDefault(t);
 
     /// <summary>The "host[:port]" of an absolute URI, or null if it cannot be parsed.</summary>
     private static string? HostOf(string? absoluteUri) =>
@@ -104,17 +119,27 @@ else if (_context is not null)
     /// </summary>
     private void ClearPageState()
     {
+        _adminPageId = null;
         _context = null;
         _themeType = null;
         _themeParams = null;
         _bodyType = typeof(FreeFormPage);
         _pluginTypesBeforeBody = [];
         _pluginTypesAfterBody = [];
+        _pluginParams = [];
+        _bodyParams = null;
         _themeGlobalCss = Array.Empty<string>();
         _themeCss = Array.Empty<string>();
         _themeScripts = Array.Empty<string>();
         _componentCss = Array.Empty<string>();
         _componentScripts = Array.Empty<string>();
+    }
+
+    /// <summary>A slot's stored JSON as parameters for <paramref name="type"/>, or null when it sets nothing.</summary>
+    private static IDictionary<string, object>? BindSlot(Type type, string? json)
+    {
+        var bound = InstanceSettingsBinder.ToParameters(type, json);
+        return bound.Count == 0 ? null : bound.ToDictionary(kv => kv.Key, kv => kv.Value!);
     }
 
     private enum Status { Pending, Ok, NotFound, Forbidden }
@@ -126,6 +151,9 @@ else if (_context is not null)
     private IDictionary<string, object>? _themeParams;
     private IReadOnlyList<Type> _pluginTypesBeforeBody = [];
     private IReadOnlyList<Type> _pluginTypesAfterBody = [];
+    private Dictionary<Type, IDictionary<string, object>> _pluginParams = [];
+    private int? _adminPageId;
+    private IDictionary<string, object>? _bodyParams;
     private string? _globalCss;
     private IReadOnlyList<string> _themeGlobalCss = Array.Empty<string>();
     private IReadOnlyList<string> _themeCss = Array.Empty<string>();
@@ -311,10 +339,15 @@ else if (_context is not null)
             DefaultThemeKey = site?.DefaultThemeKey ?? "",
             SettingReader = key => siteSettings.GetValueOrDefault(key),
         };
+        // Per-instance settings for this page's theme / plugins / code-page body (MAI-A45). A component's
+        // settings live on its own tag in BodyHtml instead, so they never appear here.
+        var slots = await db.WidgetPlacementSettings.Where(s => s.PageId == page.Id)
+            .ToDictionaryAsync(s => s.SlotName, s => s.SettingsJson, StringComparer.OrdinalIgnoreCase);
         _context = new CmsRenderContext
         {
             InstanceId = Guid.NewGuid(), Mode = ContentMode.View, RenderMode = CmsRenderMode.InteractiveServer,
             Page = pageCtx, Site = siteCtx, Services = Services, RawSettingsJson = page.SettingsJson,
+            InstanceSettings = slots,
         };
 
         // Body type: Data -> FreeFormPage; Code -> resolved type; unresolved -> placeholder.
@@ -397,9 +430,8 @@ else if (_context is not null)
         // gets its nav/footer without per-page bookkeeping. An explicit empty selection is still a choice —
         // but ActivePluginsJson serializes an empty list as null, so "none" is expressed by the fallback
         // being empty, not by an empty array.
-        var pluginRefs = PageAdminService.DeserializePlugins(page.ActivePluginsJson);
-        if (pluginRefs.Count == 0)
-            pluginRefs = PageAdminService.DeserializePlugins(siteSettings.GetValueOrDefault("plugins.default"));
+        var pluginRefs = PageAdminService.EffectivePlugins(page.ActivePluginsJson, siteSettings.GetValueOrDefault("plugins.default"));
+        _pluginParams = [];
         var pluginTypeList = new List<Type>(pluginRefs.Count);
         foreach (var pRef in pluginRefs)
         {
@@ -408,7 +440,11 @@ else if (_context is not null)
             {
                 var pRes = Catalog.ResolveTag(pk, pkey, pver);
                 if (pRes.Outcome == ContentResolution.Resolved && pRes.Type is not null)
+                {
                     pluginTypeList.Add(pRes.Type);
+                    var pParams = BindSlot(pRes.Type, slots.GetValueOrDefault(InstanceSlots.Plugin(pkey)));
+                    if (pParams is not null) _pluginParams[pRes.Type] = pParams;
+                }
                 else
                 {
                     try { Alerts.RaiseMissing(pk, pkey, pver, page.Uid, page.Slug); } catch { }
@@ -449,10 +485,40 @@ else if (_context is not null)
         _globalCss = globalSetting?.Value;
 
         var bodyType = _bodyType;
+        var bodyParams = page.Kind == PageKind.Code ? BindSlot(bodyType, slots.GetValueOrDefault(InstanceSlots.Page)) : null;
+        _bodyParams = bodyParams;
+        // The theme's single Body hole receives EVERYTHING on the page — BeforeBody plugins (header,
+        // breadcrumbs), the body, then AfterBody plugins (footer) — so the theme's .page wrapper, and its
+        // per-page padding/margin, frames the whole page rather than only the body.
+        var before = _pluginTypesBeforeBody;
+        var after = _pluginTypesAfterBody;
+        var pluginParams = _pluginParams;
+        void Plugin(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b, Type pt)
+        {
+            b.OpenComponent(0, pt);
+            if (pluginParams.GetValueOrDefault(pt) is { } pp)
+                foreach (var kv in pp) b.AddComponentParameter(1, kv.Key, kv.Value);
+            b.CloseComponent();
+        }
         _themeParams = new Dictionary<string, object>
         {
-            ["Body"] = (RenderFragment)(b => { b.OpenComponent(0, bodyType); b.CloseComponent(); }),
+            ["Body"] = (RenderFragment)(b =>
+            {
+                foreach (var pt in before) Plugin(b, pt);
+                b.OpenComponent(2, bodyType);
+                if (bodyParams is not null)
+                    foreach (var kv in bodyParams) b.AddComponentParameter(3, kv.Key, kv.Value);
+                b.CloseComponent();
+                foreach (var pt in after) Plugin(b, pt);
+            }),
         };
+        if (_themeType is not null && BindSlot(_themeType, slots.GetValueOrDefault(InstanceSlots.Theme)) is { } themeSettings)
+            foreach (var kv in themeSettings) _themeParams[kv.Key] = kv.Value;
+
+        var viewer = AuthState is not null ? (await AuthState).User : null;
+        _adminPageId = viewer?.Identity?.IsAuthenticated == true
+                       && viewer.FindAll(ClaimTypes.Role).Any(c => string.Equals(c.Value, MaRoles.Admin, StringComparison.OrdinalIgnoreCase))
+            ? page.Id : null;
 
         _status = Status.Ok;
     }

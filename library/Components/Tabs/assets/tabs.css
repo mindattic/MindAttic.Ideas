@@ -7,9 +7,10 @@
 .ma-tabs-list {
   display: flex;
   flex-wrap: wrap;
-  gap: .25rem;
+  gap: var(--ma-tabs-gap, .25rem);
+  justify-content: var(--ma-tabs-align, normal);
   border-bottom: 1px solid var(--ma-tabs-border);
-  margin-bottom: 1rem;
+  margin-bottom: var(--ma-tabs-list-spacing, 1rem);
 }
 .ma-tabs-tab {
   background: none;
@@ -17,8 +18,8 @@
   border-bottom: 2px solid transparent;
   color: inherit;
   font: inherit;
-  opacity: .7;
-  padding: .55rem .9rem;
+  opacity: var(--ma-tabs-inactive-opacity, .7);
+  padding: var(--ma-tabs-tab-padding, .55rem .9rem);
   cursor: pointer;
   margin-bottom: -1px;
 }
@@ -35,21 +36,21 @@
       grid; the open panel claims the full row below the tiles. ───────────────────────── */
 .ma-tabs-board .ma-tabs-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
-  gap: .6rem;
+  grid-template-columns: repeat(auto-fill, minmax(var(--ma-tabs-tile-min, 9.5rem), 1fr));
+  gap: var(--ma-tabs-gap, .6rem);
   border-bottom: 0;
 }
 .ma-tabs-board .ma-tabs-tab {
   border: 1px solid var(--ma-tabs-border);
-  border-radius: .5rem;
-  min-height: 4.25rem;
+  border-radius: var(--ma-tabs-radius, .5rem);
+  min-height: var(--ma-tabs-tile-height, 4.25rem);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: .5rem;
   margin-bottom: 0;
-  background: rgba(128, 128, 128, .06);
+  background: var(--ma-tabs-tile-bg, rgba(128, 128, 128, .06));
   transition: border-color .15s ease, transform .15s ease;
 }
 .ma-tabs-board .ma-tabs-tab:hover,
@@ -60,7 +61,7 @@
 }
 .ma-tabs-board .ma-tabs-panel {
   border: 1px solid var(--ma-tabs-border);
-  border-radius: .5rem;
-  padding: 1rem;
+  border-radius: var(--ma-tabs-radius, .5rem);
+  padding: var(--ma-tabs-panel-padding, 1rem);
   margin-top: .75rem;
 }

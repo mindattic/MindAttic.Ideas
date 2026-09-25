@@ -1,17 +1,19 @@
-﻿/* MindAttic.Ideas.Component.Accordion — chrome for native <details> groups. Scoped (MAIL-LAW-6). */
+﻿/* MindAttic.Ideas.Component.Accordion — chrome for native <details> groups. Scoped (MAIL-LAW-6).
+   Every value reads a custom property with the as-designed fallback, so instance settings (MAI-A45)
+   can retune it without touching the rules. */
 .ma-accordion {
   --ma-accordion-border: rgba(128, 128, 128, .35);
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--ma-accordion-border);
-  border-radius: .5rem;
+  border: var(--ma-accordion-border-width, 1px) solid var(--ma-accordion-border);
+  border-radius: var(--ma-accordion-radius, .5rem);
   overflow: hidden;
 }
-.ma-accordion details + details { border-top: 1px solid var(--ma-accordion-border); }
+.ma-accordion details + details { border-top: var(--ma-accordion-border-width, 1px) solid var(--ma-accordion-border); }
 .ma-accordion summary {
   cursor: pointer;
-  padding: .8rem 1rem;
-  font-weight: 600;
+  padding: var(--ma-accordion-header-padding, .8rem 1rem);
+  font-weight: var(--ma-accordion-header-weight, 600);
   list-style: none;
   display: flex;
   align-items: center;
@@ -32,5 +34,5 @@
   opacity: .6;
 }
 .ma-accordion details[open] > summary::after { transform: rotate(225deg); }
-.ma-accordion summary:hover { background: rgba(128, 128, 128, .08); }
-.ma-accordion details > *:not(summary) { margin: 0; padding: 0 1rem 1rem; }
+.ma-accordion summary:hover { background: var(--ma-accordion-hover, rgba(128, 128, 128, .08)); }
+.ma-accordion details > *:not(summary) { margin: 0; padding: var(--ma-accordion-content-padding, 0 1rem 1rem); }

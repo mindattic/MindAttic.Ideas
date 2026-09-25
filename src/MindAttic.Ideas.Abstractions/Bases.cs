@@ -37,6 +37,42 @@ public abstract class IdeaBase : BlazorComponentBase
             || t.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
             || t.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase);
     }
+
+    // ── Instance settings → client script (MAI-A45) ─────────────────────────────────────────────
+
+    /// <summary>
+    /// This instance's current setting values (its simple-typed [Parameter]s) as a camelCase JSON object.
+    /// </summary>
+    protected string CurrentSettingsJson()
+    {
+        var values = new Dictionary<string, object?>();
+        foreach (var p in GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+        {
+            if (!p.CanRead || !p.CanWrite) continue;
+            if (System.Reflection.CustomAttributeExtensions.GetCustomAttribute<ParameterAttribute>(p) is not { CaptureUnmatchedValues: false }) continue;
+            if (System.Reflection.CustomAttributeExtensions.GetCustomAttribute<SettingAttribute>(p) is { Hidden: true }) continue;
+            var t = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+            if (!(t.IsPrimitive || t.IsEnum || t == typeof(string) || t == typeof(decimal))) continue;
+            var v = p.GetValue(this);
+            values[char.ToLowerInvariant(p.Name[0]) + p.Name[1..]] = t.IsEnum && v is not null ? v.ToString() : v;
+        }
+        return System.Text.Json.JsonSerializer.Serialize(values);
+    }
+
+    /// <summary>
+    /// Emits <c>&lt;data hidden data-ma-settings="{name}" value="{json}"&gt;</c> so this citizen's client
+    /// script can read its instance settings live (<c>document.querySelector('[data-ma-settings="…"]')</c>).
+    /// An attribute rather than a &lt;script&gt; on purpose: Blazor re-renders it on in-circuit navigation,
+    /// whereas an inserted script never re-runs.
+    /// </summary>
+    protected void AddSettingsData(RenderTreeBuilder builder, int sequence, string name)
+    {
+        builder.OpenElement(sequence, "data");
+        builder.AddAttribute(sequence + 1, "hidden", true);
+        builder.AddAttribute(sequence + 2, "data-ma-settings", name);
+        builder.AddAttribute(sequence + 3, "value", CurrentSettingsJson());
+        builder.CloseElement();
+    }
 }
 
 // ---- Page ----
@@ -73,6 +109,26 @@ public abstract class ThemeBase : IdeaBase
 
     /// <summary>Optional raw HTML injected at the top of the theme body (e.g. effect layers).</summary>
     public virtual string? BodyPreludeHtml => null;
+
+    /// <summary>Padding of the theme's <c>.page</c> wrapper for this page (instance setting, MAI-A45).</summary>
+    [Parameter, Setting("Page padding", Group = "Layout", Order = 1, Description = "CSS padding shorthand of .page")]
+    public string? PagePadding { get; set; } = ".75rem 1rem";
+
+    /// <summary>Margin of the theme's <c>.page</c> wrapper for this page (instance setting, MAI-A45).</summary>
+    [Parameter, Setting("Page margin", Group = "Layout", Order = 2, Description = "CSS margin shorthand of .page")]
+    public string? PageMargin { get; set; }
+
+    /// <summary>The inline style a theme puts on its <c>.page</c> wrapper: <c>&lt;div class="page" style="@PageStyle"&gt;</c>.</summary>
+    protected string? PageStyle
+    {
+        get
+        {
+            var parts = new List<string>(2);
+            if (!string.IsNullOrWhiteSpace(PagePadding)) parts.Add("padding:" + PagePadding);
+            if (!string.IsNullOrWhiteSpace(PageMargin)) parts.Add("margin:" + PageMargin);
+            return parts.Count == 0 ? null : string.Join(";", parts);
+        }
+    }
 }
 
 // ---- Plugin (site-wide .idea: activates a behavior/capability across the whole page) ----

@@ -5,5 +5,86 @@
    that ships all .hw-* structural layout classes (.hw-hero, .hw-title, .hw-tagline, .hw-badge-row,
    .hw-section, .hw-stack-table, .hw-warn, .hw-btn, etc.). Has no visible output of its own; the
    shared classes are available the moment any page composes this widget. The Claudia and ChiMesh
-   widgets both declare [Uses("hardwarehero")] and then render HTML using these classes. *@
+   widgets both declare [Uses("hardwarehero")] and then render HTML using these classes.
+   Instance settings (MAI-A45) apply page-wide (there is no element of its own): each value that is
+   set becomes a --hw-* custom property in a small <style>; unset values leave the CSS defaults. *@
 <link rel="stylesheet" href="/_ideas/Component/hardwarehero/1/hardware-hero.css" />
+@if (_css.Length > 0)
+{
+    <style>@_css</style>
+}
+
+@code {
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Max width", Group = "Layout", Order = 1, Description = "Hero + content column, default 920px")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Hero padding", Group = "Layout", Order = 2, Description = "Default 80px 24px 36px")] public string? HeroPadding { get; set; }
+    [Parameter, Setting("Hero alignment", Group = "Layout", Order = 3, Description = "center, left or right")] public string? Align { get; set; }
+    [Parameter, Setting("Tagline max width", Group = "Layout", Order = 4, Description = "Default 680px")] public string? TaglineMaxWidth { get; set; }
+    [Parameter, Setting("Section padding", Group = "Layout", Order = 5, Description = "Default 26px 30px 28px")] public string? SectionPadding { get; set; }
+    [Parameter, Setting("Section margin", Group = "Layout", Order = 6, Description = "Default 28px 0")] public string? SectionMargin { get; set; }
+
+    // ── Colors ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 1, Description = "Default: the theme's --hw-accent")] public string? Accent { get; set; }
+    [Parameter, Setting("Accent text color", Group = "Colors", Order = 2, Description = "Text on primary buttons")] public string? AccentForeground { get; set; }
+    [Parameter, Setting("Muted text color", Group = "Colors", Order = 3)] public string? Muted { get; set; }
+    [Parameter, Setting("Line color", Group = "Colors", Order = 4, Description = "Section and table borders")] public string? LineColor { get; set; }
+    [Parameter, Setting("Section background", Group = "Colors", Order = 5, Description = "Default rgba(15,24,18,.7)")] public string? SectionBackground { get; set; }
+
+    // ── Appearance ──────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Title size", Group = "Appearance", Order = 1, Description = "Default clamp(2.6rem, 7vw, 4.2rem)")] public string? TitleSize { get; set; }
+    [Parameter, Setting("Tagline size", Group = "Appearance", Order = 2)] public string? TaglineSize { get; set; }
+    [Parameter, Setting("Title glow", Group = "Appearance", Order = 3)] public bool TitleGlow { get; set; } = true;
+    [Parameter, Setting("Section corner radius", Group = "Appearance", Order = 4, Description = "Default 8px")] public string? SectionRadius { get; set; }
+    [Parameter, Setting("Button corner radius", Group = "Appearance", Order = 5, Description = "Default 4px")] public string? ButtonRadius { get; set; }
+    [Parameter, Setting("Button padding", Group = "Appearance", Order = 6, Description = "Default 11px 22px")] public string? ButtonPadding { get; set; }
+    [Parameter, Setting("Uppercase buttons", Group = "Appearance", Order = 7)] public bool ButtonUppercase { get; set; } = true;
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Button hover effects", Group = "Behavior", Order = 1, Description = "Transitions and glow on hover")] public bool HoverEffects { get; set; } = true;
+
+    // Strip characters that could break out of a declaration/rule; values are admin-authored CSS.
+    private static string? Clean(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return null;
+        var s = new string(v.Where(c => c is not ('{' or '}' or ';' or '<' or '>')).ToArray()).Trim();
+        return s.Length == 0 ? null : s;
+    }
+
+    private string _css = "";
+
+    protected override void OnParametersSet()
+    {
+        var vars = new List<string>();
+        void Var(string name, string? v) { if (Clean(v) is { } c) vars.Add($"{name}:{c}"); }
+        Var("--hw-max-width", MaxWidth);
+        Var("--hw-hero-padding", HeroPadding);
+        Var("--hw-hero-align", Align);
+        Var("--hw-hero-justify", Align?.Trim().ToLowerInvariant() switch
+        {
+            "left" => "flex-start",
+            "right" => "flex-end",
+            "center" => "center",
+            _ => null,
+        });
+        Var("--hw-tagline-max-width", TaglineMaxWidth);
+        Var("--hw-section-padding", SectionPadding);
+        Var("--hw-section-margin", SectionMargin);
+        Var("--hw-accent", Accent);
+        Var("--hw-accent-fg", AccentForeground);
+        Var("--hw-muted", Muted);
+        Var("--hw-line", LineColor);
+        Var("--hw-section-bg", SectionBackground);
+        Var("--hw-title-size", TitleSize);
+        Var("--hw-tagline-size", TaglineSize);
+        if (!TitleGlow) vars.Add("--hw-title-glow:none");
+        Var("--hw-section-radius", SectionRadius);
+        Var("--hw-btn-radius", ButtonRadius);
+        Var("--hw-btn-padding", ButtonPadding);
+        if (!ButtonUppercase) vars.Add("--hw-btn-transform:none");
+
+        var sb = new System.Text.StringBuilder();
+        if (vars.Count > 0) sb.Append(".hw-hero,.hw-content{").Append(string.Join(";", vars)).Append('}');
+        if (!HoverEffects) sb.Append(".hw-btn{transition:none}.hw-btn-primary:hover{box-shadow:none}");
+        _css = sb.ToString();
+    }
+}

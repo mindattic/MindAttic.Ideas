@@ -12,14 +12,21 @@
 <CmsInclude Ref="MindAttic.Ideas.Plugin.Footer.V1" />
 
 <link rel="stylesheet" href="/_ideas/Component/mindatticfrontpage/1/maf.css" />
+@if (ConstrainPage)
+{
+    <style>.page { position: relative; z-index: 1; width: @(Clean(PageWidth) ?? "50%") !important; margin: auto !important; }</style>
+}
 
-<div class="maf">
-    <header class="maf-header">
-        <h1 class="maf-wordmark">@settings.Wordmark</h1>
-    </header>
+<div class="@_rootClass" style="@_rootStyle">
+    @if (ShowWordmark)
+    {
+        <header class="maf-header">
+            <h1 class="maf-wordmark">@(string.IsNullOrWhiteSpace(Wordmark) ? settings.Wordmark : Wordmark)</h1>
+        </header>
+    }
 
     <main class="maf-sections">
-        @foreach (var section in settings.Sections)
+        @foreach (var section in VisibleSections)
         {
             <section class="maf-section">
                 <h2>@section.Title</h2>
@@ -29,13 +36,13 @@
                     <nav class="maf-links" aria-label="@section.Title">
                         @foreach (var item in section.Items)
                         {
-                            <a href="@item.Url" target="_blank" rel="noopener noreferrer">@item.Title</a>
+                            <a href="@item.Url" target="@_target" rel="@_rel">@item.Title</a>
                         }
                     </nav>
                 }
                 else if (section.Type == "tabs")
                 {
-                    <div class="ma-tabs ma-tabs-board" data-closed>
+                    <div class="ma-tabs ma-tabs-board" data-closed="@TabsStartClosed">
                         @foreach (var item in section.Items)
                         {
                             <section data-title="@item.Title">
@@ -46,7 +53,7 @@
                                 <p>
                                     @if (!string.IsNullOrEmpty(item.IdeaSlug))
                                     {
-                                        <a href="/projects/@item.IdeaSlug">Details</a>
+                                        <a href="/projects/@item.IdeaSlug">@(DetailsLabel ?? "Details")</a>
                                         @if (!string.IsNullOrEmpty(item.Url))
                                         {
                                             <text> · </text>
@@ -54,7 +61,7 @@
                                     }
                                     @if (!string.IsNullOrEmpty(item.Url))
                                     {
-                                        <a href="@item.Url" target="_blank" rel="noopener noreferrer">Open</a>
+                                        <a href="@item.Url" target="@_target" rel="@_rel">@(OpenLabel ?? "Open")</a>
                                     }
                                 </p>
                             </section>
@@ -66,8 +73,11 @@
                     <div class="ma-gallery maf-books">
                         @foreach (var item in section.Items)
                         {
-                            <a class="ma-gallery-tile @item.CssClass" href="@item.Url" target="_blank" rel="noopener noreferrer">
-                                <span>@item.Title</span>
+                            <a class="ma-gallery-tile @item.CssClass" href="@item.Url" target="@_target" rel="@_rel">
+                                @if (ShowBookTitles)
+                                {
+                                    <span>@item.Title</span>
+                                }
                             </a>
                         }
                     </div>
@@ -76,7 +86,10 @@
         }
     </main>
 
-    <footer class="ma-footer">© <span class="maf-year">@DateTime.UtcNow.Year</span> @settings.CopyrightName</footer>
+    @if (ShowFooter)
+    {
+        <footer class="ma-footer">© <span class="maf-year">@DateTime.UtcNow.Year</span> @(string.IsNullOrWhiteSpace(CopyrightName) ? settings.CopyrightName : CopyrightName)</footer>
+    }
 </div>
 
 @if (EditMode)
@@ -105,7 +118,91 @@
 }
 
 @code {
-    [Parameter] public string Slot { get; set; } = "main";
+    /// <summary>Metadata-store slot this instance's content JSON lives under.</summary>
+    [Parameter, Setting("Content slot", Group = "Advanced", Order = 1, Copyable = false, Description = "Key of this instance's content JSON in the metadata store")]
+    public string Slot { get; set; } = "main";
+
+    // ── Content (overrides of the content JSON) ─────────────────────────────────────────────────
+    [Parameter, Setting("Wordmark", Group = "Content", Order = 1, Copyable = false, Description = "Overrides the content JSON's wordmark")] public string? Wordmark { get; set; }
+    [Parameter, Setting("Copyright name", Group = "Content", Order = 2, Copyable = false, Description = "Overrides the content JSON's copyright name")] public string? CopyrightName { get; set; }
+    [Parameter, Setting("Details link label", Group = "Content", Order = 3, Copyable = false)] public string? DetailsLabel { get; set; } = "Details";
+    [Parameter, Setting("Open link label", Group = "Content", Order = 4, Copyable = false)] public string? OpenLabel { get; set; } = "Open";
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Show wordmark", Group = "Behavior", Order = 1)] public bool ShowWordmark { get; set; } = true;
+    [Parameter, Setting("Show footer", Group = "Behavior", Order = 2)] public bool ShowFooter { get; set; } = true;
+    [Parameter, Setting("Show book titles", Group = "Behavior", Order = 3, Description = "Caption on gallery tiles")] public bool ShowBookTitles { get; set; } = true;
+    [Parameter, Setting("Tabs start closed", Group = "Behavior", Order = 4)] public bool TabsStartClosed { get; set; } = true;
+    [Parameter, Setting("External links open new tab", Group = "Behavior", Order = 5)] public bool NewTab { get; set; } = true;
+    [Parameter, Setting("Hidden sections", Group = "Behavior", Order = 6, Description = "Comma-separated section titles to hide")] public string? HideSections { get; set; }
+    [Parameter, Setting("Constrain host page width", Group = "Behavior", Order = 7, Description = "Narrow the theme's .page wrapper (as designed: on)")] public bool ConstrainPage { get; set; } = true;
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Host page width", Group = "Layout", Order = 1, Description = "Used when constraining, default 50%")] public string? PageWidth { get; set; }
+    [Parameter, Setting("Max width", Group = "Layout", Order = 2, Description = "Default 64rem")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 3, Description = "Default 1.5rem")] public string? Padding { get; set; }
+    [Parameter, Setting("Gap", Group = "Layout", Order = 4, Description = "Default 1.5rem")] public string? Gap { get; set; }
+    [Parameter, Setting("Section gap", Group = "Layout", Order = 5, Description = "Default 2.25rem")] public string? SectionGap { get; set; }
+    [Parameter, Setting("Links gap", Group = "Layout", Order = 6, Description = "Default 1.25rem")] public string? LinksGap { get; set; }
+    [Parameter, Setting("Book tile min width", Group = "Layout", Order = 7, Description = "Default 8.5rem")] public string? BookMinWidth { get; set; }
+    [Parameter, Setting("Minimum height", Group = "Layout", Order = 8, Description = "Default 100vh")] public string? MinHeight { get; set; }
+    [Parameter, Setting("Text alignment", Group = "Layout", Order = 9)] public string? Align { get; set; }
+
+    // ── Appearance ──────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Wordmark size", Group = "Appearance", Order = 1)] public string? WordmarkSize { get; set; }
+    [Parameter, Setting("Heading size", Group = "Appearance", Order = 2, Description = "Default 1.3rem")] public string? HeadingSize { get; set; }
+    [Parameter, Setting("Wordmark color", Group = "Colors", Order = 1)] public string? WordmarkColor { get; set; }
+    [Parameter, Setting("Heading color", Group = "Colors", Order = 2)] public string? HeadingColor { get; set; }
+    [Parameter, Setting("Heading rule color", Group = "Colors", Order = 3, Description = "Default rgba(128,128,128,.3)")] public string? RuleColor { get; set; }
+    [Parameter, Setting("Link color", Group = "Colors", Order = 4, Description = "Portfolio links, default inherit")] public string? LinkColor { get; set; }
+    [Parameter, Setting("Background", Group = "Colors", Order = 5)] public string? Background { get; set; }
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 2)] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 3)] public string? CssStyle { get; set; }
+
+    string? _target => NewTab ? "_blank" : null;
+    string? _rel => NewTab ? "noopener noreferrer" : null;
+
+    string _rootClass => string.IsNullOrWhiteSpace(CssClass) ? "maf" : "maf " + CssClass;
+
+    IEnumerable<MafSection> VisibleSections
+    {
+        get
+        {
+            var hide = (HideSections ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return hide.Length == 0 ? settings.Sections
+                : settings.Sections.Where(s => !hide.Contains(s.Title, StringComparer.OrdinalIgnoreCase));
+        }
+    }
+
+    static string? Decl(string name, string? value) => string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
+    // Strip characters that could break out of the inline <style> rule; values are admin-authored CSS.
+    static string? Clean(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return null;
+        var c = new string(v.Where(ch => ch is not ('{' or '}' or ';' or '<' or '>' or '!')).ToArray()).Trim();
+        return c.Length == 0 ? null : c;
+    }
+
+    string? _rootStyle
+    {
+        get
+        {
+            var s = string.Join(";", new[]
+            {
+                Decl("--maf-max-width", MaxWidth), Decl("--maf-padding", Padding), Decl("--maf-gap", Gap),
+                Decl("--maf-section-gap", SectionGap), Decl("--maf-links-gap", LinksGap), Decl("--maf-book-min", BookMinWidth),
+                Decl("--maf-min-height", MinHeight), Decl("text-align", Align), Decl("--maf-wordmark-size", WordmarkSize),
+                Decl("--maf-wordmark-color", WordmarkColor), Decl("--maf-heading-size", HeadingSize),
+                Decl("--maf-heading-color", HeadingColor), Decl("--maf-rule", RuleColor), Decl("--maf-link-color", LinkColor),
+                Decl("background", Background),
+                string.IsNullOrWhiteSpace(CssStyle) ? null : CssStyle,
+            }.Where(p => p is not null));
+            return s.Length > 0 ? s : null;
+        }
+    }
 
     MafSettings settings = new();
     IComponentMetadataStore? store;

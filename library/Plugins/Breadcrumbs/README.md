@@ -61,5 +61,17 @@ Renders: Knowledge Base / ... with a bottom margin separating it from page conte
 - Intermediate crumb labels are prettified from slug segments (`my-page` becomes `My Page`); the final crumb always uses the page's real `Title` when one is set.
 - Intermediate crumbs link to the cumulative slug prefix (e.g. the "Docs" crumb links to `/docs`). Those intermediate pages may or may not exist in the CMS.
 - The component self-loads its stylesheet (`breadcrumbs.css`) via a scoped `<link>` tag; no manual stylesheet import is needed.
-- CSS classes follow the `ma-crumbs-*` prefix convention (`ma-crumbs`, `ma-crumbs-list`, `ma-crumbs-item`, `ma-crumbs-link`, `ma-crumbs-current`) and can be targeted by theme overrides.
+- CSS classes follow the `ma-breadcrumbs-*` prefix convention (`ma-breadcrumbs`, `ma-breadcrumbs-list`, `ma-breadcrumbs-list-item`, `ma-breadcrumbs-link`, `ma-breadcrumbs-current`) and can be targeted by theme overrides.
 - The current (last) crumb is rendered as a `<span>` with `aria-current="page"` rather than a link.
+
+## Settings
+
+Per-instance settings (MAI-A45), edited in Admin; empty = as designed.
+
+- **Content:** Home text, Home link (not copied by Copy Configuration)
+- **Layout:** Padding, Margin, Alignment (also justifies the row), Gap, List padding
+- **Appearance:** Font size, Link color, Link opacity, Current crumb color, Current crumb weight, Separator, Separator opacity
+- **Behavior:** Show home crumb, Show current page, Prettify segment names, Underline on hover
+- **Advanced:** Extra CSS classes, Extra inline style
+
+Values are emitted as `--ma-breadcrumbs-*` custom properties on the `<nav>`; `breadcrumbs.css` reads them with the designed values as fallbacks.

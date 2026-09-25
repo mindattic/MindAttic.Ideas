@@ -10,6 +10,8 @@
    database, no API. Identity by convention: namespace tail "Frontpage" => key "frontpage", class
    "V1" => version 1. Its stylesheet is emitted inline so the widget renders correctly under any host
    theme; project taglines surface through the Tooltip widget (composed BY STRING ID via uses[]).
+   Instance settings (MAI-A45): visual values become --fp-* custom properties on the .siteNav root
+   (frontpage.css falls back to the as-designed values); behavior values flow to SiteNav as options.
    ============================================================================================ *@
 
 @* Styles are emitted inline (not via <HeadContent>) so this widget needs no AspNetCore.Components.Web
@@ -19,10 +21,102 @@
 @* Switch ON the Tooltip capability so NavTabItem's data-tooltip taglines render on hover. *@
 <CmsInclude Ref="MindAttic.Ideas.Plugin.Tooltip.V1" />
 
-<SiteNav Sections="HubContent.Sections" AssetBase="@AssetBase" />
+<SiteNav Sections="_sections" AssetBase="@AssetBase" Options="_options" />
 
 @code {
     // Cover images ship in this package's assets/ folder, served by the host at the package asset
     // mount /_ideas/{kind}/{key}/{version}. For this Widget that resolves to the path below.
     private const string AssetBase = "/_ideas/Component/frontpage/1";
+
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Sections shown", Group = "Content", Order = 1, Description = "Comma-separated section keys (portfolio, software, ecosystem, hardware, writing, visual-arts); empty = all")]
+    public string? ShowSections { get; set; }
+
+    [Parameter, Setting("Open button label", Group = "Content", Order = 2, Copyable = false)] public string? OpenLabel { get; set; } = "Open";
+    [Parameter, Setting("GitHub button label", Group = "Content", Order = 3, Copyable = false)] public string? GitHubLabel { get; set; } = "GitHub";
+    [Parameter, Setting("Empty section text", Group = "Content", Order = 4, Copyable = false)] public string? EmptyText { get; set; } = "Nothing here yet.";
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Section open on load", Group = "Behavior", Order = 1, Description = "Section key; empty = the first section")]
+    public string? DefaultSection { get; set; }
+
+    [Parameter, Setting("Start collapsed", Group = "Behavior", Order = 2, Description = "No section open on load")] public bool StartCollapsed { get; set; }
+    [Parameter, Setting("Allow collapsing open section", Group = "Behavior", Order = 3)] public bool AllowCollapse { get; set; } = true;
+    [Parameter, Setting("Show item counts", Group = "Behavior", Order = 4)] public bool ShowCounts { get; set; } = true;
+    [Parameter, Setting("Show cover previews", Group = "Behavior", Order = 5)] public bool ShowCovers { get; set; } = true;
+    [Parameter, Setting("Show taglines", Group = "Behavior", Order = 6)] public bool ShowTaglines { get; set; } = true;
+    [Parameter, Setting("Show tagline tooltips", Group = "Behavior", Order = 7)] public bool ShowTooltips { get; set; } = true;
+    [Parameter, Setting("Show Open button", Group = "Behavior", Order = 8)] public bool ShowOpenLink { get; set; } = true;
+    [Parameter, Setting("Show GitHub button", Group = "Behavior", Order = 9)] public bool ShowGitHubLink { get; set; } = true;
+    [Parameter, Setting("Animations", Group = "Behavior", Order = 10, Description = "Hover/chevron transitions")] public bool Animations { get; set; } = true;
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Max width", Group = "Layout", Order = 1, Description = "Default 960px")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2, Description = "Default 2rem auto")] public string? Margin { get; set; }
+    [Parameter, Setting("Tab rail width", Group = "Layout", Order = 3, Description = "Default 220px")] public string? RailWidth { get; set; }
+    [Parameter, Setting("Preview width", Group = "Layout", Order = 4, Description = "Default 150px")] public string? PreviewWidth { get; set; }
+    [Parameter, Setting("Preview aspect ratio", Group = "Layout", Order = 5, Description = "Default 1 / 1.41")] public string? PreviewRatio { get; set; }
+    [Parameter, Setting("Gap", Group = "Layout", Order = 6, Description = "Default 18px")] public string? Gap { get; set; }
+    [Parameter, Setting("Header padding", Group = "Layout", Order = 7, Description = "Default 14px 18px")] public string? HeadPadding { get; set; }
+
+    // ── Colors / appearance ─────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 1, Description = "Default #dc3545")] public string? Accent { get; set; }
+    [Parameter, Setting("Background", Group = "Colors", Order = 2, Description = "Default rgba(22,27,34,.72)")] public string? Background { get; set; }
+    [Parameter, Setting("Open section background", Group = "Colors", Order = 3)] public string? OpenBackground { get; set; }
+    [Parameter, Setting("Border color", Group = "Colors", Order = 4, Description = "Default #30363d")] public string? BorderColor { get; set; }
+    [Parameter, Setting("Button background", Group = "Colors", Order = 5, Description = "Default #2d333b")] public string? ButtonBackground { get; set; }
+    [Parameter, Setting("Button hover border", Group = "Colors", Order = 6, Description = "Default #58a6ff")] public string? ButtonHover { get; set; }
+    [Parameter, Setting("Corner radius", Group = "Appearance", Order = 1, Description = "Default 10px")] public string? Radius { get; set; }
+    [Parameter, Setting("Button corner radius", Group = "Appearance", Order = 2, Description = "Default 6px")] public string? ButtonRadius { get; set; }
+    [Parameter, Setting("Header font size", Group = "Appearance", Order = 3, Description = "Default 1.15rem")] public string? HeadSize { get; set; }
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
+
+    private IReadOnlyList<HubSection> _sections = [];
+    private SiteNavOptions _options = new();
+
+    private static string? Decl(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
+    protected override void OnParametersSet()
+    {
+        var keys = (ShowSections ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        _sections = keys.Length == 0
+            ? HubContent.Sections
+            : HubContent.Sections.Where(s => keys.Contains(s.Key, StringComparer.OrdinalIgnoreCase)).ToList();
+
+        var style = string.Join(";", new[]
+        {
+            Decl("--fp-max-width", MaxWidth), Decl("--fp-margin", Margin), Decl("--fp-rail-width", RailWidth),
+            Decl("--fp-preview-width", PreviewWidth), Decl("--fp-preview-ratio", PreviewRatio), Decl("--fp-gap", Gap),
+            Decl("--fp-head-padding", HeadPadding), Decl("--fp-accent", Accent), Decl("--fp-bg", Background),
+            Decl("--fp-open-bg", OpenBackground), Decl("--fp-border", BorderColor), Decl("--fp-button-bg", ButtonBackground),
+            Decl("--fp-button-hover", ButtonHover), Decl("--fp-radius", Radius), Decl("--fp-button-radius", ButtonRadius),
+            Decl("--fp-head-size", HeadSize),
+            string.IsNullOrWhiteSpace(CssStyle) ? null : CssStyle,
+        }.Where(p => p is not null));
+
+        var cls = string.Join(" ", new[] { Animations ? null : "siteNav--no-anim", CssClass }
+            .Where(c => !string.IsNullOrWhiteSpace(c)));
+
+        _options = new SiteNavOptions
+        {
+            RootClass = cls.Length > 0 ? cls : null,
+            RootStyle = style.Length > 0 ? style : null,
+            DefaultSection = DefaultSection,
+            StartCollapsed = StartCollapsed,
+            AllowCollapse = AllowCollapse,
+            ShowCounts = ShowCounts,
+            ShowCovers = ShowCovers,
+            ShowTaglines = ShowTaglines,
+            ShowTooltips = ShowTooltips,
+            ShowOpenLink = ShowOpenLink,
+            ShowGitHubLink = ShowGitHubLink,
+            OpenLabel = string.IsNullOrWhiteSpace(OpenLabel) ? "Open" : OpenLabel,
+            GitHubLabel = string.IsNullOrWhiteSpace(GitHubLabel) ? "GitHub" : GitHubLabel,
+            EmptyText = string.IsNullOrWhiteSpace(EmptyText) ? "Nothing here yet." : EmptyText,
+        };
+    }
 }

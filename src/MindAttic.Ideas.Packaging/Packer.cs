@@ -75,6 +75,7 @@ public static partial class Packer
             RenderMode = identity.RenderMode,
             Scope = identity.Scope,
             Uses = identity.Uses,
+            Settings = asm.GetType(identity.EntryType) is { } entryType ? ResolveSettings(entryType) : [],
             Assets = assets,
             Css = assets.Where(a => a.EndsWith(".css", StringComparison.OrdinalIgnoreCase)).ToList(),
             Scripts = assets.Where(a => a.EndsWith(".js", StringComparison.OrdinalIgnoreCase)).ToList(),
@@ -84,6 +85,17 @@ public static partial class Packer
                 .OrderBy(n => n, StringComparer.Ordinal)
                 .ToList(),
         };
+
+        // MAI-A46: refuse to pack an unsafe or malformed citizen — nothing it produces could ship anyway.
+        var problems = CitizenValidator.ValidateSettings(manifest.Settings).ToList();
+        if (req.WwwrootDir is not null)
+            problems.AddRange(CitizenValidator.ValidateAssets(
+                assets.Where(a => a.EndsWith(".js", StringComparison.OrdinalIgnoreCase)
+                               || a.EndsWith(".mjs", StringComparison.OrdinalIgnoreCase)
+                               || a.EndsWith(".css", StringComparison.OrdinalIgnoreCase))
+                      .Select(a => (a, File.ReadAllText(Path.Combine(req.WwwrootDir, a))))));
+        if (problems.Count > 0)
+            throw new PackException($"{identity.EntryType} failed validation:\n  " + string.Join("\n  ", problems));
 
         Directory.CreateDirectory(req.OutputDir);
         var outPath = Path.Combine(req.OutputDir, $"{identity.EntryType}.idea");
@@ -209,6 +221,61 @@ public static partial class Packer
         }
         return uses;
     }
+
+    /// <summary>
+    /// The entry type's instance settings (MAI-A45), reflection-only: every public writable property with a
+    /// non-capturing [Parameter] of a simple type, minus Body/ChildContent and [Setting(Hidden = true)].
+    /// </summary>
+    private static IReadOnlyList<IdeaManifestSetting> ResolveSettings(Type type)
+    {
+        var list = new List<IdeaManifestSetting>();
+        try
+        {
+            foreach (var p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (!p.CanWrite || p.Name is "Body" or "ChildContent") continue;
+                IList<CustomAttributeData> attrs;
+                try { attrs = p.GetCustomAttributesData(); } catch { continue; }
+                var param = attrs.FirstOrDefault(a => SafeAttrName(a) == "ParameterAttribute");
+                if (param is null || NamedBool(param, "CaptureUnmatchedValues") == true) continue;
+                var setting = attrs.FirstOrDefault(a => SafeAttrName(a) == "SettingAttribute");
+                if (setting is not null && NamedBool(setting, "Hidden") == true) continue;
+                var kind = SettingTypeName(p.PropertyType);
+                if (kind is null) continue;
+                list.Add(new IdeaManifestSetting
+                {
+                    Name = p.Name,
+                    Type = kind,
+                    DisplayName = NamedOrCtorString(setting, "DisplayName")
+                                  ?? (setting?.ConstructorArguments is [{ Value: string ctorName }, ..] ? ctorName : null),
+                    Group = setting is null ? null : NamedString(setting, "Group"),
+                    Copyable = setting is null || NamedBool(setting, "Copyable") != false,
+                });
+            }
+        }
+        catch { /* an unresolvable base type: the manifest simply lists no settings */ }
+        return list.OrderBy(s => s.Name, StringComparer.Ordinal).ToList();
+    }
+
+    private static string? SettingTypeName(Type t)
+    {
+        if (t.IsGenericType && t.GetGenericTypeDefinition().FullName == "System.Nullable`1") t = t.GetGenericArguments()[0];
+        if (t.IsEnum) return "enum";
+        return t.FullName switch
+        {
+            "System.Boolean" => "bool",
+            "System.String" => "string",
+            "System.Int32" or "System.Int64" or "System.Int16" or "System.Byte" => "integer",
+            "System.Double" or "System.Single" or "System.Decimal" => "number",
+            _ => null,
+        };
+    }
+
+    private static bool? NamedBool(CustomAttributeData a, string name) =>
+        a.NamedArguments.FirstOrDefault(n => n.MemberName == name) is { MemberName: not null } na && na.TypedValue.Value is bool b ? b : null;
+
+    private static string? NamedString(CustomAttributeData a, string name) =>
+        a.NamedArguments.FirstOrDefault(n => n.MemberName == name) is { MemberName: not null } na ? na.TypedValue.Value as string : null;
 
     private static string? SafeAttrName(CustomAttributeData a)
     {

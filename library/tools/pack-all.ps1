@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
   Build every library citizen and pack each one to dist/*.idea.
@@ -13,6 +13,12 @@
 
 .PARAMETER Force
   Repack every citizen, even when its .idea is already newer than its assembly.
+
+.PARAMETER Sign
+  After packing, content-sign every dist/*.idea (MAI-A42) with the signing pfx + password from the
+  MindAttic.Vault PackageSigning bucket (%APPDATA%\MindAttic\PackageSigning\providers.json). The host
+  rejects an unsigned package on EVERY install path, so -Install without -Sign only helps a host whose
+  trust cert is absent from the Vault as well.
 
 .PARAMETER Install
   After packing, copy the packed .idea files into the CMS host's library/ folder, so a FRESH database
@@ -32,6 +38,7 @@
 [CmdletBinding()]
 param(
     [switch] $Force,
+    [switch] $Sign,
     [switch] $Install
 )
 
@@ -99,6 +106,26 @@ foreach ($kindDir in @('Themes', 'Plugins', 'Components')) {
 Write-Host ''
 Write-Host "packed=$packed skipped=$skipped failed=$($failed.Count)" -ForegroundColor Cyan
 foreach ($f in $failed) { Write-Host "  FAILED $f" -ForegroundColor Red }
+
+if ($Sign -and $failed.Count -eq 0) {
+    $signingProviders = Join-Path $env:APPDATA 'MindAttic\PackageSigning\providers.json'
+    if (-not (Test-Path $signingProviders)) { throw "No PackageSigning Vault bucket at '$signingProviders'." }
+    $signing = Get-Content $signingProviders -Raw | ConvertFrom-Json
+    if (-not $signing.'signing-cert-pfx') { throw "PackageSigning bucket has no 'signing-cert-pfx' entry." }
+    $tmpPfx = Join-Path ([System.IO.Path]::GetTempPath()) "ma-idea-signing-$([Guid]::NewGuid()).pfx"
+    [System.IO.File]::WriteAllBytes($tmpPfx, [Convert]::FromBase64String($signing.'signing-cert-pfx'))
+    try {
+        & dotnet build $sdkProject -c Debug -v q --nologo | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "ma-idea build failed (exit $LASTEXITCODE)." }
+        $signed = 0
+        foreach ($idea in Get-ChildItem -Path $distDir -Filter '*.idea' -File) {
+            & dotnet run --no-build --project $sdkProject -- sign $idea.FullName --pfx $tmpPfx --password $signing.'signing-cert-password' | Out-Null
+            if ($LASTEXITCODE -ne 0) { $failed += "$($idea.Name): ma-idea sign exited $LASTEXITCODE" } else { $signed++ }
+        }
+        Write-Host "signed=$signed" -ForegroundColor Cyan
+    }
+    finally { Remove-Item $tmpPfx -Force -ErrorAction SilentlyContinue }
+}
 
 if ($Install) {
     if (-not (Test-Path $hostLibrary)) { New-Item -ItemType Directory -Path $hostLibrary | Out-Null }

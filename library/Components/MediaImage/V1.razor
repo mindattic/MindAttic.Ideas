@@ -5,41 +5,106 @@
 @* MindAttic.Ideas.Component.MediaImage.V1 — renders a managed media asset as an <img>.
    The Uid is the stable asset identifier shown in Admin → Media for each uploaded file.
    Width/Height accept any CSS length ("300px", "50%", "auto"). Renders nothing when Uid is empty or invalid.
+   Every visual setting defaults to null ("as designed") and only adds inline style when set, so an
+   unconfigured instance renders exactly <img class="ma-media-img" src alt>.
    <Component.MediaImage uid="550e8400-e29b-41d4-a716-446655440000" alt="Hero banner" width="100%" /> *@
 
 @if (_uid.HasValue)
 {
     <link rel="stylesheet" href="/_ideas/Component/mediaimage/1/mediaimage.css" />
     <img class="ma-media-img @CssClass" src="/_media/@_uid.Value" alt="@(Alt ?? "")"
+         title="@(string.IsNullOrEmpty(Tooltip) ? null : Tooltip)"
+         loading="@(LazyLoad ? "lazy" : null)"
+         decoding="@(LazyLoad ? "async" : null)"
          style="@_outerStyle" />
 }
 
 @code {
     /// <summary>Stable asset UID from Admin → Media (the Uid column).</summary>
-    [Parameter] public string? Uid { get; set; }
+    [Parameter, Setting("Media UID", Group = "Content", Order = 1, Copyable = false, Description = "The asset's Uid from Admin → Media")]
+    public string? Uid { get; set; }
 
     /// <summary>Image alt text for accessibility.</summary>
-    [Parameter] public string? Alt { get; set; }
+    [Parameter, Setting("Alt text", Group = "Content", Order = 2, Copyable = false)]
+    public string? Alt { get; set; }
+
+    /// <summary>Hover tooltip (the img title attribute).</summary>
+    [Parameter, Setting("Tooltip", Group = "Content", Order = 3, Copyable = false, Description = "Shown on hover (title attribute)")]
+    public string? Tooltip { get; set; }
 
     /// <summary>CSS width value (e.g. "300px", "100%", "50rem").</summary>
-    [Parameter] public string? Width { get; set; }
+    [Parameter, Setting("Width", Group = "Layout", Order = 1, Description = "CSS length, e.g. 300px or 100%")]
+    public string? Width { get; set; }
 
     /// <summary>CSS height value (e.g. "200px", "auto").</summary>
-    [Parameter] public string? Height { get; set; }
+    [Parameter, Setting("Height", Group = "Layout", Order = 2, Description = "CSS length, e.g. 200px or auto")]
+    public string? Height { get; set; }
 
-    /// <summary>Additional CSS classes appended to the root element.</summary>
-    [Parameter] public string? CssClass { get; set; }
+    /// <summary>CSS max-width (the stylesheet default is 100%).</summary>
+    [Parameter, Setting("Max width", Group = "Layout", Order = 3, Description = "Default 100%")]
+    public string? MaxWidth { get; set; }
 
-    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
-    [Parameter] public string? CssStyle { get; set; }
+    /// <summary>Horizontal placement: left | center | right (block-level auto margins). Empty = as designed.</summary>
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 4, Description = "left, center or right")]
+    public string? Align { get; set; }
 
     /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
-    [Parameter] public string? Padding { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 5)] public string? Padding { get; set; }
 
     /// <summary>CSS margin shorthand.</summary>
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 6)] public string? Margin { get; set; }
+
+    /// <summary>CSS object-fit when both width and height are set (cover, contain, fill…).</summary>
+    [Parameter, Setting("Object fit", Group = "Layout", Order = 7, Description = "cover, contain, fill, none, scale-down")]
+    public string? ObjectFit { get; set; }
+
+    /// <summary>CSS object-position (e.g. "center top").</summary>
+    [Parameter, Setting("Object position", Group = "Layout", Order = 8)] public string? ObjectPosition { get; set; }
+
+    /// <summary>CSS aspect-ratio (e.g. "16 / 9").</summary>
+    [Parameter, Setting("Aspect ratio", Group = "Layout", Order = 9, Description = "e.g. 16 / 9")]
+    public string? AspectRatio { get; set; }
+
+    /// <summary>CSS border-radius.</summary>
+    [Parameter, Setting("Corner radius", Group = "Appearance", Order = 1)] public string? Radius { get; set; }
+
+    /// <summary>CSS border shorthand.</summary>
+    [Parameter, Setting("Border", Group = "Appearance", Order = 2, Description = "e.g. 1px solid #ccc")]
+    public string? Border { get; set; }
+
+    /// <summary>CSS box-shadow.</summary>
+    [Parameter, Setting("Shadow", Group = "Appearance", Order = 3, Description = "CSS box-shadow")]
+    public string? Shadow { get; set; }
+
+    /// <summary>CSS background (visible behind transparent images / padding).</summary>
+    [Parameter, Setting("Background", Group = "Appearance", Order = 4)] public string? Background { get; set; }
+
+    /// <summary>CSS opacity 0–1.</summary>
+    [Parameter, Setting("Opacity", Group = "Appearance", Order = 5, Description = "0 to 1")]
+    public string? Opacity { get; set; }
+
+    /// <summary>CSS filter (e.g. "grayscale(1)").</summary>
+    [Parameter, Setting("Filter", Group = "Appearance", Order = 6, Description = "CSS filter, e.g. grayscale(1)")]
+    public string? Filter { get; set; }
+
+    /// <summary>Defer loading until the image nears the viewport (loading="lazy").</summary>
+    [Parameter, Setting("Lazy load", Group = "Behavior", Order = 1)] public bool LazyLoad { get; set; }
+
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
 
     private Guid? _uid => Guid.TryParse(Uid, out var g) ? g : null;
+
+    private string? AlignStyle => Align?.Trim().ToLowerInvariant() switch
+    {
+        "left" => "margin-left:0;margin-right:auto",
+        "center" => "margin-left:auto;margin-right:auto",
+        "right" => "margin-left:auto;margin-right:0",
+        _ => null,
+    };
 
     private string? _outerStyle
     {
@@ -49,10 +114,21 @@
             {
                 string.IsNullOrEmpty(Width)   ? null : $"width:{Width}",
                 string.IsNullOrEmpty(Height)  ? null : $"height:{Height}",
+                string.IsNullOrEmpty(MaxWidth) ? null : $"max-width:{MaxWidth}",
+                AlignStyle,
                 string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
                 string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+                string.IsNullOrEmpty(ObjectFit) ? null : $"object-fit:{ObjectFit}",
+                string.IsNullOrEmpty(ObjectPosition) ? null : $"object-position:{ObjectPosition}",
+                string.IsNullOrEmpty(AspectRatio) ? null : $"aspect-ratio:{AspectRatio}",
+                string.IsNullOrEmpty(Radius)  ? null : $"border-radius:{Radius}",
+                string.IsNullOrEmpty(Border)  ? null : $"border:{Border}",
+                string.IsNullOrEmpty(Shadow)  ? null : $"box-shadow:{Shadow}",
+                string.IsNullOrEmpty(Background) ? null : $"background:{Background}",
+                string.IsNullOrEmpty(Opacity) ? null : $"opacity:{Opacity}",
+                string.IsNullOrEmpty(Filter)  ? null : $"filter:{Filter}",
                 CssStyle,
-            }.Where(p => p is not null));
+            }.Where(p => !string.IsNullOrEmpty(p)));
             return s.Length > 0 ? s : null;
         }
     }

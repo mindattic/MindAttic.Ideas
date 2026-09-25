@@ -18,6 +18,12 @@
 
   var uid = 0;
 
+  // Instance settings (MAI-A45) from the token's inline script; each falls back to the default behavior.
+  function cfg(name, fallback) {
+    var c = window.MaTabsConfig;
+    return c && c[name] !== undefined && c[name] !== null ? c[name] : fallback;
+  }
+
   function wire(root) {
     if (root.__maTabsWired) return;
     root.__maTabsWired = true;
@@ -46,7 +52,7 @@
         var isOpen = tab.getAttribute('aria-selected') === 'true';
         select(isOpen && allowClosed ? -1 : i);
       });
-      tab.addEventListener('keydown', function (e) {
+      if (cfg('keyboard', true)) tab.addEventListener('keydown', function (e) {
         var next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
         if (next === undefined) return;
         e.preventDefault();
@@ -58,7 +64,7 @@
       return tab;
     });
 
-    var allowClosed = root.hasAttribute('data-closed');
+    var allowClosed = root.hasAttribute('data-closed') || !!cfg('startClosed', false);
 
     function select(active) {
       tabs.forEach(function (tab, i) {

@@ -3,11 +3,13 @@
 
 <link rel="stylesheet" href="/_ideas/Component/ideasbrochure/1/brochure.css" />
 
-<div class="ibr">
+<div class="@_rootClass" style="@_rootStyle">
 
   <!-- ── Hero ── -->
+  @if (ShowHero)
+  {
   <section class="ibr-hero">
-    <p class="ibr-hero-eyebrow">A Content Management System for the post-framework era</p>
+    <p class="ibr-hero-eyebrow">@(Eyebrow ?? "A Content Management System for the post-framework era")</p>
     <h1 class="ibr-hero-title">
       <span class="ibr-hero-wordmark">MindAttic</span><span class="ibr-hero-dot">.</span><span class="ibr-hero-ideas">Ideas</span>
     </h1>
@@ -15,6 +17,8 @@
       Upload a <code class="ibr-code-inline">.idea</code> package. It goes live.
       No restart. No pipeline. No ceremony.
     </p>
+    @if (ShowBadges)
+    {
     <div class="ibr-hero-badges">
       <span class="ibr-badge">Hot-load</span>
       <span class="ibr-badge">Zero-redeploy</span>
@@ -22,9 +26,13 @@
       <span class="ibr-badge">Free-form pages</span>
       <span class="ibr-badge">.NET 10 / Blazor</span>
     </div>
+    }
   </section>
+  }
 
   <!-- ── Three primitives ── -->
+  @if (ShowPrimitives)
+  {
   <section class="ibr-section">
     <h2 class="ibr-section-title">Three honest primitives</h2>
     <p class="ibr-section-lead">
@@ -62,8 +70,11 @@
       </article>
     </div>
   </section>
+  }
 
   <!-- ── Token grammar ── -->
+  @if (ShowTokens)
+  {
   <section class="ibr-section">
     <h2 class="ibr-section-title">The token grammar</h2>
     <p class="ibr-section-lead">
@@ -97,8 +108,11 @@
       </div>
     </div>
   </section>
+  }
 
   <!-- ── .idea package anatomy ── -->
+  @if (ShowAnatomy)
+  {
   <section class="ibr-section">
     <h2 class="ibr-section-title">Anatomy of a <code class="ibr-code-inline">.idea</code> package</h2>
     <p class="ibr-section-lead">
@@ -131,8 +145,11 @@
       </div>
     </div>
   </section>
+  }
 
   <!-- ── DNN section ── -->
+  @if (ShowDnn)
+  {
   <section class="ibr-section ibr-section--dnn">
     <h2 class="ibr-section-title">They saw the future. The technology wasn't ready.</h2>
     <div class="ibr-two-col ibr-dnn-cols">
@@ -189,8 +206,11 @@
       </div>
     </div>
   </section>
+  }
 
   <!-- ── Comparison table ── -->
+  @if (ShowComparison)
+  {
   <section class="ibr-section">
     <h2 class="ibr-section-title">How it stacks up</h2>
     <div class="ibr-table-wrap">
@@ -295,8 +315,11 @@
       <span class="ibr-maybe">~</span> = Partial or with caveats
     </p>
   </section>
+  }
 
   <!-- ── Under the hood ── -->
+  @if (ShowTech)
+  {
   <section class="ibr-section">
     <h2 class="ibr-section-title">Under the hood</h2>
     <div class="ibr-tech-grid">
@@ -333,8 +356,11 @@
       </div>
     </div>
   </section>
+  }
 
   <!-- ── Get started ── -->
+  @if (ShowSteps)
+  {
   <section class="ibr-section ibr-section--cta">
     <h2 class="ibr-section-title">Get started in four steps</h2>
     <div class="ibr-steps-grid">
@@ -368,10 +394,14 @@
       </div>
     </div>
   </section>
+  }
 
+  @if (ShowFooter)
+  {
   <footer class="ibr-footer">
-    <p>MindAttic.Ideas &nbsp;·&nbsp; Built on .NET 10 &nbsp;·&nbsp; &copy; <span class="ibr-year">2026</span> Ryan DeBraal</p>
+    <p>MindAttic.Ideas &nbsp;·&nbsp; Built on .NET 10 &nbsp;·&nbsp; &copy; <span class="ibr-year">2026</span> @(CopyrightName ?? "Ryan DeBraal")</p>
   </footer>
+  }
 
 </div>
 
@@ -381,3 +411,72 @@
     if (y) y.textContent = String(new Date().getFullYear());
 })();
 </script>
+
+@code {
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Hero eyebrow", Group = "Content", Order = 1, Copyable = false)]
+    public string? Eyebrow { get; set; } = "A Content Management System for the post-framework era";
+
+    [Parameter, Setting("Copyright name", Group = "Content", Order = 2, Copyable = false)]
+    public string? CopyrightName { get; set; } = "Ryan DeBraal";
+
+    // ── Sections ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Hero", Group = "Sections", Order = 1)] public bool ShowHero { get; set; } = true;
+    [Parameter, Setting("Hero badges", Group = "Sections", Order = 2)] public bool ShowBadges { get; set; } = true;
+    [Parameter, Setting("Three primitives", Group = "Sections", Order = 3)] public bool ShowPrimitives { get; set; } = true;
+    [Parameter, Setting("Token grammar", Group = "Sections", Order = 4)] public bool ShowTokens { get; set; } = true;
+    [Parameter, Setting("Package anatomy", Group = "Sections", Order = 5)] public bool ShowAnatomy { get; set; } = true;
+    [Parameter, Setting("DNN history", Group = "Sections", Order = 6)] public bool ShowDnn { get; set; } = true;
+    [Parameter, Setting("Comparison table", Group = "Sections", Order = 7)] public bool ShowComparison { get; set; } = true;
+    [Parameter, Setting("Under the hood", Group = "Sections", Order = 8)] public bool ShowTech { get; set; } = true;
+    [Parameter, Setting("Get started steps", Group = "Sections", Order = 9)] public bool ShowSteps { get; set; } = true;
+    [Parameter, Setting("Footer", Group = "Sections", Order = 10)] public bool ShowFooter { get; set; } = true;
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Hover effects", Group = "Behavior", Order = 1, Description = "Card border transitions on hover")]
+    public bool HoverEffects { get; set; } = true;
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Max width", Group = "Layout", Order = 1, Description = "Default 72rem")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 2, Description = "Default 2rem 1.5rem 4rem")] public string? Padding { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 3, Description = "Default 0 auto")] public string? Margin { get; set; }
+    [Parameter, Setting("Section gap", Group = "Layout", Order = 4, Description = "Default 5rem")] public string? SectionGap { get; set; }
+    [Parameter, Setting("Card gap", Group = "Layout", Order = 5, Description = "Pillar / card grid gap")] public string? CardGap { get; set; }
+    [Parameter, Setting("Card min width", Group = "Layout", Order = 6, Description = "Pillar grid column min, default 18rem")] public string? CardMinWidth { get; set; }
+    [Parameter, Setting("Hero padding", Group = "Layout", Order = 7, Description = "Default 4rem 1rem 1rem")] public string? HeroPadding { get; set; }
+
+    // ── Colors / appearance ─────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 1, Description = "Default #5aa0ff")] public string? Accent { get; set; }
+    [Parameter, Setting("Secondary accent", Group = "Colors", Order = 2, Description = "Wordmark gradient end, default #a78bfa")] public string? Accent2 { get; set; }
+    [Parameter, Setting("Text color", Group = "Colors", Order = 3)] public string? TextColor { get; set; }
+    [Parameter, Setting("Background", Group = "Colors", Order = 4)] public string? Background { get; set; }
+    [Parameter, Setting("Card corner radius", Group = "Appearance", Order = 1, Description = "Default 12px")] public string? CardRadius { get; set; }
+    [Parameter, Setting("Hero title size", Group = "Appearance", Order = 2, Description = "Default clamp(3rem, 8vw, 5.5rem)")] public string? TitleSize { get; set; }
+    [Parameter, Setting("Line height", Group = "Appearance", Order = 3, Description = "Default 1.7")] public string? LineHeight { get; set; }
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
+
+    private string _rootClass => string.Join(" ", new[] { "ibr", HoverEffects ? null : "ibr--no-anim", CssClass }
+        .Where(c => !string.IsNullOrWhiteSpace(c)));
+
+    private static string? Decl(string name, string? value) => string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
+    private string? _rootStyle
+    {
+        get
+        {
+            var s = string.Join(";", new[]
+            {
+                Decl("max-width", MaxWidth), Decl("padding", Padding), Decl("margin", Margin), Decl("gap", SectionGap),
+                Decl("--ibr-card-gap", CardGap), Decl("--ibr-card-min", CardMinWidth), Decl("--ibr-hero-padding", HeroPadding),
+                Decl("--ibr-accent", Accent), Decl("--ibr-accent-2", Accent2), Decl("color", TextColor),
+                Decl("background", Background), Decl("--ibr-card-radius", CardRadius), Decl("--ibr-title-size", TitleSize),
+                Decl("line-height", LineHeight),
+                string.IsNullOrWhiteSpace(CssStyle) ? null : CssStyle,
+            }.Where(p => p is not null));
+            return s.Length > 0 ? s : null;
+        }
+    }
+}

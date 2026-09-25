@@ -74,3 +74,15 @@ A 3-column fixed header: logo link on the left, free-form center column, and an 
 - **`Padding`, `Margin`, `Align`, and `Style`** are merged into a single `style` attribute on the `<header>` element in that order; `Style` is always last so it can override the others.
 - The stylesheet is served from `/_ideas/Plugin/header/1/header.css`. All CSS classes are prefixed `mah-` to avoid collisions with theme or page styles.
 - This plugin renders visible markup (a `<header>` element). It is safe to include inline via `<Plugin.Header />` on a single page, or to activate site-wide via the Admin Page Properties plugin list.
+
+## Settings
+
+Per-instance settings (MAI-A45), edited in Admin; empty = as designed.
+
+- **Content:** Logo text, Logo link, Admin link text, Sign-out text (not copied by Copy Configuration)
+- **Layout:** Padding, Margin, Alignment, Positioning (Fixed / Sticky / Static), Height, Column gap, Stacking order
+- **Appearance:** Background, Backdrop filter, Bottom border, Shadow, Logo color / size / weight / letter spacing / opacity / font family, Avatar background / text color / size / corner radius, Menu background / border color / text color / muted color / hover background / corner radius
+- **Behavior:** Show user menu, Show email in menu, Show admin link, Logo hover effect, Animations
+- **Advanced:** Extra CSS classes, Extra inline style
+
+Values are emitted as `--mah-*` custom properties on the `<header>`; `header.css` reads them with the designed values as fallbacks.

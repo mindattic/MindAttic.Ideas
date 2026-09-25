@@ -44,6 +44,9 @@ public static class IncludeExpander
         // content leaves PascalCase tags as unknown HTML elements (AngleSharp lowercases them safely).
         if (trust == ContentTrust.Author)
             html = UpgradePascalCaseTags(html);
+        // MAI-A46: EVERY body is XSS-sanitized (HtmlSanitizer) before expansion; the per-node filters below
+        // stay as defense in depth. Author trust keeps the upgraded citizen tags; Untrusted keeps none.
+        html = gate.SanitizeBody(html, trust);
         using var doc = Parser.ParseDocument("<!DOCTYPE html><html><head></head><body>" + html + "</body></html>");
         var counter = new Counter { Next = seq };
         RenderNodes(builder, counter, doc.Body!.ChildNodes, new ExpandCtx(catalog, gate, trust, alerts, pageId, slug));
@@ -126,11 +129,10 @@ public static class IncludeExpander
                 // an empty <script></script> with attributes (e.g. nonce="…") is still an XSS vector surface.
                 case IElement el when el.LocalName is "script" or "style":
                     if (ctx.Trust != ContentTrust.Author) break;   // untrusted: drop the whole element
-                    b.OpenElement(c.Next++, el.LocalName);
-                    foreach (var attr in el.Attributes)
-                        b.AddAttribute(c.Next++, attr.Name, attr.Value);
-                    b.AddMarkupContent(c.Next++, el.InnerHtml);
-                    b.CloseElement();
+                    // Whole element as ONE markup frame: a markup child of an element frame is re-parsed
+                    // outside raw-text context on interactive render, so "<tag>" text inside the CSS/JS
+                    // would become real elements and silently truncate the sheet/script.
+                    b.AddMarkupContent(c.Next++, el.OuterHtml);
                     break;
 
                 // PascalCase component tag — <Alert type="error" /> or <Alert>children</Alert> (and nested).

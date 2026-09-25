@@ -5,11 +5,104 @@
 @* MindAttic.Ideas.Theme.Winter.V1 — a self-contained Winter theme: chrome (theme.css) + ONE @Body hole.
    All look/feel ships in this theme's own assets/theme.css (served at /_ideas/Theme/winter/1/), scoped
    under .theme-winter so it never leaks into widgets or other themes. *@
-<div class="page theme-winter">
+<div class="page theme-winter @_modifiers" style="@_rootStyle">
     @Body
 </div>
 
 @code {
     private const string Mount = "/_ideas/Theme/winter/1";
     public override IReadOnlyList<string> ThemeCssUrls { get; } = new[] { Mount + "/theme.css" };
+
+    // ── Instance settings (MAI-A45). Null = as designed; a value is emitted as a CSS custom property
+    //    on this root element, which theme.css reads with the designed value as its fallback. ──
+    [Parameter, Setting("Page background", Group = "Colors", Order = 1, Description = "Full CSS background (color, gradient or url()); empty = the designed background")]
+    public string? Background { get; set; }
+    [Parameter, Setting("Background color token", Group = "Colors", Order = 2, Description = "--bg (designed: #eef3f8)")]
+    public string? BackgroundColor { get; set; }
+    [Parameter, Setting("Surface color", Group = "Colors", Order = 3, Description = "--surface (designed: #ffffff)")]
+    public string? SurfaceColor { get; set; }
+    [Parameter, Setting("Text color", Group = "Colors", Order = 4, Description = "--text (designed: #16222e)")]
+    public string? TextColor { get; set; }
+    [Parameter, Setting("Muted text color", Group = "Colors", Order = 5, Description = "--muted (designed: #5a6b7b)")]
+    public string? MutedColor { get; set; }
+    [Parameter, Setting("Border / rule color", Group = "Colors", Order = 6, Description = "--line (designed: #d4e0ea)")]
+    public string? LineColor { get; set; }
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 7, Description = "--accent (designed: #2f7dbd)")]
+    public string? AccentColor { get; set; }
+    [Parameter, Setting("Second accent color", Group = "Colors", Order = 8, Description = "--accent-2 (designed: #6aa9d6)")]
+    public string? Accent2Color { get; set; }
+    [Parameter, Setting("Text on accent", Group = "Colors", Order = 9, Description = "--accent-contrast (designed: #ffffff)")]
+    public string? AccentContrastColor { get; set; }
+    [Parameter, Setting("Code background", Group = "Colors", Order = 10, Description = "--code-bg (designed: #e6eef6)")]
+    public string? CodeBackground { get; set; }
+    [Parameter, Setting("Heading color", Group = "Colors", Order = 11, Description = "designed: #14303f")]
+    public string? HeadingColor { get; set; }
+    [Parameter, Setting("Link color", Group = "Colors", Order = 12, Description = "designed: the accent")]
+    public string? LinkColor { get; set; }
+    [Parameter, Setting("Link hover color", Group = "Colors", Order = 13, Description = "designed: same as the link color")]
+    public string? LinkHoverColor { get; set; }
+    [Parameter, Setting("Button background", Group = "Colors", Order = 14, Description = "CSS background of buttons / .btn (designed: the accent)")]
+    public string? ButtonBackground { get; set; }
+    [Parameter, Setting("Font family", Group = "Typography", Order = 1, Description = "designed: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif")]
+    public string? FontFamily { get; set; }
+    [Parameter, Setting("Base font size", Group = "Typography", Order = 2, Description = "designed: 16px")]
+    public string? FontSize { get; set; }
+    [Parameter, Setting("Line height", Group = "Typography", Order = 3, Description = "designed: 1.65")]
+    public string? LineHeight { get; set; }
+    [Parameter, Setting("Heading font family", Group = "Typography", Order = 4, Description = "designed: same as the body font")]
+    public string? HeadingFontFamily { get; set; }
+    [Parameter, Setting("Code font family", Group = "Typography", Order = 5, Description = "designed: Cascadia Code / JetBrains Mono / monospace")]
+    public string? CodeFontFamily { get; set; }
+    [Parameter, Setting("Content max width", Group = "Layout", Order = 3, Description = "Width of the reading column (designed: 860px)")]
+    public string? ContentMaxWidth { get; set; }
+    [Parameter, Setting("Content side padding", Group = "Layout", Order = 4, Description = "padding-inline of the reading column (designed: 1.25rem)")]
+    public string? ContentGutter { get; set; }
+    [Parameter, Setting("Button corner radius", Group = "Shape", Order = 1, Description = "designed: 8px")]
+    public string? ButtonRadius { get; set; }
+    [Parameter, Setting("Input corner radius", Group = "Shape", Order = 2, Description = "designed: 8px")]
+    public string? InputRadius { get; set; }
+    [Parameter, Setting("Code block corner radius", Group = "Shape", Order = 3, Description = "designed: 10px")]
+    public string? BlockRadius { get; set; }
+    [Parameter, Setting("Button hover effect", Group = "Behavior", Order = 1, Description = "Brighten buttons on hover (with a short transition)")]
+    public bool ButtonHoverEffect { get; set; } = true;
+
+    private string? _modifiers => string.Join(" ", new[] { (ButtonHoverEffect ? null : "theme-winter--no-hover"), (string.IsNullOrWhiteSpace(HeadingFontFamily) ? null : "theme-winter--heading-font"), (string.IsNullOrWhiteSpace(LinkHoverColor) ? null : "theme-winter--link-hover") }.Where(c => c is not null));
+
+    private string? _rootStyle
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (PageStyle is { } ps) parts.Add(ps);
+            foreach (var (prop, value) in new (string, string?)[]
+            {
+                ("--theme-background", Background),
+                ("--bg", BackgroundColor),
+                ("--surface", SurfaceColor),
+                ("--text", TextColor),
+                ("--muted", MutedColor),
+                ("--line", LineColor),
+                ("--accent", AccentColor),
+                ("--accent-2", Accent2Color),
+                ("--accent-contrast", AccentContrastColor),
+                ("--code-bg", CodeBackground),
+                ("--theme-heading-color", HeadingColor),
+                ("--theme-link", LinkColor),
+                ("--theme-link-hover", LinkHoverColor),
+                ("--theme-button-bg", ButtonBackground),
+                ("--theme-font-family", FontFamily),
+                ("--theme-font-size", FontSize),
+                ("--theme-line-height", LineHeight),
+                ("--theme-heading-font", HeadingFontFamily),
+                ("--theme-code-font", CodeFontFamily),
+                ("--theme-content-width", ContentMaxWidth),
+                ("--theme-gutter", ContentGutter),
+                ("--theme-button-radius", ButtonRadius),
+                ("--theme-input-radius", InputRadius),
+                ("--theme-block-radius", BlockRadius),
+            })
+                if (!string.IsNullOrWhiteSpace(value)) parts.Add(prop + ":" + value.Trim());
+            return parts.Count == 0 ? null : string.Join(";", parts);
+        }
+    }
 }

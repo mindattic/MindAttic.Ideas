@@ -4,9 +4,10 @@
   position: relative;
   width: 100%;
   aspect-ratio: var(--ma-video-ratio);
-  border-radius: .5rem;
+  border-radius: var(--ma-video-radius, .5rem);
   overflow: hidden;
-  background: #000;
+  background: var(--ma-video-bg, #000);
+  box-shadow: var(--ma-video-shadow, none);
 }
 .ma-video iframe,
 .ma-video video {
@@ -15,4 +16,5 @@
   width: 100%;
   height: 100%;
   border: 0;
+  object-fit: var(--ma-video-fit, fill);
 }

@@ -11,21 +11,21 @@
 .hw-hero {
     max-width: var(--hw-max-width, 920px);
     margin: 0 auto;
-    padding: 80px 24px 36px;
-    text-align: center;
+    padding: var(--hw-hero-padding, 80px 24px 36px);
+    text-align: var(--hw-hero-align, center);
 }
 .hw-title {
     margin: 0 0 14px;
-    font-size: clamp(2.6rem, 7vw, 4.2rem);
+    font-size: var(--hw-title-size, clamp(2.6rem, 7vw, 4.2rem));
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--hw-accent, #00d26a);
-    text-shadow: 0 0 40px rgba(0, 210, 106, 0.22);
+    text-shadow: var(--hw-title-glow, 0 0 40px rgba(0, 210, 106, 0.22));
 }
 .hw-tagline {
     margin: 0 auto 22px;
-    max-width: 680px;
-    font-size: clamp(0.88rem, 1.4vw, 1.02rem);
+    max-width: var(--hw-tagline-max-width, 680px);
+    font-size: var(--hw-tagline-size, clamp(0.88rem, 1.4vw, 1.02rem));
     color: var(--hw-muted, #5a7566);
     line-height: 1.6;
 }
@@ -33,7 +33,7 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: var(--hw-hero-justify, center);
     margin-bottom: 24px;
 }
 .hw-badge {
@@ -58,14 +58,14 @@
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: var(--hw-hero-justify, center);
 }
 .hw-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 11px 22px;
-    border-radius: 4px;
+    padding: var(--hw-btn-padding, 11px 22px);
+    border-radius: var(--hw-btn-radius, 4px);
     font-family: inherit;
     font-size: 0.86rem;
     font-weight: 700;
@@ -73,7 +73,7 @@
     cursor: pointer;
     transition: all 120ms ease;
     letter-spacing: 0.06em;
-    text-transform: uppercase;
+    text-transform: var(--hw-btn-transform, uppercase);
     border: 1px solid transparent;
 }
 .hw-btn-primary {
@@ -105,11 +105,11 @@
 
 /* === section card === */
 .hw-section {
-    margin: 28px 0;
-    padding: 26px 30px 28px;
-    background: rgba(15, 24, 18, 0.70);
+    margin: var(--hw-section-margin, 28px 0);
+    padding: var(--hw-section-padding, 26px 30px 28px);
+    background: var(--hw-section-bg, rgba(15, 24, 18, 0.70));
     border: 1px solid var(--hw-line, rgba(0, 210, 106, 0.12));
-    border-radius: 8px;
+    border-radius: var(--hw-section-radius, 8px);
 }
 .hw-section-heading {
     margin: 0 0 16px;
@@ -215,3 +215,4 @@
     .hw-section { padding: 18px 16px 20px; }
     .hw-content { padding: 0 14px; }
 }
+

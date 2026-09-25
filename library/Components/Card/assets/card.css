@@ -1,4 +1,6 @@
-﻿/* MindAttic.Ideas.Component.Card — content card + .ma-cards row helper. Scoped (MAIL-LAW-6). */
+﻿/* MindAttic.Ideas.Component.Card — content card + .ma-cards row helper. Scoped (MAIL-LAW-6).
+   Values read optional --ma-card-* custom properties (instance settings, MAI-A45) with the
+   as-designed fallback. */
 .ma-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
@@ -9,10 +11,11 @@
   --ma-card-radius: .6rem;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(128, 128, 128, .3);
+  border: var(--ma-card-border, 1px solid rgba(128, 128, 128, .3));
   border-radius: var(--ma-card-radius);
   overflow: hidden;
-  background: rgba(128, 128, 128, .06);
+  background: var(--ma-card-bg, rgba(128, 128, 128, .06));
+  box-shadow: var(--ma-card-shadow, none);
   color: inherit;
   text-decoration: none;
   transition: transform .15s ease, box-shadow .15s ease;
@@ -20,25 +23,28 @@
 .ma-card-link:hover,
 .ma-card-link:focus-visible {
   transform: translateY(-3px);
-  box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .15);
+  box-shadow: var(--ma-card-hover-shadow, 0 .5rem 1.25rem rgba(0, 0, 0, .15));
 }
+.ma-card.ma-card--no-lift:hover,
+.ma-card.ma-card--no-lift:focus-visible { transform: none; }
+.ma-card.ma-card--no-anim { transition: none; }
 /* A div carrying a base64 background-image class (the page convention) — never an <img> file. */
 .ma-card-image {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  background-size: cover;
-  background-position: center;
+  aspect-ratio: var(--ma-card-image-ratio, 16 / 9);
+  background-size: var(--ma-card-image-fit, cover);
+  background-position: var(--ma-card-image-position, center);
 }
 .ma-card-body {
   display: flex;
   flex-direction: column;
-  gap: .5rem;
-  padding: 1rem;
+  gap: var(--ma-card-body-gap, .5rem);
+  padding: var(--ma-card-body-padding, 1rem);
   flex: 1;
 }
-.ma-card-title { margin: 0; font-size: 1.15rem; }
-.ma-card-text  { margin: 0; opacity: .8; line-height: 1.5; }
+.ma-card-title { margin: 0; font-size: var(--ma-card-title-size, 1.15rem); }
+.ma-card-text  { margin: 0; opacity: var(--ma-card-text-opacity, .8); line-height: 1.5; }
 .ma-card-footer {
   margin-top: auto;
   padding-top: .5rem;

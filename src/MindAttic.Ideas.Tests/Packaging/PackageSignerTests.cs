@@ -32,6 +32,24 @@ public class PackageSignerTests
     }
 
     [Test]
+    public void SignFile_OnARealFile_SignsInPlace()
+    {
+        // Regression: SignFile wrapped the bytes in a fixed-size MemoryStream, so `ma-idea sign` threw
+        // "Memory stream is not expandable" on every real package.
+        var path = Path.Combine(Path.GetTempPath(), $"signfile-{Guid.NewGuid():N}.idea");
+        try
+        {
+            File.WriteAllBytes(path, BuildUnsigned().ToArray());
+            PackageSigner.SignFile(path, TestSigningFixture.SigningCert);
+
+            using var fs = File.OpenRead(path);
+            using var reader = IdeaArchiveReader.Open(fs);
+            Assert.That(PackageSigner.Verify(reader, TestSigningFixture.PublicOnly), Is.EqualTo(PackageSigner.VerifyOutcome.Ok));
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Test]
     public void MissingSignature_IsNotSigned()
     {
         var archive = BuildUnsigned();

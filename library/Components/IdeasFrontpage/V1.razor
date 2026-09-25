@@ -5,29 +5,52 @@
 
 <!-- ── Slide-in navigation drawer ─────────────────────────────────────────── -->
 <div class="ifp-drawer-overlay" id="ifp-overlay" role="presentation"></div>
-<nav class="ifp-drawer" id="ifp-drawer" aria-label="Page sections">
+<nav class="ifp-drawer" id="ifp-drawer" aria-label="Page sections" style="@_varStyle">
   <button class="ifp-drawer-close" id="ifp-drawer-close" aria-label="Close navigation">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
       <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   </button>
-  <div class="ifp-drawer-brand">Ideas</div>
+  <div class="ifp-drawer-brand">@(LogoText ?? "Ideas")</div>
   <ul class="ifp-drawer-links">
+    @if (ShowWhy)
+    {
     <li><a href="#ifp-why">Why Ideas</a></li>
+    }
+    @if (ShowPrimitives)
+    {
     <li><a href="#ifp-primitives">Primitives</a></li>
+    }
+    @if (ShowGrammar)
+    {
     <li><a href="#ifp-grammar">Tag Grammar</a></li>
+    }
+    @if (ShowAnatomy)
+    {
     <li><a href="#ifp-anatomy">.idea Anatomy</a></li>
+    }
+    @if (ShowFeatures)
+    {
     <li><a href="#ifp-features">Features</a></li>
+    }
+    @if (ShowTech)
+    {
     <li><a href="#ifp-tech">Tech Stack</a></li>
+    }
+    @if (ShowStart)
+    {
     <li><a href="#ifp-start">Get Started</a></li>
+    }
   </ul>
 </nav>
 
-<div class="ifp" id="ifp-root">
+<div class="@_rootClass" id="ifp-root" style="@_rootStyle" data-default-theme="@DefaultTheme" data-remember-theme="@(RememberTheme ? "true" : "false")" data-reveal="@(ScrollReveal ? "true" : "false")" data-smooth-scroll="@(SmoothScroll ? "true" : "false")" data-scroll-offset="@ScrollOffset">
 
   <!-- ── Sticky header ─────────────────────────────────────────────────────── -->
   <header class="ifp-header" role="banner">
     <div class="ifp-header-col ifp-header-left">
+      @if (ShowNavigation)
+      {
       <button class="ifp-hamburger" id="ifp-hamburger" aria-label="Open navigation" aria-expanded="false" aria-controls="ifp-drawer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <line x1="3" y1="6" x2="21" y2="6"/>
@@ -35,11 +58,14 @@
           <line x1="3" y1="18" x2="21" y2="18"/>
         </svg>
       </button>
+      }
     </div>
     <div class="ifp-header-col ifp-header-center">
-      <span class="ifp-logo" aria-label="MindAttic Ideas">Ideas</span>
+      <span class="ifp-logo" aria-label="MindAttic Ideas">@(LogoText ?? "Ideas")</span>
     </div>
     <div class="ifp-header-col ifp-header-right">
+      @if (ShowThemeToggle)
+      {
       <button class="ifp-theme-btn" id="ifp-theme-btn" aria-label="Toggle light/dark theme">
         <svg class="ifp-icon ifp-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <circle cx="12" cy="12" r="5"/>
@@ -52,11 +78,17 @@
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       </button>
-      <div class="ifp-avatar" aria-label="Ryan DeBraal" title="Ryan DeBraal">RD</div>
+      }
+      @if (ShowAvatar)
+      {
+      <div class="ifp-avatar" aria-label="@(AuthorName ?? "Ryan DeBraal")" title="@(AuthorName ?? "Ryan DeBraal")">@(AvatarInitials ?? "RD")</div>
+      }
     </div>
   </header>
 
   <!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+  @if (ShowHero)
+  {
   <section class="ifp-hero" aria-label="Introduction">
     <div class="ifp-hero-bg" aria-hidden="true">
       <svg class="ifp-hero-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
@@ -73,16 +105,18 @@
       </svg>
     </div>
     <div class="ifp-hero-inner">
-      <p class="ifp-eyebrow ifp-reveal">MindAttic.Ideas &mdash; v1</p>
+      <p class="ifp-eyebrow ifp-reveal">@(Eyebrow ?? "MindAttic.Ideas — v1")</p>
       <h1 class="ifp-title">
-        <span class="ifp-title-line ifp-reveal ifp-reveal-d1">The CMS that</span>
-        <span class="ifp-title-line ifp-title-accent ifp-reveal ifp-reveal-d2">gets out of the way.</span>
+        <span class="ifp-title-line ifp-reveal ifp-reveal-d1">@(TitleLine1 ?? "The CMS that")</span>
+        <span class="ifp-title-line ifp-title-accent ifp-reveal ifp-reveal-d2">@(TitleLine2 ?? "gets out of the way.")</span>
       </h1>
       <p class="ifp-subtitle ifp-reveal ifp-reveal-d3">
         Upload a <code class="ifp-code">.idea</code> zip and it goes live instantly &mdash;
         no redeploy, no pipeline, no ceremony.
         Pages are free-form HTML. Widgets are self-contained packages.
       </p>
+      @if (ShowBadges)
+      {
       <div class="ifp-badges ifp-reveal ifp-reveal-d4">
         <span class="ifp-badge">Hot-load</span>
         <span class="ifp-badge">Zero-redeploy</span>
@@ -91,16 +125,23 @@
         <span class="ifp-badge">.NET 10</span>
         <span class="ifp-badge">SQL Server</span>
       </div>
+      }
+      @if (ShowCta)
+      {
       <a class="ifp-cta-btn ifp-reveal ifp-reveal-d5" href="#ifp-why">
-        See what makes it different
+        @(CtaText ?? "See what makes it different")
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
         </svg>
       </a>
+      }
     </div>
   </section>
+  }
 
   <!-- ── Stats bar ─────────────────────────────────────────────────────────── -->
+  @if (ShowStats)
+  {
   <div class="ifp-stats ifp-reveal" aria-label="Quick statistics">
     <div class="ifp-stat">
       <strong>3</strong><span>Primitives</span>
@@ -118,8 +159,11 @@
       <strong>100%</strong><span>Blazor Server</span>
     </div>
   </div>
+  }
 
   <!-- ── Why Ideas ─────────────────────────────────────────────────────────── -->
+  @if (ShowWhy)
+  {
   <section class="ifp-section" id="ifp-why" aria-labelledby="ifp-why-h">
     <h2 class="ifp-section-title ifp-reveal" id="ifp-why-h">Why MindAttic.Ideas?</h2>
     <p class="ifp-section-lead ifp-reveal ifp-reveal-d1">
@@ -195,8 +239,11 @@
       </article>
     </div>
   </section>
+  }
 
   <!-- ── Three Primitives ──────────────────────────────────────────────────── -->
+  @if (ShowPrimitives)
+  {
   <section class="ifp-section ifp-section-alt" id="ifp-primitives" aria-labelledby="ifp-prim-h">
     <h2 class="ifp-section-title ifp-reveal" id="ifp-prim-h">Three primitives. That&apos;s the whole model.</h2>
     <p class="ifp-section-lead ifp-reveal ifp-reveal-d1">A CMS has one job: connect content to presentation. That takes exactly three things.</p>
@@ -261,8 +308,11 @@
       </article>
     </div>
   </section>
+  }
 
   <!-- ── Tag Grammar ───────────────────────────────────────────────────────── -->
+  @if (ShowGrammar)
+  {
   <section class="ifp-section" id="ifp-grammar" aria-labelledby="ifp-gram-h">
     <h2 class="ifp-section-title ifp-reveal" id="ifp-gram-h">The tag grammar</h2>
     <p class="ifp-section-lead ifp-reveal ifp-reveal-d1">
@@ -320,8 +370,11 @@
       </div>
     </div>
   </section>
+  }
 
   <!-- ── .idea anatomy ─────────────────────────────────────────────────────── -->
+  @if (ShowAnatomy)
+  {
   <section class="ifp-section ifp-section-alt" id="ifp-anatomy" aria-labelledby="ifp-anat-h">
     <h2 class="ifp-section-title ifp-reveal" id="ifp-anat-h">Anatomy of a <code class="ifp-code">.idea</code> package</h2>
     <p class="ifp-section-lead ifp-reveal ifp-reveal-d1">
@@ -357,8 +410,11 @@
       </div>
     </div>
   </section>
+  }
 
   <!-- ── Feature comparison table ──────────────────────────────────────────── -->
+  @if (ShowFeatures)
+  {
   <section class="ifp-section" id="ifp-features" aria-labelledby="ifp-feat-h">
     <h2 class="ifp-section-title ifp-reveal" id="ifp-feat-h">Feature overview</h2>
     <div class="ifp-table-wrap ifp-reveal ifp-reveal-d1">
@@ -384,8 +440,11 @@
       </table>
     </div>
   </section>
+  }
 
   <!-- ── Tech stack ────────────────────────────────────────────────────────── -->
+  @if (ShowTech)
+  {
   <section class="ifp-section ifp-section-alt" id="ifp-tech" aria-labelledby="ifp-tech-h">
     <h2 class="ifp-section-title ifp-reveal" id="ifp-tech-h">Under the hood</h2>
     <p class="ifp-section-lead ifp-reveal ifp-reveal-d1">Production-grade components throughout. No exotic dependencies.</p>
@@ -449,8 +508,11 @@
       </div>
     </div>
   </section>
+  }
 
   <!-- ── Get started ───────────────────────────────────────────────────────── -->
+  @if (ShowStart)
+  {
   <section class="ifp-section" id="ifp-start" aria-labelledby="ifp-start-h">
     <h2 class="ifp-section-title ifp-reveal" id="ifp-start-h">Get started</h2>
     <div class="ifp-steps">
@@ -498,15 +560,19 @@
       </a>
     </p>
   </section>
+  }
 
   <!-- ── Footer ────────────────────────────────────────────────────────────── -->
+  @if (ShowFooter)
+  {
   <footer class="ifp-footer" role="contentinfo">
     <span class="ifp-footer-mark">MindAttic.Ideas</span>
     <span class="ifp-footer-sep" aria-hidden="true">&mdash;</span>
     <span>the CMS that gets out of the way</span>
     <span class="ifp-footer-sep" aria-hidden="true">&mdash;</span>
-    <span>&copy; <span class="ifp-year"></span> Ryan DeBraal</span>
+    <span>&copy; <span class="ifp-year"></span> @(AuthorName ?? "Ryan DeBraal")</span>
   </footer>
+  }
 
 </div><!-- /.ifp -->
 
@@ -517,18 +583,22 @@
   // ── Theme ─────────────────────────────────────────────────────────────────
   var root = document.getElementById('ifp-root');
   var themeBtn = document.getElementById('ifp-theme-btn');
+  // Instance settings (MAI-A45) arrive as data-* on the root; absent values = as designed.
+  var ds = (root && root.dataset) || {};
+  var REMEMBER = ds.rememberTheme !== 'false';
+  var DEFAULT_THEME = ds.defaultTheme === 'light' ? 'light' : 'dark';
   var THEME_KEY = 'ifp-theme';
   var DARK = 'dark', LIGHT = 'light';
 
   function applyTheme(t) {
     if (root) root.setAttribute('data-ifp-theme', t);
     if (themeBtn) themeBtn.setAttribute('aria-label', t === DARK ? 'Switch to light mode' : 'Switch to dark mode');
-    try { localStorage.setItem(THEME_KEY, t); } catch(e) {}
+    if (REMEMBER) { try { localStorage.setItem(THEME_KEY, t); } catch(e) {} }
   }
 
   var saved;
-  try { saved = localStorage.getItem(THEME_KEY); } catch(e) {}
-  applyTheme(saved === LIGHT ? LIGHT : DARK);
+  if (REMEMBER) { try { saved = localStorage.getItem(THEME_KEY); } catch(e) {} }
+  applyTheme(saved === LIGHT ? LIGHT : saved === DARK ? DARK : DEFAULT_THEME);
 
   if (themeBtn) {
     themeBtn.addEventListener('click', function () {
@@ -570,7 +640,7 @@
 
   // ── Scroll-reveal (Intersection Observer) ────────────────────────────────
   var revealEls = document.querySelectorAll('.ifp-reveal');
-  if ('IntersectionObserver' in window && revealEls.length) {
+  if (ds.reveal !== 'false' && 'IntersectionObserver' in window && revealEls.length) {
     var obs = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting) {
@@ -591,6 +661,9 @@
 
   // ── Smooth-scroll for header anchor offset ────────────────────────────────
   var headerEl = document.querySelector('.ifp-header');
+  var SMOOTH = ds.smoothScroll !== 'false';
+  var OFFSET = parseFloat(ds.scrollOffset);
+  if (isNaN(OFFSET)) OFFSET = 16;
   document.querySelectorAll('a[href^="#ifp-"]').forEach(function(a) {
     a.addEventListener('click', function(e) {
       var id = a.getAttribute('href').slice(1);
@@ -598,9 +671,97 @@
       if (!target) return;
       e.preventDefault();
       var headerH = headerEl ? headerEl.offsetHeight : 0;
-      var top = target.getBoundingClientRect().top + window.pageYOffset - headerH - 16;
-      window.scrollTo({ top: top, behavior: 'smooth' });
+      var top = target.getBoundingClientRect().top + window.pageYOffset - headerH - OFFSET;
+      window.scrollTo({ top: top, behavior: SMOOTH ? 'smooth' : 'auto' });
     });
   });
 })();
 </script>
+
+@code {
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Logo text", Group = "Content", Order = 1, Copyable = false)] public string? LogoText { get; set; } = "Ideas";
+    [Parameter, Setting("Eyebrow", Group = "Content", Order = 2, Copyable = false)] public string? Eyebrow { get; set; } = "MindAttic.Ideas — v1";
+    [Parameter, Setting("Title line 1", Group = "Content", Order = 3, Copyable = false)] public string? TitleLine1 { get; set; } = "The CMS that";
+    [Parameter, Setting("Title line 2 (accent)", Group = "Content", Order = 4, Copyable = false)] public string? TitleLine2 { get; set; } = "gets out of the way.";
+    [Parameter, Setting("Button text", Group = "Content", Order = 5, Copyable = false)] public string? CtaText { get; set; } = "See what makes it different";
+    [Parameter, Setting("Author name", Group = "Content", Order = 6, Copyable = false, Description = "Avatar tooltip and footer copyright")] public string? AuthorName { get; set; } = "Ryan DeBraal";
+    [Parameter, Setting("Avatar initials", Group = "Content", Order = 7, Copyable = false)] public string? AvatarInitials { get; set; } = "RD";
+
+    // ── Sections ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Hero", Group = "Sections", Order = 1)] public bool ShowHero { get; set; } = true;
+    [Parameter, Setting("Hero badges", Group = "Sections", Order = 2)] public bool ShowBadges { get; set; } = true;
+    [Parameter, Setting("Hero button", Group = "Sections", Order = 3)] public bool ShowCta { get; set; } = true;
+    [Parameter, Setting("Stats bar", Group = "Sections", Order = 4)] public bool ShowStats { get; set; } = true;
+    [Parameter, Setting("Why Ideas", Group = "Sections", Order = 5)] public bool ShowWhy { get; set; } = true;
+    [Parameter, Setting("Primitives", Group = "Sections", Order = 6)] public bool ShowPrimitives { get; set; } = true;
+    [Parameter, Setting("Tag grammar", Group = "Sections", Order = 7)] public bool ShowGrammar { get; set; } = true;
+    [Parameter, Setting(".idea anatomy", Group = "Sections", Order = 8)] public bool ShowAnatomy { get; set; } = true;
+    [Parameter, Setting("Features", Group = "Sections", Order = 9)] public bool ShowFeatures { get; set; } = true;
+    [Parameter, Setting("Tech stack", Group = "Sections", Order = 10)] public bool ShowTech { get; set; } = true;
+    [Parameter, Setting("Get started", Group = "Sections", Order = 11)] public bool ShowStart { get; set; } = true;
+    [Parameter, Setting("Footer", Group = "Sections", Order = 12)] public bool ShowFooter { get; set; } = true;
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Navigation drawer button", Group = "Behavior", Order = 1)] public bool ShowNavigation { get; set; } = true;
+    [Parameter, Setting("Light/dark toggle", Group = "Behavior", Order = 2)] public bool ShowThemeToggle { get; set; } = true;
+    [Parameter, Setting("Avatar", Group = "Behavior", Order = 3)] public bool ShowAvatar { get; set; } = true;
+    [Parameter, Setting("Default theme", Group = "Behavior", Order = 4, Description = "dark or light")] public string? DefaultTheme { get; set; } = "dark";
+    [Parameter, Setting("Remember visitor theme", Group = "Behavior", Order = 5, Description = "Persist the toggle in localStorage")] public bool RememberTheme { get; set; } = true;
+    [Parameter, Setting("Scroll-reveal animation", Group = "Behavior", Order = 6)] public bool ScrollReveal { get; set; } = true;
+    [Parameter, Setting("Animations", Group = "Behavior", Order = 7, Description = "Hover transitions and the bouncing arrow")] public bool Animations { get; set; } = true;
+    [Parameter, Setting("Smooth scrolling", Group = "Behavior", Order = 8)] public bool SmoothScroll { get; set; } = true;
+    [Parameter, Setting("Anchor scroll offset (px)", Group = "Behavior", Order = 9, Description = "Extra space below the sticky header")] public int ScrollOffset { get; set; } = 16;
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Section padding", Group = "Layout", Order = 1, Description = "Default clamp(3rem, 8vw, 6rem) clamp(1rem, 5vw, 4rem)")] public string? SectionPadding { get; set; }
+    [Parameter, Setting("Gap", Group = "Layout", Order = 2, Description = "Default 1.5rem")] public string? Gap { get; set; }
+    [Parameter, Setting("Header height", Group = "Layout", Order = 3, Description = "Default 3.5rem")] public string? HeaderHeight { get; set; }
+    [Parameter, Setting("Corner radius", Group = "Layout", Order = 4, Description = "Default .75em")] public string? Radius { get; set; }
+    [Parameter, Setting("Small corner radius", Group = "Layout", Order = 5, Description = "Default .375em")] public string? RadiusSmall { get; set; }
+
+    // ── Colors (apply in both light and dark mode when set) ─────────────────────────────────────
+    [Parameter, Setting("Accent", Group = "Colors", Order = 1, Description = "Default #7c6af5")] public string? Accent { get; set; }
+    [Parameter, Setting("Accent (muted)", Group = "Colors", Order = 2, Description = "Default #5a50d0")] public string? AccentMuted { get; set; }
+    [Parameter, Setting("Page background", Group = "Colors", Order = 3, Description = "Overrides both modes")] public string? PageBackground { get; set; }
+    [Parameter, Setting("Surface", Group = "Colors", Order = 4, Description = "Overrides both modes")] public string? Surface { get; set; }
+    [Parameter, Setting("Surface 2", Group = "Colors", Order = 5, Description = "Overrides both modes")] public string? Surface2 { get; set; }
+    [Parameter, Setting("Text", Group = "Colors", Order = 6, Description = "Overrides both modes")] public string? TextColor { get; set; }
+    [Parameter, Setting("Muted text", Group = "Colors", Order = 7, Description = "Overrides both modes")] public string? TextMuted { get; set; }
+    [Parameter, Setting("Border", Group = "Colors", Order = 8, Description = "Overrides both modes")] public string? BorderColor { get; set; }
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
+
+    private string _rootClass => string.Join(" ", new[]
+    {
+        "ifp", ScrollReveal ? null : "ifp--no-reveal", Animations ? null : "ifp--no-anim", CssClass,
+    }.Where(c => !string.IsNullOrWhiteSpace(c)));
+
+    private static string? Decl(string name, string? value) => string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
+    private IEnumerable<string?> VarDecls => new[]
+    {
+        Decl("--ifp-accent", Accent), Decl("--ifp-accent-muted", AccentMuted), Decl("--ifp-page", PageBackground),
+        Decl("--ifp-surface", Surface), Decl("--ifp-surface-2", Surface2), Decl("--ifp-text", TextColor),
+        Decl("--ifp-text-muted", TextMuted), Decl("--ifp-border", BorderColor), Decl("--ifp-section-pad", SectionPadding),
+        Decl("--ifp-gap", Gap), Decl("--ifp-header-h", HeaderHeight), Decl("--ifp-radius", Radius),
+        Decl("--ifp-radius-sm", RadiusSmall),
+    };
+
+    // Custom properties only — shared with the drawer, which renders outside the root.
+    private string? _varStyle
+    {
+        get { var s = string.Join(";", VarDecls.Where(d => d is not null)); return s.Length > 0 ? s : null; }
+    }
+
+    private string? _rootStyle
+    {
+        get
+        {
+            var s = string.Join(";", VarDecls.Append(string.IsNullOrWhiteSpace(CssStyle) ? null : CssStyle).Where(d => d is not null));
+            return s.Length > 0 ? s : null;
+        }
+    }
+}

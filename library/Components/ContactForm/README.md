@@ -51,3 +51,12 @@ A name/email/message contact form that POSTs to a configurable endpoint.
 - **Root CSS class:** Both the configured form and the unconfigured hint carry the `ma-contact` class. The unconfigured branch also adds `ma-contact-unconfigured`.
 - **Stylesheet:** The component injects `/_ideas/Component/contactform/1/contactform.css` via a `<link>` tag.
 - **Fields:** Name (text, max 200), Email (email, max 320), Message (textarea, max 4000). All three are required by HTML validation.
+
+## Settings
+
+All parameters are instance settings (MAI-A45). `action`, `submittext`, the labels and placeholders are content (not copied by Copy/Paste Configuration). Defaults reproduce the stock form.
+
+- **Content:** `namelabel` ("Name"), `emaillabel` ("Email"), `messagelabel` ("Message"), `nameplaceholder`, `emailplaceholder`, `messageplaceholder`
+- **Behavior:** `showname` (true), `namerequired` (true), `messagerows` (6), `messagemaxlength` (4000), `animations` (true)
+- **Layout:** `maxwidth` (34rem), `gap`, `fieldpadding`, `fieldradius`, `buttonradius`, `buttonpadding`, `buttonalign` (flex-start)
+- **Colors:** `accentcolor` (#4a6cf7), `bordercolor`, `fieldbackground`, `buttontextcolor` (emitted as `--ma-contact-*` on `.ma-contact`)

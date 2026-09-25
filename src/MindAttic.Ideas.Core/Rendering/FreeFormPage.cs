@@ -39,9 +39,11 @@ public sealed class FreeFormPage : PageBase
             var css = trust == ContentTrust.Author
                 ? inline.Css
                 : inline.Css!.Replace("</", "<\\/", StringComparison.OrdinalIgnoreCase);
-            builder.OpenElement(seq++, "style");
-            builder.AddMarkupContent(seq++, $"@layer page {{\n{css}\n}}");
-            builder.CloseElement();
+            // One markup frame for the WHOLE element, never a markup child of an OpenElement("style"):
+            // interactive Blazor inserts a markup child via a <template> innerHTML parse outside raw-text
+            // context, so any "<main>" in a CSS comment becomes a real element and every rule after it
+            // drops out of the sheet. Parsing "<style>…</style>" as a unit keeps its body raw text.
+            builder.AddMarkupContent(seq++, $"<style>@layer page {{\n{css}\n}}</style>");
         }
 
         // Free-form body with <MindAttic.Ideas.{Kind}.{Name}.V{n}> includes. A missing/disabled
@@ -52,9 +54,7 @@ public sealed class FreeFormPage : PageBase
         // Intentional author JS — emitted only for Author-trusted pages.
         if (trust == ContentTrust.Author && !string.IsNullOrWhiteSpace(inline.Js))
         {
-            builder.OpenElement(seq++, "script");
-            builder.AddMarkupContent(seq++, inline.Js);
-            builder.CloseElement();
+            builder.AddMarkupContent(seq++, $"<script>{inline.Js}</script>");
         }
     }
 }

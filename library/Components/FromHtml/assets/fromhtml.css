@@ -14,15 +14,18 @@
     left: 0;
     right: 0;
     text-align: center;
-    padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.82);
+    padding: var(--ma-fromhtml-return-padding, 10px 16px);
+    background: var(--ma-fromhtml-return-bg, rgba(0, 0, 0, 0.82));
     z-index: 2147483647;
     font-family: system-ui, sans-serif;
-    font-size: 14px;
+    font-size: var(--ma-fromhtml-return-size, 14px);
 }
 
+/* ReturnPosition = Top (instance setting, MAI-A45) */
+.ma-fromhtml-return.ma-fromhtml-return--top { top: 0; bottom: auto; }
+
 .ma-fromhtml-return-link {
-    color: #fff;
+    color: var(--ma-fromhtml-return-color, #fff);
     text-decoration: none;
     font-weight: 600;
 }

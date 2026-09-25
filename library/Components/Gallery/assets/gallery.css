@@ -16,7 +16,7 @@
   aspect-ratio: var(--ma-gallery-ratio);
   background-size: cover;
   background-position: center;
-  border-radius: .4rem;
+  border-radius: var(--ma-gallery-radius, .4rem);
   cursor: pointer;
   transition: transform .15s ease, box-shadow .15s ease;
 }
@@ -24,15 +24,15 @@
   display: block;
   width: 100%;
   height: auto;
-  border-radius: .4rem;
+  border-radius: var(--ma-gallery-radius, .4rem);
   cursor: pointer;
   transition: transform .15s ease, box-shadow .15s ease;
 }
 .ma-gallery-tile:hover,
 .ma-gallery-tile:focus-visible,
 .ma-gallery img:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 .5rem 1.25rem rgba(0, 0, 0, .25);
+  transform: var(--ma-gallery-hover-transform, translateY(-3px) scale(1.02));
+  box-shadow: var(--ma-gallery-hover-shadow, 0 .5rem 1.25rem rgba(0, 0, 0, .25));
 }
 
 /* ── Lightbox overlay (created once by gallery.js for unlinked tiles) ───────────────── */
@@ -45,6 +45,7 @@
   justify-content: center;
   background: rgba(0, 0, 0, .85);
 }
+.ma-gallery-lightbox[hidden] { display: none; }
 .ma-gallery-lightbox img {
   max-width: min(92vw, 70rem);
   max-height: 88vh;

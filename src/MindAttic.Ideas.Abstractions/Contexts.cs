@@ -36,6 +36,13 @@ public interface IRenderContext
         feature = Services.GetService(typeof(T)) as T;
         return feature is not null;
     }
+
+    /// <summary>
+    /// The stored instance settings (a JSON object of setting name to value) for one slot on this page —
+    /// <c>"theme"</c>, <c>"page"</c>, or <c>"plugin:{key}"</c> (MAI-A45). Null when the instance has none;
+    /// the host binds these onto the citizen's [Parameter]s, so citizens rarely call this directly.
+    /// </summary>
+    string? GetInstanceSettingsJson(string slot) => null;
 }
 
 /// <summary>The page being rendered.</summary>

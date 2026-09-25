@@ -20,14 +20,14 @@
 .ma-brochure-head {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: var(--ma-br-head-align, flex-start);
   gap: 0.7rem;
   padding-bottom: var(--ma-br-gap);
 }
 
 .ma-brochure-title {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 3.1rem);
+  font-size: var(--ma-br-title-size, clamp(2rem, 5vw, 3.1rem));
   line-height: 1.05;
   letter-spacing: -0.02em;
   font-weight: 700;
@@ -35,7 +35,7 @@
 
 .ma-brochure-tagline {
   margin: 0;
-  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-size: var(--ma-br-tagline-size, clamp(1.05rem, 2vw, 1.3rem));
   line-height: 1.45;
   color: var(--ma-br-muted);
   max-width: 60ch;
@@ -181,3 +181,6 @@
 @media (prefers-reduced-motion: reduce) {
   .ma-brochure-link { transition: none; }
 }
+
+/* Setting: hover transitions off. */
+.ma-brochure--no-anim .ma-brochure-link { transition: none; }

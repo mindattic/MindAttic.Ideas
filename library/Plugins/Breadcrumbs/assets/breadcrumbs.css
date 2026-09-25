@@ -1,35 +1,41 @@
-﻿/* MindAttic.Ideas.Plugin.Breadcrumbs — slug-derived trail. Scoped under .ma-crumbs (MAIL-LAW-6). */
-.ma-crumbs { font-size: .9rem; }
-.ma-crumbs-list {
+﻿/* MindAttic.Ideas.Plugin.Breadcrumbs — slug-derived trail. Scoped under .ma-breadcrumbs (MAIL-LAW-6).
+   Instance settings (MAI-A45) arrive as --ma-breadcrumbs-* custom properties on the <nav>; every
+   var() falls back to the designed value. */
+.ma-breadcrumbs { font-size: var(--ma-breadcrumbs-font-size, .9rem); }
+.ma-breadcrumbs-list {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: .4rem;
+  justify-content: var(--ma-breadcrumbs-justify, normal);
+  gap: var(--ma-breadcrumbs-gap, .4rem);
   list-style: none;
   margin: 0;
-  padding: .5rem 0;
+  padding: var(--ma-breadcrumbs-list-padding, .5rem 0);
 }
-.ma-crumbs-item {
+.ma-breadcrumbs-list-item {
   display: flex;
   align-items: center;
-  gap: .4rem;
+  gap: var(--ma-breadcrumbs-gap, .4rem);
 }
 /* Separator between crumbs (not before the first). */
-.ma-crumbs-item + .ma-crumbs-item::before {
-  content: "\203A";  /* › */
-  opacity: .5;
+.ma-breadcrumbs-list-item + .ma-breadcrumbs-list-item::before {
+  content: var(--ma-breadcrumbs-separator, "\203A");  /* › */
+  opacity: var(--ma-breadcrumbs-separator-opacity, .5);
 }
-.ma-crumbs-link {
-  color: inherit;
-  opacity: .7;
+.ma-breadcrumbs-link {
+  color: var(--ma-breadcrumbs-link-color, inherit);
+  opacity: var(--ma-breadcrumbs-link-opacity, .7);
   text-decoration: none;
 }
-.ma-crumbs-link:hover,
-.ma-crumbs-link:focus-visible {
+.ma-breadcrumbs-link:hover,
+.ma-breadcrumbs-link:focus-visible {
   opacity: 1;
   text-decoration: underline;
 }
-.ma-crumbs-current {
+.ma-breadcrumbs--no-underline .ma-breadcrumbs-link:hover,
+.ma-breadcrumbs--no-underline .ma-breadcrumbs-link:focus-visible { text-decoration: none; }
+.ma-breadcrumbs-current {
   opacity: 1;
-  font-weight: 600;
+  color: var(--ma-breadcrumbs-current-color, inherit);
+  font-weight: var(--ma-breadcrumbs-current-weight, 600);
 }

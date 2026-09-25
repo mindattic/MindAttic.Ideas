@@ -15,27 +15,27 @@
 
     min-height: 100vh;
     margin: 0;
-    background: var(--bg);
+    background: var(--theme-background, var(--bg));
     color: var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 16px;
-    line-height: 1.65;
+    font-family: var(--theme-font-family, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+    font-size: var(--theme-font-size, 16px);
+    line-height: var(--theme-line-height, 1.65);
     -webkit-font-smoothing: antialiased;
 }
 
 .theme-dark * { box-sizing: border-box; }
-.theme-dark > * { max-width: 860px; margin-inline: auto; padding-inline: 1.25rem; }
+.theme-dark > * { max-width: var(--theme-content-width, 860px); margin-inline: auto; padding-inline: var(--theme-gutter, 1.25rem); }
 .theme-dark { padding-block: 2.5rem; }
 
 .theme-dark h1, .theme-dark h2, .theme-dark h3,
 .theme-dark h4, .theme-dark h5, .theme-dark h6 {
-    line-height: 1.25; font-weight: 700; margin: 1.8em 0 0.6em; letter-spacing: -0.01em; color: #f0f6fc;
+    line-height: 1.25; font-weight: 700; margin: 1.8em 0 0.6em; letter-spacing: -0.01em; color: var(--theme-heading-color, #f0f6fc);
 }
 .theme-dark h1 { font-size: 2.1rem; }
 .theme-dark h2 { font-size: 1.6rem; }
 .theme-dark h3 { font-size: 1.3rem; }
 
-.theme-dark a { color: var(--accent); text-decoration: none; }
+.theme-dark a { color: var(--theme-link, var(--accent)); text-decoration: none; }
 .theme-dark a:hover { text-decoration: underline; }
 
 .theme-dark hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
@@ -43,10 +43,10 @@
 .theme-dark code {
     background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px;
     padding: 0.1em 0.4em; font-size: 0.88em;
-    font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: var(--theme-code-font, "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 }
 .theme-dark pre {
-    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--theme-block-radius, 10px);
     padding: 1rem 1.1rem; overflow-x: auto;
 }
 .theme-dark pre code { background: none; border: 0; padding: 0; }
@@ -61,7 +61,7 @@
 .theme-dark th { background: var(--code-bg); font-weight: 600; }
 
 .theme-dark button, .theme-dark .btn {
-    background: var(--accent); color: var(--accent-contrast); border: 0; border-radius: 8px;
+    background: var(--theme-button-bg, var(--accent)); color: var(--accent-contrast); border: 0; border-radius: var(--theme-button-radius, 8px);
     padding: 0.55rem 1.1rem; font: inherit; font-weight: 700; cursor: pointer;
     transition: filter 0.12s ease;
 }
@@ -69,10 +69,16 @@
 
 .theme-dark input, .theme-dark select, .theme-dark textarea {
     background: var(--surface); color: var(--text); border: 1px solid var(--line);
-    border-radius: 8px; padding: 0.5rem 0.65rem; font: inherit;
+    border-radius: var(--theme-input-radius, 8px); padding: 0.5rem 0.65rem; font: inherit;
 }
 .theme-dark input:focus, .theme-dark select:focus, .theme-dark textarea:focus {
     outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent);
 }
 
 .theme-dark ::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+
+/* ── Instance-setting modifiers (MAI-A45) — added by V1.razor when a toggle is off or an opt-in value is set ── */
+.theme-dark--no-hover button, .theme-dark--no-hover .btn { transition: none; }
+.theme-dark--no-hover button:hover, .theme-dark--no-hover .btn:hover { filter: none; }
+.theme-dark--heading-font h1, .theme-dark--heading-font h2, .theme-dark--heading-font h3, .theme-dark--heading-font h4, .theme-dark--heading-font h5, .theme-dark--heading-font h6 { font-family: var(--theme-heading-font); }
+.theme-dark--link-hover a:hover { color: var(--theme-link-hover); }

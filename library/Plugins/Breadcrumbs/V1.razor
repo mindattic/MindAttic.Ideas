@@ -6,23 +6,28 @@
    page's slug segments ("docs/widgets/intro" -> Home / Docs / Widgets / Intro), so it needs no host
    tree feature and works on any page the moment it's dropped in. Intermediate crumbs link to the
    cumulative slug prefix; titles are prettified segment names ("my-page" -> "My Page"); the last
-   crumb is the page's real Title. Renders nothing on the home page (no segments). *@
-@if (_crumbs.Count > 0)
+   crumb is the page's real Title. Renders nothing on the home page (no segments).
+   Instance settings (MAI-A45) are emitted as --ma-breadcrumbs-* custom properties on the <nav>. *@
+@if (_crumbs.Count > 0 && (ShowHome || _crumbs.Any(c => !c.IsLast || ShowCurrent)))
 {
     <link rel="stylesheet" href="/_ideas/Plugin/breadcrumbs/1/breadcrumbs.css" />
-    <nav class="ma-crumbs @CssClass" aria-label="Breadcrumb" style="@_outerStyle">
-        <ol class="ma-crumbs-list">
-            <li class="ma-crumbs-item"><a class="ma-crumbs-link" href="/">@_homeText</a></li>
+    <nav class="ma-breadcrumbs @(UnderlineOnHover ? null : "ma-breadcrumbs--no-underline") @CssClass" aria-label="Breadcrumb" style="@_outerStyle">
+        <ol class="ma-breadcrumbs-list">
+            @if (ShowHome)
+            {
+                <li class="ma-breadcrumbs-list-item"><a class="ma-breadcrumbs-link" href="@_homeHref">@_homeText</a></li>
+            }
             @foreach (var (text, href, isLast) in _crumbs)
             {
-                <li class="ma-crumbs-item">
+                if (isLast && !ShowCurrent) continue;
+                <li class="ma-breadcrumbs-list-item">
                     @if (isLast)
                     {
-                        <span class="ma-crumbs-current" aria-current="page">@text</span>
+                        <span class="ma-breadcrumbs-current" aria-current="page">@text</span>
                     }
                     else
                     {
-                        <a class="ma-crumbs-link" href="@href">@text</a>
+                        <a class="ma-breadcrumbs-link" href="@href">@text</a>
                     }
                 </li>
             }
@@ -31,43 +36,101 @@
 }
 
 @code {
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
     /// <summary>Text of the leading root crumb (default "Home").</summary>
-    [Parameter] public string? Home { get; set; }
+    [Parameter, Setting("Home text", Group = "Content", Order = 1, Copyable = false, Description = "Label of the leading root crumb (designed: \"Home\")")]
+    public string? Home { get; set; }
 
-    /// <summary>Additional CSS classes appended to the root element.</summary>
-    [Parameter] public string? CssClass { get; set; }
+    [Parameter, Setting("Home link", Group = "Content", Order = 2, Copyable = false, Description = "Where the root crumb points (designed: /)")]
+    public string? HomeHref { get; set; }
 
-    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
-    [Parameter] public string? CssStyle { get; set; }
-
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
     /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
-    [Parameter] public string? Padding { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1)] public string? Padding { get; set; }
 
     /// <summary>CSS margin shorthand.</summary>
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2)] public string? Margin { get; set; }
 
     /// <summary>text-align or flex justification (e.g. "center", "left", "right").</summary>
-    [Parameter] public string? Align { get; set; }
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 3, Description = "left / center / right (also justifies the crumb row)")]
+    public string? Align { get; set; }
+
+    [Parameter, Setting("Gap", Group = "Layout", Order = 4, Description = "Space between crumbs and separators (designed: .4rem)")]
+    public string? Gap { get; set; }
+
+    [Parameter, Setting("List padding", Group = "Layout", Order = 5, Description = "Padding of the crumb row (designed: .5rem 0)")]
+    public string? ListPadding { get; set; }
+
+    // ── Appearance ──────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Font size", Group = "Appearance", Order = 1, Description = "designed: .9rem")] public string? FontSize { get; set; }
+    [Parameter, Setting("Link color", Group = "Appearance", Order = 2, Description = "designed: inherits the text color")] public string? LinkColor { get; set; }
+    [Parameter, Setting("Link opacity", Group = "Appearance", Order = 3, Description = "0–1 at rest (designed: 0.7)")] public double? LinkOpacity { get; set; }
+    [Parameter, Setting("Current crumb color", Group = "Appearance", Order = 4, Description = "designed: inherits the text color")] public string? CurrentColor { get; set; }
+    [Parameter, Setting("Current crumb weight", Group = "Appearance", Order = 5, Description = "font-weight (designed: 600)")] public int? CurrentWeight { get; set; }
+    [Parameter, Setting("Separator", Group = "Appearance", Order = 6, Description = "Text between crumbs (designed: ›)")] public string? Separator { get; set; }
+    [Parameter, Setting("Separator opacity", Group = "Appearance", Order = 7, Description = "0–1 (designed: 0.5)")] public double? SeparatorOpacity { get; set; }
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Show home crumb", Group = "Behavior", Order = 1)] public bool ShowHome { get; set; } = true;
+    [Parameter, Setting("Show current page", Group = "Behavior", Order = 2, Description = "The final, unlinked crumb")] public bool ShowCurrent { get; set; } = true;
+    [Parameter, Setting("Prettify segment names", Group = "Behavior", Order = 3, Description = "\"my-page\" → \"My Page\"; off shows raw slug segments")] public bool Prettify { get; set; } = true;
+    [Parameter, Setting("Underline on hover", Group = "Behavior", Order = 4)] public bool UnderlineOnHover { get; set; } = true;
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 1)] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 2)] public string? CssStyle { get; set; }
 
     private string _outerStyle => string.Join(";", new[]
     {
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        Var("--ma-breadcrumbs-justify", Justify(Align)),
+        Var("--ma-breadcrumbs-gap", Gap),
+        Var("--ma-breadcrumbs-list-padding", ListPadding),
+        Var("--ma-breadcrumbs-font-size", FontSize),
+        Var("--ma-breadcrumbs-link-color", LinkColor),
+        Var("--ma-breadcrumbs-link-opacity", Num(LinkOpacity)),
+        Var("--ma-breadcrumbs-current-color", CurrentColor),
+        Var("--ma-breadcrumbs-current-weight", CurrentWeight?.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+        Var("--ma-breadcrumbs-separator", string.IsNullOrEmpty(Separator) ? null : CssString(Separator)),
+        Var("--ma-breadcrumbs-separator-opacity", Num(SeparatorOpacity)),
         CssStyle,
     }.Where(s => s is not null));
+
+    private static string? Var(string prop, string? value) => string.IsNullOrWhiteSpace(value) ? null : prop + ":" + value.Trim();
+    private static string? Num(double? d) => d is { } v ? Math.Clamp(v, 0, 1).ToString(System.Globalization.CultureInfo.InvariantCulture) : null;
+
+    private static string? Justify(string? align) => align?.Trim().ToLowerInvariant() switch
+    {
+        null or "" => null,
+        "left" or "start" => "flex-start",
+        "right" or "end" => "flex-end",
+        "center" => "center",
+        _ => null,
+    };
+
+    // A quoted CSS string literal (for content:), with quote/backslash/newline escaped.
+    private static string CssString(string v) =>
+        "\"" + string.Concat(v.Select(c => c is '"' or '\\' or ';' or '\n' or '\r'
+            ? "\\" + ((int)c).ToString("X") + " " : c.ToString())) + "\"";
 
     private IReadOnlyList<(string Text, string Href, bool IsLast)> _crumbs =
         Array.Empty<(string, string, bool)>();
     private string _homeText = "Home";
+    private string _homeHref = "/";
 
     protected override void OnParametersSet()
     {
         _homeText = string.IsNullOrWhiteSpace(Home) ? "Home" : Home;
-        _crumbs = Build(Context?.Page?.Slug, Context?.Page?.Title);
+        _homeHref = string.IsNullOrWhiteSpace(HomeHref) ? "/" : SafeUrl(HomeHref.Trim());
+        _crumbs = Build(Context?.Page?.Slug, Context?.Page?.Title, Prettify);
     }
 
-    private static IReadOnlyList<(string, string, bool)> Build(string? slug, string? title)
+    private static IReadOnlyList<(string, string, bool)> Build(string? slug, string? title, bool prettify)
     {
         var segments = (slug ?? "").Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length == 0 || (segments.Length == 1 && segments[0].Equals("home", StringComparison.OrdinalIgnoreCase)))
@@ -78,14 +141,15 @@
         {
             prefix += "/" + segments[i];
             var isLast = i == segments.Length - 1;
-            var text = isLast && !string.IsNullOrWhiteSpace(title) ? title! : Prettify(segments[i]);
+            var text = isLast && !string.IsNullOrWhiteSpace(title) ? title!
+                     : prettify ? PrettifySegment(segments[i]) : segments[i];
             crumbs.Add((text, prefix, isLast));
         }
         return crumbs;
     }
 
     // "my-page" / "my_page" -> "My Page" (display only; the href keeps the raw segment).
-    private static string Prettify(string segment)
+    private static string PrettifySegment(string segment)
     {
         var words = segment.Replace('-', ' ').Replace('_', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return string.Join(' ', words.Select(w => char.ToUpperInvariant(w[0]) + w[1..]));

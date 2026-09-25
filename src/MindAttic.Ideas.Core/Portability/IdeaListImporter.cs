@@ -334,6 +334,35 @@ public sealed class IdeaListImporter(
                             CreatedUtc = DateTime.UtcNow,
                         });
                 }
+
+                // Instance settings (MAI-A45): upsert each slot, snapshotting a changed row into its history
+                // exactly as IWidgetInstanceSettingsService would, so an import is rollback-able too.
+                foreach (var slot in lp.InstanceSettings.Where(s => s.Slot.Length > 0))
+                {
+                    var row = await db.WidgetPlacementSettings
+                        .FirstOrDefaultAsync(s => s.PageId == page.Id && s.SlotName == slot.Slot, ct);
+                    var now = DateTime.UtcNow;
+                    if (row is null)
+                    {
+                        db.WidgetPlacementSettings.Add(new WidgetPlacementSettings
+                        {
+                            PageId = page.Id, SlotName = slot.Slot, WidgetRef = slot.WidgetRef,
+                            SettingsJson = slot.SettingsJson, SettingsVersion = 1, CreatedUtc = now, ModifiedUtc = now,
+                        });
+                    }
+                    else if (row.SettingsJson != slot.SettingsJson || row.WidgetRef != slot.WidgetRef)
+                    {
+                        db.WidgetPlacementSettingsHistory.Add(new WidgetPlacementSettingsHistory
+                        {
+                            PlacementSettingsId = row.Id, WidgetRef = row.WidgetRef, SettingsJson = row.SettingsJson,
+                            SettingsVersion = row.SettingsVersion, SavedUtc = now,
+                        });
+                        row.WidgetRef = slot.WidgetRef;
+                        row.SettingsJson = slot.SettingsJson;
+                        row.SettingsVersion++;
+                        row.ModifiedUtc = now;
+                    }
+                }
                 await db.SaveChangesAsync(ct);
             }
 

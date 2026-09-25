@@ -14,12 +14,12 @@
 
     @if (ShowReturnLink)
     {
-        <div class="ma-fromhtml-return">
-            <a href="javascript:history.back()" class="ma-fromhtml-return-link">&#8592; Return to MindAttic</a>
+        <div class="ma-fromhtml-return @(ReturnPosition == ReturnBarPosition.Top ? "ma-fromhtml-return--top" : null)" style="@_returnStyle">
+            <a href="@(string.IsNullOrWhiteSpace(ReturnHref) ? "javascript:history.back()" : SafeUrl(ReturnHref))" class="ma-fromhtml-return-link">@ReturnText</a>
         </div>
     }
 }
-else if (!EditMode)
+else if (!EditMode && ShowEmptyHint)
 {
     <div class="ma-fromhtml-empty">
         <p><em>No content loaded. In edit mode, set a source file path and click "Update from Source".</em></p>
@@ -55,19 +55,59 @@ else if (!EditMode)
     /// Instance discriminator — use "main" (default) when there is only one FromHtml per page,
     /// or a custom name when multiple instances coexist on the same page.
     /// </summary>
-    [Parameter] public string Slot { get; set; } = "main";
+    [Parameter, Setting("Slot", Group = "Advanced", Order = 0, Copyable = false, Description = "Instance discriminator; unique per FromHtml on a page")]
+    public string Slot { get; set; } = "main";
 
     /// <summary>
     /// When true, injects a fixed return-link bar into the iframe so the user can navigate back
     /// to the Ideas page they came from.
     /// </summary>
-    [Parameter] public bool ShowReturnLink { get; set; } = false;
+    [Parameter, Setting("Show return link", Group = "Behavior", Order = 1)]
+    public bool ShowReturnLink { get; set; } = false;
 
-    [Parameter] public string? CssClass { get; set; }
-    [Parameter] public string? CssStyle { get; set; }
-    [Parameter] public string? Padding  { get; set; }
-    [Parameter] public string? Margin   { get; set; }
-    [Parameter] public string? Align    { get; set; }
+    /// <summary>Return-link text.</summary>
+    [Parameter, Setting("Return link text", Group = "Content", Order = 1, Copyable = false)]
+    public string ReturnText { get; set; } = "← Return to MindAttic";
+
+    /// <summary>Return-link target; empty = browser back (history.back()).</summary>
+    [Parameter, Setting("Return link URL", Group = "Content", Order = 2, Copyable = false, Description = "Empty = browser back")]
+    public string? ReturnHref { get; set; }
+
+    public enum ReturnBarPosition { Bottom, Top }
+
+    /// <summary>Where the fixed return bar sits.</summary>
+    [Parameter, Setting("Return bar position", Group = "Layout", Order = 4)]
+    public ReturnBarPosition ReturnPosition { get; set; } = ReturnBarPosition.Bottom;
+
+    [Parameter, Setting("Return bar background", Group = "Colors", Order = 1, Description = "Default rgba(0,0,0,.82)")] public string? ReturnBackground { get; set; }
+    [Parameter, Setting("Return link color", Group = "Colors", Order = 2, Description = "Default #fff")] public string? ReturnColor { get; set; }
+    [Parameter, Setting("Return bar font size", Group = "Layout", Order = 5, Description = "Default 14px")] public string? ReturnFontSize { get; set; }
+    [Parameter, Setting("Return bar padding", Group = "Layout", Order = 6, Description = "Default 10px 16px")] public string? ReturnPadding { get; set; }
+
+    /// <summary>Show the "No content loaded" hint to visitors when nothing has been synced.</summary>
+    [Parameter, Setting("Show empty-state hint", Group = "Behavior", Order = 2)]
+    public bool ShowEmptyHint { get; set; } = true;
+
+    private string? _returnStyle
+    {
+        get
+        {
+            var s = string.Join(";", new[]
+            {
+                string.IsNullOrWhiteSpace(ReturnBackground) ? null : $"--ma-fromhtml-return-bg:{ReturnBackground}",
+                string.IsNullOrWhiteSpace(ReturnColor) ? null : $"--ma-fromhtml-return-color:{ReturnColor}",
+                string.IsNullOrWhiteSpace(ReturnFontSize) ? null : $"--ma-fromhtml-return-size:{ReturnFontSize}",
+                string.IsNullOrWhiteSpace(ReturnPadding) ? null : $"--ma-fromhtml-return-padding:{ReturnPadding}",
+            }.Where(v => v is not null));
+            return s.Length > 0 ? s : null;
+        }
+    }
+
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1)] public string? Padding  { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2)] public string? Margin   { get; set; }
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 3)] public string? Align    { get; set; }
 
     private string? _outerStyle
     {

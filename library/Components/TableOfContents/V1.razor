@@ -9,13 +9,87 @@
 {
     @* Styling loads only when the ToC actually renders (leaf pages emit nothing at all). *@
     <link rel="stylesheet" href="/_ideas/Component/tableofcontents/1/toc.css" />
-    <nav class="ma-toc" aria-label="Table of contents">
-        @BuildList(_tree)
+    <nav class="@_navClass" aria-label="@AriaLabel" style="@_navStyle">
+        @if (!string.IsNullOrWhiteSpace(Heading))
+        {
+            <div class="ma-toc-heading">@Heading</div>
+        }
+        @BuildList(_tree, 1)
     </nav>
 }
 
 @code {
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Heading", Group = "Content", Order = 1, Copyable = false, Description = "Optional visible heading above the list")]
+    public string? Heading { get; set; }
+
+    [Parameter, Setting("Accessible label", Group = "Content", Order = 2)]
+    public string AriaLabel { get; set; } = "Table of contents";
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Max depth", Group = "Behavior", Order = 1, Description = "Levels of descendants to list; 0 = all")]
+    public int MaxDepth { get; set; }
+
+    [Parameter, Setting("Honor 'open in new window'", Group = "Behavior", Order = 2, Description = "Pages flagged to open in a new window get target=_blank")]
+    public bool HonorNewWindow { get; set; } = true;
+
+    [Parameter, Setting("Hover transitions", Group = "Behavior", Order = 3)]
+    public bool Animate { get; set; } = true;
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Margin", Group = "Layout", Order = 1, Description = "Default 1.25rem 0")] public string? Margin { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 2)] public string? Padding { get; set; }
+    [Parameter, Setting("Max width", Group = "Layout", Order = 3)] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Item gap", Group = "Layout", Order = 4, Description = "Default 0.2rem")] public string? Gap { get; set; }
+    [Parameter, Setting("Link padding", Group = "Layout", Order = 5, Description = "Default 0.4rem 0.65rem")] public string? LinkPadding { get; set; }
+    [Parameter, Setting("Nested indent", Group = "Layout", Order = 6, Description = "Default 1.1rem")] public string? Indent { get; set; }
+    [Parameter, Setting("Font size", Group = "Layout", Order = 7)] public string? FontSize { get; set; }
+    [Parameter, Setting("Nested font size", Group = "Layout", Order = 8, Description = "Default 0.9em")] public string? NestedFontSize { get; set; }
+    [Parameter, Setting("Nested opacity", Group = "Layout", Order = 9, Description = "Default 0.85")] public string? NestedOpacity { get; set; }
+
+    // ── Colors ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Link color", Group = "Colors", Order = 1, Description = "Default inherit")] public string? LinkColor { get; set; }
+    [Parameter, Setting("Hover background", Group = "Colors", Order = 2, Description = "Default rgba(127,127,127,.12)")] public string? HoverBackground { get; set; }
+    [Parameter, Setting("Hover accent bar color", Group = "Colors", Order = 3, Description = "Default currentColor")] public string? AccentColor { get; set; }
+    [Parameter, Setting("Link corner radius", Group = "Colors", Order = 4, Description = "Default 6px")] public string? Radius { get; set; }
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 1)] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 2)] public string? CssStyle { get; set; }
+
     private IReadOnlyList<ChildPageNode> _tree = Array.Empty<ChildPageNode>();
+
+    private string _navClass => string.Join(" ", new[] { "ma-toc", Animate ? null : "ma-toc--no-anim", CssClass }
+        .Where(s => !string.IsNullOrWhiteSpace(s)));
+
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
+    // Null when nothing is set, so the default render carries no style attribute at all.
+    private string? _navStyle
+    {
+        get
+        {
+            var s = string.Join(";", new[]
+            {
+                Var("--ma-toc-margin", Margin),
+                Var("--ma-toc-gap", Gap),
+                Var("--ma-toc-link-padding", LinkPadding),
+                Var("--ma-toc-indent", Indent),
+                Var("--ma-toc-nested-size", NestedFontSize),
+                Var("--ma-toc-nested-opacity", NestedOpacity),
+                Var("--ma-toc-color", LinkColor),
+                Var("--ma-toc-hover-bg", HoverBackground),
+                Var("--ma-toc-accent", AccentColor),
+                Var("--ma-toc-radius", Radius),
+                Var("padding", Padding),
+                Var("max-width", MaxWidth),
+                Var("font-size", FontSize),
+                string.IsNullOrWhiteSpace(CssStyle) ? null : CssStyle,
+            }.Where(v => v is not null));
+            return s.Length == 0 ? null : s;
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -23,7 +97,7 @@
             _tree = await tree.DescendantsTreeAsync(Context.Page.PageId);
     }
 
-    private RenderFragment BuildList(IReadOnlyList<ChildPageNode> nodes) => builder =>
+    private RenderFragment BuildList(IReadOnlyList<ChildPageNode> nodes, int depth) => builder =>
     {
         int seq = 0;
         builder.OpenElement(seq++, "ul");
@@ -35,12 +109,12 @@
             builder.OpenElement(seq++, "a");
             builder.AddAttribute(seq++, "class", "ma-toc-link");
             builder.AddAttribute(seq++, "href", "/" + node.Slug);
-            if (node.OpenInNewWindow)
+            if (node.OpenInNewWindow && HonorNewWindow)
                 builder.AddAttribute(seq++, "target", "_blank");
             builder.AddContent(seq++, node.Title);
             builder.CloseElement(); // a
-            if (node.Children.Count > 0)
-                builder.AddContent(seq++, BuildList(node.Children));
+            if (node.Children.Count > 0 && (MaxDepth <= 0 || depth < MaxDepth))
+                builder.AddContent(seq++, BuildList(node.Children, depth + 1));
             builder.CloseElement(); // li
         }
         builder.CloseElement(); // ul

@@ -7,30 +7,34 @@
    wires its own backend — Formspree-style relay or a future host endpoint). Includes a honeypot
    field bots fill and servers should reject. With no action configured it renders a visible
    configuration hint instead of a dead form.
-   <Component.ContactForm action="https://formspree.io/f/abc" submittext="Send" /> *@
+   <Component.ContactForm action="https://formspree.io/f/abc" submittext="Send" />
+   Visual settings (MAI-A45) are emitted as --ma-contact-* custom properties on .ma-contact, only when set. *@
 <link rel="stylesheet" href="/_ideas/Component/contactform/1/contactform.css" />
 <div class="@CssClass" style="@_outerStyle">
 @if (string.IsNullOrWhiteSpace(_action))
 {
-    <div class="ma-contact ma-contact-unconfigured">
+    <div class="ma-contact ma-contact-unconfigured @_modClass" style="@_formStyle">
         ContactForm: set <code>action=</code> on the include token (or the <code>contact.action</code>
         site setting) to the endpoint that should receive submissions.
     </div>
 }
 else
 {
-    <form class="ma-contact" method="post" action="@_action">
+    <form class="ma-contact @_modClass" method="post" action="@_action" style="@_formStyle">
+        @if (ShowName)
+        {
+            <label class="ma-contact-field">
+                <span>@NameLabel</span>
+                <input name="name" type="text" required="@NameRequired" maxlength="200" autocomplete="name" placeholder="@NamePlaceholder" />
+            </label>
+        }
         <label class="ma-contact-field">
-            <span>Name</span>
-            <input name="name" type="text" required maxlength="200" autocomplete="name" />
+            <span>@EmailLabel</span>
+            <input name="email" type="email" required maxlength="320" autocomplete="email" placeholder="@EmailPlaceholder" />
         </label>
         <label class="ma-contact-field">
-            <span>Email</span>
-            <input name="email" type="email" required maxlength="320" autocomplete="email" />
-        </label>
-        <label class="ma-contact-field">
-            <span>Message</span>
-            <textarea name="message" required rows="6" maxlength="4000"></textarea>
+            <span>@MessageLabel</span>
+            <textarea name="message" required rows="@_rows" maxlength="@_maxLength" placeholder="@MessagePlaceholder"></textarea>
         </label>
         @* Honeypot: visually hidden, tempting name; servers should drop submissions that fill it. *@
         <input class="ma-contact-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
@@ -41,28 +45,58 @@ else
 
 @code {
     /// <summary>POST endpoint. Overrides the "contact.action" site setting.</summary>
-    [Parameter] public string? Action { get; set; }
+    [Parameter, Setting("Endpoint URL", Group = "Content", Order = 1, Copyable = false, Description = "POST target; falls back to the contact.action site setting")]
+    public string? Action { get; set; }
 
     /// <summary>Submit button text (default "Send message").</summary>
-    [Parameter] public string? SubmitText { get; set; }
+    [Parameter, Setting("Submit button text", Group = "Content", Order = 2, Copyable = false, Description = "Default \"Send message\"")]
+    public string? SubmitText { get; set; }
+
+    [Parameter, Setting("Name label", Group = "Content", Order = 3, Copyable = false)] public string NameLabel { get; set; } = "Name";
+    [Parameter, Setting("Email label", Group = "Content", Order = 4, Copyable = false)] public string EmailLabel { get; set; } = "Email";
+    [Parameter, Setting("Message label", Group = "Content", Order = 5, Copyable = false)] public string MessageLabel { get; set; } = "Message";
+    [Parameter, Setting("Name placeholder", Group = "Content", Order = 6, Copyable = false)] public string? NamePlaceholder { get; set; }
+    [Parameter, Setting("Email placeholder", Group = "Content", Order = 7, Copyable = false)] public string? EmailPlaceholder { get; set; }
+    [Parameter, Setting("Message placeholder", Group = "Content", Order = 8, Copyable = false)] public string? MessagePlaceholder { get; set; }
+
+    [Parameter, Setting("Show name field", Group = "Behavior", Order = 1)] public bool ShowName { get; set; } = true;
+    [Parameter, Setting("Name required", Group = "Behavior", Order = 2)] public bool NameRequired { get; set; } = true;
+    [Parameter, Setting("Message rows", Group = "Behavior", Order = 3)] public int MessageRows { get; set; } = 6;
+    [Parameter, Setting("Message max length", Group = "Behavior", Order = 4)] public int MessageMaxLength { get; set; } = 4000;
+    [Parameter, Setting("Animations", Group = "Behavior", Order = 5, Description = "Submit-button hover transition")] public bool Animations { get; set; } = true;
 
     /// <summary>Additional CSS classes appended to the root element.</summary>
-    [Parameter] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
 
     /// <summary>Inline CSS appended to the root element's style attribute.</summary>
-    [Parameter] public string? CssStyle { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
 
     /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
-    [Parameter] public string? Padding { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1)] public string? Padding { get; set; }
 
     /// <summary>CSS margin shorthand.</summary>
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2)] public string? Margin { get; set; }
 
     /// <summary>Text-align or flex justification (e.g. "center", "left", "right").</summary>
-    [Parameter] public string? Align { get; set; }
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 3)] public string? Align { get; set; }
+
+    [Parameter, Setting("Form max width", Group = "Layout", Order = 4, Description = "Default 34rem")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Field gap", Group = "Layout", Order = 5, Description = "Space between fields (default 1rem)")] public string? Gap { get; set; }
+    [Parameter, Setting("Field padding", Group = "Layout", Order = 6, Description = "Default .6rem .75rem")] public string? FieldPadding { get; set; }
+    [Parameter, Setting("Field corner radius", Group = "Layout", Order = 7, Description = "Default .4rem")] public string? FieldRadius { get; set; }
+    [Parameter, Setting("Button corner radius", Group = "Layout", Order = 8, Description = "Default 2rem")] public string? ButtonRadius { get; set; }
+    [Parameter, Setting("Button padding", Group = "Layout", Order = 9, Description = "Default .65rem 1.6rem")] public string? ButtonPadding { get; set; }
+    [Parameter, Setting("Button alignment", Group = "Layout", Order = 10, Description = "flex-start (default), center, flex-end, stretch")] public string? ButtonAlign { get; set; }
+
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 1, Description = "Button + focus ring (default #4a6cf7)")] public string? AccentColor { get; set; }
+    [Parameter, Setting("Border color", Group = "Colors", Order = 2, Description = "Default rgba(128,128,128,.4)")] public string? BorderColor { get; set; }
+    [Parameter, Setting("Field background", Group = "Colors", Order = 3, Description = "Default rgba(128,128,128,.07)")] public string? FieldBackground { get; set; }
+    [Parameter, Setting("Button text color", Group = "Colors", Order = 4, Description = "Default #fff")] public string? ButtonTextColor { get; set; }
 
     private string? _action;
     private string _submitText = "Send message";
+    private int _rows => MessageRows > 0 ? MessageRows : 6;
+    private int _maxLength => MessageMaxLength > 0 ? MessageMaxLength : 4000;
 
     private string _outerStyle => string.Join(";", new[]
     {
@@ -71,6 +105,34 @@ else
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
         CssStyle,
     }.Where(s => s is not null));
+
+    // .ma-contact declares its own accent/border properties, so overrides go on that element.
+    private string? _formStyle
+    {
+        get
+        {
+            var s = string.Join(";", new[]
+            {
+                Var("--ma-contact-accent", AccentColor),
+                Var("--ma-contact-border", BorderColor),
+                Var("--ma-contact-field-bg", FieldBackground),
+                Var("--ma-contact-button-color", ButtonTextColor),
+                Var("--ma-contact-max-width", MaxWidth),
+                Var("--ma-contact-gap", Gap),
+                Var("--ma-contact-field-padding", FieldPadding),
+                Var("--ma-contact-field-radius", FieldRadius),
+                Var("--ma-contact-button-radius", ButtonRadius),
+                Var("--ma-contact-button-padding", ButtonPadding),
+                Var("--ma-contact-button-align", ButtonAlign),
+            }.Where(v => v is not null));
+            return s.Length > 0 ? s : null;
+        }
+    }
+
+    private string? _modClass => Animations ? null : "ma-contact--no-anim";
+
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
 
     protected override void OnParametersSet()
     {

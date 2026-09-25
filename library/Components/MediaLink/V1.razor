@@ -5,34 +5,88 @@
 @* MindAttic.Ideas.Component.MediaLink.V1 — renders a managed media asset as a hyperlink.
    Images and PDFs open inline in the browser; everything else triggers a download (set by the
    /_media/ endpoint's Content-Disposition header). Renders nothing when Uid is empty or invalid.
+   Visual settings default to null ("as designed") and only emit inline style / custom properties
+   when set, so an unconfigured instance renders exactly as before.
    <Component.MediaLink uid="550e8400-e29b-41d4-a716-446655440000" label="Download spec" /> *@
 
 @if (_uid.HasValue)
 {
     <link rel="stylesheet" href="/_ideas/Component/medialink/1/medialink.css" />
-    <a class="ma-media-link @CssClass" href="/_media/@_uid.Value" style="@_outerStyle">@(Label ?? "Download")</a>
+    <a class="@_rootClass" href="/_media/@_uid.Value" style="@_outerStyle"
+       target="@(NewTab ? "_blank" : null)" rel="@(NewTab ? "noopener" : null)"
+       download="@(ForceDownload ? (FileName ?? "") : null)"
+       title="@(string.IsNullOrEmpty(Tooltip) ? null : Tooltip)">@(Label ?? "Download")</a>
 }
 
 @code {
     /// <summary>Stable asset UID from Admin → Media (the Uid column).</summary>
-    [Parameter] public string? Uid { get; set; }
+    [Parameter, Setting("Media UID", Group = "Content", Order = 1, Copyable = false, Description = "The asset's Uid from Admin → Media")]
+    public string? Uid { get; set; }
 
     /// <summary>Link text shown to the user. Defaults to "Download".</summary>
-    [Parameter] public string? Label { get; set; }
+    [Parameter, Setting("Label", Group = "Content", Order = 2, Copyable = false, Description = "Default: Download")]
+    public string? Label { get; set; }
 
-    /// <summary>Additional CSS classes appended to the root element.</summary>
-    [Parameter] public string? CssClass { get; set; }
+    /// <summary>Hover tooltip (title attribute).</summary>
+    [Parameter, Setting("Tooltip", Group = "Content", Order = 3, Copyable = false)] public string? Tooltip { get; set; }
 
-    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
-    [Parameter] public string? CssStyle { get; set; }
+    /// <summary>Suggested file name when ForceDownload is on.</summary>
+    [Parameter, Setting("Download file name", Group = "Content", Order = 4, Copyable = false, Description = "Used with Force download")]
+    public string? FileName { get; set; }
+
+    /// <summary>Open the asset in a new browser tab.</summary>
+    [Parameter, Setting("Open in new tab", Group = "Behavior", Order = 1)] public bool NewTab { get; set; }
+
+    /// <summary>Add the download attribute so the browser saves the file instead of opening it.</summary>
+    [Parameter, Setting("Force download", Group = "Behavior", Order = 2)] public bool ForceDownload { get; set; }
+
+    /// <summary>Underline the link text (as designed: on).</summary>
+    [Parameter, Setting("Underline", Group = "Appearance", Order = 1)] public bool Underline { get; set; } = true;
+
+    /// <summary>Link text color (default: the theme's link color).</summary>
+    [Parameter, Setting("Text color", Group = "Appearance", Order = 2)] public string? Color { get; set; }
+
+    /// <summary>Link text color on hover/focus.</summary>
+    [Parameter, Setting("Hover color", Group = "Appearance", Order = 3)] public string? HoverColor { get; set; }
+
+    /// <summary>CSS font-size.</summary>
+    [Parameter, Setting("Font size", Group = "Appearance", Order = 4)] public string? FontSize { get; set; }
+
+    /// <summary>CSS font-weight.</summary>
+    [Parameter, Setting("Font weight", Group = "Appearance", Order = 5)] public string? FontWeight { get; set; }
+
+    /// <summary>CSS background (with padding, turns the link into a button-like chip).</summary>
+    [Parameter, Setting("Background", Group = "Appearance", Order = 6)] public string? Background { get; set; }
+
+    /// <summary>CSS border shorthand.</summary>
+    [Parameter, Setting("Border", Group = "Appearance", Order = 7)] public string? Border { get; set; }
+
+    /// <summary>CSS border-radius.</summary>
+    [Parameter, Setting("Corner radius", Group = "Appearance", Order = 8)] public string? Radius { get; set; }
 
     /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
-    [Parameter] public string? Padding { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1)] public string? Padding { get; set; }
 
     /// <summary>CSS margin shorthand.</summary>
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2)] public string? Margin { get; set; }
+
+    /// <summary>Gap between inline children (default .35rem).</summary>
+    [Parameter, Setting("Gap", Group = "Layout", Order = 3, Description = "Default .35rem")] public string? Gap { get; set; }
+
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
 
     private Guid? _uid => Guid.TryParse(Uid, out var g) ? g : null;
+
+    private string _rootClass => string.Join(" ", new[]
+    {
+        "ma-media-link",
+        string.IsNullOrEmpty(HoverColor) ? null : "ma-media-link--hover",
+        CssClass,
+    }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
     private string? _outerStyle
     {
@@ -42,8 +96,17 @@
             {
                 string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
                 string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
+                string.IsNullOrEmpty(Gap) ? null : $"--ma-media-link-gap:{Gap}",
+                Underline ? null : "--ma-media-link-decoration:none",
+                string.IsNullOrEmpty(Color) ? null : $"color:{Color}",
+                string.IsNullOrEmpty(HoverColor) ? null : $"--ma-media-link-hover-color:{HoverColor}",
+                string.IsNullOrEmpty(FontSize) ? null : $"font-size:{FontSize}",
+                string.IsNullOrEmpty(FontWeight) ? null : $"font-weight:{FontWeight}",
+                string.IsNullOrEmpty(Background) ? null : $"background:{Background}",
+                string.IsNullOrEmpty(Border) ? null : $"border:{Border}",
+                string.IsNullOrEmpty(Radius) ? null : $"border-radius:{Radius}",
                 CssStyle,
-            }.Where(p => p is not null));
+            }.Where(p => !string.IsNullOrEmpty(p)));
             return s.Length > 0 ? s : null;
         }
     }

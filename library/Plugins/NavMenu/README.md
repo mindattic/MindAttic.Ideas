@@ -62,7 +62,7 @@ Renders a bar with "MindAttic" as the brand and four navigation links. The link 
 - **Link format:** each entry is `Text=/href` separated by `;`. Malformed entries (no `=`, empty text, or empty href) are silently skipped. Hrefs containing `javascript:`, `data:`, or `vbscript:` are blocked by the internal `IsUnsafeUrl` check.
 - **Priority chain:** an explicit parameter always wins over the site setting. If neither is present, `Brand` falls back to the site key, then `"Home"`.
 - **Active page:** the link whose href (slash-trimmed) matches the current page's slug (case-insensitive) receives `aria-current="page"`. Only an exact slug match qualifies; prefix matching is not performed.
-- **Responsive collapse:** the component self-loads `navmenu.css` and `navmenu.js`. Below 720 px the list collapses and the `.ma-nav-toggle` button becomes visible. No manual asset import is needed.
-- **CSS classes:** `ma-nav`, `ma-nav-brand`, `ma-nav-toggle`, `ma-nav-list`, `ma-nav-item`, `ma-nav-link`. These can be targeted by theme overrides.
+- **Responsive collapse:** the component self-loads `navmenu.css` and `navmenu.js`. Below 720 px the list collapses and the `.ma-header-toggle` button becomes visible. No manual asset import is needed.
+- **CSS classes:** `ma-header`, `ma-header-brand`, `ma-header-toggle`, `ma-header-list`, `ma-header-list-item`, `ma-header-link`. These can be targeted by theme overrides.
 - **Multi-site seam:** a single `<Plugin.NavMenu />` tag in a shared theme works across every site because `nav.links` is resolved per-site at render time.
 - **`Padding`, `Margin`, `Align`, and `Style`** are merged into a single `style` attribute on the `<nav>` element in that order; `Style` is always last so it can override the others.

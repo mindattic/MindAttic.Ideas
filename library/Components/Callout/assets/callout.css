@@ -1,17 +1,18 @@
 ﻿/* MindAttic.Ideas.Component.Callout — notice boxes. Scoped under .ma-callout (MAIL-LAW-6).
-   Icons are text glyphs (no images, no requests); accents are custom properties per variant. */
+   Icons are text glyphs (no images, no requests); accents are custom properties per variant.
+   Geometry reads optional custom properties (instance settings, MAI-A45) with the as-designed fallback. */
 .ma-callout {
   --ma-callout-accent: #3b82d4;
   --ma-callout-icon: "\2139";       /* ℹ */
   position: relative;
-  padding: .9rem 1rem .9rem 2.9rem;
-  margin: 1rem 0;
-  border-left: 4px solid var(--ma-callout-accent);
-  border-radius: .35rem;
+  padding: var(--ma-callout-padding, .9rem 1rem .9rem 2.9rem);
+  margin: var(--ma-callout-margin, 1rem 0);
+  border-left: var(--ma-callout-border-width, 4px) solid var(--ma-callout-accent);
+  border-radius: var(--ma-callout-radius, .35rem);
   background:
-    linear-gradient(color-mix(in srgb, var(--ma-callout-accent) 9%, transparent),
-                    color-mix(in srgb, var(--ma-callout-accent) 9%, transparent));
-  line-height: 1.5;
+    linear-gradient(color-mix(in srgb, var(--ma-callout-accent) var(--ma-callout-tint, 9%), transparent),
+                    color-mix(in srgb, var(--ma-callout-accent) var(--ma-callout-tint, 9%), transparent));
+  line-height: var(--ma-callout-line-height, 1.5);
 }
 .ma-callout::before {
   content: var(--ma-callout-icon);

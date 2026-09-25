@@ -1,15 +1,16 @@
 ﻿/* MindAttic.Ideas.Plugin.BackToTop — floating button. Scoped under .ma-backtotop (MAIL-LAW-6). */
 .ma-backtotop {
   position: fixed;
-  right: 1.25rem;
-  bottom: 1.25rem;
-  z-index: 9000;
-  width: 2.9rem;
-  height: 2.9rem;
+  right: var(--ma-btt-right, 1.25rem);
+  left: var(--ma-btt-left, auto);
+  bottom: var(--ma-btt-bottom, 1.25rem);
+  z-index: var(--ma-btt-z, 9000);
+  width: var(--ma-btt-size, 2.9rem);
+  height: var(--ma-btt-size, 2.9rem);
   border: 0;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, .55);
-  color: #fff;
+  border-radius: var(--ma-btt-radius, 50%);
+  background: var(--ma-btt-bg, rgba(0, 0, 0, .55));
+  color: var(--ma-btt-color, #fff);
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
@@ -17,7 +18,7 @@
   transition: opacity .2s ease, transform .2s ease;
 }
 .ma-backtotop.ma-backtotop-show {
-  opacity: .85;
+  opacity: var(--ma-btt-opacity, .85);
   pointer-events: auto;
   transform: translateY(0);
 }
@@ -34,3 +35,5 @@
   border-top: 3px solid currentColor;
   transform: rotate(45deg);
 }
+/* Instance setting "Animations" off (MAI-A45): backtotop.js adds this class. */
+.ma-backtotop.ma-backtotop--no-anim { transition: none; transform: none; }

@@ -1,13 +1,13 @@
 ﻿/* MindAttic.Ideas.Plugin.Footer — footer chrome + pin-when-short. Scoped under .ma-footer (MAIL-LAW-6). */
 .ma-footer {
-  padding: 1.25rem 1rem;
-  margin-top: 2rem;
-  font-size: .85rem;
-  opacity: .75;
-  text-align: center;
-  border-top: 1px solid rgba(128, 128, 128, .25);
+  padding: var(--ma-footer-padding, 1.25rem 1rem);
+  margin-top: var(--ma-footer-margin-top, 2rem);
+  font-size: var(--ma-footer-font-size, .85rem);
+  opacity: var(--ma-footer-opacity, .75);
+  text-align: var(--ma-footer-align, center);
+  border-top: var(--ma-footer-border, 1px solid rgba(128, 128, 128, .25));
 }
-.ma-footer a { color: inherit; }
+.ma-footer a { color: var(--ma-footer-link, inherit); }
 /* footer.js adds .ma-footer-pinned only while the document is shorter than the viewport. */
 .ma-footer-pinned {
   position: fixed;

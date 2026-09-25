@@ -13,21 +13,21 @@
 
 @if (_cards.Count > 0)
 {
-    <div class="ma-projectgrid @CssClass" style="@_outerStyle">
+    <div class="@_rootClass" style="@_outerStyle">
         @if (ShowFilters && _topics.Count > 1)
         {
-            <div class="ma-pg-filters" role="tablist" aria-label="Filter projects by topic">
+            <div class="ma-pg-filters" role="tablist" aria-label="@FilterLabel">
                 <button type="button" role="tab"
                         class="ma-pg-filter @(_activeTopic is null ? "is-active" : "")"
                         aria-selected="@(_activeTopic is null)"
-                        @onclick="() => SetTopic(null)">All <span class="ma-pg-count">@_cards.Count</span></button>
+                        @onclick="() => SetTopic(null)">@AllLabel @if (ShowCounts) {<span class="ma-pg-count">@_cards.Count</span>}</button>
                 @foreach (var topic in _topics)
                 {
                     var count = _cards.Count(c => c.Topics.Contains(topic));
                     <button type="button" role="tab"
                             class="ma-pg-filter @(_activeTopic == topic ? "is-active" : "")"
                             aria-selected="@(_activeTopic == topic)"
-                            @onclick="() => SetTopic(topic)">@topic <span class="ma-pg-count">@count</span></button>
+                            @onclick="() => SetTopic(topic)">@topic @if (ShowCounts) {<span class="ma-pg-count">@count</span>}</button>
                 }
             </div>
         }
@@ -38,27 +38,27 @@
                 <li class="ma-pg-card">
                     <a class="ma-pg-link" href="/@card.Slug">
                         <h3 class="ma-pg-title">@card.Title</h3>
-                        @if (!string.IsNullOrWhiteSpace(card.Description))
+                        @if (ShowDescription && !string.IsNullOrWhiteSpace(card.Description))
                         {
                             <p class="ma-pg-desc">@card.Description</p>
                         }
                     </a>
                     <div class="ma-pg-meta">
-                        @if (!string.IsNullOrWhiteSpace(card.Language))
+                        @if (ShowLanguage && !string.IsNullOrWhiteSpace(card.Language))
                         {
                             <span class="ma-pg-lang">@card.Language</span>
                         }
-                        @if (card.Stars > 0)
+                        @if (ShowStars && card.Stars > 0)
                         {
                             <span class="ma-pg-stars" title="@card.Stars stargazers">★ @card.Stars</span>
                         }
-                        @if (!string.IsNullOrWhiteSpace(card.Homepage))
+                        @if (ShowLive && !string.IsNullOrWhiteSpace(card.Homepage))
                         {
-                            <a class="ma-pg-ext" href="@card.Homepage" target="_blank" rel="noopener noreferrer">Live</a>
+                            <a class="ma-pg-ext" href="@card.Homepage" target="@_extTarget" rel="noopener noreferrer">@LiveLabel</a>
                         }
-                        @if (!string.IsNullOrWhiteSpace(card.Url))
+                        @if (ShowSource && !string.IsNullOrWhiteSpace(card.Url))
                         {
-                            <a class="ma-pg-ext" href="@card.Url" target="_blank" rel="noopener noreferrer">Source</a>
+                            <a class="ma-pg-ext" href="@card.Url" target="@_extTarget" rel="noopener noreferrer">@SourceLabel</a>
                         }
                     </div>
                 </li>
@@ -72,33 +72,93 @@
     /// Slug of the page whose children to list, e.g. "projects". Empty = the current page's own children,
     /// which is what an index page wants; a home page pointing at the projects index wants this.
     /// </summary>
-    [Parameter] public string? From { get; set; }
+    [Parameter, Setting("Parent page slug", Group = "Content", Order = 1, Copyable = false, Description = "Whose child pages to list; blank = this page's children")]
+    public string? From { get; set; }
 
     /// <summary>Show the topic filter bar. Off for a short, unfiltered list.</summary>
-    [Parameter] public bool ShowFilters { get; set; } = true;
+    [Parameter, Setting("Show topic filter bar", Group = "Behavior", Order = 1)]
+    public bool ShowFilters { get; set; } = true;
 
     /// <summary>Cap the number of cards rendered (e.g. a "featured" strip on a home page). 0 = no cap.</summary>
-    [Parameter] public int Max { get; set; }
+    [Parameter, Setting("Max cards", Group = "Behavior", Order = 2, Description = "0 = no cap")]
+    public int Max { get; set; }
 
     /// <summary>Only show cards carrying this GitHub topic. Empty = all.</summary>
-    [Parameter] public string? Topic { get; set; }
+    [Parameter, Setting("Only topic", Group = "Behavior", Order = 3, Description = "Only cards carrying this GitHub topic; blank = all")]
+    public string? Topic { get; set; }
 
     /// <summary>
     /// Only show repos whose NAME starts with this, e.g. "MindAttic." for the ecosystem libraries.
     /// Pairs with <see cref="ExcludeNamePrefix"/> to split one topic into two grids.
     /// </summary>
-    [Parameter] public string? NamePrefix { get; set; }
+    [Parameter, Setting("Repo name prefix", Group = "Behavior", Order = 4, Description = "Only repos whose name starts with this")]
+    public string? NamePrefix { get; set; }
 
     /// <summary>Hide repos whose name starts with this — the other half of a <see cref="NamePrefix"/> split.</summary>
-    [Parameter] public string? ExcludeNamePrefix { get; set; }
+    [Parameter, Setting("Exclude repo name prefix", Group = "Behavior", Order = 5, Description = "Hide repos whose name starts with this")]
+    public string? ExcludeNamePrefix { get; set; }
 
-    [Parameter] public string? CssClass { get; set; }
-    [Parameter] public string? CssStyle { get; set; }
-    [Parameter] public string? Padding { get; set; }
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Sort by", Group = "Behavior", Order = 6, Description = "stars (most-starred, then title) | title | none (page order)")]
+    public string SortBy { get; set; } = "stars";
+
+    [Parameter, Setting("Show filter counts", Group = "Behavior", Order = 7)] public bool ShowCounts { get; set; } = true;
+    [Parameter, Setting("Show description", Group = "Behavior", Order = 8)] public bool ShowDescription { get; set; } = true;
+    [Parameter, Setting("Show language", Group = "Behavior", Order = 9)] public bool ShowLanguage { get; set; } = true;
+    [Parameter, Setting("Show stars", Group = "Behavior", Order = 10)] public bool ShowStars { get; set; } = true;
+    [Parameter, Setting("Show Live link", Group = "Behavior", Order = 11)] public bool ShowLive { get; set; } = true;
+    [Parameter, Setting("Show Source link", Group = "Behavior", Order = 12)] public bool ShowSource { get; set; } = true;
+    [Parameter, Setting("External links in new tab", Group = "Behavior", Order = 13)] public bool NewTab { get; set; } = true;
+    [Parameter, Setting("Hover effects", Group = "Behavior", Order = 14, Description = "Card lift, shadow and transitions")] public bool HoverEffects { get; set; } = true;
+
+    // ── Labels ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("\"All\" filter label", Group = "Labels", Order = 1)] public string AllLabel { get; set; } = "All";
+    [Parameter, Setting("Live link label", Group = "Labels", Order = 2)] public string LiveLabel { get; set; } = "Live";
+    [Parameter, Setting("Source link label", Group = "Labels", Order = 3)] public string SourceLabel { get; set; } = "Source";
+    [Parameter, Setting("Filter bar label (a11y)", Group = "Labels", Order = 4)] public string FilterLabel { get; set; } = "Filter projects by topic";
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Columns", Group = "Layout", Order = 1, Description = "0 = auto-fill by minimum card width")] public int Columns { get; set; }
+    [Parameter, Setting("Minimum card width", Group = "Layout", Order = 2, Description = "Default 17rem")] public string? MinCardWidth { get; set; }
+    [Parameter, Setting("Gap", Group = "Layout", Order = 3, Description = "Default 1.25rem")] public string? Gap { get; set; }
+    [Parameter, Setting("Filter bar alignment", Group = "Layout", Order = 4, Description = "flex-start | center | flex-end")] public string? FilterAlign { get; set; }
+    [Parameter, Setting("Description lines", Group = "Layout", Order = 5, Description = "Lines before the description is clamped")] public int DescriptionLines { get; set; } = 4;
+    [Parameter, Setting("Padding", Group = "Layout", Order = 6)] public string? Padding { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 7)] public string? Margin { get; set; }
+
+    // ── Colors ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Border color", Group = "Colors", Order = 1)] public string? BorderColor { get; set; }
+    [Parameter, Setting("Card background", Group = "Colors", Order = 2)] public string? CardBackground { get; set; }
+    [Parameter, Setting("Muted text color", Group = "Colors", Order = 3)] public string? MutedColor { get; set; }
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 4)] public string? AccentColor { get; set; }
+    [Parameter, Setting("Card corner radius", Group = "Colors", Order = 5, Description = "Default .6rem")] public string? Radius { get; set; }
+    [Parameter, Setting("Hover shadow", Group = "Colors", Order = 6)] public string? HoverShadow { get; set; }
+    [Parameter, Setting("Hover lift", Group = "Colors", Order = 7, Description = "Default -3px")] public string? HoverLift { get; set; }
+    [Parameter, Setting("Title font size", Group = "Colors", Order = 8, Description = "Default 1.1rem")] public string? TitleSize { get; set; }
+
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 1)] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 2)] public string? CssStyle { get; set; }
+
+    private string _rootClass => $"ma-projectgrid {(HoverEffects ? null : "ma-pg--no-anim ")}{CssClass}";
+    private string? _extTarget => NewTab ? "_blank" : null;
+
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
 
     private string _outerStyle => string.Join(";", new[]
     {
+        Columns > 0 ? $"--ma-pg-cols:repeat({Columns},minmax(0,1fr))" : null,
+        Var("--ma-pg-min", MinCardWidth),
+        Var("--ma-pg-gap", Gap),
+        Var("--ma-pg-filter-align", FilterAlign),
+        DescriptionLines != 4 && DescriptionLines > 0 ? $"--ma-pg-desc-lines:{DescriptionLines}" : null,
+        Var("--ma-pg-border", BorderColor),
+        Var("--ma-pg-card-bg", CardBackground),
+        Var("--ma-pg-muted", MutedColor),
+        Var("--ma-pg-accent", AccentColor),
+        Var("--ma-pg-radius", Radius),
+        Var("--ma-pg-hover-shadow", HoverShadow),
+        Var("--ma-pg-lift", HoverLift),
+        Var("--ma-pg-title-size", TitleSize),
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin) ? null : $"margin:{Margin}",
         CssStyle,
@@ -155,7 +215,11 @@
             _cards = _cards.Where(c => !c.Name.StartsWith(ExcludeNamePrefix!, StringComparison.OrdinalIgnoreCase)).ToList();
 
         // Most-starred first, then alphabetical — a portfolio should lead with its strongest work.
-        _cards = _cards.OrderByDescending(c => c.Stars).ThenBy(c => c.Title, StringComparer.OrdinalIgnoreCase).ToList();
+        var sort = (SortBy ?? "stars").Trim().ToLowerInvariant();
+        if (sort == "title")
+            _cards = _cards.OrderBy(c => c.Title, StringComparer.OrdinalIgnoreCase).ToList();
+        else if (sort != "none" && sort != "page")
+            _cards = _cards.OrderByDescending(c => c.Stars).ThenBy(c => c.Title, StringComparer.OrdinalIgnoreCase).ToList();
 
         _topics = _cards.SelectMany(c => c.Topics)
             .Distinct(StringComparer.OrdinalIgnoreCase)

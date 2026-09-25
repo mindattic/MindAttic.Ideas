@@ -75,3 +75,26 @@ public static class HubContent
         return reader.ReadToEnd();
     }
 }
+
+/// <summary>
+/// The Frontpage instance settings (MAI-A45) that SiteNav needs at render time. Defaults reproduce the
+/// as-designed behaviour; V1 builds one from its [Parameter]s.
+/// </summary>
+public sealed class SiteNavOptions
+{
+    public string? RootClass { get; init; }
+    public string? RootStyle { get; init; }
+    /// <summary>Section key open on load; null = the first section.</summary>
+    public string? DefaultSection { get; init; }
+    public bool StartCollapsed { get; init; }
+    public bool AllowCollapse { get; init; } = true;
+    public bool ShowCounts { get; init; } = true;
+    public bool ShowCovers { get; init; } = true;
+    public bool ShowTaglines { get; init; } = true;
+    public bool ShowTooltips { get; init; } = true;
+    public bool ShowOpenLink { get; init; } = true;
+    public bool ShowGitHubLink { get; init; } = true;
+    public string OpenLabel { get; init; } = "Open";
+    public string GitHubLabel { get; init; } = "GitHub";
+    public string EmptyText { get; init; } = "Nothing here yet.";
+}

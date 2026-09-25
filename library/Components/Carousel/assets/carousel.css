@@ -1,16 +1,17 @@
-﻿/* MindAttic.Ideas.Component.Carousel — slider chrome. Scoped under .ma-carousel (MAIL-LAW-6). */
+﻿/* MindAttic.Ideas.Component.Carousel — slider chrome. Scoped under .ma-carousel (MAIL-LAW-6).
+   Values read optional custom properties (instance settings, MAI-A45) with the as-designed fallback. */
 .ma-carousel {
   --ma-carousel-height: 20rem;
   position: relative;
   overflow: hidden;
-  border-radius: .5rem;
+  border-radius: var(--ma-carousel-radius, .5rem);
 }
 .ma-slide {
   display: none;
   min-height: var(--ma-carousel-height);
-  background-size: cover;
+  background-size: var(--ma-carousel-bg-size, cover);
   background-position: center;
-  padding: 1.5rem;
+  padding: var(--ma-carousel-slide-padding, 1.5rem);
   box-sizing: border-box;
 }
 .ma-slide.ma-slide-active { display: block; }
@@ -18,13 +19,13 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, .35);
-  color: #fff;
+  background: var(--ma-carousel-arrow-bg, rgba(0, 0, 0, .35));
+  color: var(--ma-carousel-arrow-color, #fff);
   border: 0;
   border-radius: 50%;
-  width: 2.5rem;
-  height: 2.5rem;
-  font-size: 1.5rem;
+  width: var(--ma-carousel-arrow-size, 2.5rem);
+  height: var(--ma-carousel-arrow-size, 2.5rem);
+  font-size: calc(var(--ma-carousel-arrow-size, 2.5rem) * .6);
   line-height: 1;
   cursor: pointer;
   opacity: .75;
@@ -32,6 +33,7 @@
 }
 .ma-carousel-arrow:hover,
 .ma-carousel-arrow:focus-visible { opacity: 1; }
+.ma-carousel-arrow:disabled { opacity: .3; cursor: default; }
 .ma-carousel-prev { left: .75rem; }
 .ma-carousel-next { right: .75rem; }
 .ma-carousel-dots {
@@ -44,13 +46,13 @@
   gap: .45rem;
 }
 .ma-carousel-dot {
-  width: .6rem;
-  height: .6rem;
+  width: var(--ma-carousel-dot-size, .6rem);
+  height: var(--ma-carousel-dot-size, .6rem);
   border-radius: 50%;
   border: 0;
   padding: 0;
   cursor: pointer;
-  background: rgba(255, 255, 255, .55);
+  background: var(--ma-carousel-dot, rgba(255, 255, 255, .55));
   box-shadow: 0 0 2px rgba(0, 0, 0, .6);
 }
-.ma-carousel-dot[aria-current="true"] { background: #fff; }
+.ma-carousel-dot[aria-current="true"] { background: var(--ma-carousel-dot-active, #fff); }

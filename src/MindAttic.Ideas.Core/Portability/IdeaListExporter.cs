@@ -91,6 +91,7 @@ public sealed class IdeaListExporter(CmsDbContext db, IMediaStore media)
 
             var roleAccess = await db.PageRoleAccess.Where(r => pageIds.Contains(r.PageId)).ToListAsync(ct);
             var slugHistory = await db.PageSlugHistory.Where(h => pageIds.Contains(h.PageId)).ToListAsync(ct);
+            var instanceSlots = await db.WidgetPlacementSettings.Where(s => pageIds.Contains(s.PageId)).ToListAsync(ct);
 
             foreach (var p in pages)
             {
@@ -123,6 +124,10 @@ public sealed class IdeaListExporter(CmsDbContext db, IMediaStore media)
                     RoleAccess = roleAccess.Where(r => r.PageId == p.Id).Select(r => r.RoleName).ToList(),
                     SlugHistory = slugHistory.Where(h => h.PageId == p.Id)
                         .Select(h => new IdeaListSlugAlias { OldSlug = h.OldSlug, IsVanity = h.IsVanity })
+                        .ToList(),
+                    InstanceSettings = instanceSlots.Where(s => s.PageId == p.Id)
+                        .OrderBy(s => s.SlotName, StringComparer.Ordinal)
+                        .Select(s => new IdeaListInstanceSettings { Slot = s.SlotName, WidgetRef = s.WidgetRef, SettingsJson = s.SettingsJson })
                         .ToList(),
                 };
                 lp.Uses = await DiscoverUsesAsync(lp.BodyHtml, lp.ThemeKey, lp.ThemeVersion, lp.ActivePluginsJson, unresolved, ct);

@@ -9,16 +9,34 @@
    look/feel from separately-installed Plugin .ideas BY STRING ID (the "multi-target source" model):
    the two fonts, the back-home glyph, and the console-bg effects engine. Each Plugin emits its own
    css/js from its own .idea wwwroot, so this theme bundles only its own chrome. The effect-layer divs
-   are rendered here; the Cyberspace plugin's engine paints into them. *@
+   are rendered here; the Cyberspace plugin's engine paints into them.
+   Instance settings (MAI-A45): palette tokens live on :root in theme.css, so overrides are emitted as an
+   html:root { … } block (wins over :root by specificity); effect layers are plain on/off toggles. *@
 <CmsInclude Ref="MindAttic.Ideas.Plugin.OutfitFont.V1" />
 <CmsInclude Ref="MindAttic.Ideas.Plugin.AtticFont.V1" />
 <CmsInclude Ref="MindAttic.Ideas.Plugin.BackHomeM.V1" />
-<CmsInclude Ref="MindAttic.Ideas.Plugin.Cyberspace.V1" />
+@if (EffectsEngine)
+{
+    <CmsInclude Ref="MindAttic.Ideas.Plugin.Cyberspace.V1" />
+}
+@if (_rootVars is { } vars)
+{
+    @((MarkupString)vars)
+}
 
-<div class="cyberspace-sl-fine" aria-hidden="true"></div>
-<div class="cyberspace-sl-coarse" aria-hidden="true"></div>
-<div class="console-bg-host" aria-hidden="true"></div>
-<div class="page">
+@if (FineScanlines)
+{
+    <div class="cyberspace-sl-fine" aria-hidden="true" style="@OpacityStyle(FineScanlineOpacity)"></div>
+}
+@if (CoarseScanlines)
+{
+    <div class="cyberspace-sl-coarse" aria-hidden="true" style="@OpacityStyle(CoarseScanlineOpacity)"></div>
+}
+@if (EffectsEngine)
+{
+    <div class="console-bg-host" aria-hidden="true"></div>
+}
+<div class="page @(ButtonHoverEffect ? null : "cs-no-hover")" style="@PageStyle">
     @Body
 </div>
 
@@ -27,4 +45,86 @@
     private const string Mount = "/_ideas/Theme/cyberspace/1";
 
     public override IReadOnlyList<string> ThemeCssUrls { get; } = new[] { Mount + "/theme.css" };
+
+    // ── Effects ─────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Fine scan lines", Group = "Effects", Order = 1, Description = "The 3px red scan-line overlay (.cyberspace-sl-fine)")]
+    public bool FineScanlines { get; set; } = true;
+
+    [Parameter, Setting("Fine scan-line opacity", Group = "Effects", Order = 2, Description = "0–1; empty = as designed (0.08)")]
+    public double? FineScanlineOpacity { get; set; }
+
+    [Parameter, Setting("Coarse scan lines", Group = "Effects", Order = 3, Description = "The 7px scan-line overlay (.cyberspace-sl-coarse)")]
+    public bool CoarseScanlines { get; set; } = true;
+
+    [Parameter, Setting("Coarse scan-line opacity", Group = "Effects", Order = 4, Description = "0–1; empty = as designed (0.06)")]
+    public double? CoarseScanlineOpacity { get; set; }
+
+    [Parameter, Setting("Console-background effects engine", Group = "Effects", Order = 5, Description = "Compose the Cyberspace plugin (circuitboard + popups); its own settings tune the individual effects")]
+    public bool EffectsEngine { get; set; } = true;
+
+    // ── Colors (theme.css :root tokens) ─────────────────────────────────────────────────────────
+    [Parameter, Setting("Background color", Group = "Colors", Order = 1, Description = "--bg (designed: #07090b)")] public string? BackgroundColor { get; set; }
+    [Parameter, Setting("Text color", Group = "Colors", Order = 2, Description = "--fg (designed: #d6dde2)")] public string? TextColor { get; set; }
+    [Parameter, Setting("Muted text color", Group = "Colors", Order = 3, Description = "--muted (designed: #8a949c)")] public string? MutedColor { get; set; }
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 4, Description = "--accent (designed: #ff8c00)")] public string? AccentColor { get; set; }
+    [Parameter, Setting("Text on accent", Group = "Colors", Order = 5, Description = "--accent-fg (designed: #07090b)")] public string? AccentTextColor { get; set; }
+    [Parameter, Setting("Border color", Group = "Colors", Order = 6, Description = "--border (designed: rgba(214,221,226,0.18))")] public string? BorderColor { get; set; }
+    [Parameter, Setting("Card background", Group = "Colors", Order = 7, Description = "--card-bg (designed: rgba(10,14,18,0.78))")] public string? CardBackground { get; set; }
+    [Parameter, Setting("Content panel background", Group = "Colors", Order = 8, Description = "--content-bg of .readme (designed: rgba(10,14,18,0.86))")] public string? ContentBackground { get; set; }
+    [Parameter, Setting("Code background", Group = "Colors", Order = 9, Description = "--code-bg (designed: rgba(255,255,255,0.04))")] public string? CodeBackground { get; set; }
+    [Parameter, Setting("Code border", Group = "Colors", Order = 10, Description = "--code-border (designed: rgba(255,255,255,0.10))")] public string? CodeBorder { get; set; }
+    [Parameter, Setting("Link color", Group = "Colors", Order = 11, Description = "--link (designed: #ffb347)")] public string? LinkColor { get; set; }
+    [Parameter, Setting("Link hover color", Group = "Colors", Order = 12, Description = "--link-hover (designed: #ffd089)")] public string? LinkHoverColor { get; set; }
+    [Parameter, Setting("Table stripe", Group = "Colors", Order = 13, Description = "--table-stripe (designed: rgba(255,255,255,0.03))")] public string? TableStripe { get; set; }
+    [Parameter, Setting("Table border", Group = "Colors", Order = 14, Description = "--table-border (designed: rgba(214,221,226,0.14))")] public string? TableBorder { get; set; }
+
+    // ── Typography ──────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Font family", Group = "Typography", Order = 1, Description = "designed: 'Outfit', system-ui, sans-serif")] public string? FontFamily { get; set; }
+    [Parameter, Setting("Line height", Group = "Typography", Order = 2, Description = "designed: 1.55")] public string? LineHeight { get; set; }
+    [Parameter, Setting("Display font family", Group = "Typography", Order = 3, Description = ".project-name title font (designed: 'Attic', serif)")] public string? DisplayFontFamily { get; set; }
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Content max width", Group = "Layout", Order = 3, Description = "--max-width of .hero / .readme (designed: 920px)")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Hero padding", Group = "Layout", Order = 4, Description = "designed: 88px 24px 32px")] public string? HeroPadding { get; set; }
+    [Parameter, Setting("Hero alignment", Group = "Layout", Order = 5, Description = "text-align of .hero (designed: center)")] public string? HeroAlign { get; set; }
+    [Parameter, Setting("Content panel padding", Group = "Layout", Order = 6, Description = ".readme padding (designed: 36px 44px 48px)")] public string? PanelPadding { get; set; }
+
+    // ── Shape ───────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Button corner radius", Group = "Shape", Order = 1, Description = "designed: 6px")] public string? ButtonRadius { get; set; }
+    [Parameter, Setting("Panel corner radius", Group = "Shape", Order = 2, Description = "designed: 10px")] public string? PanelRadius { get; set; }
+    [Parameter, Setting("Panel shadow", Group = "Shape", Order = 3, Description = "box-shadow of .readme (designed: 0 18px 60px rgba(0,0,0,0.45)); 'none' to remove")] public string? PanelShadow { get; set; }
+    [Parameter, Setting("Panel backdrop filter", Group = "Shape", Order = 4, Description = "designed: blur(6px); 'none' to remove")] public string? PanelBlur { get; set; }
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Button hover effect", Group = "Behavior", Order = 1, Description = "Lift / glow buttons on hover")]
+    public bool ButtonHoverEffect { get; set; } = true;
+
+    private static string? OpacityStyle(double? v) =>
+        v is { } o ? "opacity:" + Math.Clamp(o, 0, 1).ToString(System.Globalization.CultureInfo.InvariantCulture) : null;
+
+    private string? _rootVars
+    {
+        get
+        {
+            var parts = new List<string>();
+            foreach (var (prop, value) in new (string, string?)[]
+            {
+                ("--bg", BackgroundColor), ("--fg", TextColor), ("--muted", MutedColor), ("--accent", AccentColor),
+                ("--accent-fg", AccentTextColor), ("--border", BorderColor), ("--card-bg", CardBackground),
+                ("--content-bg", ContentBackground), ("--code-bg", CodeBackground), ("--code-border", CodeBorder),
+                ("--link", LinkColor), ("--link-hover", LinkHoverColor), ("--table-stripe", TableStripe),
+                ("--table-border", TableBorder), ("--max-width", MaxWidth),
+                ("--cs-font", FontFamily), ("--cs-line-height", LineHeight), ("--cs-display-font", DisplayFontFamily),
+                ("--cs-hero-padding", HeroPadding), ("--cs-hero-align", HeroAlign), ("--cs-panel-padding", PanelPadding),
+                ("--cs-btn-radius", ButtonRadius), ("--cs-panel-radius", PanelRadius), ("--cs-panel-shadow", PanelShadow),
+                ("--cs-panel-blur", PanelBlur),
+            })
+            {
+                // Raw CSS text inside <style>: strip anything that could close the rule or the element.
+                var v = value is null ? null : new string(value.Where(c => c is not ('{' or '}' or '<' or '>' or ';')).ToArray()).Trim();
+                if (!string.IsNullOrEmpty(v)) parts.Add(prop + ":" + v);
+            }
+            return parts.Count == 0 ? null : "<style>html:root{" + string.Join(";", parts) + "}</style>";
+        }
+    }
 }

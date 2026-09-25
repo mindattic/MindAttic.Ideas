@@ -76,3 +76,11 @@ The page CSS supplies the image via the `img-docs-hero` class:
 - **`href` sanitisation.** The `href` value is passed through an internal `SafeUrl` helper that blocks `javascript:` and other unsafe schemes.
 - **`text` is plain text.** The `text` parameter is rendered inside a `<p>` without HTML interpretation. For rich card bodies, place free-form HTML outside the component and wrap it around multiple cards.
 - **`padding`, `margin`, and `align`** are convenience shorthands that emit inline styles on the root element. They are merged with any value supplied via the `style` parameter.
+
+## Settings
+
+Every parameter above is an instance setting (MAI-A45), editable per card in Admin; content ones (`title`, `text`, `imageclass`, `image`, `href`, `footer`) are skipped by Copy/Paste Configuration. Added visual/behavior settings — all unset/default reproduce the stock look:
+
+- **Layout:** `maxwidth`, `bodypadding`, `bodygap`, `imageratio`, `imagefit`, `imageposition`, `titlesize`, `textopacity`
+- **Colors:** `radius`, `background`, `border`, `shadow`, `hovershadow`, `textcolor` (emitted as `--ma-card-*` custom properties on the root)
+- **Behavior:** `showimage` (true), `hoverlift` (true), `animations` (true), `openinnewtab` (false)

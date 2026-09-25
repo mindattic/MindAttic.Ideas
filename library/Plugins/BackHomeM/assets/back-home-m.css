@@ -12,28 +12,30 @@
 
 .back-home-m {
     position: fixed;
-    top: 5px;
-    left: 5px;
-    z-index: 9999;
-    font-family: 'Attic', serif;
-    font-size: 1.25rem;
+    top: var(--ma-bhm-top, 5px);
+    left: var(--ma-bhm-left, 5px);
+    right: var(--ma-bhm-right, auto);
+    bottom: var(--ma-bhm-bottom, auto);
+    z-index: var(--ma-bhm-z, 9999);
+    font-family: var(--ma-bhm-font, 'Attic', serif);
+    font-size: var(--ma-bhm-size, 1.25rem);
     line-height: 1;
-    color: inherit;
+    color: var(--ma-bhm-color, inherit);
     text-decoration: none;
-    opacity: 0.7;
+    opacity: var(--ma-bhm-opacity, 0.7);
     cursor: pointer;
     user-select: none;
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .back-home-m::before {
-    content: '\276E\00a0M';
+    content: var(--ma-bhm-glyph, '\276E\00a0M');
 }
 
 .back-home-m:hover,
 .back-home-m:focus-visible {
-    opacity: 1;
-    transform: scale(1.1);
+    opacity: var(--ma-bhm-hover-opacity, 1);
+    transform: scale(var(--ma-bhm-hover-scale, 1.1));
     text-decoration: none;
 }
 

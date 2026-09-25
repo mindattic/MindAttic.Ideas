@@ -62,6 +62,13 @@ public sealed record IdeaManifest
     /// </summary>
     [JsonPropertyName("uses")] public IReadOnlyList<string> Uses { get; init; } = [];
 
+    /// <summary>
+    /// The citizen's declared INSTANCE SETTINGS (MAI-A45): its simple-typed [Parameter]s with their
+    /// [Setting] metadata, read reflection-only by the packer. Informational — the host reflects the
+    /// loaded type for the live schema — so a package describes its configuration surface without loading.
+    /// </summary>
+    [JsonPropertyName("settings")] public IReadOnlyList<IdeaManifestSetting> Settings { get; init; } = [];
+
     /// <summary>A package may shadow a compiled key only with this set true PLUS admin confirmation.</summary>
     [JsonPropertyName("allowOverride")] public bool AllowOverride { get; init; }
 
@@ -107,4 +114,15 @@ public sealed record IdeaManifest
         WriteIndented = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
+}
+
+/// <summary>One declared instance setting in <see cref="IdeaManifest.Settings"/>.</summary>
+public sealed record IdeaManifestSetting
+{
+    [JsonPropertyName("name")] public string Name { get; init; } = "";
+    /// <summary>bool | string | integer | number | enum</summary>
+    [JsonPropertyName("type")] public string Type { get; init; } = "string";
+    [JsonPropertyName("displayName")] public string? DisplayName { get; init; }
+    [JsonPropertyName("group")] public string? Group { get; init; }
+    [JsonPropertyName("copyable")] public bool Copyable { get; init; } = true;
 }

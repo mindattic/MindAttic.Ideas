@@ -10,11 +10,11 @@
 <link rel="stylesheet" href="/_ideas/Plugin/sociallinks/1/sociallinks.css" />
 @if (_links.Count > 0)
 {
-    <ul class="ma-social @CssClass" style="@_outerStyle" aria-label="Profiles">
+    <ul class="ma-social @_modifiers @CssClass" style="@_outerStyle" aria-label="@(string.IsNullOrWhiteSpace(AriaLabel) ? "Profiles" : AriaLabel)">
         @foreach (var (name, href, path) in _links)
         {
             <li class="ma-social-item">
-                <a class="ma-social-link" href="@href" target="_blank" rel="noopener noreferrer" aria-label="@name" title="@name">
+                <a class="ma-social-link" href="@href" target="@(OpenInNewTab ? "_blank" : null)" rel="noopener noreferrer" aria-label="@name" title="@(ShowTooltips ? name : null)">
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="@path" /></svg>
                 </a>
             </li>
@@ -23,40 +23,96 @@
 }
 
 @code {
+    // ── Content (links) ─────────────────────────────────────────────────────────────────────────
     /// <summary>GitHub profile URL. Falls back to the "social.github" site setting.</summary>
-    [Parameter] public string? GitHub { get; set; }
+    [Parameter, Setting("GitHub", Group = "Content", Order = 1, Copyable = false, Description = "Profile URL (falls back to social.github)")]
+    public string? GitHub { get; set; }
 
     /// <summary>X / Twitter profile URL. Falls back to "social.x".</summary>
-    [Parameter] public string? X { get; set; }
+    [Parameter, Setting("X / Twitter", Group = "Content", Order = 2, Copyable = false, Description = "Profile URL (falls back to social.x)")]
+    public string? X { get; set; }
 
     /// <summary>LinkedIn profile URL. Falls back to "social.linkedin".</summary>
-    [Parameter] public string? LinkedIn { get; set; }
+    [Parameter, Setting("LinkedIn", Group = "Content", Order = 3, Copyable = false, Description = "Profile URL (falls back to social.linkedin)")]
+    public string? LinkedIn { get; set; }
 
     /// <summary>YouTube channel URL. Falls back to "social.youtube".</summary>
-    [Parameter] public string? YouTube { get; set; }
+    [Parameter, Setting("YouTube", Group = "Content", Order = 4, Copyable = false, Description = "Channel URL (falls back to social.youtube)")]
+    public string? YouTube { get; set; }
 
     /// <summary>Contact email (address or mailto:). Falls back to "social.email".</summary>
-    [Parameter] public string? Email { get; set; }
+    [Parameter, Setting("Email", Group = "Content", Order = 5, Copyable = false, Description = "Address or mailto: (falls back to social.email)")]
+    public string? Email { get; set; }
 
     /// <summary>Personal website URL. Falls back to "social.website".</summary>
-    [Parameter] public string? Website { get; set; }
+    [Parameter, Setting("Website", Group = "Content", Order = 6, Copyable = false, Description = "URL (falls back to social.website)")]
+    public string? Website { get; set; }
 
     /// <summary>RSS feed URL. Falls back to "social.rss".</summary>
-    [Parameter] public string? Rss { get; set; }
+    [Parameter, Setting("RSS", Group = "Content", Order = 7, Copyable = false, Description = "Feed URL (falls back to social.rss)")]
+    public string? Rss { get; set; }
 
-    [Parameter] public string? CssClass { get; set; }
-    [Parameter] public string? CssStyle { get; set; }
-    [Parameter] public string? Padding { get; set; }
-    [Parameter] public string? Margin { get; set; }
-    [Parameter] public string? Align { get; set; }
+    [Parameter, Setting("List label", Group = "Content", Order = 8, Copyable = false, Description = "Accessible label of the row (designed: Profiles)")]
+    public string? AriaLabel { get; set; }
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1)] public string? Padding { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2)] public string? Margin { get; set; }
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 3, Description = "left / center / right (also justifies the icon row)")] public string? Align { get; set; }
+    [Parameter, Setting("Gap", Group = "Layout", Order = 4, Description = "Space between icons (designed: .6rem)")] public string? Gap { get; set; }
+
+    // ── Appearance ──────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Button size", Group = "Appearance", Order = 1, Description = "designed: 2.4rem")] public string? ButtonSize { get; set; }
+    [Parameter, Setting("Icon size", Group = "Appearance", Order = 2, Description = "designed: 1.3rem")] public string? IconSize { get; set; }
+    [Parameter, Setting("Corner radius", Group = "Appearance", Order = 3, Description = "designed: 50% (a circle)")] public string? Radius { get; set; }
+    [Parameter, Setting("Icon color", Group = "Appearance", Order = 4, Description = "designed: inherits the text color")] public string? Color { get; set; }
+    [Parameter, Setting("Icon opacity", Group = "Appearance", Order = 5, Description = "0–1 at rest (designed: 0.7)")] public double? Opacity { get; set; }
+    [Parameter, Setting("Hover background", Group = "Appearance", Order = 6, Description = "designed: rgba(128,128,128,.15)")] public string? HoverBackground { get; set; }
+    [Parameter, Setting("Hover icon color", Group = "Appearance", Order = 7, Description = "designed: unchanged")] public string? HoverColor { get; set; }
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Hover lift", Group = "Behavior", Order = 1, Description = "Nudge icons up on hover")] public bool HoverLift { get; set; } = true;
+    [Parameter, Setting("Animations", Group = "Behavior", Order = 2, Description = "Transitions on hover")] public bool Animations { get; set; } = true;
+    [Parameter, Setting("Open in new tab", Group = "Behavior", Order = 3)] public bool OpenInNewTab { get; set; } = true;
+    [Parameter, Setting("Show name tooltips", Group = "Behavior", Order = 4, Description = "Native title tooltip with the network name")] public bool ShowTooltips { get; set; } = true;
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 1)] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 2)] public string? CssStyle { get; set; }
+
+    private string _modifiers => string.Join(" ", new[]
+    {
+        Animations ? null : "ma-social--no-anim",
+        string.IsNullOrWhiteSpace(HoverColor) ? null : "ma-social--hover-color",
+    }.Where(s => s is not null));
 
     private string _outerStyle => string.Join(";", new[]
     {
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        Var("--ma-social-justify", Justify(Align)),
+        Var("--ma-social-gap", Gap),
+        Var("--ma-social-size", ButtonSize),
+        Var("--ma-social-icon-size", IconSize),
+        Var("--ma-social-radius", Radius),
+        Var("--ma-social-color", Color),
+        Var("--ma-social-opacity", Opacity is { } o ? Math.Clamp(o, 0, 1).ToString(System.Globalization.CultureInfo.InvariantCulture) : null),
+        Var("--ma-social-hover-bg", HoverBackground),
+        Var("--ma-social-hover-color", HoverColor),
+        Var("--ma-social-lift", HoverLift ? null : "0"),
         CssStyle,
     }.Where(s => s is not null));
+
+    private static string? Var(string prop, string? value) => string.IsNullOrWhiteSpace(value) ? null : prop + ":" + value.Trim();
+
+    private static string? Justify(string? align) => align?.Trim().ToLowerInvariant() switch
+    {
+        "left" or "start" => "flex-start",
+        "right" or "end" => "flex-end",
+        "center" => "center",
+        _ => null,
+    };
 
     private IReadOnlyList<(string Name, string Href, string Path)> _links =
         Array.Empty<(string, string, string)>();

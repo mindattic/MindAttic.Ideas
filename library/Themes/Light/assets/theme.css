@@ -16,18 +16,18 @@
 
     min-height: 100vh;
     margin: 0;
-    background: var(--bg);
+    background: var(--theme-background, var(--bg));
     color: var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 16px;
-    line-height: 1.65;
+    font-family: var(--theme-font-family, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+    font-size: var(--theme-font-size, 16px);
+    line-height: var(--theme-line-height, 1.65);
     -webkit-font-smoothing: antialiased;
 }
 
 .theme-light * { box-sizing: border-box; }
 
 /* Comfortable reading column for free-form page content. */
-.theme-light > * { max-width: 860px; margin-inline: auto; padding-inline: 1.25rem; }
+.theme-light > * { max-width: var(--theme-content-width, 860px); margin-inline: auto; padding-inline: var(--theme-gutter, 1.25rem); }
 .theme-light { padding-block: 2.5rem; }
 
 .theme-light h1, .theme-light h2, .theme-light h3,
@@ -38,7 +38,7 @@
 .theme-light h2 { font-size: 1.6rem; }
 .theme-light h3 { font-size: 1.3rem; }
 
-.theme-light a { color: var(--accent); text-decoration: none; }
+.theme-light a { color: var(--theme-link, var(--accent)); text-decoration: none; }
 .theme-light a:hover { text-decoration: underline; }
 
 .theme-light hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
@@ -46,10 +46,10 @@
 .theme-light code {
     background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px;
     padding: 0.1em 0.4em; font-size: 0.88em;
-    font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: var(--theme-code-font, "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 }
 .theme-light pre {
-    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--theme-block-radius, 10px);
     padding: 1rem 1.1rem; overflow-x: auto;
 }
 .theme-light pre code { background: none; border: 0; padding: 0; }
@@ -64,7 +64,7 @@
 .theme-light th { background: var(--code-bg); font-weight: 600; }
 
 .theme-light button, .theme-light .btn {
-    background: var(--accent); color: var(--accent-contrast); border: 0; border-radius: 8px;
+    background: var(--theme-button-bg, var(--accent)); color: var(--accent-contrast); border: 0; border-radius: var(--theme-button-radius, 8px);
     padding: 0.55rem 1.1rem; font: inherit; font-weight: 600; cursor: pointer;
     transition: filter 0.12s ease;
 }
@@ -72,10 +72,17 @@
 
 .theme-light input, .theme-light select, .theme-light textarea {
     background: var(--surface); color: var(--text); border: 1px solid var(--line);
-    border-radius: 8px; padding: 0.5rem 0.65rem; font: inherit;
+    border-radius: var(--theme-input-radius, 8px); padding: 0.5rem 0.65rem; font: inherit;
 }
 .theme-light input:focus, .theme-light select:focus, .theme-light textarea:focus {
     outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent);
 }
 
 .theme-light ::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+
+/* ── Instance-setting modifiers (MAI-A45) — added by V1.razor when a toggle is off or an opt-in value is set ── */
+.theme-light--no-hover button, .theme-light--no-hover .btn { transition: none; }
+.theme-light--no-hover button:hover, .theme-light--no-hover .btn:hover { filter: none; }
+.theme-light--heading-font h1, .theme-light--heading-font h2, .theme-light--heading-font h3, .theme-light--heading-font h4, .theme-light--heading-font h5, .theme-light--heading-font h6 { font-family: var(--theme-heading-font); }
+.theme-light--heading-color h1, .theme-light--heading-color h2, .theme-light--heading-color h3, .theme-light--heading-color h4, .theme-light--heading-color h5, .theme-light--heading-color h6 { color: var(--theme-heading-color); }
+.theme-light--link-hover a:hover { color: var(--theme-link-hover); }

@@ -16,23 +16,23 @@
 
     min-height: 100vh;
     margin: 0;
-    background:
+    background: var(--theme-background,
         radial-gradient(900px 500px at 100% -5%, rgba(226,109,155,0.10), transparent 60%),
-        linear-gradient(180deg, #f3faf1 0%, #eef7ec 100%);
+        linear-gradient(180deg, #f3faf1 0%, #eef7ec 100%));
     color: var(--text);
-    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
-    font-size: 16px;
-    line-height: 1.65;
+    font-family: var(--theme-font-family, "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif);
+    font-size: var(--theme-font-size, 16px);
+    line-height: var(--theme-line-height, 1.65);
     -webkit-font-smoothing: antialiased;
 }
 
 .theme-spring * { box-sizing: border-box; }
-.theme-spring > * { max-width: 860px; margin-inline: auto; padding-inline: 1.25rem; }
+.theme-spring > * { max-width: var(--theme-content-width, 860px); margin-inline: auto; padding-inline: var(--theme-gutter, 1.25rem); }
 .theme-spring { padding-block: 2.5rem; }
 
 .theme-spring h1, .theme-spring h2, .theme-spring h3,
 .theme-spring h4, .theme-spring h5, .theme-spring h6 {
-    line-height: 1.25; font-weight: 700; margin: 1.8em 0 0.6em; color: #213a27;
+    line-height: 1.25; font-weight: 700; margin: 1.8em 0 0.6em; color: var(--theme-heading-color, #213a27);
 }
 .theme-spring h1 { font-size: 2.1rem; }
 .theme-spring h1::after {
@@ -42,7 +42,7 @@
 .theme-spring h2 { font-size: 1.6rem; }
 .theme-spring h3 { font-size: 1.3rem; }
 
-.theme-spring a { color: var(--accent); text-decoration: none; }
+.theme-spring a { color: var(--theme-link, var(--accent)); text-decoration: none; }
 .theme-spring a:hover { text-decoration: underline; }
 
 .theme-spring hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
@@ -50,10 +50,10 @@
 .theme-spring code {
     background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px;
     padding: 0.1em 0.4em; font-size: 0.88em;
-    font-family: "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: var(--theme-code-font, "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 }
 .theme-spring pre {
-    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--theme-block-radius, 10px);
     padding: 1rem 1.1rem; overflow-x: auto;
 }
 .theme-spring pre code { background: none; border: 0; padding: 0; }
@@ -68,7 +68,7 @@
 .theme-spring th { background: var(--code-bg); font-weight: 600; }
 
 .theme-spring button, .theme-spring .btn {
-    background: var(--accent); color: var(--accent-contrast); border: 0; border-radius: 999px;
+    background: var(--theme-button-bg, var(--accent)); color: var(--accent-contrast); border: 0; border-radius: var(--theme-button-radius, 999px);
     padding: 0.55rem 1.2rem; font: inherit; font-weight: 600; cursor: pointer;
     transition: filter 0.12s ease;
 }
@@ -76,10 +76,17 @@
 
 .theme-spring input, .theme-spring select, .theme-spring textarea {
     background: var(--surface); color: var(--text); border: 1px solid var(--line);
-    border-radius: 8px; padding: 0.5rem 0.65rem; font: inherit;
+    border-radius: var(--theme-input-radius, 8px); padding: 0.5rem 0.65rem; font: inherit;
 }
 .theme-spring input:focus, .theme-spring select:focus, .theme-spring textarea:focus {
     outline: 2px solid color-mix(in srgb, var(--accent-2) 40%, transparent); border-color: var(--accent-2);
 }
 
 .theme-spring ::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+
+/* ── Instance-setting modifiers (MAI-A45) — added by V1.razor when a toggle is off or an opt-in value is set ── */
+.theme-spring--no-hover button, .theme-spring--no-hover .btn { transition: none; }
+.theme-spring--no-hover button:hover, .theme-spring--no-hover .btn:hover { filter: none; }
+.theme-spring--no-bar h1::after { display: none; }
+.theme-spring--heading-font h1, .theme-spring--heading-font h2, .theme-spring--heading-font h3, .theme-spring--heading-font h4, .theme-spring--heading-font h5, .theme-spring--heading-font h6 { font-family: var(--theme-heading-font); }
+.theme-spring--link-hover a:hover { color: var(--theme-link-hover); }

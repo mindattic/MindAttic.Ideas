@@ -69,6 +69,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICmsRoleService, CmsRoleService>();
         services.AddScoped<IWorkflowService, WorkflowService>();
         services.AddScoped<IWidgetInstanceSettingsService, WidgetInstanceSettingsService>();
+        services.AddScoped<IInstanceConfigService, InstanceConfigService>();
+        services.AddSingleton<IPageValidator, PageValidator>();
         services.AddScoped<IComponentMetadataStore, ComponentMetadataService>();
         services.AddScoped<ISlugRedirectService, SlugRedirectService>();
 

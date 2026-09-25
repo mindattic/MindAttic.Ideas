@@ -136,6 +136,15 @@ public interface IRenderAlertSink
 public interface IRawContentGate
 {
     MarkupString Emit(string? html, ContentTrust trust);
+
+    /// <summary>
+    /// Sanitizes a page BODY before it is expanded (MAI-A46): every trust level is XSS-sanitized; Author
+    /// trust additionally keeps citizen tags and sanitized inline style. Default: unchanged (design-time).
+    /// </summary>
+    string SanitizeBody(string html, ContentTrust trust) => html;
+
+    /// <summary>What <see cref="SanitizeBody"/> would remove from <paramref name="html"/>, as human-readable lines.</summary>
+    IReadOnlyList<string> Audit(string html, ContentTrust trust) => [];
 }
 
 /// <summary>

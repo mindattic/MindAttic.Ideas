@@ -15,7 +15,7 @@
    failed/skipped attach still renders fully styled, MAI-LAW-7) and its URL is ALSO handed to the shadow
    root for adoption, so .ma-field-input/.ma-field-label still resolve once the root is isolated. *@
 <link rel="stylesheet" href="/_ideas/Component/textbox/1/textbox.css" />
-<div class="ma-field" @ref="_root">
+<div class="ma-field" style="@_rootStyle" @ref="_root">
     <input class="ma-field-input" type="@Type" value="@Value"
            placeholder=" " @attributes="Attributes" id="@InputId" />
     <label for="@InputId" class="ma-field-label">@Label</label>
@@ -23,13 +23,55 @@
 
 @code {
     /// <summary>The floating label text.</summary>
-    [Parameter] public string? Label { get; set; }
+    [Parameter, Setting("Label", Group = "Content", Order = 1, Copyable = false)] public string? Label { get; set; }
 
     /// <summary>Input type (text, email, password, …). Defaults to text.</summary>
-    [Parameter] public string Type { get; set; } = "text";
+    [Parameter, Setting("Input type", Group = "Behavior", Order = 1, Description = "text | email | password | number | tel | url | search | …")] public string Type { get; set; } = "text";
 
     /// <summary>Initial value.</summary>
-    [Parameter] public string? Value { get; set; }
+    [Parameter, Setting("Initial value", Group = "Content", Order = 2, Copyable = false)] public string? Value { get; set; }
+
+    // Every visual setting is a CSS custom property on the root: custom properties inherit into the
+    // shadow root, so they work identically with or without Shadow DOM isolation.
+    [Parameter, Setting("Transitions", Group = "Behavior", Order = 2, Description = "Label float and border transitions")] public bool Animate { get; set; } = true;
+    [Parameter, Setting("Full width", Group = "Layout", Order = 1, Description = "Stretch to the container's width")] public bool FullWidth { get; set; }
+    [Parameter, Setting("Minimum width", Group = "Layout", Order = 2, Description = "Default 240px")] public string? MinWidth { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 3, Description = "Default 14px 0")] public string? Margin { get; set; }
+    [Parameter, Setting("Font size", Group = "Layout", Order = 4, Description = "Default 1rem")] public string? FontSize { get; set; }
+    [Parameter, Setting("Font family", Group = "Layout", Order = 5)] public string? FontFamily { get; set; }
+    [Parameter, Setting("Corner radius", Group = "Layout", Order = 6, Description = "Default 6px")] public string? Radius { get; set; }
+    [Parameter, Setting("Text color", Group = "Colors", Order = 1, Description = "Default #1f1f1f")] public string? TextColor { get; set; }
+    [Parameter, Setting("Border / label color", Group = "Colors", Order = 2, Description = "Default #79747e")] public string? BorderColor { get; set; }
+    [Parameter, Setting("Accent (focus) color", Group = "Colors", Order = 3, Description = "Default #6750a4")] public string? AccentColor { get; set; }
+    [Parameter, Setting("Backdrop color", Group = "Colors", Order = 4, Description = "Behind the floated label; match the page background (default #ffffff)")] public string? Background { get; set; }
+    [Parameter, Setting("Input background", Group = "Colors", Order = 5, Description = "Default transparent")] public string? InputBackground { get; set; }
+
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
+    // Null when nothing is set, so the default render carries no style attribute at all.
+    private string? _rootStyle
+    {
+        get
+        {
+            var s = string.Join(";", new[]
+            {
+                Animate ? null : "--ma-field-transition:none",
+                FullWidth ? "display:flex;--ma-field-input-flex:1 1 auto" : null,
+                Var("--ma-field-min-width", MinWidth),
+                Var("--ma-field-margin", Margin),
+                Var("--ma-field-font-size", FontSize),
+                Var("--ma-field-font", FontFamily),
+                Var("--ma-field-radius", Radius),
+                Var("--ma-field-fg", TextColor),
+                Var("--ma-field-border", BorderColor),
+                Var("--ma-field-accent", AccentColor),
+                Var("--ma-field-bg", Background),
+                Var("--ma-field-input-bg", InputBackground),
+            }.Where(v => v is not null));
+            return s.Length == 0 ? null : s;
+        }
+    }
 
     protected override bool UseShadowDom => true;
 

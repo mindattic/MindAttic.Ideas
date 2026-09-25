@@ -11,11 +11,18 @@
    BackToTop (floating scroll button). Hardware theme sets the global palette. *@
 <CmsInclude Ref="MindAttic.Ideas.Component.HardwareHero.V1" />
 <CmsInclude Ref="MindAttic.Ideas.Component.CodeBlock.V1" />
-<CmsInclude Ref="MindAttic.Ideas.Plugin.BackToTop.V1" />
+@if (ShowBackToTop)
+{
+    <CmsInclude Ref="MindAttic.Ideas.Plugin.BackToTop.V1" />
+}
 
-<header class="hw-hero">
-    <h1 class="hw-title">ChiMesh</h1>
-    <p class="hw-tagline">Three solar-powered LoRa nodes running Meshtastic, forming a city-wide off-grid mesh across Chicago rooftops.</p>
+@if (ShowHero)
+{
+<header class="hw-hero" style="@_widthStyle">
+    <h1 class="hw-title">@Title</h1>
+    <p class="hw-tagline">@Tagline</p>
+    @if (ShowBadges)
+    {
     <div class="hw-badge-row">
         <span class="hw-badge">RAK4631</span>
         <span class="hw-badge">Meshtastic</span>
@@ -23,21 +30,29 @@
         <span class="hw-badge">Solar</span>
         <span class="hw-badge-dim hw-badge">MIT License</span>
     </div>
+    }
+    @if (ShowGitHubButton)
+    {
     <div class="hw-btn-row">
-        <a class="hw-btn hw-btn-primary" href="https://github.com/mindattic/ChiMesh" target="_blank" rel="noopener">
-            View on GitHub
-        </a>
+        <a class="hw-btn hw-btn-primary" href="@SafeUrl(GitHubUrl)" target="_blank" rel="noopener">@GitHubText</a>
     </div>
+    }
 </header>
+}
 
-<main class="hw-content">
+<main class="hw-content" style="@_widthStyle">
 
+    @if (ShowWarning)
+    {
     <div class="hw-warn">
         <strong>LiFePO4 only.</strong> Do not substitute Li-ion cells — LiFePO4 chemistry is mandatory for
         unattended outdoor enclosures with no thermal management. Also: never plug USB-C into a node
         while the JST battery connector is wired.
     </div>
+    }
 
+    @if (ShowShoppingList)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Shopping List <span style="font-weight:400;text-transform:none;letter-spacing:0">(per node × 3)</span></h2>
         <table class="hw-stack-table">
@@ -55,7 +70,10 @@
             </tbody>
         </table>
     </section>
+    }
 
+    @if (ShowAssemble)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Assemble</h2>
         <ol class="hw-steps">
@@ -66,7 +84,10 @@
             <li>Repeat for all 3 nodes before flashing.</li>
         </ol>
     </section>
+    }
 
+    @if (ShowFlashFirmware)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Flash Firmware</h2>
         <ol class="hw-steps">
@@ -78,7 +99,10 @@
         <pre><code data-lang="bash">pip install meshtastic
 meshtastic --flash rak4631</code></pre>
     </section>
+    }
 
+    @if (ShowConfigureNode)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Configure Node</h2>
         <p>Use the Meshtastic app (Android/iOS) or CLI. Apply the same channel config to <strong>all 3 nodes</strong>:</p>
@@ -91,7 +115,10 @@ meshtastic --set mqtt.address mqtt.mindattic.com
 meshtastic --set mqtt.root meshtastic/chimesh</code></pre>
         <p>Relay nodes: leave GPS and MQTT disabled to conserve power.</p>
     </section>
+    }
 
+    @if (ShowDeploy)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Deploy</h2>
         <p>Planned placement across Chicago to maximize mesh coverage:</p>
@@ -105,7 +132,10 @@ meshtastic --set mqtt.root meshtastic/chimesh</code></pre>
         </table>
         <p>Mount enclosures on a flat roof or parapet. Orient the antenna vertically, clear of HVAC units. Panel faces south at ≈30° tilt.</p>
     </section>
+    }
 
+    @if (ShowVerifyMesh)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Verify Mesh</h2>
         <p>After deploying all 3 nodes and powering on:</p>
@@ -114,7 +144,10 @@ meshtastic --nodes           # table of node IDs + SNR
 meshtastic --sendtext "ping" # broadcast to all nodes</code></pre>
         <p>All 3 nodes should appear within 60 s. Check the SNR column — values above −10 dB indicate a solid link. Gateway node should show MQTT <code>connected</code>.</p>
     </section>
+    }
 
+    @if (ShowTroubleshooting)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Troubleshooting</h2>
         <table class="hw-stack-table">
@@ -128,7 +161,10 @@ meshtastic --sendtext "ping" # broadcast to all nodes</code></pre>
             </tbody>
         </table>
     </section>
+    }
 
+    @if (ShowSummaryStack)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Summary Stack</h2>
         <table class="hw-stack-table">
@@ -143,5 +179,36 @@ meshtastic --sendtext "ping" # broadcast to all nodes</code></pre>
             </tbody>
         </table>
     </section>
+    }
 
 </main>
+
+@code {
+    // ── Content ── (instance settings, MAI-A45; defaults reproduce the page as written)
+    [Parameter, Setting("Title", Group = "Content", Order = 1, Copyable = false)] public string Title { get; set; } = "ChiMesh";
+    [Parameter, Setting("Tagline", Group = "Content", Order = 2, Copyable = false, Multiline = true)] public string Tagline { get; set; } = "Three solar-powered LoRa nodes running Meshtastic, forming a city-wide off-grid mesh across Chicago rooftops.";
+    [Parameter, Setting("GitHub URL", Group = "Content", Order = 3, Copyable = false)] public string GitHubUrl { get; set; } = "https://github.com/mindattic/ChiMesh";
+    [Parameter, Setting("GitHub button text", Group = "Content", Order = 4, Copyable = false)] public string GitHubText { get; set; } = "View on GitHub";
+
+    // ── Layout ──
+    [Parameter, Setting("Max content width", Group = "Layout", Order = 1, Description = "Hero + content column (default 920px)")] public string? MaxWidth { get; set; }
+
+    // ── Sections ──
+    [Parameter, Setting("Hero header", Group = "Sections", Order = 0)] public bool ShowHero { get; set; } = true;
+    [Parameter, Setting("Hero badges", Group = "Sections", Order = 1)] public bool ShowBadges { get; set; } = true;
+    [Parameter, Setting("GitHub button", Group = "Sections", Order = 2)] public bool ShowGitHubButton { get; set; } = true;
+    [Parameter, Setting("Battery warning", Group = "Sections", Order = 3)] public bool ShowWarning { get; set; } = true;
+    [Parameter, Setting("Shopping List", Group = "Sections", Order = 4)] public bool ShowShoppingList { get; set; } = true;
+    [Parameter, Setting("Assemble", Group = "Sections", Order = 5)] public bool ShowAssemble { get; set; } = true;
+    [Parameter, Setting("Flash Firmware", Group = "Sections", Order = 6)] public bool ShowFlashFirmware { get; set; } = true;
+    [Parameter, Setting("Configure Node", Group = "Sections", Order = 7)] public bool ShowConfigureNode { get; set; } = true;
+    [Parameter, Setting("Deploy", Group = "Sections", Order = 8)] public bool ShowDeploy { get; set; } = true;
+    [Parameter, Setting("Verify Mesh", Group = "Sections", Order = 9)] public bool ShowVerifyMesh { get; set; } = true;
+    [Parameter, Setting("Troubleshooting", Group = "Sections", Order = 10)] public bool ShowTroubleshooting { get; set; } = true;
+    [Parameter, Setting("Summary Stack", Group = "Sections", Order = 11)] public bool ShowSummaryStack { get; set; } = true;
+
+    // ── Behavior ──
+    [Parameter, Setting("Back-to-top button", Group = "Behavior", Order = 1)] public bool ShowBackToTop { get; set; } = true;
+
+    private string? _widthStyle => string.IsNullOrWhiteSpace(MaxWidth) ? null : "--hw-max-width:" + MaxWidth;
+}

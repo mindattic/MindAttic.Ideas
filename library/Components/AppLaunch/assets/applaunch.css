@@ -30,7 +30,7 @@
 
 .ma-applaunch-title {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: var(--ma-applaunch-title-size, 1.15rem);
   font-weight: 600;
   line-height: 1.25;
 }
@@ -195,6 +195,11 @@ html.ma-applaunch-open body { overflow: hidden !important; }
   from { opacity: 0; transform: translateY(0.5rem); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Animations setting off (MAI-A45). */
+.ma-applaunch--no-anim .ma-applaunch-btn,
+.ma-applaunch--no-anim .ma-applaunch-expand { transition: none; }
+.ma-applaunch--no-anim .ma-applaunch-btn:active { transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .ma-applaunch-arm-pill { animation: none; }

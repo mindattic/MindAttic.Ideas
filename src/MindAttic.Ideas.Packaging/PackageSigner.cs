@@ -94,7 +94,10 @@ public static class PackageSigner
     /// <summary>File-path convenience for the `ma-idea sign` CLI verb.</summary>
     public static void SignFile(string ideaPath, X509Certificate2 signingCert)
     {
-        using var ms = new MemoryStream(File.ReadAllBytes(ideaPath));
+        // Expandable stream: new MemoryStream(byte[]) is fixed-size, and adding the signature entry grows it.
+        using var ms = new MemoryStream();
+        ms.Write(File.ReadAllBytes(ideaPath));
+        ms.Position = 0;
         Sign(ms, signingCert);
         File.WriteAllBytes(ideaPath, ms.ToArray());
     }

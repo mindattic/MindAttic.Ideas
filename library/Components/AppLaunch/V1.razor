@@ -19,7 +19,7 @@
 
 @if (_mode == "inline")
 {
-    <div class="ma-applaunch-inline @CssClass" style="@_outerStyle">
+    <div class="ma-applaunch-inline @_modClass @CssClass" style="@_outerStyle">
         <iframe class="ma-applaunch-frame" src="@_url" title="@_title"
                 allowfullscreen allow="fullscreen; autoplay; gamepad; clipboard-write; xr-spatial-tracking"></iframe>
         @if (_showExpand)
@@ -31,8 +31,8 @@
 }
 else
 {
-    <div class="ma-applaunch @CssClass" style="@_outerStyle">
-        @if (!string.IsNullOrWhiteSpace(_poster))
+    <div class="ma-applaunch @_modClass @CssClass" style="@_outerStyle">
+        @if (ShowPoster && !string.IsNullOrWhiteSpace(_poster))
         {
             <img class="ma-applaunch-poster" src="@_poster" alt="" loading="lazy" decoding="async" />
         }
@@ -62,52 +62,84 @@ else
     public override IReadOnlyList<string> ScriptUrls { get; } = new[] { Mount + "/applaunch.js" };
 
     /// <summary>The app to launch: an /_ideas asset path, an Ideas page slug, or an absolute URL.</summary>
-    [Parameter] public string? Url { get; set; }
+    [Parameter, Setting("App URL", Group = "Content", Order = 1, Copyable = false, Description = "/_ideas asset path, page slug, or absolute URL")]
+    public string? Url { get; set; }
 
     /// <summary>App name — the tile heading, the iframe's accessible name, and the dialog label.</summary>
-    [Parameter] public string? Title { get; set; }
+    [Parameter, Setting("Title", Group = "Content", Order = 2, Copyable = false, Description = "Default \"Application\"")]
+    public string? Title { get; set; }
 
     /// <summary>One-line description under the title. Omit to suppress.</summary>
-    [Parameter] public string? Blurb { get; set; }
+    [Parameter, Setting("Blurb", Group = "Content", Order = 3, Copyable = false, Multiline = true)]
+    public string? Blurb { get; set; }
 
     /// <summary>Launch button label. Defaults to "Launch".</summary>
-    [Parameter] public string? ButtonText { get; set; }
+    [Parameter, Setting("Button text", Group = "Content", Order = 4, Copyable = false, Description = "Default \"Launch\"")]
+    public string? ButtonText { get; set; }
 
     /// <summary>"fullscreen" (default), "window", or "inline".</summary>
-    [Parameter] public string? Mode { get; set; }
+    [Parameter, Setting("Launch mode", Group = "Behavior", Order = 1, Description = "fullscreen (default), window, or inline")]
+    public string? Mode { get; set; }
 
     /// <summary>Poster image URL for the tile. Ignored when <see cref="PosterUid"/> is set.</summary>
-    [Parameter] public string? PosterUrl { get; set; }
+    [Parameter, Setting("Poster URL", Group = "Content", Order = 5, Copyable = false)]
+    public string? PosterUrl { get; set; }
 
     /// <summary>Managed-media uid for the poster, served from /_media/{uid}.</summary>
-    [Parameter] public string? PosterUid { get; set; }
+    [Parameter, Setting("Poster media uid", Group = "Content", Order = 6, Copyable = false)]
+    public string? PosterUid { get; set; }
 
     /// <summary>Separate-window width in CSS pixels (mode="window"). Default 1280.</summary>
-    [Parameter] public int? Width { get; set; }
+    [Parameter, Setting("Window width (px)", Group = "Behavior", Order = 2, Description = "mode=window; default 1280")]
+    public int? Width { get; set; }
 
     /// <summary>Separate-window height in CSS pixels (mode="window"). Default 800.</summary>
-    [Parameter] public int? Height { get; set; }
+    [Parameter, Setting("Window height (px)", Group = "Behavior", Order = 3, Description = "mode=window; default 800")]
+    public int? Height { get; set; }
 
     /// <summary>Named window target, so re-launching reuses one window instead of stacking them.</summary>
-    [Parameter] public string? Target { get; set; }
+    [Parameter, Setting("Window target name", Group = "Behavior", Order = 4, Description = "Re-launching reuses one named window")]
+    public string? Target { get; set; }
 
     /// <summary>Aspect ratio for inline/poster framing, e.g. "16/9" or "4/3". Default 16/9.</summary>
-    [Parameter] public string? Ratio { get; set; }
+    [Parameter, Setting("Aspect ratio", Group = "Layout", Order = 4, Description = "Inline frame + poster, e.g. 16/9 (default) or 4/3")]
+    public string? Ratio { get; set; }
 
     /// <summary>Whether inline mode shows its fullscreen button. Default true.</summary>
-    [Parameter] public bool? ShowExpand { get; set; }
+    [Parameter, Setting("Show fullscreen button (inline)", Group = "Behavior", Order = 5, Description = "Default on")]
+    public bool? ShowExpand { get; set; }
 
     /// <summary>Inline-mode fullscreen button label. Default "⤢".</summary>
-    [Parameter] public string ExpandText { get; set; } = "⤢";
+    [Parameter, Setting("Fullscreen button label", Group = "Content", Order = 7, Copyable = false)]
+    public string ExpandText { get; set; } = "⤢";
+
+    /// <summary>Show the poster image on the tile when one is configured.</summary>
+    [Parameter, Setting("Show poster", Group = "Behavior", Order = 6)]
+    public bool ShowPoster { get; set; } = true;
+
+    /// <summary>Tile/button transitions (hover, press, fullscreen-button fade).</summary>
+    [Parameter, Setting("Animations", Group = "Behavior", Order = 7)]
+    public bool Animations { get; set; } = true;
 
     /// <summary>JSON blob carrying any of the above (camel- or pascal-case). Explicit parameters win.</summary>
-    [Parameter] public string? Config { get; set; }
+    [Parameter, Setting("Config JSON", Group = "Advanced", Copyable = false, Multiline = true, Description = "Any of the above as JSON; explicit settings win")]
+    public string? Config { get; set; }
 
-    [Parameter] public string? CssClass { get; set; }
-    [Parameter] public string? CssStyle { get; set; }
-    [Parameter] public string? Padding { get; set; }
-    [Parameter] public string? Margin { get; set; }
-    [Parameter] public string? Align { get; set; }
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1)] public string? Padding { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2)] public string? Margin { get; set; }
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 3)] public string? Align { get; set; }
+
+    [Parameter, Setting("Tile max width", Group = "Layout", Order = 5, Description = "Default 22rem")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Corner radius", Group = "Layout", Order = 6, Description = "Tile + inline frame (default 14px)")] public string? Radius { get; set; }
+    [Parameter, Setting("Title font size", Group = "Layout", Order = 7, Description = "Default 1.15rem")] public string? TitleSize { get; set; }
+
+    [Parameter, Setting("Tile background", Group = "Colors", Order = 1, Description = "Default rgba(127,127,127,.06)")] public string? Background { get; set; }
+    [Parameter, Setting("Tile border color", Group = "Colors", Order = 2, Description = "Default rgba(127,127,127,.35)")] public string? BorderColor { get; set; }
+    [Parameter, Setting("Button background", Group = "Colors", Order = 3, Description = "Default transparent")] public string? ButtonBackground { get; set; }
+    [Parameter, Setting("Button border color", Group = "Colors", Order = 4, Description = "Default rgba(127,127,127,.5)")] public string? ButtonBorderColor { get; set; }
+    [Parameter, Setting("Button hover background", Group = "Colors", Order = 5, Description = "Default rgba(127,127,127,.18)")] public string? ButtonHoverBackground { get; set; }
 
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
@@ -172,6 +204,19 @@ else
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
         string.IsNullOrEmpty(_ratio) ? null : $"--ma-applaunch-ratio:{_ratio}",
+        Var("--ma-applaunch-width", MaxWidth),
+        Var("--ma-applaunch-radius", Radius),
+        Var("--ma-applaunch-title-size", TitleSize),
+        Var("--ma-applaunch-bg", Background),
+        Var("--ma-applaunch-line", BorderColor),
+        Var("--ma-applaunch-btn-bg", ButtonBackground),
+        Var("--ma-applaunch-btn-line", ButtonBorderColor),
+        Var("--ma-applaunch-btn-hover", ButtonHoverBackground),
         CssStyle,
     }.Where(s => s is not null));
+
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
+    private string? _modClass => Animations ? null : "ma-applaunch--no-anim";
 }

@@ -68,3 +68,12 @@ No `slot` needed when only one instance exists; `"main"` is used automatically.
 - **Markdig advanced extensions** are enabled, which includes tables, task lists, auto-links, footnotes, definition lists, and more.
 - **Stylesheet.** The component self-loads `/_ideas/Component/frommd/1/frommd.css` for prose styling. Add the `Class` parameter to attach additional classes for local overrides.
 - **Multiple slots.** Each unique `Slot` value is stored independently. Reusing the same slot name on two different component instances on the same page will cause them to share content.
+
+## Settings
+
+All parameters are instance settings (MAI-A45); `slot` is not copied by Copy/Paste Configuration. Added (unset = the stock `frommd.css` values, emitted as `--ma-frommd-*` custom properties on the root):
+
+- **Layout:** `maxwidth` (860px), `codepadding`, `coderadius`, `imageradius`, `cellpadding`
+- **Typography:** `fontsize`, `lineheight`, `headinglineheight`, `h1size`, `h2size`, `h3size`, `paragraphspacing`, `codefont`
+- **Colors:** `textcolor`, `quoteborder`
+- **Behavior:** `showemptyhint` (true) — hide the placeholder from visitors (always shown in edit mode)

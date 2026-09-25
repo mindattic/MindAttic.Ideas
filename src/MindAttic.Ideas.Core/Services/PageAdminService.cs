@@ -43,6 +43,14 @@ public sealed class PageEditModel
     // ---- Plugins ----
     /// <summary>Plugin ref strings active for this page (e.g. "Plugin.tooltip", "Plugin.navmenu@1").</summary>
     public List<string> ActivePlugins { get; set; } = [];
+    /// <summary>
+    /// True = this page has NO selection of its own and inherits the site's default plugins
+    /// (ActivePluginsJson null). False = <see cref="ActivePlugins"/> is the page's own list — which may be
+    /// EMPTY, meaning "no plugins at all" (no header, breadcrumbs or footer).
+    /// </summary>
+    public bool InheritPlugins { get; set; } = true;
+    /// <summary>The site's default plugins (read-only context for the editor; what an inheriting page renders).</summary>
+    public List<string> SiteDefaultPlugins { get; set; } = [];
 
     /// <summary>When true, navigation links to this page open in a new browser tab/window.</summary>
     public bool OpenInNewWindow { get; set; }
@@ -105,8 +113,14 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             .Include(x => x.MetaTags).Include(x => x.RoleAccess).Include(x => x.UserAccess)
             .FirstOrDefaultAsync(x => x.Id == id, ct);
         if (p is null) return null;
+        var siteDefault = p.SiteId is int sid
+            ? await db.Settings.AsNoTracking()
+                .Where(s => s.Scope == "Site" && s.ScopeId == sid && s.Key == "plugins.default")
+                .Select(s => s.Value).FirstOrDefaultAsync(ct)
+            : null;
         return new PageEditModel
         {
+            SiteDefaultPlugins   = DeserializePlugins(siteDefault),
             Id = p.Id, Slug = p.Slug, Title = p.Title, ThemeKey = p.ThemeKey, ThemeVersion = p.ThemeVersion,
             Kind = p.Kind, BodyHtml = p.BodyHtml, PageCss = p.PageCss, PageJs = p.PageJs,
             IsPublished = p.IsPublished, Enabled = p.Enabled, OpenInNewWindow = p.OpenInNewWindow,
@@ -119,6 +133,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             WorkflowDefinitionId = p.WorkflowDefinitionId,
             WorkflowState        = p.WorkflowState,
             ActivePlugins        = DeserializePlugins(p.ActivePluginsJson),
+            InheritPlugins       = string.IsNullOrWhiteSpace(p.ActivePluginsJson),
         };
     }
 
@@ -221,7 +236,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.BodyTrust = trust;                 // write-time trust stamp
         page.AuthoredByUserId = authoredBy;
         page.AuthorTrustVersion += 1;           // epoch bump
-        page.ActivePluginsJson = SerializePlugins(model.ActivePlugins);
+        page.ActivePluginsJson = model.InheritPlugins ? null : SerializePlugins(model.ActivePlugins);
         page.WorkflowDefinitionId = model.WorkflowDefinitionId;
         page.WorkflowState = model.WorkflowState;
         // Sync IsPublished from WorkflowState so the invariant WorkflowState=="Published" ↔ IsPublished
@@ -352,8 +367,15 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         return true;
     }
 
-    private static string? SerializePlugins(List<string> plugins) =>
-        plugins is { Count: > 0 } ? JsonSerializer.Serialize(plugins) : null;
+    // An explicit empty list serializes as "[]" — "no plugins" — distinct from null ("inherit the site's").
+    private static string SerializePlugins(List<string> plugins) => JsonSerializer.Serialize(plugins);
+
+    /// <summary>
+    /// The plugin refs a page actually renders: its own list when it has one (even an empty one), else the
+    /// site's default chrome. Null <paramref name="pageJson"/> is the only "inherit".
+    /// </summary>
+    public static List<string> EffectivePlugins(string? pageJson, string? siteDefaultJson) =>
+        string.IsNullOrWhiteSpace(pageJson) ? DeserializePlugins(siteDefaultJson) : DeserializePlugins(pageJson);
 
     public static List<string> DeserializePlugins(string? json)
     {

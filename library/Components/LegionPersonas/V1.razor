@@ -13,17 +13,28 @@
    chosen in data/page.json. All CSS is scoped under .legion-personas so it never leaks into the host.
    ============================================================================================ *@
 
-<div class="legion-personas">
+<div class="@_rootClass" style="@_rootStyle">
 @* Switch ON the SacredGeometry capability: loads the renderer + the canvas[data-sacred-shape] animator. *@
 <CmsInclude Ref="MindAttic.Ideas.Plugin.SacredGeometry.V1" />
 
 <div class="gallery">
+    @if (ShowFilters)
+    {
     <aside class="filters">
-        <h1 class="brand">Legion Personas</h1>
-        <p class="muted small">@PersonaData.All.Count personas · @PersonaData.ScoredCount scored</p>
+        @if (ShowTitle)
+        {
+            <h1 class="brand">@(Title ?? "Legion Personas")</h1>
+        }
+        @if (ShowCounts)
+        {
+            <p class="muted small">@PersonaData.All.Count personas · @PersonaData.ScoredCount scored</p>
+        }
 
-        <input class="f-control" type="search" placeholder="Search name, prompt, quirk…"
-               @bind="filter.Text" @bind:event="oninput" @bind:after="OnFilterChanged" />
+        @if (ShowSearch)
+        {
+            <input class="f-control" type="search" placeholder="@(SearchPlaceholder ?? "Search name, prompt, quirk…")"
+                   @bind="filter.Text" @bind:event="oninput" @bind:after="OnFilterChanged" />
+        }
 
         <label class="f-label">Archetype</label>
         <select class="f-control" @bind="filter.Archetype" @bind:after="OnFilterChanged">
@@ -73,19 +84,23 @@
             <input class="f-control" type="number" min="0" max="120" @bind="filter.MaxAge" @bind:after="OnFilterChanged" />
         </div>
 
-        <button class="f-clear" type="button" @onclick="Clear">Clear filters</button>
+        <button class="f-clear" type="button" @onclick="Clear">@(ClearLabel ?? "Clear filters")</button>
     </aside>
+    }
 
     <section class="results">
         <div class="results-head">
             <span class="muted">@filtered.Count match@(filtered.Count == 1 ? "" : "es")</span>
             <span class="results-tools">
-                <label class="page-size">
-                    Per page
-                    <select @bind="pageSize" @bind:after="OnPageSizeChanged">
-                        @foreach (var size in PageSizes) { <option value="@size">@size</option> }
-                    </select>
-                </label>
+                @if (ShowPageSize)
+                {
+                    <label class="page-size">
+                        Per page
+                        <select @bind="pageSize" @bind:after="OnPageSizeChanged">
+                            @foreach (var size in _pageSizes) { <option value="@size">@size</option> }
+                        </select>
+                    </label>
+                }
                 @if (PageCount > 1)
                 {
                     <span class="pager">
@@ -100,7 +115,7 @@
         <div class="card-grid">
             @foreach (var p in PageItems)
             {
-                <PersonaCard Persona="p" OnClick="() => Select(p)" />
+                <PersonaCard Persona="p" OnClick="() => Select(p)" ShowTags="ShowTags" ArtBackground="@_artBg" />
             }
         </div>
     </section>
@@ -111,7 +126,7 @@
                 OnClose="@EventCallback.Factory.Create(this, (Action)Close)">
         @if (selected is not null)
         {
-            <PersonaDetail Persona="selected" />
+            <PersonaDetail Persona="selected" ShowProfile="ShowProfile" ArtBackground="@_artBg" />
         }
     </CmsInclude>
 </div>
@@ -120,18 +135,123 @@
 @code {
     private static readonly int[] PageSizes = { 250, 500, 1000 };
 
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Title", Group = "Content", Order = 1, Copyable = false)] public string? Title { get; set; } = "Legion Personas";
+    [Parameter, Setting("Search placeholder", Group = "Content", Order = 2, Copyable = false)] public string? SearchPlaceholder { get; set; } = "Search name, prompt, quirk…";
+    [Parameter, Setting("Clear button label", Group = "Content", Order = 3, Copyable = false)] public string? ClearLabel { get; set; } = "Clear filters";
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Filter sidebar", Group = "Behavior", Order = 1)] public bool ShowFilters { get; set; } = true;
+    [Parameter, Setting("Title in sidebar", Group = "Behavior", Order = 2)] public bool ShowTitle { get; set; } = true;
+    [Parameter, Setting("Library counts", Group = "Behavior", Order = 3)] public bool ShowCounts { get; set; } = true;
+    [Parameter, Setting("Search box", Group = "Behavior", Order = 4)] public bool ShowSearch { get; set; } = true;
+    [Parameter, Setting("Sticky sidebar", Group = "Behavior", Order = 5)] public bool StickyFilters { get; set; } = true;
+    [Parameter, Setting("Per-page picker", Group = "Behavior", Order = 6)] public bool ShowPageSize { get; set; } = true;
+    [Parameter, Setting("Page sizes", Group = "Behavior", Order = 7, Description = "Comma-separated, e.g. 250,500,1000")] public string? PageSizeOptions { get; set; } = "250,500,1000";
+    [Parameter, Setting("Default page size", Group = "Behavior", Order = 8)] public int DefaultPageSize { get; set; } = 250;
+    [Parameter, Setting("Sort by", Group = "Behavior", Order = 9, Description = "library (as shipped), name or age")] public string? SortBy { get; set; } = "library";
+    [Parameter, Setting("Sort descending", Group = "Behavior", Order = 10)] public bool SortDescending { get; set; }
+    [Parameter, Setting("Card tags", Group = "Behavior", Order = 11, Description = "MBTI / Enneagram / DISC chips")] public bool ShowTags { get; set; } = true;
+    [Parameter, Setting("Psychometric profile in detail", Group = "Behavior", Order = 12)] public bool ShowProfile { get; set; } = true;
+    [Parameter, Setting("Card hover effect", Group = "Behavior", Order = 13)] public bool HoverEffect { get; set; } = true;
+
+    // ── Initial filters ─────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Initial search", Group = "Initial filters", Order = 1)] public string? InitialSearch { get; set; }
+    [Parameter, Setting("Initial archetype", Group = "Initial filters", Order = 2)] public string? InitialArchetype { get; set; }
+    [Parameter, Setting("Initial worldview", Group = "Initial filters", Order = 3)] public string? InitialWorldview { get; set; }
+    [Parameter, Setting("Initial MBTI type", Group = "Initial filters", Order = 4)] public string? InitialMbti { get; set; }
+    [Parameter, Setting("Initial min age", Group = "Initial filters", Order = 5)] public int InitialMinAge { get; set; } = 0;
+    [Parameter, Setting("Initial max age", Group = "Initial filters", Order = 6)] public int InitialMaxAge { get; set; } = 120;
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Sidebar width", Group = "Layout", Order = 1, Description = "Default 280px")] public string? SidebarWidth { get; set; }
+    [Parameter, Setting("Card min width", Group = "Layout", Order = 2, Description = "Default 160px")] public string? CardMinWidth { get; set; }
+    [Parameter, Setting("Card gap", Group = "Layout", Order = 3, Description = "Default 1rem")] public string? CardGap { get; set; }
+    [Parameter, Setting("Results padding", Group = "Layout", Order = 4, Description = "Default 1.25rem 1.5rem")] public string? ResultsPadding { get; set; }
+    [Parameter, Setting("Minimum height", Group = "Layout", Order = 5, Description = "Default 100vh")] public string? MinHeight { get; set; }
+
+    // ── Colors / appearance ─────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Panel", Group = "Colors", Order = 1, Description = "Default #121723")] public string? PanelColor { get; set; }
+    [Parameter, Setting("Panel 2", Group = "Colors", Order = 2, Description = "Default #1a2130")] public string? Panel2Color { get; set; }
+    [Parameter, Setting("Line", Group = "Colors", Order = 3, Description = "Default #232c3d")] public string? LineColor { get; set; }
+    [Parameter, Setting("Text", Group = "Colors", Order = 4, Description = "Default #dce1e6")] public string? TextColor { get; set; }
+    [Parameter, Setting("Muted text", Group = "Colors", Order = 5, Description = "Default #8b97a8")] public string? MutedColor { get; set; }
+    [Parameter, Setting("Accent", Group = "Colors", Order = 6, Description = "Default #3c82ff")] public string? AccentColor { get; set; }
+    [Parameter, Setting("Avatar background", Group = "Colors", Order = 7, Description = "Default #0a1014")] public string? ArtBackground { get; set; }
+    [Parameter, Setting("Card corner radius", Group = "Appearance", Order = 1, Description = "Default 12px")] public string? CardRadius { get; set; }
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
+
     private readonly PersonaFilter filter = new();
     private List<Persona> filtered = new();
+    private int[] _pageSizes = PageSizes;
     private int pageSize = PageSizes[0];
     private int page;
     private Persona? selected;
 
-    protected override void OnInitialized() => Recompute();
+    private string _artBg => string.IsNullOrWhiteSpace(ArtBackground) ? "#0a1014" : ArtBackground!;
+
+    protected override void OnInitialized()
+    {
+        var sizes = (PageSizeOptions ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(v => int.TryParse(v, out var n) ? n : 0).Where(n => n > 0).Distinct().ToList();
+        if (sizes.Count == 0) sizes = PageSizes.ToList();
+        if (DefaultPageSize > 0 && !sizes.Contains(DefaultPageSize)) sizes.Add(DefaultPageSize);
+        sizes.Sort();
+        _pageSizes = sizes.ToArray();
+        pageSize = DefaultPageSize > 0 ? DefaultPageSize : _pageSizes[0];
+
+        filter.Text = InitialSearch ?? "";
+        filter.Archetype = InitialArchetype ?? "";
+        filter.Worldview = InitialWorldview ?? "";
+        filter.MbtiType = InitialMbti ?? "";
+        filter.MinAge = InitialMinAge;
+        filter.MaxAge = InitialMaxAge;
+        Recompute();
+    }
 
     private void Recompute()
     {
-        filtered = PersonaFiltering.Apply(PersonaData.All, filter).ToList();
+        var q = PersonaFiltering.Apply(PersonaData.All, filter);
+        q = (SortBy ?? "").Trim().ToLowerInvariant() switch
+        {
+            "name" => SortDescending ? q.OrderByDescending(p => p.Name, StringComparer.OrdinalIgnoreCase) : q.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase),
+            "age" => SortDescending ? q.OrderByDescending(p => p.Age ?? -1) : q.OrderBy(p => p.Age ?? int.MaxValue),
+            _ => SortDescending ? q.Reverse() : q,
+        };
+        filtered = q.ToList();
         if (page >= PageCount) page = 0;
+    }
+
+    private string _rootClass => string.Join(" ", new[]
+    {
+        "legion-personas",
+        HoverEffect ? null : "legion-personas--no-anim",
+        StickyFilters ? null : "legion-personas--static-filters",
+        ShowFilters ? null : "legion-personas--no-filters",
+        CssClass,
+    }.Where(c => !string.IsNullOrWhiteSpace(c)));
+
+    private static string? Decl(string name, string? value) => string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
+    private string? _rootStyle
+    {
+        get
+        {
+            var s = string.Join(";", new[]
+            {
+                Decl("--panel", PanelColor), Decl("--panel-2", Panel2Color), Decl("--line", LineColor),
+                Decl("--text", TextColor), Decl("--muted", MutedColor), Decl("--accent", AccentColor),
+                Decl("--lp-art-bg", ArtBackground), Decl("--lp-sidebar-width", SidebarWidth),
+                Decl("--lp-card-min", CardMinWidth), Decl("--lp-card-gap", CardGap),
+                Decl("--lp-results-padding", ResultsPadding), Decl("--lp-min-height", MinHeight),
+                Decl("--lp-card-radius", CardRadius),
+                string.IsNullOrWhiteSpace(CssStyle) ? null : CssStyle,
+            }.Where(p => p is not null));
+            return s.Length > 0 ? s : null;
+        }
     }
 
     private void OnFilterChanged() { page = 0; Recompute(); }
@@ -175,7 +295,8 @@
     .legion-personas .small { font-size: 0.82rem; }
 
     /* ── layout ───────────────────────────────────────────── */
-    .legion-personas .gallery { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+    .legion-personas .gallery { display: grid; grid-template-columns: var(--lp-sidebar-width, 280px) 1fr; min-height: var(--lp-min-height, 100vh); }
+    .legion-personas--no-filters .gallery { grid-template-columns: 1fr; }
 
     .legion-personas .filters {
         background: var(--panel);
@@ -190,6 +311,7 @@
         height: 100vh;
         overflow-y: auto;
     }
+    .legion-personas--static-filters .filters { position: static; height: auto; }
     .legion-personas .brand { font-size: 1.4rem; font-weight: 800; margin: 0 0 0.1rem; letter-spacing: -0.01em; color: var(--text); }
     .legion-personas .f-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-top: 0.4rem; }
     .legion-personas .f-control {
@@ -211,7 +333,7 @@
     .legion-personas .f-clear:hover { color: var(--text); border-color: var(--accent); }
 
     /* ── results ──────────────────────────────────────────── */
-    .legion-personas .results { padding: 1.25rem 1.5rem; }
+    .legion-personas .results { padding: var(--lp-results-padding, 1.25rem 1.5rem); }
     .legion-personas .results-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
     .legion-personas .pager button {
         background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
@@ -231,18 +353,20 @@
 
     .legion-personas .card-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(var(--lp-card-min, 160px), 1fr));
+        gap: var(--lp-card-gap, 1rem);
     }
 
     /* ── persona card ─────────────────────────────────────── */
     .legion-personas .persona-card {
-        background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+        background: var(--panel); border: 1px solid var(--line); border-radius: var(--lp-card-radius, 12px);
         overflow: hidden; cursor: pointer; text-align: left; padding: 0; color: inherit;
         transition: transform 0.08s ease, border-color 0.08s ease;
     }
     .legion-personas .persona-card:hover { transform: translateY(-2px); border-color: var(--accent); }
-    .legion-personas .persona-art { width: 100%; aspect-ratio: 1 / 1.41; background: #0a1014; position: relative; }
+    .legion-personas--no-anim .persona-card { transition: none; }
+    .legion-personas--no-anim .persona-card:hover { transform: none; }
+    .legion-personas .persona-art { width: 100%; aspect-ratio: 1 / 1.41; background: var(--lp-art-bg, #0a1014); position: relative; }
     .legion-personas .persona-art-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
     .legion-personas .persona-card-body { padding: 0.6rem 0.7rem 0.8rem; }
     .legion-personas .persona-card-name { font-weight: 600; }

@@ -5,12 +5,77 @@
 @* MindAttic.Ideas.Theme.Hardware.V1 — industrial/maker dark chrome. Provides the global PCB-green
    palette, monospace typography, scan-line texture, and baseline element styles for hardware project
    pages. Structural .hw-* layout classes ship in the HardwareHero widget; compose that alongside
-   any page that uses this theme. *@
-<div class="page">
+   any page that uses this theme.
+   Instance settings (MAI-A45): the --hw-* tokens live on :root in theme.css, so overrides are emitted as
+   an html:root { … } block (wins over :root by specificity). *@
+@if (_rootVars is { } vars)
+{
+    @((MarkupString)vars)
+}
+<div class="page" style="@PageStyle">
     @Body
 </div>
 
 @code {
     private const string Mount = "/_ideas/Theme/hardware/1";
     public override IReadOnlyList<string> ThemeCssUrls { get; } = new[] { Mount + "/theme.css" };
+
+    // ── Effects ─────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Scan-line overlay", Group = "Effects", Order = 1, Description = "The faint CRT scan-line texture over the page")]
+    public bool Scanlines { get; set; } = true;
+
+    [Parameter, Setting("Scan-line opacity", Group = "Effects", Order = 2, Description = "0–1 multiplier; empty = as designed (1)")]
+    public double? ScanlineOpacity { get; set; }
+
+    // ── Colors (theme.css :root tokens) ─────────────────────────────────────────────────────────
+    [Parameter, Setting("Background color", Group = "Colors", Order = 1, Description = "--hw-bg (designed: #0b0e0d)")] public string? BackgroundColor { get; set; }
+    [Parameter, Setting("Text color", Group = "Colors", Order = 2, Description = "--hw-fg (designed: #b8ccbf)")] public string? TextColor { get; set; }
+    [Parameter, Setting("Muted text color", Group = "Colors", Order = 3, Description = "--hw-muted (designed: #5a7566)")] public string? MutedColor { get; set; }
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 4, Description = "--hw-accent (designed: #00d26a)")] public string? AccentColor { get; set; }
+    [Parameter, Setting("Text on accent", Group = "Colors", Order = 5, Description = "--hw-accent-fg (designed: #0b0e0d)")] public string? AccentTextColor { get; set; }
+    [Parameter, Setting("Surface color", Group = "Colors", Order = 6, Description = "--hw-surface (designed: #0f1812)")] public string? SurfaceColor { get; set; }
+    [Parameter, Setting("Border color", Group = "Colors", Order = 7, Description = "--hw-border (designed: rgba(0,210,106,0.16))")] public string? BorderColor { get; set; }
+    [Parameter, Setting("Code background", Group = "Colors", Order = 8, Description = "--hw-code-bg (designed: rgba(0,210,106,0.05))")] public string? CodeBackground { get; set; }
+    [Parameter, Setting("Rule / line color", Group = "Colors", Order = 9, Description = "--hw-line (designed: rgba(0,210,106,0.12))")] public string? LineColor { get; set; }
+    [Parameter, Setting("Link color", Group = "Colors", Order = 10, Description = "--hw-link (designed: #4dff91)")] public string? LinkColor { get; set; }
+    [Parameter, Setting("Link hover color", Group = "Colors", Order = 11, Description = "--hw-link-hover (designed: #98ffc4)")] public string? LinkHoverColor { get; set; }
+    [Parameter, Setting("Table stripe", Group = "Colors", Order = 12, Description = "--hw-table-stripe (designed: rgba(0,210,106,0.03))")] public string? TableStripe { get; set; }
+    [Parameter, Setting("Heading color", Group = "Colors", Order = 13, Description = "designed: the text color")] public string? HeadingColor { get; set; }
+
+    // ── Typography ──────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Font family", Group = "Typography", Order = 1, Description = "designed: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace")] public string? FontFamily { get; set; }
+    [Parameter, Setting("Base font size", Group = "Typography", Order = 2, Description = "designed: 15px (14px root on phones)")] public string? FontSize { get; set; }
+    [Parameter, Setting("Line height", Group = "Typography", Order = 3, Description = "designed: 1.65")] public string? LineHeight { get; set; }
+    [Parameter, Setting("Heading font family", Group = "Typography", Order = 4, Description = "designed: same as the body font")] public string? HeadingFontFamily { get; set; }
+
+    // ── Layout / shape ──────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Content max width", Group = "Layout", Order = 3, Description = "--hw-max-width used by the .hw-* layout (designed: 920px)")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Inline code radius", Group = "Shape", Order = 1, Description = "designed: 3px")] public string? CodeRadius { get; set; }
+    [Parameter, Setting("Code block radius", Group = "Shape", Order = 2, Description = "designed: 6px")] public string? BlockRadius { get; set; }
+
+    private string? _rootVars
+    {
+        get
+        {
+            var parts = new List<string>();
+            foreach (var (prop, value) in new (string, string?)[]
+            {
+                ("--hw-bg", BackgroundColor), ("--hw-fg", TextColor), ("--hw-muted", MutedColor), ("--hw-accent", AccentColor),
+                ("--hw-accent-fg", AccentTextColor), ("--hw-surface", SurfaceColor), ("--hw-border", BorderColor),
+                ("--hw-code-bg", CodeBackground), ("--hw-line", LineColor), ("--hw-link", LinkColor),
+                ("--hw-link-hover", LinkHoverColor), ("--hw-table-stripe", TableStripe), ("--hw-heading-color", HeadingColor),
+                ("--hw-font", FontFamily), ("--hw-font-size", FontSize), ("--hw-line-height", LineHeight),
+                ("--hw-heading-font", HeadingFontFamily), ("--hw-max-width", MaxWidth),
+                ("--hw-code-radius", CodeRadius), ("--hw-block-radius", BlockRadius),
+                ("--hw-scanlines", Scanlines ? null : "none"),
+                ("--hw-scanline-opacity", ScanlineOpacity is { } o ? Math.Clamp(o, 0, 1).ToString(System.Globalization.CultureInfo.InvariantCulture) : null),
+            })
+            {
+                // Raw CSS text inside <style>: strip anything that could close the rule or the element.
+                var v = value is null ? null : new string(value.Where(c => c is not ('{' or '}' or '<' or '>' or ';')).ToArray()).Trim();
+                if (!string.IsNullOrEmpty(v)) parts.Add(prop + ":" + v);
+            }
+            return parts.Count == 0 ? null : "<style>html:root{" + string.Join(";", parts) + "}</style>";
+        }
+    }
 }

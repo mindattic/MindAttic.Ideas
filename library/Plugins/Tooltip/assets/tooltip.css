@@ -25,7 +25,7 @@
   left: 0;
   z-index: 2147483000; /* above app chrome + overlays */
   max-width: var(--ma-tooltip-maxw);
-  padding: 7px 11px;
+  padding: var(--ma-tooltip-pad, 7px 11px);
   background: var(--ma-tooltip-bg);
   color: var(--ma-tooltip-fg);
   border: 1px solid var(--ma-tooltip-border);
@@ -33,8 +33,8 @@
   box-shadow: var(--ma-tooltip-shadow);
   font-family: var(--ma-tooltip-font);
   font-size: var(--ma-tooltip-fontsz);
-  font-weight: 500;
-  line-height: 1.4;
+  font-weight: var(--ma-tooltip-weight, 500);
+  line-height: var(--ma-tooltip-lh, 1.4);
   letter-spacing: 0.01em;
   white-space: normal;
   word-break: break-word;

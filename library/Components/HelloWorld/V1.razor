@@ -10,18 +10,97 @@
    .hello-world so it never leaks into the host theme.
    ============================================================================================ *@
 
-<div class="hello-world">
-    <p class="hw-greeting">Hello, World!</p>
-    <p class="hw-sub">This is a MindAttic <code>.idea</code> component.</p>
-    <button class="hw-btn" type="button" @onclick="Increment">
-        Clicked @count time@(count == 1 ? "" : "s")
-    </button>
+<div class="@_rootClass" style="@_rootStyle">
+    <p class="hw-greeting">@(Greeting ?? "Hello, World!")</p>
+    @if (ShowSubtitle)
+    {
+        if (Subtitle is null)
+        {
+            <p class="hw-sub">This is a MindAttic <code>.idea</code> component.</p>
+        }
+        else
+        {
+            <p class="hw-sub">@Subtitle</p>
+        }
+    }
+    @if (ShowButton)
+    {
+        <button class="hw-btn" type="button" @onclick="Increment">
+            Clicked @count time@(count == 1 ? "" : "s")
+        </button>
+    }
 </div>
 
 @code {
-    private int count;
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Greeting", Group = "Content", Order = 1, Copyable = false, Description = "Default: Hello, World!")]
+    public string? Greeting { get; set; }
 
-    private void Increment() => count++;
+    [Parameter, Setting("Subtitle", Group = "Content", Order = 2, Copyable = false, Description = "Empty = the default .idea blurb")]
+    public string? Subtitle { get; set; }
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Show subtitle", Group = "Behavior", Order = 1)] public bool ShowSubtitle { get; set; } = true;
+    [Parameter, Setting("Show click counter", Group = "Behavior", Order = 2)] public bool ShowButton { get; set; } = true;
+    [Parameter, Setting("Counter start", Group = "Behavior", Order = 3)] public int StartCount { get; set; } = 0;
+    [Parameter, Setting("Counter step", Group = "Behavior", Order = 4, Description = "Added per click")] public int Step { get; set; } = 1;
+    [Parameter, Setting("Button hover effect", Group = "Behavior", Order = 5)] public bool HoverEffect { get; set; } = true;
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Max width", Group = "Layout", Order = 1, Description = "Default 380px")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 2, Description = "Default 1.5rem")] public string? Padding { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 3)] public string? Margin { get; set; }
+    [Parameter, Setting("Text alignment", Group = "Layout", Order = 4)] public string? Align { get; set; }
+
+    // ── Colors / appearance ─────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Background", Group = "Colors", Order = 1, Description = "Default #121723")] public string? Background { get; set; }
+    [Parameter, Setting("Border color", Group = "Colors", Order = 2, Description = "Default #232c3d")] public string? LineColor { get; set; }
+    [Parameter, Setting("Text color", Group = "Colors", Order = 3, Description = "Default #dce1e6")] public string? TextColor { get; set; }
+    [Parameter, Setting("Muted text color", Group = "Colors", Order = 4, Description = "Default #8b97a8")] public string? MutedColor { get; set; }
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 5, Description = "Button, default #3c82ff")] public string? Accent { get; set; }
+    [Parameter, Setting("Corner radius", Group = "Appearance", Order = 1, Description = "Default 12px")] public string? Radius { get; set; }
+    [Parameter, Setting("Greeting size", Group = "Appearance", Order = 2, Description = "Default 1.6rem")] public string? GreetingSize { get; set; }
+    [Parameter, Setting("Font family", Group = "Appearance", Order = 3, Description = "Default system-ui, sans-serif")] public string? FontFamily { get; set; }
+    [Parameter, Setting("Shadow", Group = "Appearance", Order = 4)] public string? Shadow { get; set; }
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
+
+    private int count;
+    private bool _seeded;
+
+    protected override void OnParametersSet()
+    {
+        if (!_seeded) { count = StartCount; _seeded = true; }
+    }
+
+    private void Increment() => count += Step;
+
+    private string _rootClass => string.Join(" ", new[]
+    {
+        "hello-world", HoverEffect ? null : "hello-world--no-anim", CssClass,
+    }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+    private static string? Decl(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
+    private string? _rootStyle
+    {
+        get
+        {
+            var s = string.Join(";", new[]
+            {
+                Decl("--hw-bg", Background), Decl("--hw-line", LineColor), Decl("--hw-text", TextColor),
+                Decl("--hw-muted", MutedColor), Decl("--hw-accent", Accent),
+                Decl("max-width", MaxWidth), Decl("padding", Padding), Decl("margin", Margin),
+                Decl("text-align", Align), Decl("border-radius", Radius), Decl("--hw-greeting-size", GreetingSize),
+                Decl("font-family", FontFamily), Decl("box-shadow", Shadow),
+                string.IsNullOrWhiteSpace(CssStyle) ? null : CssStyle,
+            }.Where(p => p is not null));
+            return s.Length > 0 ? s : null;
+        }
+    }
 }
 
 <style>
@@ -41,7 +120,7 @@
         font-family: system-ui, sans-serif;
     }
     .hello-world * { box-sizing: border-box; }
-    .hello-world .hw-greeting { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+    .hello-world .hw-greeting { margin: 0; font-size: var(--hw-greeting-size, 1.6rem); font-weight: 800; letter-spacing: -0.01em; }
     .hello-world .hw-sub { margin: 0.25rem 0 1rem; color: var(--hw-muted); font-size: 0.9rem; }
     .hello-world .hw-sub code {
         background: #1a2130; border: 1px solid var(--hw-line);
@@ -53,4 +132,6 @@
         transition: filter 0.1s ease;
     }
     .hello-world .hw-btn:hover { filter: brightness(1.1); }
+    .hello-world--no-anim .hw-btn { transition: none; }
+    .hello-world--no-anim .hw-btn:hover { filter: none; }
 </style>

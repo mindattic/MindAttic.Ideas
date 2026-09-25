@@ -27,14 +27,14 @@
     }
 
     // Backdrop click: the click landed directly on the .ma-modal element itself
-    if (target.classList && target.classList.contains('ma-modal')) {
+    if (target.classList && target.classList.contains('ma-modal') && target.dataset.closeBackdrop !== 'false') {
       closeModal(target);
     }
   });
 
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    var modals = document.querySelectorAll('.ma-modal:not([hidden])');
+    var modals = document.querySelectorAll('.ma-modal:not([hidden]):not([data-close-escape="false"])');
     for (var i = modals.length - 1; i >= 0; i--) closeModal(modals[i]);
   });
 })();

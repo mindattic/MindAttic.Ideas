@@ -1,17 +1,18 @@
 ﻿/* MindAttic.Ideas.Component.CodeBlock — code chrome + copy button. Scoped via .ma-code (MAIL-LAW-6);
-   codeblock.js adds .ma-code to every pre>code so authors write plain Markdown-style markup. */
+   codeblock.js adds .ma-code to every pre>code so authors write plain Markdown-style markup.
+   Values read optional custom properties (instance settings, MAI-A45) with the as-designed fallback. */
 .ma-code {
   position: relative;
-  background: #14181f;
-  color: #d6e2f0;
-  border-radius: .5rem;
-  padding: 1rem 1.1rem;
+  background: var(--ma-code-bg, #14181f);
+  color: var(--ma-code-color, #d6e2f0);
+  border-radius: var(--ma-code-radius, .5rem);
+  padding: var(--ma-code-padding, 1rem 1.1rem);
   overflow-x: auto;
-  font-size: .9rem;
-  line-height: 1.55;
+  font-size: var(--ma-code-font-size, .9rem);
+  line-height: var(--ma-code-line-height, 1.55);
 }
 .ma-code code {
-  font-family: ui-monospace, Consolas, "Cascadia Mono", monospace;
+  font-family: var(--ma-code-font, ui-monospace, Consolas, "Cascadia Mono", monospace);
   background: none;
   padding: 0;
 }
@@ -42,4 +43,4 @@
 }
 .ma-code:hover .ma-code-copy,
 .ma-code-copy:focus-visible { opacity: 1; }
-.ma-code-copy.ma-code-copied { border-color: #2e9e5b; color: #7fd6a4; }
+.ma-code-copy.ma-code-copied { border-color: var(--ma-code-copied, #2e9e5b); color: #7fd6a4; }

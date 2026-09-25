@@ -22,46 +22,119 @@
         }
         @if (!string.IsNullOrWhiteSpace(CtaText) && !string.IsNullOrWhiteSpace(CtaHref))
         {
-            <a class="ma-hero-cta" href="@SafeUrl(CtaHref)">@CtaText</a>
+            <a class="ma-hero-cta" href="@SafeUrl(CtaHref)" target="@(CtaNewTab ? "_blank" : null)" rel="@(CtaNewTab ? "noopener" : null)">@CtaText</a>
         }
     </div>
 </section>
 
 @code {
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
     /// <summary>The headline.</summary>
-    [Parameter] public string? Title { get; set; }
+    [Parameter, Setting("Title", Group = "Content", Order = 1, Copyable = false)] public string? Title { get; set; }
 
     /// <summary>Optional line under the headline.</summary>
-    [Parameter] public string? Subtitle { get; set; }
+    [Parameter, Setting("Subtitle", Group = "Content", Order = 2, Copyable = false, Multiline = true)] public string? Subtitle { get; set; }
 
     /// <summary>A page CSS class carrying the base64 background-image (the authoring convention).</summary>
-    [Parameter] public string? ImageClass { get; set; }
+    [Parameter, Setting("Background image class", Group = "Content", Order = 3, Copyable = false, Description = "A page CSS class carrying the background-image")]
+    public string? ImageClass { get; set; }
 
     /// <summary>Optional background image URL or data: URI (alternative to ImageClass).</summary>
-    [Parameter] public string? Image { get; set; }
+    [Parameter, Setting("Background image URL", Group = "Content", Order = 4, Copyable = false)] public string? Image { get; set; }
 
     /// <summary>Call-to-action button text (rendered only with CtaHref).</summary>
-    [Parameter] public string? CtaText { get; set; }
+    [Parameter, Setting("Button text", Group = "Content", Order = 5, Copyable = false, Description = "Shown only with a button link")]
+    public string? CtaText { get; set; }
 
     /// <summary>Call-to-action link target.</summary>
-    [Parameter] public string? CtaHref { get; set; }
+    [Parameter, Setting("Button link", Group = "Content", Order = 6, Copyable = false)] public string? CtaHref { get; set; }
 
+    /// <summary>Open the call-to-action link in a new tab.</summary>
+    [Parameter, Setting("Button opens new tab", Group = "Behavior", Order = 1)] public bool CtaNewTab { get; set; }
+
+    /// <summary>Hover lift/brighten transition on the button.</summary>
+    [Parameter, Setting("Button hover animation", Group = "Behavior", Order = 2)] public bool Animate { get; set; } = true;
+
+    /// <summary>Darkening overlay over a background image.</summary>
+    [Parameter, Setting("Image overlay", Group = "Behavior", Order = 3, Description = "Darken the background image so text stays readable")]
+    public bool Overlay { get; set; } = true;
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
     /// <summary>Horizontal alignment: center (default) | left | right.</summary>
-    [Parameter] public string? Align { get; set; }
-
-    /// <summary>Additional CSS classes appended to the root element.</summary>
-    [Parameter] public string? CssClass { get; set; }
-
-    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
-    [Parameter] public string? CssStyle { get; set; }
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 1, Description = "center, left or right")] public string? Align { get; set; }
 
     /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
-    [Parameter] public string? Padding { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 2, Description = "Default 3rem 1.5rem")] public string? Padding { get; set; }
 
     /// <summary>CSS margin shorthand.</summary>
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 3)] public string? Margin { get; set; }
+
+    /// <summary>Minimum banner height (default 18rem).</summary>
+    [Parameter, Setting("Minimum height", Group = "Layout", Order = 4, Description = "Default 18rem")] public string? MinHeight { get; set; }
+
+    /// <summary>Max width of the text column (default 42rem).</summary>
+    [Parameter, Setting("Content max width", Group = "Layout", Order = 5, Description = "Default 42rem")] public string? MaxWidth { get; set; }
+
+    /// <summary>Gap between title, subtitle and button (default .75rem).</summary>
+    [Parameter, Setting("Gap", Group = "Layout", Order = 6, Description = "Default .75rem")] public string? Gap { get; set; }
+
+    // ── Appearance ──────────────────────────────────────────────────────────────────────────────
+    /// <summary>Button background / accent color (default #4a6cf7).</summary>
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 1, Description = "Button background, default #4a6cf7")] public string? Accent { get; set; }
+
+    /// <summary>Button text color (default #fff).</summary>
+    [Parameter, Setting("Button text color", Group = "Colors", Order = 2)] public string? CtaColor { get; set; }
+
+    /// <summary>Banner background color (shown without, or behind, an image).</summary>
+    [Parameter, Setting("Background color", Group = "Colors", Order = 3)] public string? Background { get; set; }
+
+    /// <summary>Text color (default: inherited; white over an image).</summary>
+    [Parameter, Setting("Text color", Group = "Colors", Order = 4)] public string? TextColor { get; set; }
+
+    /// <summary>Headline color (default: the text color).</summary>
+    [Parameter, Setting("Title color", Group = "Colors", Order = 5)] public string? TitleColor { get; set; }
+
+    /// <summary>Image overlay color (default rgba(0,0,0,.45)).</summary>
+    [Parameter, Setting("Overlay color", Group = "Colors", Order = 6, Description = "Default rgba(0,0,0,.45)")] public string? OverlayColor { get; set; }
+
+    /// <summary>Corner radius of the banner (default .5rem).</summary>
+    [Parameter, Setting("Corner radius", Group = "Appearance", Order = 1, Description = "Default .5rem")] public string? Radius { get; set; }
+
+    /// <summary>Button corner radius (default 2rem).</summary>
+    [Parameter, Setting("Button radius", Group = "Appearance", Order = 2, Description = "Default 2rem")] public string? CtaRadius { get; set; }
+
+    /// <summary>Button padding (default .7rem 1.6rem).</summary>
+    [Parameter, Setting("Button padding", Group = "Appearance", Order = 3, Description = "Default .7rem 1.6rem")] public string? CtaPadding { get; set; }
+
+    /// <summary>Headline font-size (default clamp(1.9rem, 5vw, 3.2rem)).</summary>
+    [Parameter, Setting("Title size", Group = "Appearance", Order = 4)] public string? TitleSize { get; set; }
+
+    /// <summary>Subtitle font-size (default clamp(1.05rem, 2.5vw, 1.35rem)).</summary>
+    [Parameter, Setting("Subtitle size", Group = "Appearance", Order = 5)] public string? SubtitleSize { get; set; }
+
+    /// <summary>Subtitle opacity (default .85).</summary>
+    [Parameter, Setting("Subtitle opacity", Group = "Appearance", Order = 6, Description = "0 to 1, default .85")] public string? SubtitleOpacity { get; set; }
+
+    /// <summary>Background image size (default cover).</summary>
+    [Parameter, Setting("Image size", Group = "Appearance", Order = 7, Description = "cover, contain, auto…")] public string? BackgroundSize { get; set; }
+
+    /// <summary>Background image position (default center).</summary>
+    [Parameter, Setting("Image position", Group = "Appearance", Order = 8)] public string? BackgroundPosition { get; set; }
+
+    /// <summary>CSS box-shadow of the banner.</summary>
+    [Parameter, Setting("Shadow", Group = "Appearance", Order = 9)] public string? Shadow { get; set; }
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
 
     private bool HasImage => !string.IsNullOrWhiteSpace(ImageClass) || !string.IsNullOrWhiteSpace(Image);
+
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
 
     private string AlignClass => Align?.ToLowerInvariant() switch
     {
@@ -72,7 +145,13 @@
 
     // Joins all conditional classes, skipping nulls/empties to avoid spurious spaces in the attribute.
     private string _rootClass => string.Join(" ",
-        new[] { "ma-hero", AlignClass, HasImage ? $"ma-hero-img {ImageClass}".TrimEnd() : null, CssClass }
+        new[]
+        {
+            "ma-hero", AlignClass, HasImage ? $"ma-hero-img {ImageClass}".TrimEnd() : null,
+            Overlay ? null : "ma-hero--no-overlay",
+            Animate ? null : "ma-hero--no-anim",
+            CssClass,
+        }
         .Where(s => !string.IsNullOrWhiteSpace(s)));
 
     // Single quotes are not HTML-encoded by Blazor, so escape them to keep Image inside the url('…') string.
@@ -85,6 +164,24 @@
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         BackgroundStyle,
+        Var("--ma-hero-min-height", MinHeight),
+        Var("--ma-hero-max-width", MaxWidth),
+        Var("--ma-hero-gap", Gap),
+        Var("--ma-hero-accent", Accent),
+        Var("--ma-hero-cta-color", CtaColor),
+        Var("background-color", Background),
+        Var("color", TextColor),
+        Var("--ma-hero-title-color", TitleColor),
+        Var("--ma-hero-overlay", OverlayColor),
+        Var("--ma-hero-radius", Radius),
+        Var("--ma-hero-cta-radius", CtaRadius),
+        Var("--ma-hero-cta-padding", CtaPadding),
+        Var("--ma-hero-title-size", TitleSize),
+        Var("--ma-hero-subtitle-size", SubtitleSize),
+        Var("--ma-hero-subtitle-opacity", SubtitleOpacity),
+        Var("--ma-hero-bg-size", BackgroundSize),
+        Var("--ma-hero-bg-position", BackgroundPosition),
+        Var("box-shadow", Shadow),
         CssStyle,
     }.Where(s => s is not null));
 }

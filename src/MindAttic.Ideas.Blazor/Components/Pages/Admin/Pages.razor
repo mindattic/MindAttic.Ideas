@@ -3,12 +3,21 @@
 @inject IContentCatalog Catalog
 @inject ICmsRoleService RolesSvc
 @inject MindAttic.Authentication.Services.IUserAdminService UserAdmin
+@inject IInstanceConfigService Instances
+@inject IPageValidator Validator
+@inject MindAttic.Ideas.Blazor.Services.InstanceClipboard Clipboard
+@implements IDisposable
 
 @* Page Management panel — hosted by AdminShell's "Page Management" tab (no own route). *@
 
 <div class="admin-two-pane">
     <div class="admin-list">
         <button class="admin-new" @onclick="StartNew">+ New Page</button>
+        <button class="admin-link" @onclick="ToggleExpandAll">@(expandAll ? "▾ Collapse instances" : "▸ Show every page's theme, plugins & components")</button>
+        @if (Clipboard.Current is { } copied)
+        {
+            <div class="admin-clipboard">📋 Copied: @copied.SourceLabel</div>
+        }
 
         @if (pages is not null)
         {
@@ -29,6 +38,8 @@
                      @ondragenter="() => dragOverId = node.Id"
                      @ondrop="() => NestUnder(node)"
                      @onclick="() => Edit(node.Id)">
+                    <button class="admin-mini admin-caret" title="Theme, plugins &amp; components on this page"
+                            @onclick:stopPropagation="true" @onclick="() => ToggleExpand(node.Id)">@(expanded.Contains(node.Id) ? "▾" : "▸")</button>
                     <span class="admin-grip" title="Drag to nest">⠿</span>
                     <span class="admin-reorder">
                         <button class="admin-mini" title="Move up" @onclick:stopPropagation="true" @onclick="() => Nudge(node, -1)">▲</button>
@@ -44,13 +55,39 @@
                         </span>
                     </span>
                 </div>
+                @if (expanded.Contains(node.Id) && instances.TryGetValue(node.Id, out var nodes))
+                {
+                    @foreach (var inst in nodes.Where(n => n.Source != InstanceSource.Page || n.SettingCount > 0))
+                    {
+                        var i = inst;
+                        var pageId = node.Id;
+                        <div class="admin-instance @(editingInstance == (pageId, i.Path) ? "active" : "") @(i.Resolved ? "" : "missing")"
+                             style="margin-left:@((depth + i.Depth) * 1.1 + 0.6)rem"
+                             title="@SourceLabel(i.Source)"
+                             @onclick="() => OpenInstance(pageId, i)">
+                            <span class="admin-kind admin-kind-@i.Kind.ToString().ToLowerInvariant()">@i.Kind</span>
+                            <span class="admin-instance-name">@i.DisplayName.Replace(i.Kind + ": ", "")</span>
+                            @if (i.SetCount > 0) { <span class="admin-badge ok" title="Settings set on this instance">@i.SetCount set</span> }
+                            @if (i.SettingCount > 0)
+                            {
+                                <button class="admin-mini" title="Copy Configuration" @onclick:stopPropagation="true" @onclick="() => CopyInstance(pageId, i)">⧉</button>
+                                <button class="admin-mini" title="Paste Configuration" disabled="@(!Clipboard.CanPasteOnto(i.Kind, i.Key))"
+                                        @onclick:stopPropagation="true" @onclick="() => PasteInstance(pageId, i)">📋</button>
+                            }
+                        </div>
+                    }
+                }
             }
             <p class="admin-hint">Drag a page onto another to nest it; drop on “Top level” to un-nest; ▲▼ reorders siblings.</p>
         }
     </div>
 
     <div class="admin-editor">
-        @if (editing is null)
+        @if (instanceView is not null)
+        {
+            <InstanceSettingsEditor View="instanceView" OnSaved="OnInstanceSaved" OnClose="CloseInstance" />
+        }
+        else if (editing is null)
         {
             <p class="admin-empty">Select a page or create a new one.</p>
         }
@@ -111,24 +148,48 @@
                         </select>
                     </label>
                     <label class="admin-plugins-label">Plugins
+                        <label class="admin-access-check">
+                            <input type="checkbox" checked="@editing.InheritPlugins" @onchange="OnInheritPluginsChanged" />
+                            Use the site's default plugins
+                            @if (editing.InheritPlugins) { <span class="admin-sub">(@(editing.SiteDefaultPlugins.Count == 0 ? "none" : string.Join(", ", editing.SiteDefaultPlugins.Select(r => r.Replace("Plugin.", "")))))</span> }
+                        </label>
                         <div class="admin-plugin-list">
                             @foreach (var pluginKey in UniquePluginKeys())
                             {
                                 var pKey = pluginKey;
                                 var latestRef = "Plugin." + pKey;
+                                var shown = editing.InheritPlugins ? editing.SiteDefaultPlugins : editing.ActivePlugins;
                                 <label class="admin-access-check">
-                                    <input type="checkbox"
-                                           checked="@editing.ActivePlugins.Any(r => r.StartsWith("Plugin." + pKey, StringComparison.OrdinalIgnoreCase))"
+                                    <input type="checkbox" disabled="@editing.InheritPlugins"
+                                           checked="@shown.Any(r => r.StartsWith("Plugin." + pKey, StringComparison.OrdinalIgnoreCase))"
                                            @onchange="e => TogglePlugin(latestRef, (bool)(e.Value ?? false))" />
                                     @pKey
                                 </label>
                             }
                         </div>
+                        @if (!editing.InheritPlugins && editing.ActivePlugins.Count == 0)
+                        {
+                            <span class="admin-sub">No plugins: this page renders with no header, breadcrumbs or footer.</span>
+                        }
                     </label>
                     <label>SEO Title<input @bind="editing.SeoTitle" placeholder="(uses Title if blank)" /></label>
                     <label>SEO Description<input @bind="editing.SeoDescription" placeholder="(meta description)" /></label>
                 </div>
             </details>
+
+            @if (pageIssues.Count > 0)
+            {
+                <div class="admin-lint-banner @(pageIssues.Any(i => i.Severity == PageIssueSeverity.Error) ? "err" : "")" role="status">
+                    <button type="button" class="admin-lint-dismiss" @onclick="() => pageIssues = []">×</button>
+                    <strong>Page validation</strong>
+                    <ul>
+                        @foreach (var issue in pageIssues)
+                        {
+                            <li>@(issue.Severity == PageIssueSeverity.Error ? "⛔ " : "⚠ ")@issue.Message</li>
+                        }
+                    </ul>
+                </div>
+            }
 
             @if (editing.Kind == PageKind.Data)
             {
@@ -232,6 +293,7 @@
     private string status = "";
     private bool statusBad;
     private IReadOnlyList<CssLintWarning> cssLintWarnings = [];
+    private IReadOnlyList<PageIssue> pageIssues = [];
 
     // Drag state (the dragged page + the row currently hovered as a drop target).
     private int? dragId;
@@ -241,9 +303,95 @@
     private IReadOnlyList<string> allRoleNames = [];
     private IReadOnlyList<AuthUserSummary> allUsers = [];
 
+    // ── Instance tree (MAI-A45) ──────────────────────────────────────────────────────────────────
+    private readonly Dictionary<int, IReadOnlyList<InstanceNode>> instances = [];
+    private readonly HashSet<int> expanded = [];
+    private bool expandAll;
+    private (int PageId, string Path)? editingInstance;
+    private InstanceSettingsView? instanceView;
+
+    public void Dispose() => Clipboard.Changed -= OnClipboardChanged;
+    private void OnClipboardChanged() => InvokeAsync(StateHasChanged);
+
+    private static string SourceLabel(InstanceSource s) => s switch
+    {
+        InstanceSource.Theme => "The page's theme",
+        InstanceSource.ThemeUses => "Composed by the theme",
+        InstanceSource.PagePlugin => "Selected in this page's Plugins",
+        InstanceSource.SiteDefaultPlugin => "The site's default plugins (this page has no selection of its own)",
+        InstanceSource.BodyTag => "A tag in the page body",
+        _ => "The page",
+    };
+
+    private async Task ToggleExpand(int pageId)
+    {
+        if (!expanded.Remove(pageId))
+        {
+            expanded.Add(pageId);
+            instances[pageId] = await Instances.GetInstancesAsync(pageId);
+        }
+    }
+
+    private async Task ToggleExpandAll()
+    {
+        expandAll = !expandAll;
+        expanded.Clear();
+        if (!expandAll) return;
+        foreach (var p in pages ?? [])
+        {
+            expanded.Add(p.Id);
+            instances[p.Id] = await Instances.GetInstancesAsync(p.Id);
+        }
+    }
+
+    private async Task RefreshInstances(int pageId)
+    {
+        if (expanded.Contains(pageId)) instances[pageId] = await Instances.GetInstancesAsync(pageId);
+    }
+
+    private async Task OpenInstance(int pageId, InstanceNode node)
+    {
+        if (!node.Resolved) { CloseInstance(); return; }
+        instanceView = await Instances.GetSettingsAsync(pageId, node.Path);
+        editingInstance = instanceView is null ? null : (pageId, node.Path);
+    }
+
+    private async Task CopyInstance(int pageId, InstanceNode node)
+    {
+        if (await Instances.GetSettingsAsync(pageId, node.Path) is { } view) Clipboard.Copy(view);
+    }
+
+    // Paste lands in the editor for review; nothing is written until Save.
+    private async Task PasteInstance(int pageId, InstanceNode node)
+    {
+        if (!Clipboard.CanPasteOnto(node.Kind, node.Key)) return;
+        if (await Instances.GetSettingsAsync(pageId, node.Path) is not { } view) return;
+        instanceView = view with { Values = Clipboard.PasteOnto(view) };
+        editingInstance = (pageId, node.Path);
+    }
+
+    private async Task OnInstanceSaved()
+    {
+        if (editingInstance is not { } e) return;
+        await RefreshInstances(e.PageId);
+        instanceView = await Instances.GetSettingsAsync(e.PageId, e.Path) ?? instanceView;
+        if (editing?.Id == e.PageId) editing = await PagesSvc.GetAsync(e.PageId);
+    }
+
+    private void CloseInstance() { instanceView = null; editingInstance = null; }
+
+    /// <summary>Deep link from a page's admin cog: /admin/pages?page={id} opens that page with its instances.</summary>
+    [SupplyParameterFromQuery(Name = "page")] public int? DeepLinkPageId { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        Clipboard.Changed += OnClipboardChanged;
         await Load();
+        if (DeepLinkPageId is int deep && pages?.Any(p => p.Id == deep) == true)
+        {
+            await Edit(deep);
+            if (!expanded.Contains(deep)) await ToggleExpand(deep);
+        }
         allRoleNames = await RolesSvc.GetAllRoleNamesAsync();
         allUsers = await UserAdmin.ListAsync();
     }
@@ -307,12 +455,15 @@
 
     private void StartNew()
     {
+        CloseInstance();
         editing = new PageEditModel { Kind = PageKind.Data, Enabled = true };
         isNew = true; status = "";
     }
 
     private async Task Edit(int id)
     {
+        CloseInstance();
+        pageIssues = [];
         editing = await PagesSvc.GetAsync(id);
         isNew = false; status = "";
     }
@@ -330,6 +481,8 @@
         }
         isNew = false;
         editing = await PagesSvc.GetAsync(result.Id) ?? editing;
+        pageIssues = Validator.Validate(editing.BodyHtml, result.StampedTrust);
+        await RefreshInstances(result.Id);
         statusBad = result.Error is not null;
         status = result.Error
             ?? (result.StampedTrust == ContentTrust.Author
@@ -364,6 +517,15 @@
     private IEnumerable<string> UniquePluginKeys() =>
         Catalog.All.Where(d => d.Kind == ContentKind.Plugin)
             .Select(d => d.Key).Distinct().OrderBy(k => k);
+
+    // Leaving "inherit" starts the page's own list FROM the site defaults, so unchecking one plugin keeps
+    // the rest; returning to "inherit" discards the page's own list.
+    private void OnInheritPluginsChanged(ChangeEventArgs e)
+    {
+        if (editing is null) return;
+        editing.InheritPlugins = e.Value is true;
+        editing.ActivePlugins = editing.InheritPlugins ? [] : [.. editing.SiteDefaultPlugins];
+    }
 
     private void TogglePlugin(string pluginRef, bool add)
     {

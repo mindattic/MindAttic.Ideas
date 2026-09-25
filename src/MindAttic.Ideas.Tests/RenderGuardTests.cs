@@ -191,10 +191,22 @@ public class RenderGuardTests
     [Test]
     public void Author_ScriptSrc_IsPreserved()
     {
+        // Author <script>/<style> is emitted as ONE markup frame (never an element with a markup child, which
+        // interactive Blazor re-parses outside raw-text context), so the attribute lives in that markup.
         const string html = """<script src="https://cdn.example/lib.js"></script>""";
-        var attrs = AttributesForElement(html, "script", ContentTrust.Author);
-        Assert.That(attrs.Select(a => a.Name), Contains.Item("src"),
-            "author-trusted <script src=...> must be preserved");
+        var builder = new RenderTreeBuilder();
+        var seq = 0;
+        IncludeExpander.Expand(builder, ref seq, html, new FakeCatalog { Outcome = ContentResolution.Missing },
+            new PassGate(), ContentTrust.Author, new RecordingSink(), Guid.NewGuid(), "test");
+        var frames = builder.GetFrames();
+        var all = Enumerable.Range(0, frames.Count).Select(i => frames.Array[i]).ToList();
+        Assert.Multiple(() =>
+        {
+            Assert.That(all.Any(f => f.FrameType == RenderTreeFrameType.Markup
+                && f.MarkupContent.Contains("src=\"https://cdn.example/lib.js\"")), Is.True,
+                "author-trusted <script src=...> must be preserved");
+            Assert.That(all.Any(f => f.FrameType == RenderTreeFrameType.Element && f.ElementName == "script"), Is.False);
+        });
     }
 
     [Test]

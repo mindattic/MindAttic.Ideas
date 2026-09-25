@@ -1613,3 +1613,123 @@ border's 12-way expansion, `!important` precedence in both directions); non-exac
 `@media`-nested rules left untouched; comments before/between/after a merged group preserved verbatim;
 a file with no duplicates returned byte-for-byte identical; the `var()`-in-shorthand and vendor-prefixed
 -property regressions above, each asserting the input passes through completely unchanged.)*
+
+## MAI-A45 — Every citizen instance is configurable; configuration is shared by copy/paste, never by type {#MAI-A45}
+
+**What changed (2026-09-25).** A citizen's configurable surface is now uniform across all four kinds:
+**its INSTANCE SETTINGS are its public, writable, simple-typed `[Parameter]`s** (bool / string / integer /
+floating / enum, nullable allowed). An optional `[Setting]` attribute (Abstractions, append-only) adds the
+Admin label, group, order, help text, `Multiline`, `Hidden`, and `Copyable = false` for CONTENT (a caption,
+a link, an image uid) as opposed to configuration. A bool setting is how a citizen exposes an on/off
+feature toggle; there is no separate "feature" concept.
+
+**Values are per INSTANCE, and live where the instance lives.**
+- A **Component** (or inline Plugin) instance IS its tag in `BodyHtml`, so its settings are that tag's
+  attributes — the RFC 0001 typed-attribute binding, unchanged. Admin edits rewrite exactly that one
+  tag's attribute list in the source text (`BodyTagIndex`) and save through the ordinary page save, so
+  trust stamping (MAI-LAW-5) and page history apply exactly as for a hand edit.
+- A **Theme**, a page/site-default **Plugin**, a Plugin a compiled Theme/Page composes by string id
+  (`CmsInclude`, declared by `[Uses]`), and a **Code Page** have no tag, so their settings live in the
+  page's instance-settings slots: the existing versioned `WidgetPlacementSettings` table (A25, with
+  history + rollback), slot names `theme`, `page`, `plugin:{key}`. `PageHost` binds each slot onto the
+  citizen's parameters; `IncludeRenderer` merges `plugin:{key}` over the composing author's attributes.
+  `IRenderContext.GetInstanceSettingsJson(slot)` (default member) exposes them.
+- Unknown names and unparsable values are dropped on write and on bind, so neither a stale slot nor a
+  tampered paste can reach a render or inject markup into a tag.
+
+**No "by type" layer — deliberately.** There is no site-wide or global "settings for every instance of
+citizen X". It was considered and rejected as confusing: the question "why does this card look like that?"
+must always be answered by looking at THAT instance. Configuration is shared instead by Admin **Copy
+Configuration** / **Paste Configuration** between two instances of the same citizen (same kind + key),
+across pages. Copy takes only `Copyable` settings, so pasting keeps the target's own content; a paste
+lands in the editor for review and writes nothing until Save.
+
+**Admin.** The page tree expands each page into its instances — Page, Theme, theme-composed plugins,
+page plugins (or the site default chrome), and nested body tags — each with Edit / Copy / Paste. The
+editor is generated from the schema; unset means the declared default (the property initializer), and
+"reset" returns a value to it. A signed-in Admin sees an invisible-until-hovered cog at the bottom-left of
+every content page that deep-links to `/admin/pages?page={id}` (that page, instances expanded).
+
+**Client script.** `IdeaBase.AddSettingsData` emits `<data hidden data-ma-settings="{kind.key}" value="{json}">`
+so a citizen's JS can read its settings live; an attribute, not a `<script>`, because Blazor re-renders it
+on in-circuit navigation whereas an inserted script never re-runs. `Plugin.Cyberspace` uses it: every
+effect (crash, tremor, leak, schematic, cascade, artifact, fragment, trace, pulsar, heist, predator,
+terminal) plus the parallax circuitboard is a toggle, with spawn-rate and circuitboard opacity/speed
+multipliers; the canonical UiUx engine reads them through a host-agnostic `window.__cyberspaceFx` hook
+(absent = designed behaviour) and the Ideas glue shim feeds it from the data element.
+
+**Also in this change.** `ThemeBase` gains `PagePadding` (default `.75rem 1rem`) / `PageMargin`, applied to
+every theme's `.page` wrapper via `PageStyle`. `.idealist` pages carry their slots (`InstanceSettings[]`;
+import upserts with a history snapshot). And a render bug found while doing it: `<style>`/`<script>` whose
+raw text contained `<tag>`-looking text (e.g. `<main>` in a CSS comment) lost everything after it once the
+circuit went interactive, because a markup CHILD of an element frame is re-parsed by Blazor outside
+raw-text context. `FreeFormPage`, `CmsHead` and `IncludeExpander` now emit the whole element as ONE markup
+frame — this was the frontpage losing its layout ~0.5s after load.
+
+*(tests: `InstanceSettingsTests` — schema discovery/metadata/defaults, typed serialize, case-insensitive
+names, coercion, malformed JSON, ThemeBase padding default. `BodyTagIndexTests` — nesting, kind/version,
+comments and `<style>` ignored, single-tag rewrite leaves every other byte untouched, escaping round-trip,
+null removes. `InstanceClipboardTests` — paste replaces copyable, keeps content, resets source-unset;
+same-citizen only. `IdeaListTests.RoundTrip_CarriesThemeAndPluginInstanceSettings`. `RawTextElementFrameTests`
+— `<style>`/`<script>` never an element frame with a markup child.)*
+
+## MAI-A46 — Every page body is XSS-sanitized; pages validate at save, citizens at pack, both in CI {#MAI-A46}
+
+**This amendment NARROWS MAI-LAW-5.** Author trust no longer means verbatim markup passthrough. EVERY page
+body — Author and Untrusted alike — is run through HtmlSanitizer (Ganss.Xss, the de-facto open-source .NET
+sanitizer, already the Untrusted engine) before `IncludeExpander` builds a render tree
+(`IRawContentGate.SanitizeBody`). No `<script>`, event handler, `javascript:`/`vbscript:`/`data:` URL,
+frame, form, embed or `<style>` survives in page markup at any trust level. Author trust now differs only
+in what it may ADDITIONALLY keep: citizen tags (`<ma-component>`, whose attributes are the instance's
+settings — minus handlers and executable-scheme values), `id`, a form-less `<button>`, `target` (always
+forced to `rel="noopener noreferrer"`), and inline `style` passed through HtmlSanitizer's CSS sanitizer
+(custom properties kept, `url(javascript:)`/`expression()` removed). Both profiles keep `class`, `role`,
+`aria-*` and `data-*`. **Deliberate author JavaScript lives only in the separate, Author-only Page JS field**
+— never in markup. `Emit` shares the same policy. Before the change, no live page body used any construct
+the new policy strips.
+
+This also closes a real gap: a Data page's body never went through HtmlSanitizer at all —
+`IncludeExpander` used its own hand-rolled per-node filter for Untrusted content (script/style + `on*` +
+URL schemes), which let `<iframe srcdoc>`, `<form>`, `<meta http-equiv>`, `<base>` and `style=` overlays
+through. That filter stays as defense in depth behind the sanitizer.
+
+**Validation, three places, one rule set.**
+- **Page save** (`IPageValidator` / `PageMarkupValidator`, shown in Admin after Save): every citizen tag
+  resolves (else Error — it would render a placeholder); every tag attribute is a declared setting or a
+  pass-through (`class`/`id`/`style`/`title`/`role`/`data-*`/`aria-*`/meta) else Warning; typed values fit
+  (bool/integer/number) else Error; an Untrusted page's tags are flagged as non-rendering; and
+  `IRawContentGate.Audit` lists exactly what the sanitizer would remove.
+- **Library pack** (`CitizenValidator`, called by `Packer.Pack` — a failing citizen produces NO package):
+  settings that collide case-insensitively or use a grammar-reserved name (`kind`, `data-key`,
+  `data-version`); JS assets with `eval(`, `new Function(`, `document.write(`, or string-argument
+  `setTimeout`/`setInterval`; CSS assets with `expression(`, `javascript:`, `-moz-binding`, `behavior:`
+  (comments ignored; `scroll-behavior` et al. are not matches).
+- **CI** (`ShippedContentValidationTests`): every package in the host's committed `library/` passes the
+  pack checks, and every page of `seed/mindattic-site.idealist` validates against those packages'
+  manifest `settings[]` with no Error and nothing sanitizer-stripped. On first run it caught the
+  sanitizer profile stripping `class`/`id`/`role` (fixed before landing) and a real content bug — the
+  legacy home page's `<Component.Tooltip />` (Tooltip is a Plugin; it had always rendered a placeholder),
+  corrected to `<Plugin.Tooltip />` in the seed and the live page.
+
+**Also in this change.**
+- **`.page` wraps the whole page.** PageHost now renders BeforeBody plugins, the body, then AfterBody
+  plugins INSIDE the theme's single `Body` hole, so the theme's `.page` wrapper — and its per-page
+  `PagePadding`/`PageMargin` instance settings — frame the header, breadcrumbs and footer too. (Theme-less
+  pages keep the old flat order.)
+- **An explicitly empty plugin selection means NONE.** `ActivePluginsJson` null/blank = inherit the site's
+  `plugins.default`; `[]` = no header/breadcrumbs/footer. Admin gains "Use the site's default plugins";
+  leaving it starts the page's own list from the defaults. (`PageAdminService.EffectivePlugins`.)
+- **Class renames (author request):** NavMenu `ma-nav*` → `ma-header` / `-brand` / `-list` /
+  `-list-item` / `-link` / `-toggle`; Breadcrumbs `ma-crumbs*` → `ma-breadcrumbs` / `-list` /
+  `-list-item` / `-link` / `-current`. The host's own chrome already owned `.ma-header*` in `app.css`
+  (unlayered, loaded on every page), so per the aliasing rule the HOST side was renamed `ma-host-header*`.
+- **Signing actually works.** `PackageSigner.SignFile` wrapped the file in a fixed-size `MemoryStream`,
+  so `ma-idea sign` threw on every real package (tests only ever signed expandable streams).
+  `pack-all.ps1 -Sign` signs from the Vault PackageSigning bucket; `tools/deploy.ps1` packs with
+  `-Sign -Install` and runs the deployed copy with `IDEAS_DROPBOX` so same-version edited packages
+  replace the installed ones (Development only).
+
+*(tests: `RawContentGateTests` — Author script/style/handlers/frames/forms stripped, citizen tags and their
+settings kept minus handlers/script URLs, sanitized inline style + custom properties, Untrusted drops
+citizen tags. `PageMarkupValidatorTests`, `CitizenValidatorTests`, `ShippedContentValidationTests`,
+`EffectivePluginsTests`, `PackageSignerTests.SignFile_OnARealFile_SignsInPlace`.)*

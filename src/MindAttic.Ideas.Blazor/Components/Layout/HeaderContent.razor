@@ -1,7 +1,7 @@
 @namespace MindAttic.Ideas.Blazor.Components.Layout
 
 @* One column slot inside <Header>. Each column controls its own flex sizing, alignment, and padding. *@
-<div class="ma-header-col @(Fill ? "ma-header-col--fill" : "")" style="@_style">
+<div class="ma-host-header-col @(Fill ? "ma-host-header-col--fill" : "")" style="@_style">
     @ChildContent
 </div>
 

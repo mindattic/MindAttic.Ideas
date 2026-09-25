@@ -1,16 +1,16 @@
 ﻿/* MindAttic.Ideas.Component.MindAtticFrontpage — all rules scoped under .maf or .maf-* */
 
-.page { position: relative; z-index: 1; width: 50% !important; margin: auto !important; }
+/* The host .page width override (50%) is emitted inline by V1 — toggleable instance setting (MAI-A45). */
 
-.maf { display: flex; flex-direction: column; gap: 1.5rem; max-width: 64rem; min-height: 100vh; margin: 0 auto; padding: 1.5rem; }
+.maf { display: flex; flex-direction: column; gap: var(--maf-gap, 1.5rem); max-width: var(--maf-max-width, 64rem); min-height: var(--maf-min-height, 100vh); margin: 0 auto; padding: var(--maf-padding, 1.5rem); }
 .maf-header { display: contents; }
-.maf-wordmark { font-family: var(--font-attic, var(--font-outfit, system-ui)); font-size: clamp(2.2rem, 6vw, 3.6rem); letter-spacing: .04em; }
-.maf-sections { display: flex; flex-direction: column; gap: 2.25rem; }
+.maf-wordmark { font-family: var(--font-attic, var(--font-outfit, system-ui)); font-size: var(--maf-wordmark-size, clamp(2.2rem, 6vw, 3.6rem)); letter-spacing: .04em; color: var(--maf-wordmark-color, inherit); }
+.maf-sections { display: flex; flex-direction: column; gap: var(--maf-section-gap, 2.25rem); }
 .maf-section { display: flex; flex-direction: column; gap: 1rem; }
-.maf-section h2 { font-size: 1.3rem; opacity: .9; border-bottom: 1px solid rgba(128,128,128,.3); padding-bottom: .35rem; }
-.maf-links { display: flex; flex-wrap: wrap; gap: 1.25rem; }
-.maf-links a { color: inherit; }
-.maf-books { --ma-gallery-min: 8.5rem; }
+.maf-section h2 { font-size: var(--maf-heading-size, 1.3rem); opacity: .9; color: var(--maf-heading-color, inherit); border-bottom: 1px solid var(--maf-rule, rgba(128,128,128,.3)); padding-bottom: .35rem; }
+.maf-links { display: flex; flex-wrap: wrap; gap: var(--maf-links-gap, 1.25rem); }
+.maf-links a { color: var(--maf-link-color, inherit); }
+.maf-books { --ma-gallery-min: var(--maf-book-min, 8.5rem); }
 .maf-books .ma-gallery-tile { display: flex; align-items: flex-end; padding: .6rem; text-decoration: none; color: #fff; }
 .maf-books .ma-gallery-tile span { font-size: .85rem; line-height: 1.25; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
 

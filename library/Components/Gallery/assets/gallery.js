@@ -11,6 +11,20 @@
 
   var box, img, items = [], index = -1;
 
+  // Instance settings (MAI-A45) published by the Gallery component as
+  // <data data-ma-settings="component.gallery" value="{json}">. Read live so in-circuit navigation
+  // picks up the current page's values; every missing key falls back to the as-designed behaviour.
+  function settings() {
+    var el = document.querySelector('[data-ma-settings="component.gallery"]');
+    var s = {};
+    if (el) { try { s = JSON.parse(el.value || el.getAttribute('value') || '{}') || {}; } catch (e) { s = {}; } }
+    function flag(k) { return s[k] !== false; }
+    return {
+      lightbox: flag('lightbox'), arrows: flag('showArrows'), keyboard: flag('keyboard'),
+      loop: flag('loop'), backdrop: flag('closeOnBackdrop')
+    };
+  }
+
   // The tile's image, however it was authored: <img src> or a background-image class.
   function urlOf(el) {
     if (el instanceof HTMLImageElement) return el.src;
@@ -35,7 +49,7 @@
     var prev = btn('ma-gallery-prev', '‹', function () { step(-1); });
     var next = btn('ma-gallery-next', '›', function () { step(1); });
     box.appendChild(img); box.appendChild(close); box.appendChild(prev); box.appendChild(next);
-    box.addEventListener('click', function (e) { if (e.target === box) hide(); });
+    box.addEventListener('click', function (e) { if (e.target === box && settings().backdrop) hide(); });
     document.body.appendChild(box);
   }
 
@@ -54,12 +68,17 @@
     index = i;
     img.src = items[i].url;
     img.alt = items[i].alt;
+    var arrows = settings().arrows && items.length > 1;
+    box.querySelector('.ma-gallery-prev').hidden = !arrows;
+    box.querySelector('.ma-gallery-next').hidden = !arrows;
     box.hidden = false;
   }
 
   function step(dir) {
     if (box.hidden || !items.length) return;
-    showAt((index + dir + items.length) % items.length);
+    var next = index + dir;
+    if (!settings().loop && (next < 0 || next >= items.length)) return;
+    showAt((next + items.length) % items.length);
   }
 
   function hide() { if (box) box.hidden = true; }
@@ -67,7 +86,7 @@
   document.addEventListener('click', function (e) {
     if (!(e.target instanceof Element) || e.target.closest('a')) return;
     var gallery = e.target.closest('.ma-gallery');
-    if (!gallery) return;
+    if (!gallery || !settings().lightbox) return;
     var tile = e.target.closest('.ma-gallery > *');
     if (!tile) return;
     var url = urlOf(tile);
@@ -82,7 +101,7 @@
   });
 
   document.addEventListener('keydown', function (e) {
-    if (!box || box.hidden) return;
+    if (!box || box.hidden || !settings().keyboard) return;
     if (e.key === 'Escape') hide();
     else if (e.key === 'ArrowLeft') step(-1);
     else if (e.key === 'ArrowRight') step(1);

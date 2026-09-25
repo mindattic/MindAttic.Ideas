@@ -17,6 +17,13 @@
 //   WebSnapshot.autoInit(root?)  — rescan; call after DOM mutations
 
 (function (global) {
+  // Instance settings (MAI-A45) from the token's inline script, read lazily; each falls back to the
+  // verbatim behavior when unset.
+  function cfg(name, fallback) {
+    const c = global.WebSnapshotConfig;
+    return c && c[name] !== undefined && c[name] !== null ? c[name] : fallback;
+  }
+
   function readOpts(el) {
     return { src: el.dataset.src || null };
   }
@@ -57,9 +64,9 @@
     const src = state.opts.src;
     if (!src) return;
 
-    const bust = '_t=' + Date.now();
-    const url = src + (src.includes('?') ? '&' : '?') + bust;
-    const res = await fetch(url, { cache: 'no-store' });
+    const bustOn = cfg('cacheBust', true);
+    const url = bustOn ? src + (src.includes('?') ? '&' : '?') + '_t=' + Date.now() : src;
+    const res = await fetch(url, bustOn ? { cache: 'no-store' } : undefined);
     if (!res.ok) throw new Error(`Fetch ${src} failed: ${res.status}`);
     const payload = (await res.text()).trim();
     // Guard against a 200 that's actually an HTML error page or anything else
@@ -70,8 +77,22 @@
     state.img.src = payload;
   }
 
+  // Optional periodic re-fetch of every attached fetch-mode snapshot (refreshInterval seconds).
+  let refreshTimer = null;
+  function scheduleRefreshes() {
+    const secs = Number(cfg('refreshInterval', 0));
+    if (refreshTimer || !(secs > 0)) return;
+    refreshTimer = setInterval(() => {
+      document.querySelectorAll('.web-snapshot').forEach(el => {
+        const s = el.__webSnapshotState;
+        if (s && s.opts.src) refresh(el).catch(err => console.warn('[WebSnapshot] refresh failed:', err));
+      });
+    }, secs * 1000);
+  }
+
   function autoInit(root) {
     (root || document).querySelectorAll('.web-snapshot').forEach(el => attach(el));
+    scheduleRefreshes();
   }
 
   if (document.readyState === 'loading') {

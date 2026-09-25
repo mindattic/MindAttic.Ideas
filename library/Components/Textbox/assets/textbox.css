@@ -7,22 +7,23 @@
 .ma-field {
     position: relative;
     display: inline-flex;
-    margin: 14px 0;
-    font-family: var(--font-outfit, system-ui, -apple-system, "Segoe UI", sans-serif);
+    margin: var(--ma-field-margin, 14px 0);
+    font-family: var(--ma-field-font, var(--font-outfit, system-ui, -apple-system, "Segoe UI", sans-serif));
 }
 
 .ma-field-input {
     font: inherit;
-    font-size: 1rem;
+    font-size: var(--ma-field-font-size, 1rem);
     line-height: 1.2;
     padding: 15px 12px;
-    min-width: 240px;
+    min-width: var(--ma-field-min-width, 240px);
+    flex: var(--ma-field-input-flex, 0 1 auto);
     color: var(--ma-field-fg, #1f1f1f);
-    background: transparent;
+    background: var(--ma-field-input-bg, transparent);
     border: 1px solid var(--ma-field-border, #79747e);
-    border-radius: 6px;
+    border-radius: var(--ma-field-radius, 6px);
     outline: none;
-    transition: border-color .15s ease, border-width .15s ease;
+    transition: var(--ma-field-transition, border-color .15s ease, border-width .15s ease);
 }
 
 .ma-field-input:hover {
@@ -46,7 +47,7 @@
     /* knock the border out behind the floated label — match this to the field's backdrop */
     background: var(--ma-field-bg, #ffffff);
     pointer-events: none;
-    transition: top .15s ease, transform .15s ease, color .15s ease;
+    transition: var(--ma-field-transition, top .15s ease, transform .15s ease, color .15s ease);
 }
 
 /* Float the label when the field is focused, or filled (placeholder=" " => :not(:placeholder-shown)). */

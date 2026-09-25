@@ -1,7 +1,12 @@
 .ma-media-link {
     display: inline-flex;
     align-items: center;
-    gap: .35rem;
-    text-decoration: underline;
+    gap: var(--ma-media-link-gap, .35rem);
+    text-decoration: var(--ma-media-link-decoration, underline);
     text-underline-offset: 3px;
+}
+/* Only when a hover color is configured (MAI-A45 setting) — otherwise the theme's hover wins. */
+.ma-media-link--hover:hover,
+.ma-media-link--hover:focus-visible {
+    color: var(--ma-media-link-hover-color) !important;
 }

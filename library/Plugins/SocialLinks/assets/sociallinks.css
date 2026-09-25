@@ -1,8 +1,11 @@
-﻿/* MindAttic.Ideas.Plugin.SocialLinks — icon link row. Scoped under .ma-social (MAIL-LAW-6). */
+﻿/* MindAttic.Ideas.Plugin.SocialLinks — icon link row. Scoped under .ma-social (MAIL-LAW-6).
+   Instance settings (MAI-A45) arrive as --ma-social-* custom properties on the <ul>; every var()
+   falls back to the designed value. */
 .ma-social {
   display: flex;
   align-items: center;
-  gap: .6rem;
+  justify-content: var(--ma-social-justify, normal);
+  gap: var(--ma-social-gap, .6rem);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -11,20 +14,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: 50%;
-  color: inherit;
-  opacity: .7;
+  width: var(--ma-social-size, 2.4rem);
+  height: var(--ma-social-size, 2.4rem);
+  border-radius: var(--ma-social-radius, 50%);
+  color: var(--ma-social-color, inherit);
+  opacity: var(--ma-social-opacity, .7);
   transition: opacity .15s ease, background .15s ease, transform .15s ease;
 }
 .ma-social-link:hover,
 .ma-social-link:focus-visible {
   opacity: 1;
-  background: rgba(128, 128, 128, .15);
-  transform: translateY(-2px);
+  background: var(--ma-social-hover-bg, rgba(128, 128, 128, .15));
+  transform: translateY(var(--ma-social-lift, -2px));
 }
 .ma-social-link svg {
-  width: 1.3rem;
-  height: 1.3rem;
+  width: var(--ma-social-icon-size, 1.3rem);
+  height: var(--ma-social-icon-size, 1.3rem);
 }
+/* Instance-setting modifiers (MAI-A45), added to .ma-social by V1.razor. */
+.ma-social--no-anim .ma-social-link { transition: none; }
+.ma-social--hover-color .ma-social-link:hover,
+.ma-social--hover-color .ma-social-link:focus-visible { color: var(--ma-social-hover-color); }

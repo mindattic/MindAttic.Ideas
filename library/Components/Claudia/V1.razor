@@ -10,26 +10,38 @@
    BackToTop (floating scroll button). Hardware theme sets the global palette. *@
 <CmsInclude Ref="MindAttic.Ideas.Component.HardwareHero.V1" />
 <CmsInclude Ref="MindAttic.Ideas.Component.CodeBlock.V1" />
-<CmsInclude Ref="MindAttic.Ideas.Plugin.BackToTop.V1" />
+@if (ShowBackToTop)
+{
+    <CmsInclude Ref="MindAttic.Ideas.Plugin.BackToTop.V1" />
+}
 
-<header class="hw-hero">
-    <h1 class="hw-title">Claudia</h1>
-    <p class="hw-tagline">An open-hardware smart speaker for the Claude API — wake word, voice ASR, and TTS on a Raspberry Pi Zero 2 WH.</p>
+@if (ShowHero)
+{
+<header class="hw-hero" style="@_widthStyle">
+    <h1 class="hw-title">@Title</h1>
+    <p class="hw-tagline">@Tagline</p>
+    @if (ShowBadges)
+    {
     <div class="hw-badge-row">
         <span class="hw-badge">Pi Zero 2 WH</span>
         <span class="hw-badge">WonderEcho Hat</span>
         <span class="hw-badge">Python 3.11</span>
         <span class="hw-badge-dim hw-badge">MIT License</span>
     </div>
+    }
+    @if (ShowGitHubButton)
+    {
     <div class="hw-btn-row">
-        <a class="hw-btn hw-btn-primary" href="https://github.com/mindattic/Claudia" target="_blank" rel="noopener">
-            View on GitHub
-        </a>
+        <a class="hw-btn hw-btn-primary" href="@SafeUrl(GitHubUrl)" target="_blank" rel="noopener">@GitHubText</a>
     </div>
+    }
 </header>
+}
 
-<main class="hw-content">
+<main class="hw-content" style="@_widthStyle">
 
+    @if (ShowShoppingList)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Shopping List</h2>
         <table class="hw-stack-table">
@@ -47,7 +59,10 @@
             </tbody>
         </table>
     </section>
+    }
 
+    @if (ShowAssemble)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Assemble</h2>
         <ol class="hw-steps">
@@ -56,19 +71,28 @@
             <li>Insert the microSD card. Connect power last.</li>
         </ol>
     </section>
+    }
 
+    @if (ShowFlashMicroSD)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Flash microSD</h2>
         <p>Use <strong>Raspberry Pi Imager</strong> to write <em>Raspberry Pi OS Lite (64-bit)</em>. In the advanced options, pre-configure your Wi-Fi SSID + password and enable SSH before writing.</p>
     </section>
+    }
 
+    @if (ShowSystemSetup)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">System Setup</h2>
         <p>SSH in after first boot, then install the audio and Python dependencies:</p>
         <pre><code data-lang="bash">sudo apt update &amp;&amp; sudo apt upgrade -y
 sudo apt install -y python3-pip ffmpeg portaudio19-dev libsndfile1</code></pre>
     </section>
+    }
 
+    @if (ShowInstallChatbot)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Install Chatbot</h2>
         <pre><code data-lang="bash">git clone https://github.com/mindattic/Claudia.git
@@ -76,14 +100,20 @@ cd Claudia
 pip install -r requirements.txt</code></pre>
         <p>Core Python packages: <code>anthropic</code>, <code>sounddevice</code>, <code>piper-tts</code>, <code>faster-whisper</code>.</p>
     </section>
+    }
 
+    @if (ShowAPIKey)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">API Key</h2>
         <p>Create a <code>.env</code> file in the repo root (never commit it):</p>
         <pre><code data-lang="env">ANTHROPIC_API_KEY=sk-ant-...</code></pre>
         <p>Or export the variable in your shell profile. The chatbot reads it at startup via <code>python-dotenv</code>.</p>
     </section>
+    }
 
+    @if (ShowConfigureChatbot)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Configure Chatbot</h2>
         <p>Edit <code>config.yaml</code> to select your ASR and TTS backend:</p>
@@ -97,7 +127,10 @@ pip install -r requirements.txt</code></pre>
         </table>
         <p>Smart-home integration (Kasa, Shelly, Sonoff) is optional; leave <code>smarthome: none</code> to skip.</p>
     </section>
+    }
 
+    @if (ShowHealthcheck)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Healthcheck</h2>
         <p>Confirm both mic input and speaker output work before running the chatbot:</p>
@@ -105,14 +138,20 @@ pip install -r requirements.txt</code></pre>
 aplay test.wav</code></pre>
         <p>You should hear a 3-second recording play back. If the device index is wrong, list cards with <code>arecord -l</code>.</p>
     </section>
+    }
 
+    @if (ShowRun)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Run</h2>
         <pre><code data-lang="bash">python3 claudia.py</code></pre>
         <p>Say the wake word <strong>"Claudia"</strong>, pause, then speak your prompt. Claude responds via the TTS speaker. Press <kbd>Ctrl+C</kbd> to stop.</p>
         <p>To run as a systemd service on boot, copy <code>claudia.service</code> to <code>/etc/systemd/system/</code> and run <code>sudo systemctl enable --now claudia</code>.</p>
     </section>
+    }
 
+    @if (ShowCase)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Case</h2>
         <p>Three options depending on your setup:</p>
@@ -122,7 +161,10 @@ aplay test.wav</code></pre>
             <li><strong>None</strong> — leave bare during development.</li>
         </ul>
     </section>
+    }
 
+    @if (ShowTroubleshooting)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Troubleshooting</h2>
         <table class="hw-stack-table">
@@ -135,7 +177,10 @@ aplay test.wav</code></pre>
             </tbody>
         </table>
     </section>
+    }
 
+    @if (ShowSummaryStack)
+    {
     <section class="hw-section">
         <h2 class="hw-section-heading">Summary Stack</h2>
         <table class="hw-stack-table">
@@ -150,5 +195,39 @@ aplay test.wav</code></pre>
             </tbody>
         </table>
     </section>
+    }
 
 </main>
+
+@code {
+    // ── Content ── (instance settings, MAI-A45; defaults reproduce the page as written)
+    [Parameter, Setting("Title", Group = "Content", Order = 1, Copyable = false)] public string Title { get; set; } = "Claudia";
+    [Parameter, Setting("Tagline", Group = "Content", Order = 2, Copyable = false, Multiline = true)] public string Tagline { get; set; } = "An open-hardware smart speaker for the Claude API — wake word, voice ASR, and TTS on a Raspberry Pi Zero 2 WH.";
+    [Parameter, Setting("GitHub URL", Group = "Content", Order = 3, Copyable = false)] public string GitHubUrl { get; set; } = "https://github.com/mindattic/Claudia";
+    [Parameter, Setting("GitHub button text", Group = "Content", Order = 4, Copyable = false)] public string GitHubText { get; set; } = "View on GitHub";
+
+    // ── Layout ──
+    [Parameter, Setting("Max content width", Group = "Layout", Order = 1, Description = "Hero + content column (default 920px)")] public string? MaxWidth { get; set; }
+
+    // ── Sections ──
+    [Parameter, Setting("Hero header", Group = "Sections", Order = 0)] public bool ShowHero { get; set; } = true;
+    [Parameter, Setting("Hero badges", Group = "Sections", Order = 1)] public bool ShowBadges { get; set; } = true;
+    [Parameter, Setting("GitHub button", Group = "Sections", Order = 2)] public bool ShowGitHubButton { get; set; } = true;
+    [Parameter, Setting("Shopping List", Group = "Sections", Order = 3)] public bool ShowShoppingList { get; set; } = true;
+    [Parameter, Setting("Assemble", Group = "Sections", Order = 4)] public bool ShowAssemble { get; set; } = true;
+    [Parameter, Setting("Flash microSD", Group = "Sections", Order = 5)] public bool ShowFlashMicroSD { get; set; } = true;
+    [Parameter, Setting("System Setup", Group = "Sections", Order = 6)] public bool ShowSystemSetup { get; set; } = true;
+    [Parameter, Setting("Install Chatbot", Group = "Sections", Order = 7)] public bool ShowInstallChatbot { get; set; } = true;
+    [Parameter, Setting("API Key", Group = "Sections", Order = 8)] public bool ShowAPIKey { get; set; } = true;
+    [Parameter, Setting("Configure Chatbot", Group = "Sections", Order = 9)] public bool ShowConfigureChatbot { get; set; } = true;
+    [Parameter, Setting("Healthcheck", Group = "Sections", Order = 10)] public bool ShowHealthcheck { get; set; } = true;
+    [Parameter, Setting("Run", Group = "Sections", Order = 11)] public bool ShowRun { get; set; } = true;
+    [Parameter, Setting("Case", Group = "Sections", Order = 12)] public bool ShowCase { get; set; } = true;
+    [Parameter, Setting("Troubleshooting", Group = "Sections", Order = 13)] public bool ShowTroubleshooting { get; set; } = true;
+    [Parameter, Setting("Summary Stack", Group = "Sections", Order = 14)] public bool ShowSummaryStack { get; set; } = true;
+
+    // ── Behavior ──
+    [Parameter, Setting("Back-to-top button", Group = "Behavior", Order = 1)] public bool ShowBackToTop { get; set; } = true;
+
+    private string? _widthStyle => string.IsNullOrWhiteSpace(MaxWidth) ? null : "--hw-max-width:" + MaxWidth;
+}

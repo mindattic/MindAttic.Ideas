@@ -256,6 +256,46 @@ public class IdeaListTests
     }
 
     [Test]
+    public async Task RoundTrip_CarriesThemeAndPluginInstanceSettings()
+    {
+        var source = NewEnv();
+        await SeedSiteAsync(source);
+        var page = await AddPageAsync(source, "frontpage", "<h1>Hello</h1>");
+        await using (var db = source.Db())
+        {
+            db.WidgetPlacementSettings.Add(new WidgetPlacementSettings
+            {
+                PageId = page.Id, SlotName = "plugin:cyberspace", WidgetRef = "Plugin.cyberspace",
+                SettingsJson = """{"Crash":false}""", CreatedUtc = DateTime.UtcNow, ModifiedUtc = DateTime.UtcNow,
+            });
+            db.WidgetPlacementSettings.Add(new WidgetPlacementSettings
+            {
+                PageId = page.Id, SlotName = "theme", WidgetRef = "Theme.cyberspace@1",
+                SettingsJson = """{"PagePadding":"2rem"}""", CreatedUtc = DateTime.UtcNow, ModifiedUtc = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        Assert.That(await ExportAsync(source), Is.Zero);
+        var target = NewEnv();
+        Assert.That(await ImportAsync(target), Is.Zero);
+        Assert.That(await ImportAsync(target), Is.Zero, "a second import of the same list is a no-op for slots");
+
+        await using var read = target.Db();
+        var imported = await read.Pages.SingleAsync();
+        var slots = await read.WidgetPlacementSettings.Where(s => s.PageId == imported.Id)
+            .ToDictionaryAsync(s => s.SlotName);
+        Assert.Multiple(async () =>
+        {
+            Assert.That(slots.Keys, Is.EquivalentTo(new[] { "plugin:cyberspace", "theme" }));
+            Assert.That(slots["plugin:cyberspace"].SettingsJson, Is.EqualTo("""{"Crash":false}"""));
+            Assert.That(slots["theme"].WidgetRef, Is.EqualTo("Theme.cyberspace@1"));
+            Assert.That(slots["theme"].SettingsVersion, Is.EqualTo(1), "unchanged on re-import");
+            Assert.That(await read.WidgetPlacementSettingsHistory.CountAsync(), Is.Zero);
+        });
+    }
+
+    [Test]
     public async Task ImportAdoptsAnIndependentlySeededPage_BySlug_RatherThanDuplicatingIt()
     {
         var source = NewEnv();

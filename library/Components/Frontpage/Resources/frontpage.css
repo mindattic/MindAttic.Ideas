@@ -16,8 +16,8 @@
     padding: 8px 18px;
     min-width: 88px;
     border: 1px solid #444c56;
-    border-radius: 6px;
-    background: #2d333b;
+    border-radius: var(--fp-button-radius, 6px);
+    background: var(--fp-button-bg, #2d333b);
     color: #c9d1d9 !important;
     font-size: 0.85rem;
     font-weight: 600;
@@ -29,7 +29,7 @@
 }
 .tabButton-btn:hover {
     background: #373e47;
-    border-color: #58a6ff;
+    border-color: var(--fp-button-hover, #58a6ff);
     color: #fff !important;
     text-decoration: none;
 }
@@ -46,22 +46,22 @@
    right preview panel (1:1.41 DVD-case image + description).
    ============================================================ */
 .siteNav {
-    max-width: 960px;
+    max-width: var(--fp-max-width, 960px);
     width: calc(100% - 2rem);
-    margin: 2rem auto;
+    margin: var(--fp-margin, 2rem auto);
     display: flex;
     flex-direction: column;
-    border: 1px solid #30363d;
-    border-radius: 10px;
-    background: rgba(22, 27, 34, 0.72);
+    border: 1px solid var(--fp-border, #30363d);
+    border-radius: var(--fp-radius, 10px);
+    background: var(--fp-bg, rgba(22, 27, 34, 0.72));
     overflow: hidden;
 }
 
-.siteNav-section { border-top: 1px solid #30363d; }
+.siteNav-section { border-top: 1px solid var(--fp-border, #30363d); }
 .siteNav-section:first-child { border-top: 0; }
 .siteNav-section.is-open {
-    background: rgba(13, 17, 23, 0.5);
-    box-shadow: inset 3px 0 0 #dc3545;
+    background: var(--fp-open-bg, rgba(13, 17, 23, 0.5));
+    box-shadow: inset 3px 0 0 var(--fp-accent, #dc3545);
 }
 
 .siteNav-headWrap { margin: 0; }
@@ -71,13 +71,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 18px;
+    padding: var(--fp-head-padding, 14px 18px);
     background: transparent;
     border: 0;
     cursor: pointer;
     color: #e6edf3;
     font-family: 'Outfit', system-ui, sans-serif;
-    font-size: 1.15rem;
+    font-size: var(--fp-head-size, 1.15rem);
     font-weight: 600;
     letter-spacing: 0.01em;
     transition: background 0.12s, color 0.12s;
@@ -102,16 +102,16 @@
     transform: rotate(45deg);
     transition: transform 0.18s ease, border-color 0.12s;
 }
-.siteNav-section.is-open .siteNav-chevron { transform: rotate(225deg); border-color: #dc3545; }
+.siteNav-section.is-open .siteNav-chevron { transform: rotate(225deg); border-color: var(--fp-accent, #dc3545); }
 
 .siteNav-body { padding: 4px 18px 18px; }
 .siteNav-diagram { margin: 4px auto; text-align: center; }
 .siteNav-diagram svg { max-width: 100%; height: auto; }
 
 /* Inner side-tab: rail on the left, preview panel on the right. */
-.siteNav-tabs { display: flex; gap: 18px; align-items: flex-start; }
+.siteNav-tabs { display: flex; gap: var(--fp-gap, 18px); align-items: flex-start; }
 .siteNav-list {
-    flex: 0 0 220px;
+    flex: 0 0 var(--fp-rail-width, 220px);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -134,8 +134,8 @@
 .siteNav-item:hover { background: #1c2128; border-color: #444c56; color: #fff; }
 .siteNav-item.is-selected {
     background: #1c2128;
-    border-color: #dc3545;
-    border-left-color: #dc3545;
+    border-color: var(--fp-accent, #dc3545);
+    border-left-color: var(--fp-accent, #dc3545);
     color: #fff;
     font-weight: 600;
 }
@@ -145,13 +145,13 @@
     flex: 1;
     min-width: 0;
     display: flex;
-    gap: 18px;
+    gap: var(--fp-gap, 18px);
     align-items: flex-start;
 }
 .siteNav-preview {
     flex-shrink: 0;
-    width: 150px;
-    aspect-ratio: 1 / 1.41; /* DVD-case ratio */
+    width: var(--fp-preview-width, 150px);
+    aspect-ratio: var(--fp-preview-ratio, 1 / 1.41); /* DVD-case ratio */
     border-radius: 6px;
     border: 1px solid #30363d;
     background: #0d1117;
@@ -186,3 +186,7 @@
     .siteNav-item { width: auto; }
     .siteNav-panel { flex-direction: column; }
 }
+
+/* Instance setting (MAI-A45): animations off. */
+.siteNav.siteNav--no-anim *,
+.siteNav.siteNav--no-anim .tabButton-btn { transition: none !important; animation: none !important; }

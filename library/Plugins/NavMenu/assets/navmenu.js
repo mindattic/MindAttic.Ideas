@@ -7,9 +7,9 @@
   window.__maNavMenu = true;
 
   document.addEventListener('click', function (e) {
-    var toggle = e.target.closest('.ma-nav-toggle');
+    var toggle = e.target.closest('.ma-header-toggle');
     if (!toggle) return;
-    var nav = toggle.closest('.ma-nav');
+    var nav = toggle.closest('.ma-header');
     if (!nav) return;
     var open = nav.classList.toggle('open');
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');

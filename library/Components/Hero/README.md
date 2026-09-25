@@ -64,3 +64,16 @@ A full-width hero banner with a headline, optional subtitle, optional call-to-ac
 - **Alignment**: any value other than `left` or `right` (including an empty or missing `align=`) falls back to `center`.
 - **Single quotes in URLs**: if `image=` contains a `data:` URI with single quotes, they are percent-encoded (`%27`) automatically to keep the CSS `url('…')` value valid.
 - **Stylesheet**: the component loads `/_ideas/Component/hero/1/hero.css` via a `<link>` tag. This path is served by the MindAttic.Ideas runtime from the `.idea` package.
+
+## Settings (MAI-A45)
+
+Every parameter is a per-instance setting in Admin (stored as the tag's attributes). Unset values keep the as-designed look.
+
+- **Content** (not copied by Copy Configuration): `Title`, `Subtitle`, `ImageClass`, `Image`, `CtaText`, `CtaHref`
+- **Behavior**: `CtaNewTab`, `Animate` (button hover lift, default on), `Overlay` (image darkening, default on)
+- **Layout**: `Align`, `Padding`, `Margin`, `MinHeight`, `MaxWidth` (text column), `Gap`
+- **Colors**: `Accent`, `CtaColor`, `Background`, `TextColor`, `TitleColor`, `OverlayColor`
+- **Appearance**: `Radius`, `CtaRadius`, `CtaPadding`, `TitleSize`, `SubtitleSize`, `SubtitleOpacity`, `BackgroundSize`, `BackgroundPosition`, `Shadow`
+- **Advanced**: `CssClass`, `CssStyle`
+
+Visual values are emitted as `--ma-hero-*` custom properties on the `<section>`; `hero.css` falls back to its original values.

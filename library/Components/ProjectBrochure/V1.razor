@@ -18,24 +18,24 @@
    </Component.ProjectBrochure>
 *@
 
-<article class="ma-brochure @CssClass" style="@_outerStyle">
+<article class="ma-brochure @(Animate ? null : "ma-brochure--no-anim") @CssClass" style="@_outerStyle">
 
     <header class="ma-brochure-head">
-        @if (!string.IsNullOrWhiteSpace(_status))
+        @if (ShowStatus && !string.IsNullOrWhiteSpace(_status))
         {
             <span class="ma-brochure-status" data-status="@_statusKey">@_status</span>
         }
 
         <h1 class="ma-brochure-title">@Title</h1>
 
-        @if (!string.IsNullOrWhiteSpace(Tagline))
+        @if (ShowTagline && !string.IsNullOrWhiteSpace(Tagline))
         {
             <p class="ma-brochure-tagline">@Tagline</p>
         }
 
-        @if (_tech.Count > 0)
+        @if (ShowTech && _tech.Count > 0)
         {
-            <ul class="ma-brochure-tech" aria-label="Built with">
+            <ul class="ma-brochure-tech" aria-label="@TechLabel">
                 @foreach (var t in _tech)
                 {
                     <li>@t</li>
@@ -43,25 +43,25 @@
             </ul>
         }
 
-        @if (_links.Count > 0)
+        @if (ShowLinks && _links.Count > 0)
         {
             <nav class="ma-brochure-links" aria-label="Project links">
                 @foreach (var (label, href, primary) in _links)
                 {
                     <a class="@(primary ? "ma-brochure-link primary" : "ma-brochure-link")"
-                       href="@href" rel="noopener">@label</a>
+                       href="@href" rel="noopener" target="@(NewTab ? "_blank" : null)">@label</a>
                 }
             </nav>
         }
     </header>
 
-    @if (!string.IsNullOrWhiteSpace(_heroSrc))
+    @if (ShowHero && !string.IsNullOrWhiteSpace(_heroSrc))
     {
         <figure class="ma-brochure-figure @(_wide ? "wide" : "")">
             @* A screenshot is evidence, so it is never decorative: it gets a real alt and a caption
                saying what you are looking at. *@
             <img src="@_heroSrc" alt="@(_heroAlt)" loading="lazy" decoding="async" />
-            @if (!string.IsNullOrWhiteSpace(Caption))
+            @if (ShowCaption && !string.IsNullOrWhiteSpace(Caption))
             {
                 <figcaption>@Caption</figcaption>
             }
@@ -80,55 +80,83 @@
     public override IReadOnlyList<string> StylesheetUrls { get; } = new[] { Mount + "/projectbrochure.css" };
 
     /// <summary>The project's name — the page's one h1.</summary>
-    [Parameter] public string? Title { get; set; }
+    [Parameter, Setting("Title", Group = "Content", Order = 1, Copyable = false)] public string? Title { get; set; }
 
     /// <summary>One line saying what it is. Not a description; a claim.</summary>
-    [Parameter] public string? Tagline { get; set; }
+    [Parameter, Setting("Tagline", Group = "Content", Order = 2, Copyable = false)] public string? Tagline { get; set; }
 
     /// <summary>Managed-media uid of the lead image (a screenshot or a rendered diagram).</summary>
-    [Parameter] public string? HeroUid { get; set; }
+    [Parameter, Setting("Hero image media uid", Group = "Content", Order = 3, Copyable = false)] public string? HeroUid { get; set; }
 
     /// <summary>Lead image URL. Ignored when <see cref="HeroUid"/> is set.</summary>
-    [Parameter] public string? HeroUrl { get; set; }
+    [Parameter, Setting("Hero image URL", Group = "Content", Order = 4, Copyable = false, Description = "Ignored when a media uid is set")] public string? HeroUrl { get; set; }
 
     /// <summary>Alt text for the lead image. Defaults to naming the project.</summary>
-    [Parameter] public string? HeroAlt { get; set; }
+    [Parameter, Setting("Hero image alt text", Group = "Content", Order = 5, Copyable = false)] public string? HeroAlt { get; set; }
 
     /// <summary>Caption under the lead image — what the reader is looking at.</summary>
-    [Parameter] public string? Caption { get; set; }
+    [Parameter, Setting("Hero caption", Group = "Content", Order = 6, Copyable = false, Multiline = true)] public string? Caption { get; set; }
 
     /// <summary>
     /// Let the lead image break out to near-viewport width. A 16:9 screenshot is happy inside the
     /// reading column; a flowchart is a 5:1 banner and becomes unreadable there.
     /// </summary>
-    [Parameter] public bool? WideHero { get; set; }
+    [Parameter, Setting("Wide hero image", Group = "Layout", Order = 1, Description = "Break the lead image out to near-viewport width (blank = off)")] public bool? WideHero { get; set; }
 
     /// <summary>Repository URL.</summary>
-    [Parameter] public string? Repo { get; set; }
+    [Parameter, Setting("Repository URL", Group = "Content", Order = 7, Copyable = false)] public string? Repo { get; set; }
 
     /// <summary>A running instance, if there is one.</summary>
-    [Parameter] public string? Live { get; set; }
+    [Parameter, Setting("Live URL", Group = "Content", Order = 8, Copyable = false)] public string? Live { get; set; }
 
     /// <summary>Package/download URL (a NuGet page, a release).</summary>
-    [Parameter] public string? Package { get; set; }
+    [Parameter, Setting("Package URL", Group = "Content", Order = 9, Copyable = false)] public string? Package { get; set; }
 
     /// <summary>Comma-separated technologies, rendered as badges.</summary>
-    [Parameter] public string? Tech { get; set; }
+    [Parameter, Setting("Technologies", Group = "Content", Order = 10, Copyable = false, Description = "Comma-separated")] public string? Tech { get; set; }
 
     /// <summary>e.g. "Shipping", "Experiment", "Archived" — colours the pill.</summary>
-    [Parameter] public string? Status { get; set; }
+    [Parameter, Setting("Status", Group = "Content", Order = 11, Copyable = false, Description = "Shipping | Experiment | Archived | any text")] public string? Status { get; set; }
 
     /// <summary>JSON blob carrying any of the above (camel- or pascal-case). Explicit parameters win.</summary>
-    [Parameter] public string? Config { get; set; }
+    [Parameter, Setting("Config JSON", Group = "Advanced", Order = 1, Copyable = false, Multiline = true)] public string? Config { get; set; }
 
     /// <summary>The rest of the page: README, diagrams, galleries, a launcher.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    [Parameter] public string? CssClass { get; set; }
-    [Parameter] public string? CssStyle { get; set; }
-    [Parameter] public string? Padding { get; set; }
-    [Parameter] public string? Margin { get; set; }
-    [Parameter] public string? Align { get; set; }
+    // ── Labels ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Live link label", Group = "Labels", Order = 1)] public string LiveLabel { get; set; } = "Open it";
+    [Parameter, Setting("Package link label", Group = "Labels", Order = 2)] public string PackageLabel { get; set; } = "Package";
+    [Parameter, Setting("Source link label", Group = "Labels", Order = 3)] public string SourceLabel { get; set; } = "Source";
+    [Parameter, Setting("Tech list label (a11y)", Group = "Labels", Order = 4)] public string TechLabel { get; set; } = "Built with";
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Show status pill", Group = "Behavior", Order = 1)] public bool ShowStatus { get; set; } = true;
+    [Parameter, Setting("Show tagline", Group = "Behavior", Order = 2)] public bool ShowTagline { get; set; } = true;
+    [Parameter, Setting("Show tech badges", Group = "Behavior", Order = 3)] public bool ShowTech { get; set; } = true;
+    [Parameter, Setting("Show links", Group = "Behavior", Order = 4)] public bool ShowLinks { get; set; } = true;
+    [Parameter, Setting("Show hero image", Group = "Behavior", Order = 5)] public bool ShowHero { get; set; } = true;
+    [Parameter, Setting("Show caption", Group = "Behavior", Order = 6)] public bool ShowCaption { get; set; } = true;
+    [Parameter, Setting("Hover transitions", Group = "Behavior", Order = 7)] public bool Animate { get; set; } = true;
+    [Parameter, Setting("Open links in new tab", Group = "Behavior", Order = 8)] public bool NewTab { get; set; } = false;
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Max width", Group = "Layout", Order = 2, Description = "Reading column width (default 78ch, 82ch on wide screens)")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Section gap", Group = "Layout", Order = 3, Description = "Default 1.4rem")] public string? Gap { get; set; }
+    [Parameter, Setting("Masthead alignment", Group = "Layout", Order = 4, Description = "flex-start | center | flex-end")] public string? HeadAlign { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 5)] public string? Padding { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 6)] public string? Margin { get; set; }
+    [Parameter, Setting("Text alignment", Group = "Layout", Order = 7)] public string? Align { get; set; }
+
+    // ── Colors ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Line / border color", Group = "Colors", Order = 1)] public string? LineColor { get; set; }
+    [Parameter, Setting("Muted text color", Group = "Colors", Order = 2)] public string? MutedColor { get; set; }
+    [Parameter, Setting("Image corner radius", Group = "Colors", Order = 3, Description = "Default 14px")] public string? Radius { get; set; }
+    [Parameter, Setting("Title font size", Group = "Colors", Order = 4)] public string? TitleSize { get; set; }
+    [Parameter, Setting("Tagline font size", Group = "Colors", Order = 5)] public string? TaglineSize { get; set; }
+
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 2)] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 3)] public string? CssStyle { get; set; }
 
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
@@ -180,16 +208,27 @@
 
         // Order is deliberate: the thing you can DO comes before the thing you can read.
         _links = [];
-        if (First(Live, cfg?.Live) is { Length: > 0 } live) _links.Add(("Open it", SafeUrl(live), true));
-        if (First(Package, cfg?.Package) is { Length: > 0 } pkg) _links.Add(("Package", SafeUrl(pkg), false));
-        if (First(Repo, cfg?.Repo) is { Length: > 0 } repo) _links.Add(("Source", SafeUrl(repo), false));
+        if (First(Live, cfg?.Live) is { Length: > 0 } live) _links.Add((LiveLabel, SafeUrl(live), true));
+        if (First(Package, cfg?.Package) is { Length: > 0 } pkg) _links.Add((PackageLabel, SafeUrl(pkg), false));
+        if (First(Repo, cfg?.Repo) is { Length: > 0 } repo) _links.Add((SourceLabel, SafeUrl(repo), false));
     }
 
     private static string? First(params string?[] values) =>
         values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
+
     private string _outerStyle => string.Join(";", new[]
     {
+        Var("--ma-br-width", MaxWidth),
+        Var("--ma-br-gap", Gap),
+        Var("--ma-br-head-align", HeadAlign),
+        Var("--ma-br-line", LineColor),
+        Var("--ma-br-muted", MutedColor),
+        Var("--ma-br-radius", Radius),
+        Var("--ma-br-title-size", TitleSize),
+        Var("--ma-br-tagline-size", TaglineSize),
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",

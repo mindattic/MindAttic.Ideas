@@ -86,3 +86,13 @@ A fixed-position overlay dialog with optional header, footer, backdrop dismiss, 
 - **CSS custom properties:** Appearance is fully theme-able via `--ma-modal-bg`, `--ma-modal-line`, `--ma-modal-text`, `--ma-modal-muted`, `--ma-modal-accent`, `--ma-modal-radius`, and `--ma-modal-width`. Set these on any ancestor element.
 - **Mobile:** Below 640 px the modal slides up from the bottom with squared top corners and fills 96 vh.
 - **`WrapForm` + `ConfirmText`:** When `WrapForm` is true, the confirm button is `type="submit"` and form validation fires before `OnConfirm`. When false, the confirm button is `type="button"` and `OnConfirm` fires directly.
+
+## Settings
+
+Per-instance settings (MAI-A45), edited in Admin and stored as tag attributes. Blank = as designed.
+
+- **Behavior:** `IsOpen`, `ShowClose`, `ShowHeader`, `ShowFooter`, `WrapForm`, `CloseOnBackdrop`, `CloseOnEscape`
+- **Content** (not copied between instances): `Title`, `ConfirmText`, `CancelText`; plus `CloseText`, `CloseLabel`
+- **Layout:** `Size`, `Width`, `MaxHeight`, `DialogPadding`, `VerticalAlign`, `Padding`, `Margin`, `Align`, `ZIndex`
+- **Colors:** `BackdropColor`, `Background`, `BorderColor`, `TextColor`, `MutedColor`, `AccentColor`, `HoverBackground`, `Radius`, `Shadow`, `TitleSize` (emitted as the `--ma-modal-*` custom properties)
+- **Advanced:** `Config`, `CssClass`, `CssStyle`

@@ -117,6 +117,12 @@ public sealed class IdeaListPage
     public List<IdeaListSlugAlias> SlugHistory { get; set; } = [];
 
     /// <summary>
+    /// The page's theme / plugin / code-page INSTANCE settings (MAI-A45), one per slot. Component
+    /// instances need no entry: their settings are attributes on their tags in <see cref="BodyHtml"/>.
+    /// </summary>
+    public List<IdeaListInstanceSettings> InstanceSettings { get; set; } = [];
+
+    /// <summary>
     /// Every "Kind.key@version" this page's body/theme/active-plugins actually reference, pinned to the
     /// version active when exported. <see cref="IdeaListImporter"/> validates EVERY entry against the
     /// catalog AFTER <see cref="IdeaList.Packages"/> finishes installing and BEFORE any page is written;
@@ -167,4 +173,12 @@ public sealed class IdeaListMedia
     public string? Notes { get; set; }
     /// <summary>Path of the payload inside the archive, e.g. <c>media/3f2b…-….png</c>.</summary>
     public string EntryName { get; set; } = "";
+}
+
+/// <summary>One stored instance-settings slot of a page ("theme", "page", "plugin:{key}").</summary>
+public sealed class IdeaListInstanceSettings
+{
+    public string Slot { get; set; } = "";
+    public string WidgetRef { get; set; } = "";
+    public string SettingsJson { get; set; } = "{}";
 }

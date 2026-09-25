@@ -16,7 +16,7 @@
 
 <link rel="stylesheet" href="/_ideas/Plugin/poweredby/1/poweredby.css" />
 
-<footer class="ma-footer ma-pb pin-when-short @CssClass" style="@_outerStyle">
+<footer class="ma-footer ma-pb @(PinWhenShort ? "pin-when-short" : null) @CssClass" style="@_outerStyle">
     <div class="ma-pb-inner">
         @if (!string.IsNullOrWhiteSpace(_text))
         {
@@ -34,35 +34,70 @@
         }
 
         <span class="ma-pb-badge">
-            Powered by <a class="ma-pb-badge-link" href="@_href">@_label</a>
+            @(BadgePrefix ?? "Powered by") <a class="ma-pb-badge-link" href="@_href">@_label</a>
         </span>
     </div>
 </footer>
 
 @code {
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
     /// <summary>Footer text. Overrides the "footer.text" site setting.</summary>
-    [Parameter] public string? Text { get; set; }
+    [Parameter, Setting("Footer text", Group = "Content", Order = 1, Copyable = false, Multiline = true, Description = "Overrides the footer.text site setting")]
+    public string? Text { get; set; }
 
     /// <summary>Footer links as "Text=/href;Text=/href". Overrides the "footer.links" site setting.</summary>
-    [Parameter] public string? Links { get; set; }
+    [Parameter, Setting("Footer links", Group = "Content", Order = 2, Copyable = false, Description = "Text=/href;Text=/href (overrides footer.links)")]
+    public string? Links { get; set; }
 
     /// <summary>Where the badge points. Overrides the "poweredby.href" site setting. Default "/ideas".</summary>
-    [Parameter] public string? Href { get; set; }
+    [Parameter, Setting("Badge link", Group = "Content", Order = 3, Copyable = false, Description = "designed: /ideas (overrides poweredby.href)")]
+    public string? Href { get; set; }
 
     /// <summary>Badge wording. Overrides the "poweredby.label" site setting. Default "MindAttic.Ideas".</summary>
-    [Parameter] public string? Label { get; set; }
+    [Parameter, Setting("Badge label", Group = "Content", Order = 4, Copyable = false, Description = "designed: MindAttic.Ideas (overrides poweredby.label)")]
+    public string? Label { get; set; }
 
-    [Parameter] public string? CssClass { get; set; }
-    [Parameter] public string? CssStyle { get; set; }
-    [Parameter] public string? Padding { get; set; }
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Badge prefix", Group = "Content", Order = 5, Copyable = false, Description = "Words before the badge link (designed: \"Powered by\")")]
+    public string? BadgePrefix { get; set; }
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1, Description = "designed: 1.25rem 0")] public string? Padding { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2, Description = "designed: 3rem above")] public string? Margin { get; set; }
+    [Parameter, Setting("Content max width", Group = "Layout", Order = 3, Description = "designed: the theme's --max-width, else 70rem")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Inner padding", Group = "Layout", Order = 4, Description = "designed: 0 1rem")] public string? InnerPadding { get; set; }
+    [Parameter, Setting("Gap", Group = "Layout", Order = 5, Description = "Space between text, links and badge (designed: .75rem 1.25rem)")] public string? Gap { get; set; }
+
+    // ── Appearance ──────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Font size", Group = "Appearance", Order = 1, Description = "designed: .82rem")] public string? FontSize { get; set; }
+    [Parameter, Setting("Text color", Group = "Appearance", Order = 2, Description = "designed: the theme's --muted")] public string? TextColor { get; set; }
+    [Parameter, Setting("Accent color", Group = "Appearance", Order = 3, Description = "Link hover color (designed: the theme's --accent)")] public string? AccentColor { get; set; }
+    [Parameter, Setting("Border color", Group = "Appearance", Order = 4, Description = "Top rule + badge underline (designed: the theme's --border)")] public string? BorderColor { get; set; }
+    [Parameter, Setting("Background", Group = "Appearance", Order = 5, Description = "CSS background (designed: none)")] public string? Background { get; set; }
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Pin when short", Group = "Behavior", Order = 1, Description = "Carry the pin-when-short class (Plugin.PinFooter pins it while the page is short)")]
+    public bool PinWhenShort { get; set; } = true;
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 1)] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 2)] public string? CssStyle { get; set; }
 
     private string _outerStyle => string.Join(";", new[]
     {
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin) ? null : $"margin:{Margin}",
+        Var("--ma-pb-max-width", MaxWidth),
+        Var("--ma-pb-inner-padding", InnerPadding),
+        Var("--ma-pb-gap", Gap),
+        Var("font-size", FontSize),
+        Var("--ma-pb-muted", TextColor),
+        Var("--ma-pb-accent", AccentColor),
+        Var("--ma-pb-border", BorderColor),
+        Var("background", Background),
         CssStyle,
     }.Where(s => s is not null));
+
+    private static string? Var(string prop, string? value) => string.IsNullOrWhiteSpace(value) ? null : prop + ":" + value.Trim();
 
     private string? _text;
     private string _href = "/ideas";

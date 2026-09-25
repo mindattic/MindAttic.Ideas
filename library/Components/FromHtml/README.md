@@ -63,3 +63,12 @@ Adds 2 rem of padding around the injected content, centers text, and shows a bac
 - **Edit mode only.** The source file path UI and the "Update from Source" button are only visible when the page is in edit mode. Visitors see only the stored HTML snapshot (or nothing if no snapshot has been saved yet).
 - **`Slot` uniqueness.** If two `FromHtml` instances on the same page share the same `Slot` value they will read and write the same stored snapshot. Assign distinct slot names when composing more than one instance per page.
 - **Requires plugin: `header` (v1).** The component declares `[Uses(ContentKind.Plugin, "header", 1)]`. The `header` plugin must be active on the page for the component to function correctly.
+
+## Settings
+
+All parameters are instance settings (MAI-A45); `slot` and the return-link text/URL are not copied by Copy/Paste Configuration. Added:
+
+- **Content:** `returntext` ("← Return to MindAttic"), `returnhref` (empty = browser back)
+- **Layout:** `returnposition` (Bottom | Top), `returnfontsize` (14px), `returnpadding` (10px 16px)
+- **Colors:** `returnbackground` (rgba(0,0,0,.82)), `returncolor` (#fff)
+- **Behavior:** `showemptyhint` (true) — hide the "No content loaded" hint from visitors

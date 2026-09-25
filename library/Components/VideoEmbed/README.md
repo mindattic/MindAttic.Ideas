@@ -63,3 +63,13 @@ Responsive video player that accepts YouTube, Vimeo, or direct video URLs and re
 - The YouTube video ID must be 1–20 characters of `[A-Za-z0-9_-]`; malformed IDs are rejected and the component renders nothing.
 - The outer wrapper is `<div class="ma-video">` with a responsive aspect-ratio CSS rule provided by `videoembed.css`.
 - `Title` defaults to `"Video"` when not provided; supply a meaningful value for accessibility.
+
+## Settings
+
+Per-instance settings (MAI-A45), edited in Admin and stored as tag attributes. Blank = as designed.
+
+- **Content** (not copied between instances): `Url`, `Title`, `Poster`
+- **Behavior:** `Autoplay` (also mutes), `Muted`, `Loop`, `Controls`, `StartAt` (seconds), `AllowFullscreen`, `Lazy`, `Preload` — YouTube/Vimeo options are appended to the embed URL only when they differ from the defaults
+- **Layout:** `AspectRatio`, `MaxWidth`, `Fit`, `Padding`, `Margin`, `Align`
+- **Colors:** `Radius`, `Background`, `Shadow` (the `--ma-video-*` custom properties)
+- **Advanced:** `CssClass`, `CssStyle`

@@ -201,6 +201,31 @@ In the CMS admin → **/admin/upload**, drop the `.idea`. The host validates it 
 registers the type, extracts its `wwwroot/`, and it's immediately referenceable from any page by its `{{tag}}`.
 Install `V2` later and pinned pages keep `V1` until nothing references it.
 
+### Instance settings (MAI-A45)
+
+Every public, writable, simple-typed `[Parameter]` (bool / string / number / enum, nullable allowed) is an
+**instance setting**: Admin → Page Management → expand a page → click the instance to edit it, and use
+⧉ / 📋 to Copy / Paste Configuration onto another instance of the same citizen on any page. Add
+`[Setting]` for the Admin label and grouping:
+
+```csharp
+[Parameter, Setting("Corner radius", Group = "Layout", Description = "CSS length")]
+public string? Radius { get; set; }                       // null = "as designed" (CSS keeps the default)
+
+[Parameter, Setting("Animate on hover", Group = "Behavior")]
+public bool Animate { get; set; } = true;                 // the initializer IS the default Admin shows
+
+[Parameter, Setting("Caption", Group = "Content", Copyable = false)]
+public string? Caption { get; set; }                      // content: Copy Configuration skips it
+```
+
+Rules: defaults must reproduce the current look exactly; never rename or retype a shipped parameter
+(existing pages carry it as a tag attribute); feed CSS through custom properties
+(`style="--x:@Radius"` + `var(--x, <default>)`) so the stylesheet stays the default source. A Component's
+values are its tag's attributes; a Theme's / Plugin's / Code Page's are per-page slots the host binds.
+For client JS, `AddSettingsData(builder, seq, "plugin.key")` (or `data-*` attributes on the root) — read
+them live, don't cache at script load. There is intentionally no "all instances of X" setting.
+
 ---
 
 ## Cheat sheet

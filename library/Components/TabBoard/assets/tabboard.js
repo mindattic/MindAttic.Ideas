@@ -31,6 +31,11 @@
   function isAlwaysShow() {
     return !!(window.TabBoardConfig && window.TabBoardConfig.alwaysShowTabPage);
   }
+  // CONFIG (MAI-A45 instance settings): each falls back to the verbatim behavior when unset.
+  function cfg(name, fallback) {
+    var c = window.TabBoardConfig;
+    return c && c[name] !== undefined && c[name] !== null ? c[name] : fallback;
+  }
 
     var PROJECT_ART_PALETTES = [
       ['#0f2027', '#2c5364', '#71f0c8'],
@@ -128,6 +133,7 @@
           if (btn) name = btn.textContent.trim();
         }
         if (!name) continue;
+        if (!images[name] && !cfg('generateArt', true)) continue;
         var src = images[name] || generateProjectArt(name);
         var img = document.createElement('img');
         img.src = src;
@@ -208,9 +214,9 @@
           var a = document.createElement('a');
           a.className = 'tabButton-btn';
           a.href = it.href;
-          a.target = '_blank';
+          if (cfg('linkNewTab', true)) a.target = '_blank';
           a.rel = 'noopener noreferrer';
-          a.textContent = it.linkLabel || 'Open';
+          a.textContent = it.linkLabel || cfg('linkLabel', 'Open');
           links.appendChild(a);
           tabPage.appendChild(links);
         }
@@ -270,7 +276,7 @@
       for (var s = 0; s < sections.length; s++) {
         var section = sections[s];
         var key = section.getAttribute('data-section-key');
-        if (!key) continue;
+        if (!key || !cfg('persist', true)) continue;
         var saved = null;
         try { saved = localStorage.getItem(key); } catch (e) {}
         if (!saved) continue;
@@ -307,7 +313,7 @@
           tabPage.classList.add('is-open');
         }
         var key = section.getAttribute && section.getAttribute('data-section-key');
-        if (key) {
+        if (key && cfg('persist', true)) {
           try { localStorage.setItem(key, wasOpen ? '' : id); } catch (e) {}
         }
       });

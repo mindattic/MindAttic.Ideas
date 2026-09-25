@@ -115,3 +115,11 @@ The overlay is `role="dialog" aria-modal="true"`, takes focus on open, returns f
 button on close, and closes on Escape. Native fullscreen swallows Escape to exit fullscreen first,
 which fires `fullscreenchange` — both paths tear the overlay down, so one press always leaves.
 `prefers-reduced-motion` disables the tile transition and the curtain animation.
+
+## Settings
+
+All parameters are instance settings (MAI-A45); `url`, `title`, `blurb`, `buttontext`, poster, `expandtext` and `config` are content (not copied by Copy/Paste Configuration). Added:
+
+- **Layout:** `maxwidth` (22rem), `radius` (14px), `titlesize` (1.15rem)
+- **Colors:** `background`, `bordercolor`, `buttonbackground`, `buttonbordercolor`, `buttonhoverbackground` — written to the `--ma-applaunch-*` properties above
+- **Behavior:** `showposter` (true), `animations` (true; off adds `ma-applaunch--no-anim`)

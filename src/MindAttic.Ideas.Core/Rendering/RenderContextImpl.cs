@@ -20,6 +20,12 @@ public sealed class CmsRenderContext : IRenderContext
     public required IServiceProvider Services { get; init; }
     public string? RawSettingsJson { get; init; }
 
+    /// <summary>This page's stored instance-settings slots (slot name → JSON), MAI-A45.</summary>
+    public IReadOnlyDictionary<string, string> InstanceSettings { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    public string? GetInstanceSettingsJson(string slot) => InstanceSettings.GetValueOrDefault(slot);
+
     public T GetSettings<T>() where T : class, new() =>
         string.IsNullOrWhiteSpace(RawSettingsJson)
             ? new T()

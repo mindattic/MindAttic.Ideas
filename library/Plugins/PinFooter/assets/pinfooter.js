@@ -20,9 +20,26 @@
     if (window.__pinFooterInited) return;
     window.__pinFooterInited = true;
 
+    // CMS adapter: instance setting (MAI-A45) "enabled" read LIVE from
+    // <data data-ma-settings="plugin.pinfooter" value="{json}">; absent = pin (the verbatim behavior).
+    var settingsCache = { raw: null, parsed: {} };
+    function pinEnabled() {
+        var el = document.querySelector('[data-ma-settings="plugin.pinfooter"]');
+        var raw = el ? el.getAttribute('value') : null;
+        if (raw !== settingsCache.raw) {
+            settingsCache.raw = raw;
+            try { settingsCache.parsed = raw ? JSON.parse(raw) : {}; } catch (e) { settingsCache.parsed = {}; }
+        }
+        return settingsCache.parsed.enabled !== false;
+    }
+
     function pinAll() {
-        var hasScrollbar = document.documentElement.scrollHeight > window.innerHeight;
         var targets = document.querySelectorAll('.pin-when-short');
+        if (!pinEnabled()) {
+            for (var j = 0; j < targets.length; j++) targets[j].classList.remove('pinned');
+            return;
+        }
+        var hasScrollbar = document.documentElement.scrollHeight > window.innerHeight;
         for (var i = 0; i < targets.length; i++) {
             targets[i].classList.toggle('pinned', !hasScrollbar);
         }

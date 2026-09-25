@@ -4,7 +4,7 @@ h1:focus {
 
 /* ── Site header — flex chrome. Opt-in: pages include <Header /> in their markup.
    Columns are <HeaderContent> children; each controls its own sizing, alignment, and padding. ── */
-.ma-header {
+.ma-host-header {
     position: fixed;
     top: 0;
     left: 0;
@@ -21,17 +21,17 @@ h1:focus {
 }
 
 /* Column defaults: shrink-to-content, vertically centered */
-.ma-header-col {
+.ma-host-header-col {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
 }
 
 /* Fill modifier: consume remaining horizontal space */
-.ma-header-col--fill { flex: 1; }
+.ma-host-header-col--fill { flex: 1; }
 
 /* Logo link style — apply this class to the anchor inside a logo HeaderContent */
-.ma-header-logo-link {
+.ma-host-header-logo-link {
     font-size: .85rem;
     font-weight: 600;
     color: #e7eaf0;
@@ -40,7 +40,7 @@ h1:focus {
     opacity: .85;
 }
 
-.ma-header-logo-link:hover { opacity: 1; }
+.ma-host-header-logo-link:hover { opacity: 1; }
 
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid #26b050;
@@ -412,3 +412,23 @@ h1:focus {
 .ma-attrib-item h3 { font-size: .95rem; font-weight: 700; margin: 0 0 .2rem; color: #fff; }
 .ma-attrib-item p { font-size: .82rem; color: #c2c8d0; margin: .12rem 0; }
 .ma-attrib-lead { font-size: .86rem; color: #9aa3af; margin-bottom: .35rem; max-width: 48rem; }
+
+/* Instance tree + settings editor (MAI-A45) */
+.admin-caret{opacity:.8;font-size:.75rem;}
+.admin-instance{display:flex;align-items:center;gap:.4rem;padding:.25rem .55rem;border-radius:6px;cursor:pointer;font-size:.8rem;border:1px solid transparent;}
+.admin-instance:hover{background:rgba(127,127,127,.12);}
+.admin-instance.active{border-color:#e2231a;background:rgba(226,35,26,.08);}
+.admin-instance.missing{opacity:.55;cursor:default;}
+.admin-instance-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.admin-kind{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;padding:.05rem .35rem;border-radius:5px;background:rgba(127,127,127,.25);}
+.admin-kind-theme{background:#6a1b9a;color:#fff;}
+.admin-kind-plugin{background:#1565c0;color:#fff;}
+.admin-kind-component{background:#2e7d32;color:#fff;}
+.admin-kind-page{background:#555;color:#fff;}
+.admin-clipboard{font-size:.72rem;opacity:.8;margin:.35rem 0;padding:.3rem .5rem;border:1px dashed rgba(127,127,127,.5);border-radius:6px;}
+.admin-settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem;padding:.5rem 0;}
+.admin-setting{display:flex;flex-direction:column;gap:.3rem;padding:.5rem .6rem;border:1px solid rgba(127,127,127,.25);border-radius:8px;}
+.admin-setting.set{border-color:#2e7d32;}
+.admin-setting-head{display:flex;align-items:center;gap:.35rem;font-size:.82rem;}
+.admin-setting input:not([type=checkbox]),.admin-setting select,.admin-setting textarea{width:100%;}
+.admin-lint-banner.err{background:rgba(226,35,26,.14);}

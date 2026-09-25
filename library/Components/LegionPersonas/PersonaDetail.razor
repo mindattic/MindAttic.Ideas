@@ -3,7 +3,7 @@
 <div class="persona-detail">
     <div class="persona-detail-head">
         <div class="persona-art persona-art-lg">
-            <canvas class="persona-art-canvas" data-sacred-shape="@Persona.Shape" data-sacred-bg="#0a1014"></canvas>
+            <canvas class="persona-art-canvas" data-sacred-shape="@Persona.Shape" data-sacred-bg="@ArtBackground"></canvas>
         </div>
         <div class="persona-detail-title">
             <h2>@Persona.Name</h2>
@@ -22,7 +22,7 @@
         @Trait("Quirk", Persona.Quirk)
     </dl>
 
-    @if (Persona.HasProfile)
+    @if (ShowProfile && Persona.HasProfile)
     {
         <h3 class="section">Psychometric profile</h3>
         <dl class="trait-grid">
@@ -34,7 +34,7 @@
         </dl>
         <div class="muted small scored-line">@Persona.ScoredLine</div>
     }
-    else
+    else if (ShowProfile)
     {
         <p class="muted">Not yet scored.</p>
     }
@@ -42,6 +42,8 @@
 
 @code {
     [Parameter, EditorRequired] public Persona Persona { get; set; } = default!;
+    [Parameter] public bool ShowProfile { get; set; } = true;
+    [Parameter] public string ArtBackground { get; set; } = "#0a1014";
 
     private RenderFragment Trait(string label, string? value) => builder =>
     {

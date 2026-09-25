@@ -9,7 +9,7 @@
 {
     <div class="ma-frommd @CssClass" style="@_outerStyle">@((MarkupString)renderedHtml)</div>
 }
-else
+else if (ShowEmptyHint || EditMode)
 {
     <div class="ma-frommd ma-frommd-empty @CssClass" style="@_outerStyle">
         <p><em>No content loaded. In edit mode, set a source file path and click "Update from Source".</em></p>
@@ -44,21 +44,59 @@ else
     /// Instance discriminator — use "main" (default) when there is only one FromMd per page,
     /// or a custom name (e.g. "api-docs") when multiple instances coexist on the same page.
     /// </summary>
-    [Parameter] public string Slot { get; set; } = "main";
+    [Parameter, Setting("Slot", Group = "Advanced", Order = 0, Copyable = false, Description = "Instance discriminator; unique per FromMd on a page")]
+    public string Slot { get; set; } = "main";
 
-    [Parameter] public string? CssClass { get; set; }
-    [Parameter] public string? CssStyle { get; set; }
-    [Parameter] public string? Padding { get; set; }
-    [Parameter] public string? Margin { get; set; }
-    [Parameter] public string? Align { get; set; }
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced")] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced")] public string? CssStyle { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1)] public string? Padding { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2)] public string? Margin { get; set; }
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 3)] public string? Align { get; set; }
+
+    [Parameter, Setting("Max width", Group = "Layout", Order = 4, Description = "Default 860px")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Font size", Group = "Typography", Order = 1)] public string? FontSize { get; set; }
+    [Parameter, Setting("Line height", Group = "Typography", Order = 2)] public string? LineHeight { get; set; }
+    [Parameter, Setting("Heading line height", Group = "Typography", Order = 3, Description = "Default 1.25")] public string? HeadingLineHeight { get; set; }
+    [Parameter, Setting("H1 size", Group = "Typography", Order = 4, Description = "Default 2rem")] public string? H1Size { get; set; }
+    [Parameter, Setting("H2 size", Group = "Typography", Order = 5, Description = "Default 1.55rem")] public string? H2Size { get; set; }
+    [Parameter, Setting("H3 size", Group = "Typography", Order = 6, Description = "Default 1.25rem")] public string? H3Size { get; set; }
+    [Parameter, Setting("Paragraph spacing", Group = "Typography", Order = 7, Description = "Vertical margin of p/ul/ol (default 0.9em)")] public string? ParagraphSpacing { get; set; }
+    [Parameter, Setting("Code font", Group = "Typography", Order = 8)] public string? CodeFont { get; set; }
+    [Parameter, Setting("Code block padding", Group = "Layout", Order = 5, Description = "Default 1rem 1.1rem")] public string? CodePadding { get; set; }
+    [Parameter, Setting("Code block radius", Group = "Layout", Order = 6, Description = "Default 8px")] public string? CodeRadius { get; set; }
+    [Parameter, Setting("Image radius", Group = "Layout", Order = 7, Description = "Default 6px")] public string? ImageRadius { get; set; }
+    [Parameter, Setting("Table cell padding", Group = "Layout", Order = 8, Description = "Default 0.45rem 0.7rem")] public string? CellPadding { get; set; }
+    [Parameter, Setting("Text color", Group = "Colors", Order = 1)] public string? TextColor { get; set; }
+    [Parameter, Setting("Blockquote border", Group = "Colors", Order = 2, Description = "Default 3px solid currentColor")] public string? QuoteBorder { get; set; }
+
+    /// <summary>Show the "No content loaded" hint to visitors when nothing has been synced.</summary>
+    [Parameter, Setting("Show empty-state hint", Group = "Behavior", Order = 1)] public bool ShowEmptyHint { get; set; } = true;
 
     private string _outerStyle => string.Join(";", new[]
     {
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        Var("font-size", FontSize),
+        Var("line-height", LineHeight),
+        Var("color", TextColor),
+        Var("--ma-frommd-max-width", MaxWidth),
+        Var("--ma-frommd-heading-lh", HeadingLineHeight),
+        Var("--ma-frommd-h1", H1Size),
+        Var("--ma-frommd-h2", H2Size),
+        Var("--ma-frommd-h3", H3Size),
+        Var("--ma-frommd-flow", ParagraphSpacing),
+        Var("--ma-frommd-code-font", CodeFont),
+        Var("--ma-frommd-pre-padding", CodePadding),
+        Var("--ma-frommd-pre-radius", CodeRadius),
+        Var("--ma-frommd-img-radius", ImageRadius),
+        Var("--ma-frommd-cell-padding", CellPadding),
+        Var("--ma-frommd-quote-border", QuoteBorder),
         CssStyle,
     }.Where(s => s is not null));
+
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
 
     string? renderedHtml;
     string? localSourceFile;

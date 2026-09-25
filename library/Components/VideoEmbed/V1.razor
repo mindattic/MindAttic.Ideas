@@ -12,40 +12,76 @@
     <div class="ma-video @CssClass" style="@_outerStyle">
         <iframe src="@_embedUrl" title="@(Title ?? "Video")"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                allowfullscreen="@AllowFullscreen" referrerpolicy="strict-origin-when-cross-origin"
+                loading="@(Lazy ? "lazy" : null)"></iframe>
     </div>
 }
 else if (!string.IsNullOrWhiteSpace(Url))
 {
     <div class="ma-video @CssClass" style="@_outerStyle">
-        <video controls src="@SafeUrl(Url)" title="@(Title ?? "Video")"></video>
+        <video controls="@Controls" src="@_nativeSrc" title="@(Title ?? "Video")"
+               autoplay="@Autoplay" muted="@(Muted || Autoplay)" loop="@Loop" playsinline="@Autoplay"
+               poster="@(string.IsNullOrWhiteSpace(Poster) ? null : SafeUrl(Poster))"
+               preload="@Preload"></video>
     </div>
 }
 
 @code {
     /// <summary>The video URL: YouTube/Vimeo page URL, a file URL, or a data: URI.</summary>
-    [Parameter] public string? Url { get; set; }
+    [Parameter, Setting("Video URL", Group = "Content", Order = 1, Copyable = false, Description = "YouTube / Vimeo page URL, a file URL, or a data: URI")] public string? Url { get; set; }
 
     /// <summary>Accessible title for the player.</summary>
-    [Parameter] public string? Title { get; set; }
+    [Parameter, Setting("Title", Group = "Content", Order = 2, Copyable = false, Description = "Accessible title (default \"Video\")")] public string? Title { get; set; }
 
-    /// <summary>Additional CSS classes appended to the root element.</summary>
-    [Parameter] public string? CssClass { get; set; }
+    /// <summary>Poster image for a native video (ignored for YouTube/Vimeo).</summary>
+    [Parameter, Setting("Poster image URL", Group = "Content", Order = 3, Copyable = false, Description = "Native video only")] public string? Poster { get; set; }
 
-    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
-    [Parameter] public string? CssStyle { get; set; }
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Autoplay", Group = "Behavior", Order = 1, Description = "Browsers only autoplay muted, so this also mutes")] public bool Autoplay { get; set; }
+    [Parameter, Setting("Muted", Group = "Behavior", Order = 2)] public bool Muted { get; set; }
+    [Parameter, Setting("Loop", Group = "Behavior", Order = 3)] public bool Loop { get; set; }
+    [Parameter, Setting("Show controls", Group = "Behavior", Order = 4)] public bool Controls { get; set; } = true;
+    [Parameter, Setting("Start at (seconds)", Group = "Behavior", Order = 5, Description = "0 = from the beginning")] public int StartAt { get; set; }
+    [Parameter, Setting("Allow fullscreen", Group = "Behavior", Order = 6)] public bool AllowFullscreen { get; set; } = true;
+    [Parameter, Setting("Lazy-load embed", Group = "Behavior", Order = 7, Description = "Defer loading the YouTube/Vimeo iframe until near the viewport")] public bool Lazy { get; set; }
+    [Parameter, Setting("Preload (native)", Group = "Behavior", Order = 8, Description = "auto | metadata | none; blank = browser default")] public string? Preload { get; set; }
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Aspect ratio", Group = "Layout", Order = 1, Description = "e.g. 16 / 9 (default), 4 / 3, 9 / 16")] public string? AspectRatio { get; set; }
+    [Parameter, Setting("Max width", Group = "Layout", Order = 2, Description = "Centers the player when set")] public string? MaxWidth { get; set; }
+    [Parameter, Setting("Video fit", Group = "Layout", Order = 3, Description = "Native video object-fit: fill | contain | cover")] public string? Fit { get; set; }
 
     /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
-    [Parameter] public string? Padding { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 4)] public string? Padding { get; set; }
 
     /// <summary>CSS margin shorthand.</summary>
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 5)] public string? Margin { get; set; }
 
     /// <summary>text-align or flex justification (e.g. "center", "left", "right").</summary>
-    [Parameter] public string? Align { get; set; }
+    [Parameter, Setting("Text alignment", Group = "Layout", Order = 6)] public string? Align { get; set; }
+
+    // ── Colors ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Corner radius", Group = "Colors", Order = 1, Description = "Default .5rem")] public string? Radius { get; set; }
+    [Parameter, Setting("Background", Group = "Colors", Order = 2, Description = "Letterbox color (default #000)")] public string? Background { get; set; }
+    [Parameter, Setting("Shadow", Group = "Colors", Order = 3, Description = "CSS box-shadow (default none)")] public string? Shadow { get; set; }
+
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 1)] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 2)] public string? CssStyle { get; set; }
+
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
 
     private string _outerStyle => string.Join(";", new[]
     {
+        Var("--ma-video-ratio", AspectRatio),
+        Var("--ma-video-radius", Radius),
+        Var("--ma-video-bg", Background),
+        Var("--ma-video-shadow", Shadow),
+        Var("--ma-video-fit", Fit),
+        string.IsNullOrWhiteSpace(MaxWidth) ? null : $"max-width:{MaxWidth};margin-inline:auto",
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
@@ -53,8 +89,39 @@ else if (!string.IsNullOrWhiteSpace(Url))
     }.Where(s => s is not null));
 
     private string? _embedUrl;
+    private string? _nativeSrc;
 
-    protected override void OnParametersSet() => _embedUrl = ToEmbedUrl(Url);
+    protected override void OnParametersSet()
+    {
+        _embedUrl = WithPlayerOptions(ToEmbedUrl(Url));
+        _nativeSrc = string.IsNullOrWhiteSpace(Url) ? null : SafeUrl(Url);
+        if (_nativeSrc is not null && StartAt > 0 && !_nativeSrc.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
+            && !_nativeSrc.Contains('#'))
+            _nativeSrc += "#t=" + StartAt;
+    }
+
+    // Appends the player settings to a YouTube/Vimeo embed URL — only the ones that differ from the
+    // defaults, so an unconfigured instance keeps the exact embed URL it always had.
+    private string? WithPlayerOptions(string? embed)
+    {
+        if (embed is null) return null;
+        var vimeo = embed.Contains("player.vimeo.com", StringComparison.Ordinal);
+        var q = new List<string>();
+        if (Autoplay) { q.Add("autoplay=1"); q.Add(vimeo ? "muted=1" : "mute=1"); }
+        else if (Muted) q.Add(vimeo ? "muted=1" : "mute=1");
+        if (Loop)
+        {
+            q.Add("loop=1");
+            // YouTube loops a single video only when it is also its own playlist.
+            if (!vimeo) q.Add("playlist=" + embed[(embed.LastIndexOf('/') + 1)..]);
+        }
+        if (!Controls) q.Add("controls=0");
+        if (StartAt > 0 && !vimeo) q.Add("start=" + StartAt);
+        if (q.Count == 0 && !(vimeo && StartAt > 0)) return embed;
+        var url = q.Count == 0 ? embed : embed + (embed.Contains('?') ? "&" : "?") + string.Join("&", q);
+        if (vimeo && StartAt > 0) url += "#t=" + StartAt + "s";
+        return url;
+    }
 
     // YouTube (watch / youtu.be / shorts / embed) and Vimeo page URLs -> embed URLs; else null.
     internal static string? ToEmbedUrl(string? url)

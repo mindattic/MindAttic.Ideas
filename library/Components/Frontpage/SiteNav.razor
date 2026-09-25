@@ -12,7 +12,7 @@
    The "ecosystem" (diagram) section has no children — it renders its IntroHtml
    (the SVG) directly in the panel. Cover images resolve under AssetBase. *@
 
-<div class="siteNav">
+<div class="@(string.IsNullOrWhiteSpace(Options.RootClass) ? "siteNav" : "siteNav " + Options.RootClass)" style="@Options.RootStyle">
     @foreach (var s in Sections)
     {
         var isOpen = s.Key == _openKey;
@@ -22,7 +22,7 @@
                         aria-expanded="@(isOpen ? "true" : "false")">
                     <span class="siteNav-head-title">@s.Title</span>
                     <span class="siteNav-head-meta">
-                        @if (s.Kind != "diagram") { <span class="siteNav-head-count">@s.Pages.Count</span> }
+                        @if (s.Kind != "diagram" && Options.ShowCounts) { <span class="siteNav-head-count">@s.Pages.Count</span> }
                         <span class="siteNav-chevron" aria-hidden="true"></span>
                     </span>
                 </button>
@@ -40,7 +40,7 @@
                     }
                     else if (s.Pages.Count == 0)
                     {
-                        <p class="muted">Nothing here yet.</p>
+                        <p class="muted">@Options.EmptyText</p>
                     }
                     else
                     {
@@ -51,6 +51,7 @@
                                 {
                                     <NavTabItem Page="p"
                                                 Selected="sel is not null && p.Slug == sel.Slug"
+                                                ShowTooltip="Options.ShowTooltips"
                                                 OnSelect="slug => SelectChild(s.Key, slug)" />
                                 }
                             </nav>
@@ -58,28 +59,31 @@
                             <div class="siteNav-panel">
                                 @if (sel is not null)
                                 {
-                                    <div class="siteNav-preview @(sel.Cover is null ? "is-placeholder" : null)">
-                                        @if (sel.Cover is not null)
-                                        {
-                                            <img src="@($"{AssetBase}/covers/{sel.Cover}")" alt="@sel.Title" />
-                                        }
-                                    </div>
+                                    @if (Options.ShowCovers)
+                                    {
+                                        <div class="siteNav-preview @(sel.Cover is null ? "is-placeholder" : null)">
+                                            @if (sel.Cover is not null)
+                                            {
+                                                <img src="@($"{AssetBase}/covers/{sel.Cover}")" alt="@sel.Title" />
+                                            }
+                                        </div>
+                                    }
 
                                     <div class="siteNav-detail">
                                         <h3 class="siteNav-detail-title">@sel.Title</h3>
-                                        @if (!string.IsNullOrWhiteSpace(sel.Tagline))
+                                        @if (Options.ShowTaglines && !string.IsNullOrWhiteSpace(sel.Tagline))
                                         {
                                             <p class="siteNav-detail-tagline">@sel.Tagline</p>
                                         }
 
                                         <div class="siteNav-links">
-                                            @if (!string.IsNullOrWhiteSpace(sel.OpenUrl))
+                                            @if (Options.ShowOpenLink && !string.IsNullOrWhiteSpace(sel.OpenUrl))
                                             {
-                                                <a class="tabButton-btn" href="@sel.OpenUrl" target="_blank" rel="noopener noreferrer">Open</a>
+                                                <a class="tabButton-btn" href="@sel.OpenUrl" target="_blank" rel="noopener noreferrer">@Options.OpenLabel</a>
                                             }
-                                            @if (!string.IsNullOrWhiteSpace(sel.GitHubUrl))
+                                            @if (Options.ShowGitHubLink && !string.IsNullOrWhiteSpace(sel.GitHubUrl))
                                             {
-                                                <a class="tabButton-btn" href="@sel.GitHubUrl" target="_blank" rel="noopener noreferrer">GitHub</a>
+                                                <a class="tabButton-btn" href="@sel.GitHubUrl" target="_blank" rel="noopener noreferrer">@Options.GitHubLabel</a>
                                             }
                                         </div>
                                     </div>
@@ -96,22 +100,29 @@
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<HubSection> Sections { get; set; } = [];
     [Parameter] public string AssetBase { get; set; } = "";
+    [Parameter] public SiteNavOptions Options { get; set; } = new();
 
     private string? _openKey;
+    private bool _initialized;
     private readonly Dictionary<string, string> _selected = new();
 
     protected override void OnParametersSet()
     {
-        // Default: first section open, its first child selected.
-        if (_openKey is null && Sections.Count > 0)
+        // Default: first section (or the configured one) open, its first child selected.
+        if (!_initialized && Sections.Count > 0)
         {
-            _openKey = Sections[0].Key;
-            EnsureSelection(Sections[0]);
+            _initialized = true;
+            if (Options.StartCollapsed) return;
+            var first = Sections.FirstOrDefault(x => string.Equals(x.Key, Options.DefaultSection?.Trim(), StringComparison.OrdinalIgnoreCase))
+                        ?? Sections[0];
+            _openKey = first.Key;
+            EnsureSelection(first);
         }
     }
 
     private void ToggleSection(HubSection s)
     {
+        if (_openKey == s.Key && !Options.AllowCollapse) return;
         _openKey = (_openKey == s.Key) ? null : s.Key;
         if (_openKey == s.Key) EnsureSelection(s);
     }

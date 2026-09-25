@@ -8,12 +8,12 @@
     .ma-modal {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.65);
+        background: var(--ma-modal-backdrop, rgba(0, 0, 0, 0.65));
         display: flex;
         justify-content: center;
-        align-items: flex-start;
+        align-items: var(--ma-modal-valign, flex-start);
         padding: 4vh 1rem;
-        z-index: 1000;
+        z-index: var(--ma-modal-z, 1000);
         overscroll-behavior: contain;
     }
     .ma-modal[hidden] { display: none; }
@@ -23,12 +23,13 @@
         border: 1px solid var(--ma-modal-line, #232c3d);
         border-radius: var(--ma-modal-radius, 14px);
         width: 100%;
-        max-height: 92vh;
+        max-height: var(--ma-modal-max-height, 92vh);
         overflow-y: auto;
-        padding: 1.4rem;
+        padding: var(--ma-modal-dialog-padding, 1.4rem);
         box-sizing: border-box;
         position: relative;
         color: var(--ma-modal-text, #dce1e6);
+        box-shadow: var(--ma-modal-shadow, none);
     }
     .ma-modal-dialog:focus { outline: none; }
     .ma-modal-dialog::-webkit-scrollbar { width: 6px; }
@@ -49,7 +50,7 @@
     }
     .ma-modal-title {
         margin: 0;
-        font-size: 1.25rem;
+        font-size: var(--ma-modal-title-size, 1.25rem);
         font-weight: 700;
         flex: 1;
         color: var(--ma-modal-text, #dce1e6);
@@ -104,13 +105,15 @@
 
     @@media (max-width: 640px) {
         .ma-modal { padding: 2vh 0; align-items: flex-end; }
-        .ma-modal-dialog { border-radius: 14px 14px 0 0; max-height: 96vh; }
+        .ma-modal-dialog { border-radius: 14px 14px 0 0; max-height: var(--ma-modal-max-height, 96vh); }
     }
 </style>
 
 @if (_open)
 {
-    <div class="ma-modal @CssClass" style="@_outerStyle" @onclick="HandleBackdropClick" @onkeydown="HandleKeyDown">
+    <div class="ma-modal @CssClass" style="@_outerStyle"
+         data-close-backdrop="@(CloseOnBackdrop ? null : "false")" data-close-escape="@(CloseOnEscape ? null : "false")"
+         @onclick="HandleBackdropClick" @onkeydown="HandleKeyDown">
         @if (_wrapForm)
         {
             <form class="ma-modal-dialog @_sizeClass" role="dialog" aria-modal="true"
@@ -136,28 +139,109 @@
 }
 
 @code {
-    [Parameter] public bool IsOpen { get; set; } = true;
-    [Parameter] public string? Title { get; set; }
-    [Parameter] public bool? ShowClose { get; set; }
-    [Parameter] public bool? ShowHeader { get; set; }
-    [Parameter] public bool? ShowFooter { get; set; }
-    [Parameter] public string? ConfirmText { get; set; }
-    [Parameter] public string? CancelText { get; set; }
-    [Parameter] public bool? WrapForm { get; set; }
-    [Parameter] public string? Size { get; set; }
-    [Parameter] public string? Config { get; set; }
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Open", Group = "Behavior", Order = 1, Description = "Whether the modal is rendered and visible")]
+    public bool IsOpen { get; set; } = true;
+    [Parameter, Setting("Show close button", Group = "Behavior", Order = 2, Description = "Blank = on")]
+    public bool? ShowClose { get; set; }
+    [Parameter, Setting("Show header", Group = "Behavior", Order = 3, Description = "Blank = auto (when a title or close button is present)")]
+    public bool? ShowHeader { get; set; }
+    [Parameter, Setting("Show footer", Group = "Behavior", Order = 4, Description = "Blank = auto (when a confirm or cancel label is set)")]
+    public bool? ShowFooter { get; set; }
+    [Parameter, Setting("Wrap in form", Group = "Behavior", Order = 5, Description = "Confirm button submits a form (blank = off)")]
+    public bool? WrapForm { get; set; }
+    [Parameter, Setting("Close on backdrop click", Group = "Behavior", Order = 6)]
+    public bool CloseOnBackdrop { get; set; } = true;
+    [Parameter, Setting("Close on Escape", Group = "Behavior", Order = 7)]
+    public bool CloseOnEscape { get; set; } = true;
+
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Title", Group = "Content", Order = 1, Copyable = false)]
+    public string? Title { get; set; }
+    [Parameter, Setting("Confirm button label", Group = "Content", Order = 2, Copyable = false, Description = "Blank hides the button")]
+    public string? ConfirmText { get; set; }
+    [Parameter, Setting("Cancel button label", Group = "Content", Order = 3, Copyable = false, Description = "Blank hides the button")]
+    public string? CancelText { get; set; }
+    [Parameter, Setting("Close button text", Group = "Content", Order = 4, Description = "Glyph shown on the close button")]
+    public string CloseText { get; set; } = "✕";
+    [Parameter, Setting("Close button label (a11y)", Group = "Content", Order = 5)]
+    public string CloseLabel { get; set; } = "Close";
+
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Size", Group = "Layout", Order = 1, Description = "sm | md | lg | xl | full (blank = md)")]
+    public string? Size { get; set; }
+    [Parameter, Setting("Width", Group = "Layout", Order = 2, Description = "Dialog max-width; overrides the size preset (e.g. 720px)")]
+    public string? Width { get; set; }
+    [Parameter, Setting("Max height", Group = "Layout", Order = 3, Description = "Dialog max-height (default 92vh)")]
+    public string? MaxHeight { get; set; }
+    [Parameter, Setting("Dialog padding", Group = "Layout", Order = 4, Description = "Default 1.4rem")]
+    public string? DialogPadding { get; set; }
+    [Parameter, Setting("Vertical position", Group = "Layout", Order = 5, Description = "flex-start | center | flex-end (default flex-start)")]
+    public string? VerticalAlign { get; set; }
+    [Parameter, Setting("Backdrop padding", Group = "Layout", Order = 6)]
+    public string? Padding { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 7)]
+    public string? Margin { get; set; }
+    [Parameter, Setting("Text alignment", Group = "Layout", Order = 8)]
+    public string? Align { get; set; }
+    [Parameter, Setting("Z-index", Group = "Layout", Order = 9, Description = "Default 1000")]
+    public int? ZIndex { get; set; }
+
+    // ── Colors ──────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Backdrop color", Group = "Colors", Order = 1, Description = "Default rgba(0,0,0,.65)")]
+    public string? BackdropColor { get; set; }
+    [Parameter, Setting("Dialog background", Group = "Colors", Order = 2)]
+    public string? Background { get; set; }
+    [Parameter, Setting("Border / line color", Group = "Colors", Order = 3)]
+    public string? BorderColor { get; set; }
+    [Parameter, Setting("Text color", Group = "Colors", Order = 4)]
+    public string? TextColor { get; set; }
+    [Parameter, Setting("Muted text color", Group = "Colors", Order = 5)]
+    public string? MutedColor { get; set; }
+    [Parameter, Setting("Accent (confirm) color", Group = "Colors", Order = 6)]
+    public string? AccentColor { get; set; }
+    [Parameter, Setting("Close hover background", Group = "Colors", Order = 7)]
+    public string? HoverBackground { get; set; }
+    [Parameter, Setting("Corner radius", Group = "Colors", Order = 8, Description = "Default 14px")]
+    public string? Radius { get; set; }
+    [Parameter, Setting("Shadow", Group = "Colors", Order = 9, Description = "CSS box-shadow (default none)")]
+    public string? Shadow { get; set; }
+    [Parameter, Setting("Title font size", Group = "Colors", Order = 10, Description = "Default 1.25rem")]
+    public string? TitleSize { get; set; }
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Config JSON", Group = "Advanced", Order = 1, Multiline = true, Description = "JSON with any of title/showClose/showHeader/showFooter/confirmText/cancelText/wrapForm/size")]
+    public string? Config { get; set; }
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 2)]
+    public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 3)]
+    public string? CssStyle { get; set; }
+
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnConfirm { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
-    [Parameter] public string? CssClass { get; set; }
-    [Parameter] public string? CssStyle { get; set; }
-    [Parameter] public string? Padding { get; set; }
-    [Parameter] public string? Margin { get; set; }
-    [Parameter] public string? Align { get; set; }
+
+    private static string? Var(string name, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{name}:{value}";
 
     private string _outerStyle => string.Join(";", new[]
     {
+        Var("--ma-modal-width", Width),
+        Var("--ma-modal-max-height", MaxHeight),
+        Var("--ma-modal-dialog-padding", DialogPadding),
+        Var("--ma-modal-valign", VerticalAlign),
+        Var("--ma-modal-z", ZIndex?.ToString()),
+        Var("--ma-modal-backdrop", BackdropColor),
+        Var("--ma-modal-bg", Background),
+        Var("--ma-modal-line", BorderColor),
+        Var("--ma-modal-text", TextColor),
+        Var("--ma-modal-muted", MutedColor),
+        Var("--ma-modal-accent", AccentColor),
+        Var("--ma-modal-hover-bg", HoverBackground),
+        Var("--ma-modal-radius", Radius),
+        Var("--ma-modal-shadow", Shadow),
+        Var("--ma-modal-title-size", TitleSize),
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
@@ -228,9 +312,9 @@
             builder.OpenElement(i++, "button");
             builder.AddAttribute(i++, "class", "ma-modal-close");
             builder.AddAttribute(i++, "type", "button");
-            builder.AddAttribute(i++, "aria-label", "Close");
+            builder.AddAttribute(i++, "aria-label", CloseLabel);
             builder.AddAttribute(i++, "onclick", EventCallback.Factory.Create(this, HandleClose));
-            builder.AddContent(i++, "✕");
+            builder.AddContent(i++, CloseText);
             builder.CloseElement();
         }
         builder.CloseElement();
@@ -278,8 +362,8 @@
     private async Task HandleClose()         { if (OnClose.HasDelegate)   await OnClose.InvokeAsync(); }
     private async Task HandleConfirm()       { if (OnConfirm.HasDelegate) await OnConfirm.InvokeAsync(); }
     private async Task HandleCancel()        { if (OnCancel.HasDelegate)  await OnCancel.InvokeAsync(); }
-    private async Task HandleBackdropClick() { if (OnClose.HasDelegate)   await OnClose.InvokeAsync(); }
-    private async Task HandleKeyDown(KeyboardEventArgs e) { if (e.Key == "Escape") await HandleClose(); }
+    private async Task HandleBackdropClick() { if (CloseOnBackdrop && OnClose.HasDelegate) await OnClose.InvokeAsync(); }
+    private async Task HandleKeyDown(KeyboardEventArgs e) { if (CloseOnEscape && e.Key == "Escape") await HandleClose(); }
 
     private sealed class ModalConfig
     {

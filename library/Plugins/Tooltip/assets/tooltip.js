@@ -21,9 +21,23 @@
   window.__maTooltip = true;
 
   var SEL = '[data-tooltip]';
-  var GAP = 10;        // distance from trigger
-  var EDGE = 6;        // min distance from viewport edge
+  var GAP = 10;        // distance from trigger (default; instance setting "gap")
+  var EDGE = 6;        // min distance from viewport edge (default; instance setting "edge")
   var tip, arrow, body, current, timer;
+
+  // Instance settings (MAI-A45), read LIVE from <data data-ma-settings="plugin.tooltip" value="{json}">.
+  // Every value falls back to the designed behavior when absent.
+  var cache = { raw: null, parsed: {} };
+  function settings() {
+    var el = document.querySelector('[data-ma-settings="plugin.tooltip"]');
+    var raw = el ? el.getAttribute('value') : null;
+    if (raw !== cache.raw) {
+      cache.raw = raw;
+      try { cache.parsed = raw ? JSON.parse(raw) : {}; } catch (e) { cache.parsed = {}; }
+    }
+    return cache.parsed;
+  }
+  function num(v, d) { return typeof v === 'number' && v >= 0 ? v : d; }
 
   function build() {
     if (tip) return;
@@ -41,7 +55,9 @@
   }
 
   function place(target) {
-    var pref = (target.getAttribute('data-tooltip-pos') || 'top').toLowerCase();
+    var s = settings();
+    var GAP = num(s.gap, 10), EDGE = num(s.edge, 6);
+    var pref = (target.getAttribute('data-tooltip-pos') || s.defaultPosition || 'top').toLowerCase();
     var r = target.getBoundingClientRect();
     var w = tip.offsetWidth, h = tip.offsetHeight;
     var vw = document.documentElement.clientWidth;
@@ -88,7 +104,7 @@
     var txt = target.getAttribute('data-tooltip');
     if (!txt) return;
     build();
-    if (target.hasAttribute('data-tooltip-html')) body.innerHTML = txt;
+    if (target.hasAttribute('data-tooltip-html') && settings().allowHtml !== false) body.innerHTML = txt;
     else body.textContent = txt;
     current = target;
     target.setAttribute('aria-describedby', 'ma-tooltip');
@@ -114,7 +130,9 @@
     var t = trigger(e.target);
     if (!t || t === current) return;
     clearTimeout(timer);
-    var delay = parseInt(t.getAttribute('data-tooltip-delay') || '0', 10) || 0;
+    if (e.type === 'focusin' && settings().showOnFocus === false) return;
+    var attr = t.getAttribute('data-tooltip-delay');
+    var delay = attr != null ? (parseInt(attr, 10) || 0) : num(settings().delay, 0);
     if (delay > 0) timer = setTimeout(function () { show(t); }, delay);
     else show(t);
   }
@@ -127,7 +145,7 @@
     hide();
   }
 
-  function onKey(e) { if (e.key === 'Escape') hide(); }
+  function onKey(e) { if (e.key === 'Escape' && settings().hideOnEscape !== false) hide(); }
   function onScrollResize() { if (current) place(current); }
 
   document.addEventListener('mouseover', onOver, true);

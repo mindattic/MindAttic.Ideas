@@ -66,3 +66,15 @@ When no parameter is supplied, the component reads `social.github`, `social.x`, 
 - **Icons are inline SVG:** all icon paths are embedded directly in the markup (24×24 viewBox). There are no external icon requests and no dependency on a web font.
 - **Link target:** all links open in a new tab (`target="_blank"`) with `rel="noopener noreferrer"`.
 - **Safety check:** URLs that fail an internal `IsUnsafeUrl` check are silently omitted.
+
+## Settings
+
+Per-instance settings (MAI-A45), edited in Admin; empty = as designed.
+
+- **Content:** GitHub, X / Twitter, LinkedIn, YouTube, Email, Website, RSS, List label (not copied by Copy Configuration)
+- **Layout:** Padding, Margin, Alignment (also justifies the row), Gap
+- **Appearance:** Button size, Icon size, Corner radius, Icon color, Icon opacity, Hover background, Hover icon color
+- **Behavior:** Hover lift, Animations, Open in new tab, Show name tooltips
+- **Advanced:** Extra CSS classes, Extra inline style
+
+Values are emitted as `--ma-social-*` custom properties on the `<ul>`; `sociallinks.css` reads them with the designed values as fallbacks.

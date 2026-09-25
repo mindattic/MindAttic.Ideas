@@ -5,16 +5,19 @@
 @* MindAttic.Ideas.Plugin.Header.V1 — 3-column fixed header (logo | center | user dropdown).
    Auth is handled entirely server-side: AuthorizeView gates the dropdown; the logout form uses
    POST + AntiforgeryToken (CSRF-safe). If auth state is unavailable the user column stays empty.
-   Logo text comes from Logo parameter → "header.logo" site setting → site key → "MindAttic". *@
+   Logo text comes from Logo parameter → "header.logo" site setting → site key → "MindAttic".
+   Instance settings (MAI-A45) are emitted as --mah-* custom properties on the <header>. *@
 
 <link rel="stylesheet" href="/_ideas/Plugin/header/1/header.css" />
 
-<header class="mah-root @CssClass" style="@_outerStyle">
+<header class="mah-root @_modifiers @CssClass" style="@_outerStyle">
     <div class="mah-col">
-        <a href="/" class="mah-logo-link">@_logoText</a>
+        <a href="@_logoHref" class="mah-logo-link" style="@_logoStyle">@_logoText</a>
     </div>
     <div class="mah-col mah-col--fill">@ChildContent</div>
     <div class="mah-col">
+        @if (ShowUserMenu)
+        {
         <AuthorizeView>
             <Authorized Context="ctx">
                 @{
@@ -29,18 +32,21 @@
                         @Initials(email)
                     </button>
                     <div class="mah-uc-menu" role="menu">
-                        <div class="mah-uc-email">@email</div>
+                        @if (ShowEmail)
+                        {
+                            <div class="mah-uc-email">@email</div>
+                        }
                         <ul class="mah-uc-list">
-                            @if (isAdmin)
+                            @if (isAdmin && ShowAdminLink)
                             {
                                 <li role="menuitem">
-                                    <a href="/admin" class="mah-uc-item">Admin panel</a>
+                                    <a href="/admin" class="mah-uc-item">@(string.IsNullOrWhiteSpace(AdminLinkText) ? "Admin panel" : AdminLinkText)</a>
                                 </li>
                             }
                             <li role="menuitem">
                                 <form method="post" action="/_ma-auth/logout" style="margin:0">
                                     <AntiforgeryToken />
-                                    <button type="submit" class="mah-uc-item mah-uc-signout">Sign out</button>
+                                    <button type="submit" class="mah-uc-item mah-uc-signout">@(string.IsNullOrWhiteSpace(SignOutText) ? "Sign out" : SignOutText)</button>
                                 </form>
                             </li>
                         </ul>
@@ -48,40 +54,126 @@
                 </div>
             </Authorized>
         </AuthorizeView>
+        }
     </div>
 </header>
 
 @code {
+    public enum Positions { Fixed, Sticky, Static }
+
+    // ── Content ─────────────────────────────────────────────────────────────────────────────────
     /// <summary>Logo text override. Falls back to "header.logo" site setting, then site key, then "MindAttic".</summary>
-    [Parameter] public string? Logo { get; set; }
+    [Parameter, Setting("Logo text", Group = "Content", Order = 1, Copyable = false, Description = "Falls back to the header.logo site setting, then the site key")]
+    public string? Logo { get; set; }
+
+    [Parameter, Setting("Logo link", Group = "Content", Order = 2, Copyable = false, Description = "Where the logo points (designed: /)")]
+    public string? LogoHref { get; set; }
+
+    [Parameter, Setting("Admin link text", Group = "Content", Order = 3, Copyable = false, Description = "designed: \"Admin panel\"")]
+    public string? AdminLinkText { get; set; }
+
+    [Parameter, Setting("Sign-out text", Group = "Content", Order = 4, Copyable = false, Description = "designed: \"Sign out\"")]
+    public string? SignOutText { get; set; }
 
     /// <summary>Optional center-column content (nav links, search bar, etc.).</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    /// <summary>Additional CSS classes appended to the root element.</summary>
-    [Parameter] public string? CssClass { get; set; }
-
-    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
-    [Parameter] public string? CssStyle { get; set; }
-
+    // ── Layout ──────────────────────────────────────────────────────────────────────────────────
     /// <summary>CSS padding shorthand (e.g. "1rem" or "4px 8px").</summary>
-    [Parameter] public string? Padding { get; set; }
+    [Parameter, Setting("Padding", Group = "Layout", Order = 1, Description = "designed: 0 1.25rem")] public string? Padding { get; set; }
 
     /// <summary>CSS margin shorthand.</summary>
-    [Parameter] public string? Margin { get; set; }
+    [Parameter, Setting("Margin", Group = "Layout", Order = 2)] public string? Margin { get; set; }
 
     /// <summary>Text-align or flex justification (e.g. "center", "left", "right").</summary>
-    [Parameter] public string? Align { get; set; }
+    [Parameter, Setting("Alignment", Group = "Layout", Order = 3)] public string? Align { get; set; }
+
+    [Parameter, Setting("Positioning", Group = "Layout", Order = 4, Description = "Fixed to the viewport top, sticky, or in normal flow")]
+    public Positions Position { get; set; } = Positions.Fixed;
+
+    [Parameter, Setting("Height", Group = "Layout", Order = 5, Description = "designed: 48px")] public string? Height { get; set; }
+    [Parameter, Setting("Column gap", Group = "Layout", Order = 6, Description = "designed: 1rem")] public string? Gap { get; set; }
+    [Parameter, Setting("Stacking order (z-index)", Group = "Layout", Order = 7, Description = "designed: 200")] public int? ZIndex { get; set; }
+
+    // ── Appearance ──────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Background", Group = "Appearance", Order = 1, Description = "designed: rgba(10,12,10,.88)")] public string? Background { get; set; }
+    [Parameter, Setting("Backdrop filter", Group = "Appearance", Order = 2, Description = "designed: blur(8px); 'none' to remove")] public string? BackdropFilter { get; set; }
+    [Parameter, Setting("Bottom border", Group = "Appearance", Order = 3, Description = "CSS border shorthand (designed: 1px solid rgba(60,70,60,.4))")] public string? BorderBottom { get; set; }
+    [Parameter, Setting("Shadow", Group = "Appearance", Order = 4, Description = "CSS box-shadow (designed: none)")] public string? Shadow { get; set; }
+    [Parameter, Setting("Logo color", Group = "Appearance", Order = 5, Description = "designed: #e7eaf0")] public string? LogoColor { get; set; }
+    [Parameter, Setting("Logo size", Group = "Appearance", Order = 6, Description = "designed: .85rem")] public string? LogoSize { get; set; }
+    [Parameter, Setting("Logo weight", Group = "Appearance", Order = 7, Description = "designed: 600")] public int? LogoWeight { get; set; }
+    [Parameter, Setting("Logo letter spacing", Group = "Appearance", Order = 8, Description = "designed: .04em")] public string? LogoLetterSpacing { get; set; }
+    [Parameter, Setting("Logo opacity", Group = "Appearance", Order = 9, Description = "0–1 at rest (designed: 0.8)")] public double? LogoOpacity { get; set; }
+    [Parameter, Setting("Logo font family", Group = "Appearance", Order = 10, Description = "designed: inherits the page font")] public string? LogoFontFamily { get; set; }
+    [Parameter, Setting("Avatar background", Group = "Appearance", Order = 11, Description = "designed: #e2231a")] public string? AvatarBackground { get; set; }
+    [Parameter, Setting("Avatar text color", Group = "Appearance", Order = 12, Description = "designed: #fff")] public string? AvatarColor { get; set; }
+    [Parameter, Setting("Avatar size", Group = "Appearance", Order = 13, Description = "designed: 36px")] public string? AvatarSize { get; set; }
+    [Parameter, Setting("Avatar corner radius", Group = "Appearance", Order = 14, Description = "designed: 50% (a circle)")] public string? AvatarRadius { get; set; }
+    [Parameter, Setting("Menu background", Group = "Appearance", Order = 15, Description = "designed: #14171c")] public string? MenuBackground { get; set; }
+    [Parameter, Setting("Menu border color", Group = "Appearance", Order = 16, Description = "designed: #2a2f37")] public string? MenuBorderColor { get; set; }
+    [Parameter, Setting("Menu text color", Group = "Appearance", Order = 17, Description = "designed: #e7eaf0")] public string? MenuTextColor { get; set; }
+    [Parameter, Setting("Menu muted color", Group = "Appearance", Order = 18, Description = "The email line (designed: #9aa3af)")] public string? MenuMutedColor { get; set; }
+    [Parameter, Setting("Menu hover background", Group = "Appearance", Order = 19, Description = "designed: #1d2128")] public string? MenuHoverBackground { get; set; }
+    [Parameter, Setting("Menu corner radius", Group = "Appearance", Order = 20, Description = "designed: 10px")] public string? MenuRadius { get; set; }
+
+    // ── Behavior ────────────────────────────────────────────────────────────────────────────────
+    [Parameter, Setting("Show user menu", Group = "Behavior", Order = 1, Description = "The signed-in user's avatar and dropdown")] public bool ShowUserMenu { get; set; } = true;
+    [Parameter, Setting("Show email in menu", Group = "Behavior", Order = 2)] public bool ShowEmail { get; set; } = true;
+    [Parameter, Setting("Show admin link", Group = "Behavior", Order = 3, Description = "Admin-role users only")] public bool ShowAdminLink { get; set; } = true;
+    [Parameter, Setting("Logo hover effect", Group = "Behavior", Order = 4, Description = "Brighten the logo on hover")] public bool LogoHoverEffect { get; set; } = true;
+    [Parameter, Setting("Animations", Group = "Behavior", Order = 5, Description = "Transitions on the logo")] public bool Animations { get; set; } = true;
+
+    // ── Advanced ────────────────────────────────────────────────────────────────────────────────
+    /// <summary>Additional CSS classes appended to the root element.</summary>
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 1)] public string? CssClass { get; set; }
+
+    /// <summary>Inline CSS appended to the root element's style attribute.</summary>
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 2)] public string? CssStyle { get; set; }
 
     private string _logoText = "MindAttic";
+    private string _logoHref = "/";
+
+    private string _modifiers => string.Join(" ", new[]
+    {
+        Animations ? null : "mah-root--no-anim",
+        LogoHoverEffect ? null : "mah-root--no-hover",
+    }.Where(s => s is not null));
 
     private string _outerStyle => string.Join(";", new[]
     {
         string.IsNullOrEmpty(Padding) ? null : $"padding:{Padding}",
         string.IsNullOrEmpty(Margin)  ? null : $"margin:{Margin}",
         string.IsNullOrEmpty(Align) ? null : $"text-align:{Align}",
+        Var("--mah-position", Position switch { Positions.Sticky => "sticky", Positions.Static => "relative", _ => null }),
+        Var("--mah-height", Height),
+        Var("--mah-gap", Gap),
+        Var("--mah-z", ZIndex?.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+        Var("--mah-bg", Background),
+        Var("--mah-blur", BackdropFilter),
+        Var("--mah-border", BorderBottom),
+        Var("box-shadow", Shadow),
+        Var("--mah-logo-color", LogoColor),
+        Var("--mah-logo-size", LogoSize),
+        Var("--mah-logo-weight", LogoWeight?.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+        Var("--mah-logo-spacing", LogoLetterSpacing),
+        Var("--mah-logo-opacity", LogoOpacity is { } o ? Math.Clamp(o, 0, 1).ToString(System.Globalization.CultureInfo.InvariantCulture) : null),
+        Var("--mah-avatar-bg", AvatarBackground),
+        Var("--mah-avatar-color", AvatarColor),
+        Var("--mah-avatar-size", AvatarSize),
+        Var("--mah-avatar-radius", AvatarRadius),
+        Var("--mah-menu-bg", MenuBackground),
+        Var("--mah-menu-border", MenuBorderColor),
+        Var("--mah-menu-text", MenuTextColor),
+        Var("--mah-menu-muted", MenuMutedColor),
+        Var("--mah-menu-hover", MenuHoverBackground),
+        Var("--mah-menu-radius", MenuRadius),
         CssStyle,
     }.Where(s => s is not null));
+
+    private string? _logoStyle => Var("font-family", LogoFontFamily);
+
+    private static string? Var(string prop, string? value) => string.IsNullOrWhiteSpace(value) ? null : prop + ":" + value.Trim();
 
     protected override void OnParametersSet()
     {
@@ -89,6 +181,7 @@
                                   Context?.Site?.GetSetting("header.logo"),
                                   Context?.Site?.Key)
                     ?? "MindAttic";
+        _logoHref = string.IsNullOrWhiteSpace(LogoHref) ? "/" : SafeUrl(LogoHref.Trim());
     }
 
     private static string Initials(string name)

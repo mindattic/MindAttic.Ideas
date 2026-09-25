@@ -17,6 +17,20 @@
     if (window.__maSacredInit) return; // re-evaluation would stack another rAF loop + MutationObserver
     window.__maSacredInit = true;
 
+    // Instance settings (MAI-A45), read LIVE from <data data-ma-settings="plugin.sacredgeometry" value="{json}">.
+    // Page-wide defaults only: a canvas's own data-sacred-spin / data-sacred-bg still win.
+    var cache = { raw: null, parsed: {} };
+    function settings() {
+        var el = document.querySelector('[data-ma-settings="plugin.sacredgeometry"]');
+        var raw = el ? el.getAttribute('value') : null;
+        if (raw !== cache.raw) {
+            cache.raw = raw;
+            try { cache.parsed = raw ? JSON.parse(raw) : {}; } catch (e) { cache.parsed = {}; }
+        }
+        return cache.parsed;
+    }
+    var reducedMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
     function start(SG) {
         var visible = new Set();
         var sized = new WeakSet();
@@ -71,15 +85,19 @@
         }).observe(document.body, { childList: true, subtree: true });
 
         function frame() {
+            var s = settings();
+            var animate = s.animate !== false && !(s.respectReducedMotion === true && reducedMotion && reducedMotion.matches);
+            var speed = typeof s.speed === 'number' && s.speed >= 0 ? s.speed : 1;
+            var defSpin = typeof s.defaultSpin === 'number' && s.defaultSpin > 0 ? s.defaultSpin : 0.01;
             visible.forEach(function (cv) {
                 if (!cv.isConnected) { detach(cv); return; }
                 if (!cv.width) sizeCanvas(cv);
                 var idx = parseInt(cv.dataset.sacredShape, 10);
                 if (!(idx >= 0 && idx < SG.count)) return;
                 var ctx = cv.getContext('2d');
-                var spin = parseFloat(cv.dataset.sacredSpin); if (!(spin > 0)) spin = 0.01;
-                cv._sgPhase += spin;
-                var bg = cv.dataset.sacredBg;
+                var spin = parseFloat(cv.dataset.sacredSpin); if (!(spin > 0)) spin = defSpin;
+                if (animate) cv._sgPhase += spin * speed;
+                var bg = cv.dataset.sacredBg || s.defaultBackground;
                 if (bg) { ctx.fillStyle = bg; ctx.fillRect(0, 0, cv.width, cv.height); }
                 else { ctx.clearRect(0, 0, cv.width, cv.height); }
                 // The shape is square; the box may not be. Draw it "cover"-style — sized to the larger
