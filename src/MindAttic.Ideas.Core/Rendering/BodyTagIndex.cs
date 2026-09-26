@@ -130,7 +130,10 @@ public static class BodyTagIndex
         return null;
     }
 
-    private static string Escape(string v) => v.Replace("&", "&amp;").Replace("\"", "&quot;");
+    // < and > are escaped too: values are decoded on parse, and the tag pipeline (UpgradePascalCaseTags,
+    // Scan) is regex-based, so a literal "<Component.X />" inside a re-emitted value would be upgraded.
+    private static string Escape(string v) =>
+        v.Replace("&", "&amp;").Replace("\"", "&quot;").Replace("<", "&lt;").Replace(">", "&gt;");
 
     private static List<KeyValuePair<string, string?>> ParseAttributes(string tail)
     {

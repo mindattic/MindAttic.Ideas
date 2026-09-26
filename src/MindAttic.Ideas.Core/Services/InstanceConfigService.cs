@@ -81,6 +81,18 @@ public sealed class InstanceConfigService(
             // Only known settings with values that survive typing are written, so a bad paste cannot
             // inject arbitrary attributes into the author's markup.
             var clean = InstanceSettingsBinder.Parse(InstanceSettingsBinder.Serialize(type, values));
+            // ...but an attribute the author already wrote that does not type-check (e.g. an int setting
+            // hand-written as "3.5") is left exactly as authored when this save did not change it, rather
+            // than silently deleted because some OTHER setting was edited.
+            var current = TagValues(tag, schema);
+            foreach (var d in schema)
+            {
+                if (clean.ContainsKey(d.Name)) continue;
+                var submitted = values.FirstOrDefault(kv => string.Equals(kv.Key, d.Name, StringComparison.OrdinalIgnoreCase)).Value;
+                if (submitted is not null && current.TryGetValue(d.Name, out var was) && was == submitted
+                    && tag.Get(d.Name) is { } raw)
+                    clean[d.Name] = raw;
+            }
             model.BodyHtml = BodyTagIndex.SetSettings(model.BodyHtml, tag.Index, schema.Select(d => d.Name), clean);
             var result = await pages.SaveAsync(model, user, ct);
             return result.Ok ? null : result.Error ?? "Save failed.";

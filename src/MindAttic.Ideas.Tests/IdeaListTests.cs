@@ -296,6 +296,50 @@ public class IdeaListTests
     }
 
     [Test]
+    public async Task Import_RemovesSlotsTheListOmits_ButAnOldFormatListLeavesThemAlone()
+    {
+        var source = NewEnv();
+        await SeedSiteAsync(source);
+        await AddPageAsync(source, "frontpage", "<h1>Hello</h1>");   // exported with NO slots → InstanceSettings = []
+        Assert.That(await ExportAsync(source), Is.Zero);
+
+        var target = NewEnv();
+        Assert.That(await ImportAsync(target), Is.Zero);
+        async Task AddStaleSlotAsync()
+        {
+            await using var db = target.Db();
+            var p = await db.Pages.SingleAsync();
+            db.WidgetPlacementSettings.Add(new WidgetPlacementSettings
+            {
+                PageId = p.Id, SlotName = "theme", WidgetRef = "Theme.cyberspace", SettingsJson = """{"PagePadding":"9rem"}""",
+                CreatedUtc = DateTime.UtcNow, ModifiedUtc = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+        async Task<int> SlotCountAsync() { await using var db = target.Db(); return await db.WidgetPlacementSettings.CountAsync(); }
+
+        await AddStaleSlotAsync();
+        Assert.That(await ImportAsync(target), Is.Zero);
+        Assert.That(await SlotCountAsync(), Is.Zero, "a list that names no slots is authoritative: the stale slot goes");
+
+        // Rewrite the list as a pre-MAI-A45 file (no instanceSettings property at all).
+        using (var zip = ZipFile.Open(ListPath, ZipArchiveMode.Update))
+        {
+            var entry = zip.GetEntry(IdeaList.ManifestEntryName)!;
+            string json;
+            using (var r = new StreamReader(entry.Open())) json = r.ReadToEnd();
+            var node = System.Text.Json.Nodes.JsonNode.Parse(json)!;
+            foreach (var p in node["pages"]!.AsArray()) p!.AsObject().Remove("instanceSettings");
+            entry.Delete();
+            using var w = new StreamWriter(zip.CreateEntry(IdeaList.ManifestEntryName).Open());
+            w.Write(node.ToJsonString());
+        }
+        await AddStaleSlotAsync();
+        Assert.That(await ImportAsync(target), Is.Zero);
+        Assert.That(await SlotCountAsync(), Is.EqualTo(1), "an old-format list says nothing about slots, so it must not delete them");
+    }
+
+    [Test]
     public async Task ImportAdoptsAnIndependentlySeededPage_BySlug_RatherThanDuplicatingIt()
     {
         var source = NewEnv();

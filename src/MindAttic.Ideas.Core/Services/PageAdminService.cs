@@ -75,6 +75,8 @@ public interface IPageAdminService
 {
     Task<IReadOnlyList<PageSummary>> ListAsync(CancellationToken ct = default);
     Task<PageEditModel?> GetAsync(int id, CancellationToken ct = default);
+    /// <summary>A blank model for a NEW page, carrying the site defaults it will inherit (it lands in the default site).</summary>
+    Task<PageEditModel> NewAsync(CancellationToken ct = default);
     Task<PageSaveResult> SaveAsync(PageEditModel model, ClaimsPrincipal author, CancellationToken ct = default);
     Task<bool> SetPublishedAsync(int id, bool published, CancellationToken ct = default);
     Task<bool> SetEnabledAsync(int id, bool enabled, CancellationToken ct = default);
@@ -134,6 +136,22 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
             WorkflowState        = p.WorkflowState,
             ActivePlugins        = DeserializePlugins(p.ActivePluginsJson),
             InheritPlugins       = string.IsNullOrWhiteSpace(p.ActivePluginsJson),
+        };
+    }
+
+    public async Task<PageEditModel> NewAsync(CancellationToken ct = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
+        // Same site rule as SaveAsync for a new page: the default site, else the first one.
+        var site = await db.Sites.AsNoTracking().FirstOrDefaultAsync(s => s.IsDefault, ct)
+                   ?? await db.Sites.AsNoTracking().FirstOrDefaultAsync(ct);
+        var siteDefault = site is null ? null : await db.Settings.AsNoTracking()
+            .Where(s => s.Scope == "Site" && s.ScopeId == site.Id && s.Key == "plugins.default")
+            .Select(s => s.Value).FirstOrDefaultAsync(ct);
+        return new PageEditModel
+        {
+            Kind = PageKind.Data, Enabled = true, InheritPlugins = true,
+            SiteDefaultPlugins = DeserializePlugins(siteDefault),
         };
     }
 

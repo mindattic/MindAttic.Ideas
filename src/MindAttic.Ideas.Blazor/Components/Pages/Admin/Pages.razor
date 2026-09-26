@@ -453,10 +453,11 @@
         await Load();
     }
 
-    private void StartNew()
+    private async Task StartNew()
     {
         CloseInstance();
-        editing = new PageEditModel { Kind = PageKind.Data, Enabled = true };
+        pageIssues = [];
+        editing = await PagesSvc.NewAsync();
         isNew = true; status = "";
     }
 

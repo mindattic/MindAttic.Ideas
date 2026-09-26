@@ -119,8 +119,10 @@ public sealed class IdeaListPage
     /// <summary>
     /// The page's theme / plugin / code-page INSTANCE settings (MAI-A45), one per slot. Component
     /// instances need no entry: their settings are attributes on their tags in <see cref="BodyHtml"/>.
+    /// Null = the list predates instance settings, so import leaves the page's slots untouched; a present
+    /// list (even empty) is the whole truth, so import removes slots it does not name.
     /// </summary>
-    public List<IdeaListInstanceSettings> InstanceSettings { get; set; } = [];
+    public List<IdeaListInstanceSettings>? InstanceSettings { get; set; }
 
     /// <summary>
     /// Every "Kind.key@version" this page's body/theme/active-plugins actually reference, pinned to the

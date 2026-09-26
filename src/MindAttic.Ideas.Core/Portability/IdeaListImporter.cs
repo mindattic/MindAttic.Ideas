@@ -337,7 +337,14 @@ public sealed class IdeaListImporter(
 
                 // Instance settings (MAI-A45): upsert each slot, snapshotting a changed row into its history
                 // exactly as IWidgetInstanceSettingsService would, so an import is rollback-able too.
-                foreach (var slot in lp.InstanceSettings.Where(s => s.Slot.Length > 0))
+                if (lp.InstanceSettings is { } listedSlots)
+                {
+                    var keep = listedSlots.Select(s => s.Slot).ToHashSet(StringComparer.Ordinal);
+                    var stale = await db.WidgetPlacementSettings
+                        .Where(s => s.PageId == page.Id).ToListAsync(ct);
+                    db.WidgetPlacementSettings.RemoveRange(stale.Where(s => !keep.Contains(s.SlotName)));
+                }
+                foreach (var slot in (lp.InstanceSettings ?? []).Where(s => s.Slot.Length > 0))
                 {
                     var row = await db.WidgetPlacementSettings
                         .FirstOrDefaultAsync(s => s.PageId == page.Id && s.SlotName == slot.Slot, ct);
