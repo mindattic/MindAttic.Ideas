@@ -216,6 +216,7 @@ public sealed class IdeaListImporter(
             site.HostBindings = ls.HostBindings;
             site.DefaultThemeKey = ls.DefaultThemeKey;
             site.DefaultThemeVersion = ls.DefaultThemeVersion;
+            site.DefaultThemeMode = ls.DefaultThemeMode;
             site.SettingsJson = ls.SettingsJson;
             site.ModifiedUtc = DateTime.UtcNow;
             if (!dryRun) await db.SaveChangesAsync(ct);

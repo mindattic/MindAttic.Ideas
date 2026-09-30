@@ -47,10 +47,11 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       # Every MindAttic.* package is restored from the git-tracked lib/local-packages feed. A
-      # GitHub runner has no C:\LocalNuGet and no ../local-feed; NuGet tolerates those missing
-      # sources silently, which is exactly why the vendored copies have to be there.
+      # GitHub runner has no C:\LocalNuGet and no ../local-feed; --ignore-failed-sources tells NuGet
+      # to tolerate those two missing sources instead of hard-failing with NU1301, which is exactly
+      # why the vendored copies have to be there.
       - name: Restore
-        run: dotnet restore MindAttic.Ideas.slnx
+        run: dotnet restore MindAttic.Ideas.slnx --ignore-failed-sources
 
       - name: Build
         run: dotnet build MindAttic.Ideas.slnx -c Release --no-restore

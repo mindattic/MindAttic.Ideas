@@ -10,10 +10,15 @@
     --text: #2a2418;
     --muted: #7a6f57;
     --line: #f0e3c8;
-    --accent: #ff7a18;       /* sunset orange */
-    --accent-2: #1ea7e1;     /* sky blue */
+    --accent: #ff7a18;       /* sunset orange — decorative only (blockquote rule, ::selection) */
+    --accent-2: #086f96;     /* sky blue, deepened for WCAG AA as link text (designed: #1ea7e1) */
     --accent-contrast: #ffffff;
     --code-bg: #fdf2dc;
+    /* The bright decorative --accent fails AA as text/button-fill, so buttons and the h1 gradient use
+       their own darker, verified-AA pair instead of --accent directly. */
+    --theme-button-bg-default: #a04600;
+    --theme-heading-grad-2: #a66b00;
+    --theme-heading-color-default: #34291a;
 
     min-height: 100vh;
     margin: 0;
@@ -34,9 +39,10 @@
 
 .theme-summer h1, .theme-summer h2, .theme-summer h3,
 .theme-summer h4, .theme-summer h5, .theme-summer h6 {
-    line-height: 1.2; font-weight: 800; margin: 1.8em 0 0.6em; letter-spacing: -0.01em; color: var(--theme-heading-color, #34291a);
+    line-height: 1.2; font-weight: 800; margin: 1.8em 0 0.6em; letter-spacing: -0.01em;
+    color: var(--theme-heading-color, var(--theme-heading-color-default, #34291a));
 }
-.theme-summer h1 { font-size: 2.2rem; background: linear-gradient(90deg, var(--accent), #ffb300); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.theme-summer h1 { font-size: 2.2rem; background: linear-gradient(90deg, var(--theme-button-bg-default), var(--theme-heading-grad-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .theme-summer h2 { font-size: 1.6rem; }
 .theme-summer h3 { font-size: 1.3rem; }
 
@@ -66,7 +72,7 @@
 .theme-summer th { background: var(--code-bg); font-weight: 700; }
 
 .theme-summer button, .theme-summer .btn {
-    background: var(--theme-button-bg, linear-gradient(90deg, var(--accent), #ffb300)); color: var(--accent-contrast); border: 0;
+    background: var(--theme-button-bg, var(--theme-button-bg-default)); color: var(--accent-contrast); border: 0;
     border-radius: var(--theme-button-radius, 999px); padding: 0.55rem 1.2rem; font: inherit; font-weight: 700; cursor: pointer;
     transition: filter 0.12s ease;
 }
@@ -85,6 +91,24 @@
 /* ── Instance-setting modifiers (MAI-A45) — added by V1.razor when a toggle is off or an opt-in value is set ── */
 .theme-summer--no-hover button, .theme-summer--no-hover .btn { transition: none; }
 .theme-summer--no-hover button:hover, .theme-summer--no-hover .btn:hover { filter: none; }
-.theme-summer--plain-h1 h1 { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--theme-heading-color, #34291a); }
+.theme-summer--plain-h1 h1 { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--theme-heading-color, var(--theme-heading-color-default, #34291a)); }
 .theme-summer--heading-font h1, .theme-summer--heading-font h2, .theme-summer--heading-font h3, .theme-summer--heading-font h4, .theme-summer--heading-font h5, .theme-summer--heading-font h6 { font-family: var(--theme-heading-font); }
 .theme-summer--link-hover a:hover { color: var(--theme-link-hover); }
+
+/* ── Dark mode — activated by the ThemeToggle plugin via data-theme-mode="dark" on <html>. WCAG 2.2 AA
+      verified: text/muted/link all clear 4.5:1 on --bg, button text clears 4.5:1 on --theme-button-bg-default,
+      and both h1 gradient stops individually clear 3:1 (large text) on --bg. ── */
+html[data-theme-mode="dark"] .theme-summer {
+    --bg: #1c150a;
+    --surface: #261c0e;
+    --text: #fbeedc;
+    --muted: #cbb48c;
+    --line: #3a2c17;
+    --accent: #ff9d4d;
+    --accent-2: #5ec8f0;
+    --accent-contrast: #1c1206;
+    --code-bg: #2c2011;
+    --theme-button-bg-default: #ff9d4d;
+    --theme-heading-grad-2: #ffcf8a;
+    --theme-heading-color-default: #fbeedc;
+}

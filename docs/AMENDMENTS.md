@@ -1733,3 +1733,51 @@ through. That filter stays as defense in depth behind the sanitizer.
 settings kept minus handlers/script URLs, sanitized inline style + custom properties, Untrusted drops
 citizen tags. `PageMarkupValidatorTests`, `CitizenValidatorTests`, `ShippedContentValidationTests`,
 `EffectivePluginsTests`, `PackageSignerTests.SignFile_OnARealFile_SignsInPlace`.)*
+
+## MAI-A47 — Every theme carries a light AND a dark palette, switched by the ThemeToggle plugin; Light + Dark merge into Ideas {#MAI-A47}
+
+Every Theme citizen now ships two complete, independently WCAG 2.2 AA-compliant palettes — light and
+dark — instead of one fixed color scheme. The active mode is a `data-theme-mode="light"|"dark"` attribute
+on `<html>`; each theme's `theme.css` reads it via an `html[data-theme-mode="dark"] .theme-<name> { ... }`
+override block (or, for the two themes whose custom properties already live on `:root` — Cyberspace,
+Hardware — a direct `html[data-theme-mode="light"] { ... }` override, since `:root` and `<html>` are the
+same element). No theme's markup (`V1.razor`) changed to support this; only `theme.css` grew a second
+palette block per theme.
+
+**`Light` and `Dark` retire as standalone themes and merge into one new theme, `Ideas`** — its light
+palette is the former Light theme's, its dark palette the former Dark theme's, both already AA-clean.
+The theme catalog goes from 8 to 7: `Autumn, Cyberspace, Hardware, Ideas, Spring, Summer, Winter`. A data
+migration (`AddSiteDefaultThemeMode`) rewrites any `Sites.DefaultThemeKey`/`Pages.ThemeKey` still holding
+`"light"`/`"dark"` to `"ideas"`, since those keys would otherwise silently fall back to the unrelated
+built-in `bootstrap` theme once the old citizens are gone. `Page.ThemeKey` has no matching `ThemeMode`
+override column — a page previously pinned to `Dark` follows the site default / visitor's toggle choice
+after migration, not a forced mode; this was accepted as within scope, not a gap to close later.
+
+**`Site.DefaultThemeMode`** (new column, `"light"` default) is the admin-configured first-visit default,
+edited in `SitesPanel.razor` next to `DefaultThemeKey`/`DefaultThemeVersion`. No render-context plumbing
+(`ISiteContext`/`CmsSiteContext`/`PageHost`) needed to learn about it — the only reader is `App.razor`,
+which resolves the requesting site directly (mirroring `PageHost`'s own `SiteResolver.ResolveAsync`
+pattern) and sets `data-theme-mode` on `<html>` before anything else renders. A synchronous inline script
+— the first thing in `<head>`, ahead of every stylesheet `<link>` — then corrects that attribute from
+`localStorage` (`mindattic.theme-mode`) if the visitor already made an explicit choice, so there is no
+flash of the wrong mode on either a first visit or a return one. No CSP is enforced yet and no pre-paint
+plugin slot exists (`PluginSlot` is `BeforeBody`/`AfterBody` only, both inside `<body>`, per MAI-A27), so
+this host-authored script in `App.razor` — not a plugin — is the only thing allowed to run that early.
+
+**`Plugin.ThemeToggle`** (new, `Slot = BeforeBody`) renders a sun/moon icon button; both icons always
+render, and `html[data-theme-mode]` CSS shows/hides between them. Its `assets/themetoggle.js` only
+handles the click: flips `data-theme-mode` on `<html>` and writes the choice to `localStorage`, in the
+same idempotent-IIFE / try-catch-wrapped-storage style as `Component.TabBoard`'s engine script.
+
+A handful of pre-existing accent colors that already failed AA independent of this change were fixed as
+part of making every theme's *native* palette pass too, since the requirement is that both modes of every
+theme pass, not just the newly-added one: Spring's pink link/button (`#e26d9b`→`#b23367`), Summer's sky-blue
+link (`#1ea7e1`→`#086f96`) and its button/H1-gradient (which used the bright decorative `--accent` directly
+as button-fill and gradient text-fill — now a separate, mode-aware `--theme-button-bg-default` /
+`--theme-heading-grad-2` pair carries that role instead, leaving `--accent` free to stay bright for
+purely-decorative uses), Winter's glacial-blue link (`#2f7dbd`→`#1f5e91`), and Hardware's muted text
+(`#5a7566`→`#7fa08f`).
+
+*(no automated contrast test added — verified by hand with a one-off WCAG relative-luminance script against
+every theme × mode × text/muted/link/button-text pair before writing the final values; see `SitesPanel.razor`,
+`SiteAdminService`, `App.razor`, `library/Plugins/ThemeToggle/`, and each `library/Themes/*/assets/theme.css`.)*

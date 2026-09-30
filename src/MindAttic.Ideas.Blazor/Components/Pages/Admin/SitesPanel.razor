@@ -69,6 +69,13 @@
                 <label class="admin-area">Theme version
                     <input type="number" min="1" @bind="editing.DefaultThemeVersion" />
                 </label>
+                <label class="admin-area">Default mode
+                    <select @bind="editing.DefaultThemeMode">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                    <small>What a first-time visitor sees before they use the theme toggle.</small>
+                </label>
             </div>
 
             @if (editing.IsDefault)
@@ -101,6 +108,7 @@
         public string HostBindings { get; set; } = "";
         public string DefaultThemeKey { get; set; } = "";
         public int DefaultThemeVersion { get; set; } = 1;
+        public string DefaultThemeMode { get; set; } = "light";
         public bool IsDefault { get; set; }
     }
 
@@ -127,7 +135,7 @@
         {
             Id = s.Id, Key = s.Key, Name = s.Name, HostBindings = s.HostBindings,
             DefaultThemeKey = s.DefaultThemeKey, DefaultThemeVersion = s.DefaultThemeVersion,
-            IsDefault = s.IsDefault,
+            DefaultThemeMode = s.DefaultThemeMode, IsDefault = s.IsDefault,
         };
         isNew = false; status = "";
     }
@@ -138,7 +146,7 @@
         var (ok, error) = isNew
             ? await CreateAsync()
             : await SitesSvc.UpdateAsync(editing.Id, editing.Name, editing.HostBindings,
-                                         editing.DefaultThemeKey, editing.DefaultThemeVersion);
+                                         editing.DefaultThemeKey, editing.DefaultThemeVersion, editing.DefaultThemeMode);
         statusBad = !ok;
         status = ok ? (isNew ? "Site created." : "Saved.") : (error ?? "Could not save.");
         if (ok)
@@ -154,7 +162,7 @@
     private async Task<(bool, string?)> CreateAsync()
     {
         var (ok, error, _) = await SitesSvc.CreateAsync(editing!.Key, editing.Name, editing.HostBindings,
-                                                        editing.DefaultThemeKey, editing.DefaultThemeVersion);
+                                                        editing.DefaultThemeKey, editing.DefaultThemeVersion, editing.DefaultThemeMode);
         return (ok, error);
     }
 

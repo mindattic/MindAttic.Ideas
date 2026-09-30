@@ -12,6 +12,8 @@ public sealed class Site : ContentEntityBase
     public string HostBindings { get; set; } = "";
     public string DefaultThemeKey { get; set; } = "";
     public int DefaultThemeVersion { get; set; } = 1;
+    /// <summary>"light" or "dark" — the mode a first-time visitor sees before any ThemeToggle choice.</summary>
+    public string DefaultThemeMode { get; set; } = "light";
     public bool IsDefault { get; set; }
     public string? SettingsJson { get; set; }
 }

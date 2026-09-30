@@ -185,7 +185,7 @@ public class SiteResolutionTests
 
         var svc = new SiteAdminService(db);
         var (ok, error, id) = await svc.CreateAsync("rdb", "Ryan DeBraal",
-            " RyanDeBraal.com ,, https://www.ryandebraal.com/ ", "dark", 1);
+            " RyanDeBraal.com ,, https://www.ryandebraal.com/ ", "dark", 1, "dark");
 
         var created = await db.Sites.SingleAsync(s => s.Id == id);
         Assert.Multiple(() =>
@@ -205,7 +205,7 @@ public class SiteResolutionTests
         await db.SaveChangesAsync();
 
         var svc = new SiteAdminService(db);
-        var (ok, error, _) = await svc.CreateAsync("dupe", "Dupe", "MINDATTIC.com", "", 1);
+        var (ok, error, _) = await svc.CreateAsync("dupe", "Dupe", "MINDATTIC.com", "", 1, "light");
 
         Assert.Multiple(() =>
         {

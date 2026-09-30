@@ -27,9 +27,9 @@
     public string? MutedColor { get; set; }
     [Parameter, Setting("Border / rule color", Group = "Colors", Order = 6, Description = "--line (designed: #f0e3c8)")]
     public string? LineColor { get; set; }
-    [Parameter, Setting("Accent color", Group = "Colors", Order = 7, Description = "--accent (designed: #ff7a18)")]
+    [Parameter, Setting("Accent color", Group = "Colors", Order = 7, Description = "--accent, decorative only — blockquote rule, text selection (designed: #ff7a18)")]
     public string? AccentColor { get; set; }
-    [Parameter, Setting("Second accent color", Group = "Colors", Order = 8, Description = "--accent-2 (designed: #1ea7e1)")]
+    [Parameter, Setting("Second accent color", Group = "Colors", Order = 8, Description = "--accent-2, the link color (designed: light #086f96 / dark #5ec8f0)")]
     public string? Accent2Color { get; set; }
     [Parameter, Setting("Text on accent", Group = "Colors", Order = 9, Description = "--accent-contrast (designed: #ffffff)")]
     public string? AccentContrastColor { get; set; }
@@ -41,7 +41,7 @@
     public string? LinkColor { get; set; }
     [Parameter, Setting("Link hover color", Group = "Colors", Order = 13, Description = "designed: same as the link color")]
     public string? LinkHoverColor { get; set; }
-    [Parameter, Setting("Button background", Group = "Colors", Order = 14, Description = "CSS background of buttons / .btn (designed: an orange gradient)")]
+    [Parameter, Setting("Button background", Group = "Colors", Order = 14, Description = "CSS background of buttons / .btn (designed: a WCAG AA-safe burnt orange, light #a04600 / dark #ff9d4d)")]
     public string? ButtonBackground { get; set; }
     [Parameter, Setting("Font family", Group = "Typography", Order = 1, Description = "designed: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif")]
     public string? FontFamily { get; set; }

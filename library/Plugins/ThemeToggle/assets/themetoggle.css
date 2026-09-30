@@ -1,0 +1,25 @@
+/* MindAttic.Ideas.Plugin.ThemeToggle — a site-wide light/dark switch button. Theme-agnostic: colors
+   derive from currentColor/inherit so it reads correctly against whatever theme/mode is active. */
+.ma-tt-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    transition: background-color .15s ease;
+}
+.ma-tt-btn:hover,
+.ma-tt-btn:focus-visible { background: color-mix(in srgb, currentColor 12%, transparent); }
+
+.ma-tt-icon { width: 1.15rem; height: 1.15rem; }
+
+/* Light mode (the default, absent attribute or explicitly "light"): show the sun, hide the moon. */
+.ma-tt-icon-moon { display: none; }
+html[data-theme-mode="dark"] .ma-tt-icon-sun { display: none; }
+html[data-theme-mode="dark"] .ma-tt-icon-moon { display: block; }

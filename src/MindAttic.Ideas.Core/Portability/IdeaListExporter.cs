@@ -68,6 +68,7 @@ public sealed class IdeaListExporter(CmsDbContext db, IMediaStore media)
                 HostBindings = site.HostBindings,
                 DefaultThemeKey = site.DefaultThemeKey,
                 DefaultThemeVersion = site.DefaultThemeVersion,
+                DefaultThemeMode = site.DefaultThemeMode,
                 SettingsJson = site.SettingsJson,
             };
 

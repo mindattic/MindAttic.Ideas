@@ -424,8 +424,8 @@ its packed output as optional content. Present on disk today:
 
 | Folder | Citizens present |
 |---|---|
-| `Themes/` (8) | Autumn, Cyberspace, Dark, Hardware, Light, Spring, Summer, Winter |
-| `Plugins/` (12) | AtticFont, BackHomeM, BackToTop, Breadcrumbs, Cyberspace, Footer, Header, NavMenu, OutfitFont, PinFooter, SacredGeometry, SocialLinks |
+| `Themes/` (7) | Autumn, Cyberspace, Hardware, Ideas, Spring, Summer, Winter |
+| `Plugins/` (13) | AtticFont, BackHomeM, BackToTop, Breadcrumbs, Cyberspace, Footer, Header, NavMenu, OutfitFont, PinFooter, SacredGeometry, SocialLinks, ThemeToggle |
 | `Components/` (27) | Accordion, Callout, Card, Carousel, ChiMesh, Claudia, CodeBlock, ContactForm, FromHtml, FromMd, Frontpage, Gallery, HardwareHero, HelloWorld, Hero, IdeasBrochure, IdeasFrontpage, LegionPersonas, MediaImage, MediaLink, MindAtticFrontpage, ModalPopup, TabBoard, TableOfContents, Tabs, Textbox, VideoEmbed, WebSnapshot |
 
 (`library/README.md` and `library/docs/BIBLE.md` currently cite 43 total citizens / 23 Components as of

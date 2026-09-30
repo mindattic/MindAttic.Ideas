@@ -9,7 +9,7 @@
     color-scheme: dark;
     --hw-bg:           #0b0e0d;
     --hw-fg:           #b8ccbf;
-    --hw-muted:        #5a7566;
+    --hw-muted:        #7fa08f;  /* lightened from #5a7566 for WCAG AA (was ~3.7:1 on --hw-bg) */
     --hw-accent:       #00d26a;
     --hw-accent-fg:    #0b0e0d;
     --hw-surface:      #0f1812;
@@ -121,4 +121,24 @@ strong { color: var(--hw-fg); font-weight: 700; }
 
 @media (max-width: 640px) {
     html { font-size: 14px; }
+}
+
+/* ── Light mode — activated by the ThemeToggle plugin via data-theme-mode="light" on <html>. These vars
+      already live on :root (this theme predates the .theme-<name> convention), so an attribute selector
+      on <html> overrides them directly — html IS :root. WCAG 2.2 AA verified: text/muted/link/accent-as-
+      text all clear 4.5:1 on --hw-bg. Scanlines stay on; they're a near-invisible texture, not text. ── */
+html[data-theme-mode="light"] {
+    --hw-bg: #f4f8f5;
+    --hw-fg: #0f1a13;
+    --hw-muted: #3f5c4c;
+    --hw-accent: #067a41;
+    --hw-accent-fg: #f4f8f5;
+    --hw-surface: #e8f2ec;
+    --hw-border: rgba(0, 120, 60, 0.18);
+    --hw-code-bg: rgba(0, 120, 60, 0.06);
+    --hw-line: rgba(0, 120, 60, 0.16);
+    --hw-link: #0a7a43;
+    --hw-link-hover: #065c31;
+    --hw-table-stripe: rgba(0, 120, 60, 0.05);
+    color-scheme: light;
 }

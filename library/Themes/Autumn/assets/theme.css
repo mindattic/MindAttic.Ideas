@@ -89,3 +89,21 @@
 .theme-autumn--no-hover button:hover, .theme-autumn--no-hover .btn:hover { filter: none; }
 .theme-autumn--no-bar h1::after { display: none; }
 .theme-autumn--heading-font h1, .theme-autumn--heading-font h2, .theme-autumn--heading-font h3, .theme-autumn--heading-font h4, .theme-autumn--heading-font h5, .theme-autumn--heading-font h6 { font-family: var(--theme-heading-font); }
+
+/* ── Dark mode — activated by the ThemeToggle plugin via data-theme-mode="dark" on <html>. WCAG 2.2 AA
+      verified: text/muted/link all clear 4.5:1 on --bg, button text clears 4.5:1 on --accent. ── */
+html[data-theme-mode="dark"] .theme-autumn {
+    --bg: #1c130d;
+    --surface: #241a12;
+    --text: #f6e8d8;
+    --muted: #c2a488;
+    --line: #3c2c1e;
+    --accent: #ff8659;
+    --accent-2: #f2b563;
+    --accent-contrast: #241207;
+    --code-bg: #2a1e14;
+}
+html[data-theme-mode="dark"] .theme-autumn h1, html[data-theme-mode="dark"] .theme-autumn h2, html[data-theme-mode="dark"] .theme-autumn h3,
+html[data-theme-mode="dark"] .theme-autumn h4, html[data-theme-mode="dark"] .theme-autumn h5, html[data-theme-mode="dark"] .theme-autumn h6 {
+    color: var(--theme-heading-color, #ffe4cc);
+}

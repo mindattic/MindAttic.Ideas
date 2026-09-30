@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- Ideas theme — the CMS's own default look, merging the former Light and Dark themes into one
+       theme with two modes (MAI-A?? ThemeToggle). Common props + the Abstractions reference come from
+       ../../Directory.Build.props. Identity by convention: namespace tail (ideas) + V{n} class ->
+       Theme/ideas/1. Self-contained chrome lives in assets/theme.css (a PLAIN folder, NOT wwwroot/, so
+       StaticWebAssetsEnabled=false keeps the Razor SDK from claiming it). At pack time assets/ IS the
+       package wwwroot, served at /_ideas/Theme/ideas/1/. -->
+  <PropertyGroup>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+</Project>

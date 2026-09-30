@@ -1,0 +1,115 @@
+/* ============================================================================
+   MindAttic.Ideas.Theme.Ideas.V1 — the CMS's own default theme, with two WCAG 2.2 AA palettes.
+   Everything is scoped under .theme-ideas (the chrome wrapper) so it never leaks into widgets or
+   other themes. Served at /_ideas/Theme/ideas/1/theme.css.
+
+   Light mode is the native (undecorated) block below — it was the former standalone "Light" theme.
+   Dark mode is the html[data-theme-mode="dark"] .theme-ideas override block further down — it was
+   the former standalone "Dark" theme. The ThemeToggle plugin sets data-theme-mode on <html>.
+   ============================================================================ */
+
+.theme-ideas {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1b2230;
+    --muted: #5c6675;
+    --line: #e3e7ee;
+    --accent: #2563eb;
+    --accent-contrast: #ffffff;
+    --code-bg: #f0f2f6;
+    --theme-heading-color-default: inherit;
+    --theme-button-weight: 600;
+    --theme-button-hover-brightness: 1.07;
+    --theme-selection-alpha: 25%;
+
+    min-height: 100vh;
+    margin: 0;
+    background: var(--theme-background, var(--bg));
+    color: var(--text);
+    font-family: var(--theme-font-family, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+    font-size: var(--theme-font-size, 16px);
+    line-height: var(--theme-line-height, 1.65);
+    -webkit-font-smoothing: antialiased;
+}
+
+.theme-ideas * { box-sizing: border-box; }
+
+/* Comfortable reading column for free-form page content. */
+.theme-ideas > * { max-width: var(--theme-content-width, 860px); margin-inline: auto; padding-inline: var(--theme-gutter, 1.25rem); }
+.theme-ideas { padding-block: 2.5rem; }
+
+.theme-ideas h1, .theme-ideas h2, .theme-ideas h3,
+.theme-ideas h4, .theme-ideas h5, .theme-ideas h6 {
+    line-height: 1.25; font-weight: 700; margin: 1.8em 0 0.6em; letter-spacing: -0.01em;
+    color: var(--theme-heading-color, var(--theme-heading-color-default, inherit));
+}
+.theme-ideas h1 { font-size: 2.1rem; }
+.theme-ideas h2 { font-size: 1.6rem; }
+.theme-ideas h3 { font-size: 1.3rem; }
+
+.theme-ideas a { color: var(--theme-link, var(--accent)); text-decoration: none; }
+.theme-ideas a:hover { text-decoration: underline; }
+
+.theme-ideas hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+
+.theme-ideas code {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 5px;
+    padding: 0.1em 0.4em; font-size: 0.88em;
+    font-family: var(--theme-code-font, "Cascadia Code", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+}
+.theme-ideas pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--theme-block-radius, 10px);
+    padding: 1rem 1.1rem; overflow-x: auto;
+}
+.theme-ideas pre code { background: none; border: 0; padding: 0; }
+
+.theme-ideas blockquote {
+    margin: 1.4rem 0; padding: 0.4rem 1.1rem; color: var(--muted);
+    border-left: 3px solid var(--accent); background: var(--surface);
+}
+
+.theme-ideas table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; }
+.theme-ideas th, .theme-ideas td { border: 1px solid var(--line); padding: 0.5rem 0.7rem; text-align: left; }
+.theme-ideas th { background: var(--code-bg); font-weight: 600; }
+
+.theme-ideas button, .theme-ideas .btn {
+    background: var(--theme-button-bg, var(--accent)); color: var(--accent-contrast); border: 0; border-radius: var(--theme-button-radius, 8px);
+    padding: 0.55rem 1.1rem; font: inherit; font-weight: var(--theme-button-weight); cursor: pointer;
+    transition: filter 0.12s ease;
+}
+.theme-ideas button:hover, .theme-ideas .btn:hover { filter: brightness(var(--theme-button-hover-brightness)); }
+
+.theme-ideas input, .theme-ideas select, .theme-ideas textarea {
+    background: var(--surface); color: var(--text); border: 1px solid var(--line);
+    border-radius: var(--theme-input-radius, 8px); padding: 0.5rem 0.65rem; font: inherit;
+}
+.theme-ideas input:focus, .theme-ideas select:focus, .theme-ideas textarea:focus {
+    outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent);
+}
+
+.theme-ideas ::selection { background: color-mix(in srgb, var(--accent) var(--theme-selection-alpha), transparent); }
+
+/* ── Instance-setting modifiers (MAI-A45) — added by V1.razor when a toggle is off or an opt-in value is set ── */
+.theme-ideas--no-hover button, .theme-ideas--no-hover .btn { transition: none; }
+.theme-ideas--no-hover button:hover, .theme-ideas--no-hover .btn:hover { filter: none; }
+.theme-ideas--heading-font h1, .theme-ideas--heading-font h2, .theme-ideas--heading-font h3, .theme-ideas--heading-font h4, .theme-ideas--heading-font h5, .theme-ideas--heading-font h6 { font-family: var(--theme-heading-font); }
+.theme-ideas--link-hover a:hover { color: var(--theme-link-hover); }
+
+/* ── Dark mode (formerly the standalone "Dark" theme) — activated by the ThemeToggle plugin via
+      data-theme-mode="dark" on <html>. Same structural rules above apply; only the palette and the
+      few mode-specific touches (heading default, button weight/hover brightness, selection alpha)
+      change here. ── */
+html[data-theme-mode="dark"] .theme-ideas {
+    --bg: #0e1116;
+    --surface: #161b22;
+    --text: #e6edf3;
+    --muted: #9aa6b2;
+    --line: #273039;
+    --accent: #58a6ff;
+    --accent-contrast: #0e1116;
+    --code-bg: #1b222c;
+    --theme-heading-color-default: #f0f6fc;
+    --theme-button-weight: 700;
+    --theme-button-hover-brightness: 1.1;
+    --theme-selection-alpha: 30%;
+}

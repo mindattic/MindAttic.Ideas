@@ -9,7 +9,7 @@
     --text: #16222e;
     --muted: #5a6b7b;
     --line: #d4e0ea;
-    --accent: #2f7dbd;       /* glacial blue */
+    --accent: #1f5e91;       /* glacial blue, deepened for WCAG AA as link/button text */
     --accent-2: #6aa9d6;     /* ice */
     --accent-contrast: #ffffff;
     --code-bg: #e6eef6;
@@ -85,3 +85,21 @@
 .theme-winter--no-hover button:hover, .theme-winter--no-hover .btn:hover { filter: none; }
 .theme-winter--heading-font h1, .theme-winter--heading-font h2, .theme-winter--heading-font h3, .theme-winter--heading-font h4, .theme-winter--heading-font h5, .theme-winter--heading-font h6 { font-family: var(--theme-heading-font); }
 .theme-winter--link-hover a:hover { color: var(--theme-link-hover); }
+
+/* ── Dark mode — activated by the ThemeToggle plugin via data-theme-mode="dark" on <html>. WCAG 2.2 AA
+      verified: text/muted/link all clear 4.5:1 on --bg, button text clears 4.5:1 on --accent. ── */
+html[data-theme-mode="dark"] .theme-winter {
+    --bg: #0c1620;
+    --surface: #132330;
+    --text: #e9f2f9;
+    --muted: #a6c0d3;
+    --line: #22374a;
+    --accent: #6db6e8;
+    --accent-2: #9ad3f0;
+    --accent-contrast: #0a1720;
+    --code-bg: #17293a;
+}
+html[data-theme-mode="dark"] .theme-winter h1, html[data-theme-mode="dark"] .theme-winter h2, html[data-theme-mode="dark"] .theme-winter h3,
+html[data-theme-mode="dark"] .theme-winter h4, html[data-theme-mode="dark"] .theme-winter h5, html[data-theme-mode="dark"] .theme-winter h6 {
+    color: var(--theme-heading-color, #dcecf7);
+}

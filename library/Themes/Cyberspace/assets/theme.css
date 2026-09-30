@@ -80,3 +80,24 @@ html, body {
 .cs-no-hover .btn:hover, .cs-no-hover .btn:focus-visible { transform: none; }
 .cs-no-hover .btn-primary:hover { box-shadow: none; }
 .cs-no-hover .btn-secondary:hover { background: transparent; }
+
+/* ── Light mode — activated by the ThemeToggle plugin via data-theme-mode="light" on <html>. These vars
+      already live on :root (this theme predates the .theme-<name> convention), so an attribute selector
+      on <html> overrides them directly — html IS :root. WCAG 2.2 AA verified: text/muted/link all clear
+      4.5:1 on --bg; --accent/--accent-fg (button) are unchanged since that pair's contrast doesn't depend
+      on the page background. ── */
+html[data-theme-mode="light"] {
+    --bg: #f5f6f7;
+    --fg: #14181b;
+    --muted: #5c6570;
+    --border: rgba(20, 24, 27, 0.14);
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --content-bg: rgba(255, 255, 255, 0.9);
+    --code-bg: rgba(0, 0, 0, 0.04);
+    --code-border: rgba(0, 0, 0, 0.10);
+    --link: #a35400;
+    --link-hover: #8a4700;
+    --table-stripe: rgba(0, 0, 0, 0.03);
+    --table-border: rgba(20, 24, 27, 0.12);
+    color-scheme: light;
+}

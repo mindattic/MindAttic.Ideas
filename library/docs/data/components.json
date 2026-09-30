@@ -512,6 +512,17 @@
       "notes": "Baseline set (MAIL-A3). Icon row for GitHub/X/LinkedIn/YouTube/email/website/RSS; inline SVG path data (no icon files); social.* site-setting fallbacks."
     },
     {
+      "id": "plugin.themetoggle",
+      "key": "themetoggle",
+      "kind": "Plugin",
+      "version": 1,
+      "displayName": "Theme Toggle",
+      "assembly": "MindAttic.Ideas.Plugin.ThemeToggle",
+      "artifact": "MindAttic.Ideas.Plugin.ThemeToggle.V1.idea",
+      "mount": "/_ideas/Plugin/themetoggle/1",
+      "notes": "Site-wide light/dark switch. Sets html[data-theme-mode] and persists the choice in localStorage (mindattic.theme-mode); App.razor sets the server-rendered first-visit default from the site's DefaultThemeMode."
+    },
+    {
       "id": "plugin.tooltip",
       "key": "tooltip",
       "kind": "Plugin",
@@ -550,16 +561,6 @@
       "notes": "Composes its look from four separately-installed Widget .ideas by string id; bundles only its own chrome (theme.css)."
     },
     {
-      "id": "theme.dark",
-      "key": "dark",
-      "kind": "Theme",
-      "version": 1,
-      "displayName": "Dark",
-      "assembly": "MindAttic.Ideas.Theme.Dark",
-      "artifact": "MindAttic.Ideas.Theme.Dark.V1.idea",
-      "mount": "/_ideas/Theme/dark/1"
-    },
-    {
       "id": "theme.hardware",
       "key": "hardware",
       "kind": "Theme",
@@ -568,18 +569,18 @@
       "assembly": "MindAttic.Ideas.Theme.Hardware",
       "artifact": "MindAttic.Ideas.Theme.Hardware.V1.idea",
       "mount": "/_ideas/Theme/hardware/1",
-      "notes": "Industrial/maker dark chrome: PCB-green palette, monospace typography, scan-line texture. Structural .hw-* layout classes live in the HardwareHero widget; compose that alongside any page that uses this theme."
+      "notes": "Industrial/maker dark chrome: PCB-green palette, monospace typography, scan-line texture. Structural .hw-* layout classes live in the HardwareHero widget; compose that alongside any page that uses this theme. Both light and dark palettes verified WCAG 2.2 AA, switched via html[data-theme-mode]."
     },
     {
-      "id": "theme.light",
-      "key": "light",
+      "id": "theme.ideas",
+      "key": "ideas",
       "kind": "Theme",
       "version": 1,
-      "displayName": "Light",
-      "assembly": "MindAttic.Ideas.Theme.Light",
-      "artifact": "MindAttic.Ideas.Theme.Light.V1.idea",
-      "mount": "/_ideas/Theme/light/1",
-      "notes": "Self-contained chrome scoped under .theme-light."
+      "displayName": "Ideas",
+      "assembly": "MindAttic.Ideas.Theme.Ideas",
+      "artifact": "MindAttic.Ideas.Theme.Ideas.V1.idea",
+      "mount": "/_ideas/Theme/ideas/1",
+      "notes": "The CMS's own default theme. Merges the former standalone Light and Dark themes into one theme with two WCAG 2.2 AA palettes, switched via html[data-theme-mode] (the ThemeToggle plugin). Self-contained chrome scoped under .theme-ideas."
     },
     {
       "id": "theme.spring",

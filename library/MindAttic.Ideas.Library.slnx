@@ -2,8 +2,7 @@
   <Folder Name="/Themes/">
     <Project Path="Themes/Cyberspace/MindAttic.Ideas.Theme.Cyberspace.csproj" />
     <Project Path="Themes/Hardware/MindAttic.Ideas.Theme.Hardware.csproj" />
-    <Project Path="Themes/Light/MindAttic.Ideas.Theme.Light.csproj" />
-    <Project Path="Themes/Dark/MindAttic.Ideas.Theme.Dark.csproj" />
+    <Project Path="Themes/Ideas/MindAttic.Ideas.Theme.Ideas.csproj" />
     <Project Path="Themes/Spring/MindAttic.Ideas.Theme.Spring.csproj" />
     <Project Path="Themes/Summer/MindAttic.Ideas.Theme.Summer.csproj" />
     <Project Path="Themes/Autumn/MindAttic.Ideas.Theme.Autumn.csproj" />
@@ -24,6 +23,7 @@
     <Project Path="Plugins/BackHomeM/MindAttic.Ideas.Plugin.BackHomeM.csproj" />
     <Project Path="Plugins/SocialLinks/MindAttic.Ideas.Plugin.SocialLinks.csproj" />
     <Project Path="Plugins/Header/MindAttic.Ideas.Plugin.Header.csproj" />
+    <Project Path="Plugins/ThemeToggle/MindAttic.Ideas.Plugin.ThemeToggle.csproj" />
   </Folder>
   <Folder Name="/Components/">
     <Project Path="Components/Textbox/MindAttic.Ideas.Component.Textbox.csproj" />

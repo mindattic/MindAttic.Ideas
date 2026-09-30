@@ -57,6 +57,7 @@ public sealed class IdeaListSite
     public string HostBindings { get; set; } = "";
     public string DefaultThemeKey { get; set; } = "";
     public int DefaultThemeVersion { get; set; } = 1;
+    public string DefaultThemeMode { get; set; } = "light";
     public string? SettingsJson { get; set; }
 }
 

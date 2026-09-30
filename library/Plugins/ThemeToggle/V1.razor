@@ -1,0 +1,34 @@
+@namespace MindAttic.Ideas.Plugin.ThemeToggle
+@inherits PluginBase
+@attribute [Idea(DisplayName = "Theme Toggle", Slot = PluginSlot.BeforeBody)]
+
+@*  MindAttic.Ideas.Plugin.ThemeToggle.V1 — a site-wide light/dark switch for whichever theme is active.
+    Both icons always render; theme.css-independent CSS here shows/hides them off the data-theme-mode
+    attribute App.razor sets on <html> (server default) and themetoggle.js corrects/toggles (localStorage
+    "mindattic.theme-mode"). No theme markup changes needed — see docs/AMENDMENTS.md and each theme's
+    theme.css for the html[data-theme-mode="..."] palette overrides this plugin switches between. *@
+
+<link rel="stylesheet" href="/_ideas/Plugin/themetoggle/1/themetoggle.css" />
+<script src="/_ideas/Plugin/themetoggle/1/themetoggle.js" defer></script>
+
+<button type="button" class="ma-tt-btn @CssClass" style="@CssStyle" aria-label="@(AriaLabel ?? "Toggle light/dark theme")">
+    <svg class="ma-tt-icon ma-tt-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+    <svg class="ma-tt-icon ma-tt-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+</button>
+
+@code {
+    /// <summary>Overrides the button's accessible name. Default "Toggle light/dark theme".</summary>
+    [Parameter, Setting("Aria label", Group = "Content", Order = 1, Copyable = false, Description = "designed: \"Toggle light/dark theme\"")]
+    public string? AriaLabel { get; set; }
+
+    [Parameter, Setting("Extra CSS classes", Group = "Advanced", Order = 1)] public string? CssClass { get; set; }
+    [Parameter, Setting("Extra inline style", Group = "Advanced", Order = 2)] public string? CssStyle { get; set; }
+}

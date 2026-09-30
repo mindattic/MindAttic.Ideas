@@ -7,7 +7,7 @@ namespace MindAttic.Ideas.Core.Services;
 
 public sealed record SiteSummary(
     int Id, string Key, string Name, string HostBindings,
-    string DefaultThemeKey, int DefaultThemeVersion, bool IsDefault, int PageCount);
+    string DefaultThemeKey, int DefaultThemeVersion, string DefaultThemeMode, bool IsDefault, int PageCount);
 
 /// <summary>
 /// Site CRUD for the Admin "Sites" panel. Without this, a second domain could only be added by hand
@@ -17,9 +17,9 @@ public interface ISiteAdminService
 {
     Task<IReadOnlyList<SiteSummary>> ListAsync(CancellationToken ct = default);
     Task<(bool Ok, string? Error, int Id)> CreateAsync(string key, string name, string hostBindings,
-        string defaultThemeKey, int defaultThemeVersion, CancellationToken ct = default);
+        string defaultThemeKey, int defaultThemeVersion, string defaultThemeMode, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> UpdateAsync(int id, string name, string hostBindings,
-        string defaultThemeKey, int defaultThemeVersion, CancellationToken ct = default);
+        string defaultThemeKey, int defaultThemeVersion, string defaultThemeMode, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> MakeDefaultAsync(int id, CancellationToken ct = default);
     Task<(bool Ok, string? Error)> DeleteAsync(int id, CancellationToken ct = default);
     /// <summary>Which site a given host would resolve to right now — the panel's "test a hostname" box.</summary>
@@ -38,7 +38,7 @@ public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
     }
 
     public async Task<(bool Ok, string? Error, int Id)> CreateAsync(string key, string name, string hostBindings,
-        string defaultThemeKey, int defaultThemeVersion, CancellationToken ct = default)
+        string defaultThemeKey, int defaultThemeVersion, string defaultThemeMode, CancellationToken ct = default)
     {
         key = (key ?? "").Trim().ToLowerInvariant();
         if (key.Length == 0) return (false, "A site key is required.", 0);
@@ -54,6 +54,7 @@ public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
             HostBindings = CleanBindings(hostBindings),
             DefaultThemeKey = (defaultThemeKey ?? "").Trim(),
             DefaultThemeVersion = defaultThemeVersion <= 0 ? 1 : defaultThemeVersion,
+            DefaultThemeMode = NormalizeThemeMode(defaultThemeMode),
             // Never steal default from an existing site as a side effect of creating one.
             IsDefault = !await db.Sites.AnyAsync(ct),
             CreatedUtc = DateTime.UtcNow,
@@ -65,7 +66,7 @@ public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
     }
 
     public async Task<(bool Ok, string? Error)> UpdateAsync(int id, string name, string hostBindings,
-        string defaultThemeKey, int defaultThemeVersion, CancellationToken ct = default)
+        string defaultThemeKey, int defaultThemeVersion, string defaultThemeMode, CancellationToken ct = default)
     {
         var site = await db.Sites.FirstOrDefaultAsync(s => s.Id == id, ct);
         if (site is null) return (false, "Site not found.");
@@ -77,6 +78,7 @@ public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
         site.HostBindings = CleanBindings(hostBindings);
         site.DefaultThemeKey = (defaultThemeKey ?? "").Trim();
         site.DefaultThemeVersion = defaultThemeVersion <= 0 ? 1 : defaultThemeVersion;
+        site.DefaultThemeMode = NormalizeThemeMode(defaultThemeMode);
         site.ModifiedUtc = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         return (true, null);
@@ -144,6 +146,8 @@ public sealed class SiteAdminService(CmsDbContext db) : ISiteAdminService
 
     private static string CleanBindings(string? raw) => string.Join(", ", HostBinding.Split(raw).Distinct());
 
+    private static string NormalizeThemeMode(string? mode) => mode == "dark" ? "dark" : "light";
+
     private static SiteSummary ToSummary(Site s, int pageCount) => new(
-        s.Id, s.Key, s.Name, s.HostBindings, s.DefaultThemeKey, s.DefaultThemeVersion, s.IsDefault, pageCount);
+        s.Id, s.Key, s.Name, s.HostBindings, s.DefaultThemeKey, s.DefaultThemeVersion, s.DefaultThemeMode, s.IsDefault, pageCount);
 }

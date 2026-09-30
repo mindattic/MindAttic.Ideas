@@ -131,15 +131,4 @@
         }
         return list;
     }
-
-    /// <summary>Settings are author-editable, so a hostile scheme must never reach an href.</summary>
-    private static string SafeUrl(string url) => IsUnsafeUrl(url) ? "/" : url;
-
-    private static bool IsUnsafeUrl(string url)
-    {
-        var trimmed = url.TrimStart();
-        return trimmed.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase)
-            || trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
-            || trimmed.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase);
-    }
 }

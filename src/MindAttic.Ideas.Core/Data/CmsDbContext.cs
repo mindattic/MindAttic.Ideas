@@ -54,6 +54,7 @@ public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbCon
             e.Property(x => x.Name).HasMaxLength(200);
             e.Property(x => x.HostBindings).HasMaxLength(1000);
             e.Property(x => x.DefaultThemeKey).HasMaxLength(120);
+            e.Property(x => x.DefaultThemeMode).HasMaxLength(10).HasDefaultValue("light");
             e.Property(x => x.RowVersion).IsRowVersion();
             e.HasQueryFilter(x => !x.IsDeleted);
         });

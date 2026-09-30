@@ -9,7 +9,7 @@
     --text: #1f2e22;
     --muted: #5a6f5e;
     --line: #d8ead2;
-    --accent: #e26d9b;       /* cherry blossom */
+    --accent: #b23367;       /* cherry blossom, deepened for WCAG AA as link/button text */
     --accent-2: #4caf50;     /* new-leaf green */
     --accent-contrast: #ffffff;
     --code-bg: #eaf5e6;
@@ -90,3 +90,21 @@
 .theme-spring--no-bar h1::after { display: none; }
 .theme-spring--heading-font h1, .theme-spring--heading-font h2, .theme-spring--heading-font h3, .theme-spring--heading-font h4, .theme-spring--heading-font h5, .theme-spring--heading-font h6 { font-family: var(--theme-heading-font); }
 .theme-spring--link-hover a:hover { color: var(--theme-link-hover); }
+
+/* ── Dark mode — activated by the ThemeToggle plugin via data-theme-mode="dark" on <html>. WCAG 2.2 AA
+      verified: text/muted/link all clear 4.5:1 on --bg, button text clears 4.5:1 on --accent. ── */
+html[data-theme-mode="dark"] .theme-spring {
+    --bg: #101a12;
+    --surface: #17231a;
+    --text: #eaf5ea;
+    --muted: #9fc0a2;
+    --line: #25362a;
+    --accent: #ff8fb8;
+    --accent-2: #5fd66a;
+    --accent-contrast: #1b0e13;
+    --code-bg: #1c2a1f;
+}
+html[data-theme-mode="dark"] .theme-spring h1, html[data-theme-mode="dark"] .theme-spring h2, html[data-theme-mode="dark"] .theme-spring h3,
+html[data-theme-mode="dark"] .theme-spring h4, html[data-theme-mode="dark"] .theme-spring h5, html[data-theme-mode="dark"] .theme-spring h6 {
+    color: var(--theme-heading-color, #d9f2da);
+}

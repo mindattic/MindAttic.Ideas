@@ -22,10 +22,10 @@ Three packagings of one thing — not three projects.
 
 ```
 library/
-  Themes/      Cyberspace, Light, Dark, Spring, Summer, Autumn, Winter, Hardware  (8)
+  Themes/      Cyberspace, Ideas, Spring, Summer, Autumn, Winter, Hardware  (7)
   Plugins/     Tooltip, OutfitFont, AtticFont, SacredGeometry, Cyberspace,
                NavMenu, Breadcrumbs, Footer, PinFooter, BackToTop, BackHomeM,
-               SocialLinks, PoweredBy  (13)
+               SocialLinks, PoweredBy, ThemeToggle  (14)
   Components/  HelloWorld, Textbox, Card, Accordion, Tabs, TabBoard, Gallery,
                Carousel, Callout, CodeBlock, VideoEmbed, ContactForm, ModalPopup,
                Hero, HardwareHero, TableOfContents, LegionPersonas, IdeasBrochure,
