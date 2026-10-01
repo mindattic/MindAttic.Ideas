@@ -1,34 +1,51 @@
 # Deploying MindAttic.Ideas to Azure
 
-MindAttic.Ideas is a **single deployment** — one App Service, one app pool, one database
-([BIBLE §1](BIBLE.md#MAI-§1)). Pages go live by uploading a `.idea`, not by redeploying, so this
-runbook runs rarely: once to stand the estate up, then only when the engine itself changes.
+One build of the CMS runs as **two deployments** on one App Service plan ([MAI-A48](AMENDMENTS.md#MAI-A48)):
 
-Everything here is **passwordless**. The web app has a system-assigned managed identity and reaches
-SQL, Blob Storage and Key Vault through it. There is no SQL password, no storage key and no client
-secret in the repo, in CI, or in app settings ([HOUSE-LAW-3](../../MindAttic.HouseRules.md#HOUSE-LAW-3)).
+| Site | What it is |
+|---|---|
+| **https://mindattic.azurewebsites.net** | The company site: MindAttic's own content, on Ideas. |
+| **https://mindattic-ideas-demo.azurewebsites.net** | A public, **vanilla** demo of Ideas: every first-party `.idea` installed, one hello-world page. **Wiped and re-provisioned every hour** with a new admin password, shown (behind a captcha) on the company site's Ideas page. |
+
+Each is still a single deployment ([BIBLE §1](BIBLE.md#MAI-§1)): pages go live by uploading a `.idea`,
+not by redeploying. Deploy only when the engine itself changes.
+
+Everything is **passwordless**. Each site has a system-assigned managed identity and reaches SQL, Blob
+Storage and Key Vault through it. There is no SQL password, no storage key and no client secret in the
+repo, in CI, or in app settings ([HOUSE-LAW-3](../../MindAttic.HouseRules.md#HOUSE-LAW-3)).
 
 ---
 
 ## What gets created
 
-`infra/main.bicep` provisions 16 resources:
+`infra/main.bicep` (with `infra/webapp.bicep` for each site):
 
-| Resource | Why |
-|---|---|
-| App Service plan (B1 Linux) + web app | The single deployment. B1 is the cheapest tier with Always On, so the first request after idle is not a cold start. |
-| Azure SQL server + `MindAtticIdeas` database | The CMS catalog, pages, media rows, users. Entra-only auth — the server has no SQL login at all. |
-| Storage account, container `media` | Blob-backed media ([A31](AMENDMENTS.md#MAI-A31)). Private: no anonymous access, no shared keys. |
-| Storage container `dp-keys` | The Data Protection key ring. |
-| Key Vault + RSA key `dp-protect` | Wraps the key ring at rest. Purge protection is **on** — losing this key invalidates every issued auth cookie at once. |
-| 5 role assignments | The app identity gets Storage Blob Data Contributor, Key Vault Crypto User and Key Vault Secrets User; the deployer gets Crypto Officer + Secrets Officer so it can create the key and seed secrets. |
+| Resource | Company site | Demo |
+|---|---|---|
+| App Service plan (B1 Linux) | shared | shared |
+| Web app + managed identity | `mindattic` | `mindattic-ideas-demo` |
+| Azure SQL (Entra-only) | `MindAtticIdeas` | `MindAtticIdeasDemoTemplate` (pristine) → copied hourly to `MindAtticIdeasDemo` |
+| Storage containers (private, no shared keys) | `media`, `dp-keys` | `demo-media`, `demo-dp-keys` |
+| Key Vault (RBAC) | `kv-mindatticid-…`: auth secrets, `dp-protect`, `signing-cert-public`, `turnstile-secret` | `kv-demo-…`: its own auth secrets and `dp-protect`, `admin-password`, `credentials` |
 
-Roughly **$18–20/month** at the defaults (B1 ≈ $13, SQL Basic ≈ $5, storage and Key Vault are
-pennies). Pass `-SqlDatabaseSku GP_S_Gen5_1` for a serverless database that auto-pauses instead.
+**Isolation.** The demo identity has no role on anything of the company site's: not its database, vault,
+or containers. The only reach across is one-way and named: the company site may **read** the demo vault's
+`credentials` secret, which only CI writes. So nothing done on the demo — even with its admin login —
+can touch the company site.
+
+Roughly **$23–25/month** at the defaults (B1 ≈ $13 shared by both sites, three Basic databases ≈ $5 each,
+storage and vaults are pennies).
 
 ---
 
 ## First-time setup
+
+### 0. The GitHub OIDC principal
+
+CI authenticates as the app registration **`gh-mindattic-ideas-deploy`** (Contributor on the resource
+group) with two federated credentials, `repo:mindattic/MindAttic.Ideas:ref:refs/heads/master` and
+`repo:mindattic/MindAttic.Ideas:environment:production`. Its ids are the repo secrets
+`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`. No other secret is needed.
 
 ### 1. Provision
 
@@ -38,80 +55,73 @@ az login
 ./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas
 ```
 
-The script is re-runnable. It deploys the Bicep, then does the two things Bicep cannot:
+Re-runnable. After the Bicep it: seeds both vaults (CSPRNG, never printed; existing secrets left
+alone); creates the SQL contained users **by object id** (company site read/write on `MindAtticIdeas`;
+demo read/write on the template only; CI `db_ddladmin` + read/write on both); applies the schema to the
+template; restarts the company site and dispatches the first demo reset.
 
-- **Seeds the auth Security bucket into Key Vault.** MindAttic.Authentication fail-closes without
-  `pepper.v1`, `bootstrap-token`, `reset-token-key` and `dp-kek`. They are generated with a CSPRNG,
-  written straight to Key Vault, and never printed or written to disk. App settings reference them
-  as `@Microsoft.KeyVault(SecretUri=…)`, which the config chain surfaces at
-  `MindAttic:Vault:Security:<name>`. Existing secrets are left alone.
-- **Creates the SQL contained user** for the app identity with `db_datareader` + `db_datawriter`
-  **only**. The running site never issues DDL.
+### 2. Deploy
 
-### 2. Apply the schema
+Push `master` (or `npm run deploy -- --app ideas` from MindAttic.Deploy). See below.
 
-The database is empty until you do this — `MigrateAsync` runs in Development only.
+### 3. Turn on the demo-login reveal (Cloudflare Turnstile)
 
-```pwsh
-./infra/migrate.ps1 -ResourceGroup rg-mindattic-ideas -SqlServer sql-….database.windows.net
-```
+Until this is done the Ideas page shows the demo link and "Demo sign-in opens soon" — the login is
+never shown without a human check.
 
-Generates an **idempotent** script (every migration guarded by its own `__EFMigrationsHistory`
-check), authenticates with an Entra access token, opens a single-IP firewall rule and always removes
-it again. Re-running is a no-op.
+1. In Cloudflare → Turnstile, add a widget for `mindattic.azurewebsites.net` (Managed mode).
+2. Store the **secret key** in the company vault:
+   `az keyvault secret set --vault-name kv-mindatticid-… --name turnstile-secret --value <secret>`
+3. Re-run provisioning with the **site key** (public):
+   `./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas -TurnstileSiteKey <site key>`
 
-### 3. Deploy the app
+### 4. Sign in to the company site
 
-Either push once from here:
-
-```pwsh
-dotnet publish src/MindAttic.Ideas.Blazor -c Release -o publish
-az webapp deploy --resource-group rg-mindattic-ideas --name mindattic-ideas --src-path publish --type zip
-```
-
-…or hand it to CI (below), which is the steady state.
-
-### 4. Sign in and rotate
-
-```pwsh
-az keyvault secret show --vault-name kv-… --name bootstrap-token --query value -o tsv
-```
-
-Sign in at `https://mindattic-ideas.azurewebsites.net/` as `admin` with that token. The account is
-created `MustChangePassword`, so you are forced to set a real one. **Rotate the Key Vault secret
-immediately afterwards** — it has served its purpose.
+If its database has no users yet:
+`az keyvault secret show --vault-name kv-mindatticid-… --name bootstrap-token --query value -o tsv` —
+sign in as `admin`, you are forced to change it, then **rotate the Key Vault secret**.
 
 ---
 
-## Continuous deployment
+## Continuous deployment — `.github/workflows/azure-deploy.yml`
 
-`.github/workflows/azure-deploy.yml` runs on push to `master` and on manual dispatch, in three
-gated stages:
+On push to `master` and on dispatch:
 
-1. **build** — restore, build Release, run the full NUnit suite, publish, and emit the idempotent
-   migration script. A red test stops the deploy.
-2. **migrate** — apply that script to Azure SQL under an Entra token, opening and closing a
-   single-run firewall rule. Skippable via the `skip_migrate` dispatch input.
-3. **deploy** — push the artifact, then poll `/_health` until it answers 200. Deploy runs when
-   migrate is skipped, but never when migrate *ran and failed*: shipping code against a schema that
-   did not apply is how you get a half-migrated production database.
+1. **build** — restore, build, full NUnit suite (a red test stops everything), publish, generate
+   `seed/demo.idealist` from the packages actually in the build, emit the idempotent migration script.
+2. **migrate** — apply it to `MindAtticIdeas` **and** the demo template, under an Entra token through a
+   single-run firewall rule. Skippable with `skip_migrate`.
+3. **deploy** — the same artifact to both sites, restart each onto it (a zip deploy overwrites DLLs
+   under the running process on Linux), smoke-test the company site's `/_health` **and** `/`.
+4. **reset-demo** — run the demo reset, so the demo never runs new code on an old schema.
 
-### Required repo secrets
+Never deploys when migrate *ran and failed*: that is how you get a half-migrated database.
 
-| Secret | Used by | How to get it |
-|---|---|---|
-| `AZURE_WEBAPP_PUBLISH_PROFILE` | deploy | App Service → **Get publish profile**, paste the whole XML. |
-| `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` | migrate | An app registration with a **federated credential** for this repo, granted Contributor on the resource group. |
+## The hourly demo reset — `.github/workflows/demo-reset.yml`
 
-If you would rather not set up OIDC, dispatch the workflow with `skip_migrate: true` and run
-`infra/migrate.ps1` by hand whenever a migration is added. Everything else still works.
+Hourly (`cron: '0 * * * *'`), after every deploy, and on dispatch. It is the demo's operator; the
+product contains no reset code ([MAI-A39](AMENDMENTS.md#MAI-A39)).
 
-### Turning it on in MindAttic.Deploy
+1. `credentials` := `{"status":"resetting"}` — the Ideas page says the demo is resetting.
+2. A new password (CSPRNG, 4×5 unambiguous characters) → demo vault `admin-password`. Masked in logs,
+   passed only through files.
+3. Delete `MindAtticIdeasDemo`; copy `MindAtticIdeasDemoTemplate` to it (schema + the demo identity's
+   user, no content). Empty `demo-media`.
+4. Touch an app setting: restarts the demo and makes it re-read its Key Vault references. It boots from
+   `seed/demo.idealist` (every package + the hello page) and creates `admin` from the new password with
+   no forced change (`MindAttic:Auth:Bootstrap:RequirePasswordChange=false`). Sessions revalidate every
+   15 s and cap at 1 h, so the previous hour's sessions die immediately.
+5. Wait for `/_health` and `/`, then **sign in for real** with the new password.
+6. Only then `credentials` := `{status: ready, url, username, password, validUntilUtc}`.
 
-The `ideas` entry in `MindAttic.Deploy/projects.json → apps[]` ships `disabled: true`
-([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2) — a target is disabled with a note, never
-deleted). Once the infra exists and the secrets are set, flip it to `disabled: false`; then
-`npm run deploy -- --app ideas` pushes `master` and fires the workflow.
+Any failure leaves `credentials` at `resetting`: the page never shows a login that does not work.
+GitHub's cron can start a few minutes late; the displayed login is always the live one. Expect a few
+minutes of demo downtime at the top of each hour.
+
+**How the company site shows it.** `IdeasBrochure` asks the host's `IDemoAccess` feature for the URL and
+status only. The login is fetched by the browser from `POST /_demo/reveal` with a Turnstile token, which
+the server verifies with Cloudflare (bound to the `demo-reveal` action), rate-limits per client IP
+(5/minute), and answers `Cache-Control: no-store`. The password is never in page HTML or logs.
 
 ---
 
@@ -187,7 +197,7 @@ Set as App Service application settings. `__` maps to `:` in the config chain.
 ## Troubleshooting
 
 **App returns 500 immediately after deploy.** Almost always a missing required setting. Check the
-log stream: `az webapp log tail -g rg-mindattic-ideas -n mindattic-ideas`. `DataProtection:BlobUri`
+log stream: `az webapp log tail -g rg-mindattic-ideas -n mindattic` (or `-n mindattic-ideas-demo`). `DataProtection:BlobUri`
 and `DataProtection:KeyVaultKeyId` throw by name; a missing Security secret throws
 `Required auth secret '<name>' was not found`.
 

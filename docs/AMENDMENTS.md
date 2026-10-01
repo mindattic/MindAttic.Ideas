@@ -1781,3 +1781,48 @@ purely-decorative uses), Winter's glacial-blue link (`#2f7dbd`→`#1f5e91`), and
 *(no automated contrast test added — verified by hand with a one-off WCAG relative-luminance script against
 every theme × mode × text/muted/link/button-text pair before writing the final values; see `SitesPanel.razor`,
 `SiteAdminService`, `App.razor`, `library/Plugins/ThemeToggle/`, and each `library/Themes/*/assets/theme.css`.)*
+
+## MAI-A48 — Two deployments of one build: the company site `mindattic` and an hourly-reset public demo {#MAI-A48}
+
+**What changed (2026-10-01).** The estate now runs the same build twice on one App Service plan:
+**`mindattic`** (the company site, replacing the `mindattic-ideas` web app — Azure cannot rename an app,
+so a new one took over the same database, storage and vault and the old one was deleted) and
+**`mindattic-ideas-demo`**, a public, vanilla install of Ideas that is wiped and re-provisioned every hour
+with a new admin password. The company site's Ideas page links to it and reveals the current login
+behind Cloudflare Turnstile.
+
+**This is A39 applied, not reversed.** The demo is a separate deployment with its own database, Key
+Vault, blob containers and identity; nothing in the product resets anything. The operator is
+`.github/workflows/demo-reset.yml`: it replaces the demo database with a copy of a pristine template
+(`MindAtticIdeasDemoTemplate`: schema + the demo identity's contained user, no content), empties the
+demo's media, rotates the password, restarts the demo, signs in for real, and only then publishes the
+login. A copy, not a row delete, because `Pages` is temporal and the app identity cannot clear
+`PagesHistory`, and a freshly created database would have no contained users.
+
+**Isolation, stated as reach.** The demo identity holds roles on its own vault and its own two
+containers only, and exists only in the template (so only in its copies). The company identity's single
+grant on the demo is read on ONE secret, `credentials`. Only CI writes that secret and `admin-password`.
+Demo admin access cannot run code — unsigned `.idea` packages are refused (A42) and markup is sanitized
+(A46) — and everything it does is gone within the hour.
+
+**Product changes, all generic and inert unless configured:**
+- `MindAttic:Auth:Bootstrap:RequirePasswordChange=false` creates the first admin without the forced
+  change, for a login that is shared and rotated from outside (otherwise the first visitor would set a
+  password nobody else knows).
+- With an idealist configured, `SeedService` seeds only the structural minimum; the idealist owns content.
+- `Ideas:Packages:StorageRoot` relocates the package store and extraction root.
+- `IDemoAccess` (Abstractions, append-only) exposes the demo URL and status — never credentials — to a
+  component. The login is returned only by `POST /_demo/reveal`: server-verified Turnstile token bound to
+  the `demo-reveal` action, 5 per minute per client IP, `no-store`; 503 when no Turnstile keys exist.
+- `IdeasBrochure` gains a "Try the live demo" section.
+- `seed/demo/frontpage.html` + `tools/build-demo-idealist.ps1`: CI generates `seed/demo.idealist` from the
+  packages actually in the build, so the demo can never list one that is not shipped.
+
+**Infra.** `main.bicep` keeps `appName = mindattic-ideas` as the name base of every SHARED resource (each
+name derives from it; changing it would build a second estate) and names the two sites with
+`siteAppName`/`demoAppName` through `webapp.bicep`. CI deploys both over OIDC (no publish-profile secret)
+and migrates the company database and the template.
+
+*(tests: `AdminBootstrapTests`, `SeedServiceTests.WithAnIdealist_SeedsOnlyTheStructuralMinimum`,
+`DemoRevealTests` — no keys → 503, no token → 400, failed check → 403 with nothing leaked, resetting → 503,
+success returns the login for the reveal action only, `DemoInfo` never carries credentials.)*

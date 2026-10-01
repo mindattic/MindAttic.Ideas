@@ -1,0 +1,160 @@
+# Reset the public demo (mindattic-ideas-demo) to a vanilla Ideas install with a brand-new admin
+# password. Hourly, after every deploy, and on demand.
+#
+# The demo is a DEPLOYMENT, not a feature (MAI-A39): this workflow is its operator. It never touches the
+# company site. Order matters, and the published login is the LAST thing written:
+#
+#   1. credentials := {status: resetting}         the company site's Ideas page shows "back soon"
+#   2. new password -> demo vault `admin-password`
+#   3. demo DB := fresh copy of the template      schema + the demo identity's user, no content
+#   4. empty the demo's media container
+#   5. touch an app setting                       restarts the demo AND re-reads its Key Vault refs
+#   6. wait for /_health and /, then sign in for real with the new password
+#   7. credentials := {status: ready, ...}        only now can anyone see the new login
+#
+# If any step fails, credentials stays "resetting": the page never shows a login that doesn't work.
+
+name: Reset the public demo
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: demo-reset
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AZURE_RESOURCE_GROUP: rg-mindattic-ideas
+  DEMO_APP: mindattic-ideas-demo
+  TEMPLATE_DB: MindAtticIdeasDemoTemplate
+  DEMO_DB: MindAtticIdeasDemo
+  DEMO_MEDIA_CONTAINER: demo-media
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve resource names
+        shell: pwsh
+        run: |
+          $rg = $env:AZURE_RESOURCE_GROUP
+          $vault  = az keyvault list -g $rg --query "[?starts_with(name,'kv-demo-')].name | [0]" -o tsv
+          $server = az sql server list -g $rg --query "[0].name" -o tsv
+          $store  = az storage account list -g $rg --query "[0].name" -o tsv
+          $host_  = az webapp show -g $rg -n $env:DEMO_APP --query defaultHostName -o tsv
+          foreach ($v in @($vault, $server, $store, $host_)) { if (-not $v) { throw 'Could not resolve the demo estate. Run infra/provision.ps1.' } }
+          "DEMO_VAULT=$vault"     >> $env:GITHUB_ENV
+          "SQL_SERVER=$server"    >> $env:GITHUB_ENV
+          "STORAGE_ACCOUNT=$store" >> $env:GITHUB_ENV
+          "DEMO_URL=https://$host_" >> $env:GITHUB_ENV
+
+      - name: Mark the demo as resetting
+        shell: pwsh
+        run: |
+          $f = Join-Path $env:RUNNER_TEMP 'credentials.json'
+          '{"status":"resetting"}' | Set-Content -NoNewline -Path $f
+          az keyvault secret set --vault-name $env:DEMO_VAULT --name credentials --file $f --encoding utf-8 --output none
+          Remove-Item $f
+
+      - name: Generate and store the new admin password
+        shell: pwsh
+        run: |
+          # 4 groups of 5 from an alphabet without look-alikes (0/O, 1/l/I): ~115 bits, easy to copy.
+          $alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'.ToCharArray()
+          $chars = foreach ($i in 1..20) { $alphabet[[System.Security.Cryptography.RandomNumberGenerator]::GetInt32($alphabet.Length)] }
+          $password = (0..3 | ForEach-Object { -join $chars[($_ * 5)..($_ * 5 + 4)] }) -join '-'
+          Write-Host "::add-mask::$password"
+          $f = Join-Path $env:RUNNER_TEMP 'admin-password.txt'
+          $password | Set-Content -NoNewline -Path $f
+          az keyvault secret set --vault-name $env:DEMO_VAULT --name admin-password --file $f --encoding utf-8 --output none
+          # Kept for the sign-in check and the final publish; the runner is discarded after the job.
+          Move-Item $f (Join-Path $env:RUNNER_TEMP 'pw.txt')
+
+      - name: Replace the demo database with a fresh copy of the template
+        shell: pwsh
+        run: |
+          $rg = $env:AZURE_RESOURCE_GROUP
+          if (az sql db show -g $rg -s $env:SQL_SERVER -n $env:DEMO_DB --query name -o tsv 2>$null) {
+            az sql db delete -g $rg -s $env:SQL_SERVER -n $env:DEMO_DB --yes
+            if ($LASTEXITCODE) { throw 'Could not delete the demo database.' }
+          }
+          az sql db copy -g $rg -s $env:SQL_SERVER -n $env:TEMPLATE_DB --dest-name $env:DEMO_DB --output none
+          if ($LASTEXITCODE) { throw 'Could not copy the template database.' }
+
+      - name: Empty the demo's media
+        shell: pwsh
+        run: |
+          az storage blob delete-batch --account-name $env:STORAGE_ACCOUNT --source $env:DEMO_MEDIA_CONTAINER --auth-mode login --output none
+          if ($LASTEXITCODE) { throw 'Could not empty the demo media container.' }
+
+      # A configuration change (unlike a plain restart) makes App Service re-read every Key Vault
+      # reference immediately, so the app boots with the NEW admin-password. Bicep owns app settings
+      # and drops this one on its next deployment, which is harmless.
+      - name: Restart the demo onto the new database and password
+        shell: pwsh
+        run: |
+          az webapp config appsettings set -g $env:AZURE_RESOURCE_GROUP -n $env:DEMO_APP `
+            --settings "DemoResetUtc=$((Get-Date).ToUniversalTime().ToString('o'))" --output none
+          if ($LASTEXITCODE) { throw 'Could not restart the demo.' }
+
+      - name: Wait for the demo to come up
+        shell: pwsh
+        run: |
+          foreach ($path in @('/_health', '/')) {
+            $ok = $false
+            for ($i = 1; $i -le 40 -and -not $ok; $i++) {
+              try {
+                $r = Invoke-WebRequest -Uri "$env:DEMO_URL$path" -UseBasicParsing -TimeoutSec 30
+                if ($r.StatusCode -eq 200) { Write-Host "$path OK after $i attempt(s)."; $ok = $true }
+              } catch { Write-Host "$path attempt $i : $($_.Exception.Message)" }
+              if (-not $ok) { Start-Sleep -Seconds 15 }
+            }
+            if (-not $ok) { throw "$env:DEMO_URL$path never returned 200." }
+          }
+
+      - name: Sign in with the new password
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar="$RUNNER_TEMP/jar.txt"
+          token=$(curl -sf -c "$jar" -b "$jar" "$DEMO_URL/login" \
+            | grep -o 'name="__RequestVerificationToken"[^>]*value="[^"]*"' | sed 's/.*value="//;s/"$//' | head -1)
+          [ -n "$token" ] || { echo "No antiforgery token on /login"; exit 1; }
+          curl -s -o /dev/null -c "$jar" -b "$jar" -X POST "$DEMO_URL/_ma-auth/login" \
+            --data-urlencode "__RequestVerificationToken=$token" \
+            --data-urlencode "userName=admin" \
+            --data-urlencode "password@$RUNNER_TEMP/pw.txt" \
+            --data-urlencode "returnUrl=/admin"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" "$DEMO_URL/admin")
+          rm -f "$jar"
+          [ "$code" = "200" ] || { echo "Signed-in /admin returned $code"; exit 1; }
+          echo "Signed in as admin with the new password."
+
+      - name: Publish the new login
+        shell: pwsh
+        run: |
+          $password = Get-Content -Raw (Join-Path $env:RUNNER_TEMP 'pw.txt')
+          $now = (Get-Date).ToUniversalTime()
+          $validUntil = (Get-Date -Year $now.Year -Month $now.Month -Day $now.Day -Hour $now.Hour -Minute 0 -Second 0 -AsUTC).AddHours(1)
+          $f = Join-Path $env:RUNNER_TEMP 'credentials.json'
+          [ordered]@{ status = 'ready'; url = $env:DEMO_URL; username = 'admin'; password = $password; validUntilUtc = $validUntil.ToString('o') } |
+            ConvertTo-Json -Compress | Set-Content -NoNewline -Path $f
+          az keyvault secret set --vault-name $env:DEMO_VAULT --name credentials --file $f --encoding utf-8 --output none
+          if ($LASTEXITCODE) { throw 'Could not publish the login.' }
+          Remove-Item $f, (Join-Path $env:RUNNER_TEMP 'pw.txt')
+          Write-Host "Demo ready at $env:DEMO_URL until $($validUntil.ToString('u'))."

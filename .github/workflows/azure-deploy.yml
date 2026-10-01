@@ -1,16 +1,19 @@
 name: Build and deploy MindAttic.Ideas to Azure App Service
 
-# Three stages, in order, each gating the next:
-#   build    — restore, run the full NUnit suite, publish, and emit the idempotent migration script
-#   migrate  — apply that script to Azure SQL under an Entra token (the running site never does DDL)
-#   deploy   — push the artifact to the App Service
+# One build, two deployments of it (the same artifact on both):
+#   mindattic             the company site
+#   mindattic-ideas-demo  the public demo, re-provisioned by demo-reset.yml
 #
-# Prerequisites (see docs/DEPLOYMENT.md for the full runbook):
-#   1. ./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas
-#   2. Repo secret  AZURE_WEBAPP_PUBLISH_PROFILE  — App Service → Get publish profile
-#   3. For the migrate job, either OIDC federated credentials (AZURE_CLIENT_ID / AZURE_TENANT_ID /
-#      AZURE_SUBSCRIPTION_ID) or set SKIP_MIGRATE below and run ./infra/migrate.ps1 by hand.
-#   4. Flip MindAttic.Deploy/projects.json → apps[] 'ideas' to disabled: false.
+# Stages, each gating the next:
+#   build       restore, run the full NUnit suite, publish, generate the demo's idealist and the
+#               idempotent migration script
+#   migrate     apply that script to the company database and the demo TEMPLATE under an Entra token
+#               (the running sites never do DDL)
+#   deploy      push the artifact to both sites, restart each onto it, smoke-test each
+#   reset-demo  wipe and re-provision the demo, so it never runs new code on an old schema
+#
+# Everything authenticates with GitHub OIDC (AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID).
+# Prerequisite: ./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas. Runbook: docs/DEPLOYMENT.md.
 
 on:
   push:
@@ -31,7 +34,6 @@ env:
   PUBLISH_PROJECT: src/MindAttic.Ideas.Blazor/MindAttic.Ideas.Blazor.csproj
   TEST_PROJECT: src/MindAttic.Ideas.Tests/MindAttic.Ideas.Tests.csproj
   MIGRATIONS_PROJECT: src/MindAttic.Ideas.Core
-  AZURE_WEBAPP_NAME: mindattic-ideas
   AZURE_RESOURCE_GROUP: rg-mindattic-ideas
   DOTNET_VERSION: '10.x'
 
@@ -63,6 +65,12 @@ jobs:
 
       - name: Publish
         run: dotnet publish ${{ env.PUBLISH_PROJECT }} -c Release -o publish --no-build
+
+      # The demo boots from this (Ideas:Idealist). Generated from the packages actually in the build,
+      # so it can never list one that is not shipped.
+      - name: Build the demo's idealist
+        shell: pwsh
+        run: ./tools/build-demo-idealist.ps1 -LibraryDir publish/library -Out publish/seed/demo.idealist
 
       - name: Generate idempotent migration script
         run: |
@@ -117,15 +125,19 @@ jobs:
           "server=$server" | Out-File $env:GITHUB_OUTPUT -Append
           "fqdn=$(az sql server show --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name $server --query fullyQualifiedDomainName -o tsv)" | Out-File $env:GITHUB_OUTPUT -Append
 
+      # The company database, and the demo's template (the demo's live database is a copy of it,
+      # replaced by reset-demo below).
       - name: Apply the schema
         shell: pwsh
         run: |
           Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber
           Import-Module SqlServer
           $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
-          Invoke-Sqlcmd -ServerInstance '${{ steps.firewall.outputs.fqdn }}' -Database 'MindAtticIdeas' `
-            -AccessToken $token -InputFile migrate.sql -QueryTimeout 300 -ErrorAction Stop
-          Write-Host 'Schema applied.'
+          foreach ($db in @('MindAtticIdeas', 'MindAtticIdeasDemoTemplate')) {
+            Invoke-Sqlcmd -ServerInstance '${{ steps.firewall.outputs.fqdn }}' -Database $db `
+              -AccessToken $token -InputFile migrate.sql -QueryTimeout 300 -ErrorAction Stop
+            Write-Host "Schema applied to $db."
+          }
 
       - name: Close the SQL firewall
         if: always() && steps.firewall.outputs.rule != ''
@@ -140,9 +152,13 @@ jobs:
     # Deploy even when migrate was skipped, but never when it ran and failed: shipping code against
     # a schema that did not apply is how you get a half-migrated production database.
     if: ${{ always() && needs.build.result == 'success' && needs.migrate.result != 'failure' && needs.migrate.result != 'cancelled' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [mindattic, mindattic-ideas-demo]
     environment:
       name: production
-      url: ${{ steps.deploy.outputs.webapp-url }}
+      url: https://${{ matrix.app }}.azurewebsites.net
     steps:
       - name: Download app artifact
         uses: actions/download-artifact@v8
@@ -150,19 +166,6 @@ jobs:
           name: ideas-app
           path: publish/
 
-      - name: Deploy to Azure App Service
-        id: deploy
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          slot-name: Production
-          package: publish/
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-
-      # The zip deploy overwrites DLLs in /home/site/wwwroot underneath the RUNNING process. Linux
-      # allows that (Windows would lock the files), and the old process then reads changed bytes
-      # through its memory-mapped assemblies: every page throws BadImageFormatException while
-      # /_health -- which touches none of that code -- still answers 200. Restart onto the new files.
       - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
@@ -170,16 +173,26 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ matrix.app }}
+          package: publish/
+
+      # The zip deploy overwrites DLLs in /home/site/wwwroot underneath the RUNNING process. Linux
+      # allows that (Windows would lock the files), and the old process then reads changed bytes
+      # through its memory-mapped assemblies: every page throws BadImageFormatException while
+      # /_health -- which touches none of that code -- still answers 200. Restart onto the new files.
       - name: Restart onto the new build
         shell: pwsh
-        run: az webapp restart --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AZURE_WEBAPP_NAME }}
+        run: az webapp restart --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ matrix.app }}
 
-      # The app boots, discovers its citizens, seeds the CMS and installs the library .ideas. /_health
-      # alone is not enough (see above): the home page must actually render too.
+      # The demo is smoke-tested properly by reset-demo (it is re-provisioned there anyway).
       - name: Smoke-test health and the home page
+        if: matrix.app == 'mindattic'
         shell: pwsh
         run: |
-          $base = "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+          $base = "https://${{ matrix.app }}.azurewebsites.net"
           foreach ($path in @('/_health', '/')) {
             $ok = $false
             for ($i = 1; $i -le 20 -and -not $ok; $i++) {
@@ -191,3 +204,9 @@ jobs:
             }
             if (-not $ok) { throw "$base$path never returned 200." }
           }
+
+  reset-demo:
+    needs: deploy
+    if: ${{ always() && needs.deploy.result == 'success' }}
+    uses: ./.github/workflows/demo-reset.yml
+    secrets: inherit

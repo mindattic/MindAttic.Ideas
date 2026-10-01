@@ -1,6 +1,11 @@
 Deploy MindAttic.Ideas via **MindAttic.Deploy** (sibling repo at `D:\Projects\MindAttic\MindAttic.Deploy`). MindAttic.Deploy is the source of truth for every MindAttic deploy; this command shims into it.
 
-The deploy fires this repo's GitHub Actions workflow (`azure-deploy.yml`) by pushing `master`. The workflow builds Release, runs the full NUnit suite, applies the idempotent EF migration script to Azure SQL, lands the artifact on the `mindattic-ideas` App Service, and polls `/_health` until it answers 200.
+The deploy fires this repo's GitHub Actions workflow (`azure-deploy.yml`) by pushing `master`. One build ships to **two** sites on the same App Service plan:
+
+- **https://mindattic.azurewebsites.net**, the company site.
+- **https://mindattic-ideas-demo.azurewebsites.net**, the public vanilla demo.
+
+The workflow builds Release, runs the full NUnit suite, migrates the company database and the demo template, deploys and restarts both sites, smoke-tests the company site, then runs `demo-reset.yml` (a fresh demo database, a new admin password, and a real sign-in check before the login is published).
 
 Run this command and report the result:
 
@@ -14,9 +19,11 @@ It will:
 2. `git -C ../MindAttic.Ideas push origin master` if local commits are ahead of remote, triggering the Actions workflow.
 3. Print the Actions URL for monitoring: <https://github.com/mindattic/MindAttic.Ideas/actions/workflows/azure-deploy.yml>.
 
-After running, summarize: which steps ran, what was pushed (or that there were no changes), and the Actions URL.
+After running, watch the run to completion with `gh run watch --repo mindattic/MindAttic.Ideas`. Then confirm `https://mindattic.azurewebsites.net/` and the demo both answer, and open the company site in the browser (`Start-Process https://mindattic.azurewebsites.net/`). Summarize which steps ran, what was pushed (or that nothing was), and the result of each job.
 
 Notes:
-- For a no-push rehearsal (build only, no push), append `--dry-run`.
-- **The app entry ships `disabled: true`.** Until the Azure estate exists the command prints its note and exits 0 — it never half-fires. Stand the estate up with `./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas`, set the repo secrets, then flip `disabled: false` in `MindAttic.Deploy/projects.json`. Full runbook: `docs/DEPLOYMENT.md`.
-- **Content does not need a deploy.** A page, widget or theme goes live by uploading its `.idea` through Admin; media goes in through Admin → Media or `--upload-media`. Deploy only when the engine itself changed.
+- For a no-push rehearsal (build only), append `--dry-run`.
+- **Watch what gets pushed.** This command commits whatever is staged in `MindAttic.Ideas` and pushes `master`. Commit or stash unrelated work first.
+- **The demo resets on its own** every hour. To reset it now, dispatch `demo-reset.yml`: `gh workflow run demo-reset.yml --repo mindattic/MindAttic.Ideas`.
+- **Content does not need a deploy.** A page, widget or theme goes live by uploading its `.idea` through Admin. Media goes in through Admin → Media or `--upload-media`. Deploy only when the engine itself changed.
+- Infrastructure changes go through `./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas`, not this command. Full runbook: `docs/DEPLOYMENT.md`.

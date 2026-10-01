@@ -341,7 +341,7 @@ updated: 2026-06-16
   Key Vault. *`infra/main.bicep` compiles and **validates against the live subscription**
   (`provisioningState: Succeeded`); what-if enumerates the 16 resources; both scripts parse under
   Windows PowerShell 5.1.* **Provisioned and live 2026-09-04** at
-  https://mindattic-ideas.azurewebsites.net — 16 resources, 53 content definitions installed on first
+  https://mindattic-ideas.azurewebsites.net (since MAI-A48: https://mindattic.azurewebsites.net, plus the demo) — 16 resources, 53 content definitions installed on first
   boot, reached over managed identity with no password anywhere
   ([A33](AMENDMENTS.md#MAI-A33)). *(test: `DeploymentPackagingTests` guards the packaging and
   configuration contract the estate depends on.)*
