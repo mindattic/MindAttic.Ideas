@@ -159,17 +159,35 @@ jobs:
           package: publish/
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
-      # The app boots, migrates nothing, discovers its citizens, seeds the CMS and installs 51
-      # library .ideas. If /_health does not answer, the deploy did not really succeed.
-      - name: Smoke-test the health endpoint
+      # The zip deploy overwrites DLLs in /home/site/wwwroot underneath the RUNNING process. Linux
+      # allows that (Windows would lock the files), and the old process then reads changed bytes
+      # through its memory-mapped assemblies: every page throws BadImageFormatException while
+      # /_health -- which touches none of that code -- still answers 200. Restart onto the new files.
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Restart onto the new build
+        shell: pwsh
+        run: az webapp restart --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ env.AZURE_WEBAPP_NAME }}
+
+      # The app boots, discovers its citizens, seeds the CMS and installs the library .ideas. /_health
+      # alone is not enough (see above): the home page must actually render too.
+      - name: Smoke-test health and the home page
         shell: pwsh
         run: |
-          $url = "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/_health"
-          for ($i = 1; $i -le 20; $i++) {
-            try {
-              $r = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 20
-              if ($r.StatusCode -eq 200) { Write-Host "Healthy after $i attempt(s)."; exit 0 }
-            } catch { Write-Host "attempt $i : $($_.Exception.Message)" }
-            Start-Sleep -Seconds 15
+          $base = "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+          foreach ($path in @('/_health', '/')) {
+            $ok = $false
+            for ($i = 1; $i -le 20 -and -not $ok; $i++) {
+              try {
+                $r = Invoke-WebRequest -Uri "$base$path" -UseBasicParsing -TimeoutSec 30
+                if ($r.StatusCode -eq 200) { Write-Host "$path OK after $i attempt(s)."; $ok = $true }
+              } catch { Write-Host "$path attempt $i : $($_.Exception.Message)" }
+              if (-not $ok) { Start-Sleep -Seconds 15 }
+            }
+            if (-not $ok) { throw "$base$path never returned 200." }
           }
-          throw "$url never returned 200."
