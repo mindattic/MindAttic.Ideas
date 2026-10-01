@@ -396,6 +396,39 @@
   </section>
   }
 
+  @if (ShowDemo && _demo is not null)
+  {
+  <section class="ibr-section ibr-demo" data-ma-demo data-site-key="@_demo.TurnstileSiteKey" data-reveal-path="@_revealPath">
+    <h2 class="ibr-section-title">Try the live demo</h2>
+    <p class="ibr-demo-lede">
+      A real Ideas install, not a video. Sign in as the admin, upload an <code class="ibr-code-inline">.idea</code>,
+      build a page, switch themes. It wipes itself and gets a brand-new password every hour, so break anything you like.
+    </p>
+    <p><a class="ibr-demo-link" href="@_demo.Url" target="_blank" rel="noopener noreferrer">@_demo.Url</a></p>
+    @if (!_demo.Ready)
+    {
+      <p class="ibr-demo-msg">The demo is resetting right now. Back in a few minutes.</p>
+    }
+    else if (_demo.TurnstileSiteKey is null)
+    {
+      <p class="ibr-demo-msg">Demo sign-in opens soon.</p>
+    }
+    else
+    {
+      <button type="button" class="ibr-demo-btn" data-ma-demo-reveal>Show demo login</button>
+      <div class="ibr-demo-check" data-ma-demo-check hidden></div>
+      <dl class="ibr-demo-login" data-ma-demo-login hidden>
+        <dt>Username</dt>
+        <dd><code data-ma-demo-user></code> <button type="button" class="ibr-demo-copy" data-ma-demo-copy="user">Copy</button></dd>
+        <dt>Password</dt>
+        <dd><code data-ma-demo-pass></code> <button type="button" class="ibr-demo-copy" data-ma-demo-copy="pass">Copy</button></dd>
+      </dl>
+      <p class="ibr-demo-msg" data-ma-demo-msg aria-live="polite"></p>
+      <script src="/_ideas/Component/ideasbrochure/1/demo-access.js" defer></script>
+    }
+  </section>
+  }
+
   @if (ShowFooter)
   {
   <footer class="ibr-footer">
@@ -430,7 +463,24 @@
     [Parameter, Setting("Comparison table", Group = "Sections", Order = 7)] public bool ShowComparison { get; set; } = true;
     [Parameter, Setting("Under the hood", Group = "Sections", Order = 8)] public bool ShowTech { get; set; } = true;
     [Parameter, Setting("Get started steps", Group = "Sections", Order = 9)] public bool ShowSteps { get; set; } = true;
-    [Parameter, Setting("Footer", Group = "Sections", Order = 10)] public bool ShowFooter { get; set; } = true;
+    [Parameter, Setting("Live demo", Group = "Sections", Order = 10, Description = "Shown only when the host advertises a demo")] public bool ShowDemo { get; set; } = true;
+    [Parameter, Setting("Footer", Group = "Sections", Order = 11)] public bool ShowFooter { get; set; } = true;
+
+    // The demo is a host feature (IDemoAccess). Absent, or answering null, the section simply isn't
+    // rendered. Credentials never come through here: only the browser's post-Turnstile call gets them.
+    private DemoInfo? _demo;
+    private string? _revealPath;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!ShowDemo || Context is null || !Context.TryGetFeature<IDemoAccess>(out var demo) || demo is null) return;
+        try
+        {
+            _demo = await demo.GetInfoAsync();
+            _revealPath = demo.RevealPath;
+        }
+        catch { _demo = null; }
+    }
 
     // ── Behavior ────────────────────────────────────────────────────────────────────────────────
     [Parameter, Setting("Hover effects", Group = "Behavior", Order = 1, Description = "Card border transitions on hover")]

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using MindAttic.Ideas.Abstractions;
 using MindAttic.Ideas.Core.Data;
@@ -122,5 +123,27 @@ public class SeedServiceTests
         await using var db = factory.CreateDbContext();
         var slugs = await db.Pages.Select(p => p.Slug).ToListAsync();
         Assert.That(slugs, Does.Contain("frontpage"), "frontpage must be seeded on a fresh DB");
+    }
+
+    [Test]
+    public async Task WithAnIdealist_SeedsOnlyTheStructuralMinimum()
+    {
+        // A custom instance (a public demo, say) owns its content through its idealist: it must not come
+        // up carrying MindAttic's own pages, nav or chrome.
+        var factory = new InMemoryFactory("seed_idealist_" + Guid.NewGuid().ToString("N"));
+        var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Ideas:Idealist"] = "seed/demo.idealist" }).Build();
+
+        await new SeedService(factory, config).SeedAsync();
+
+        await using var db = factory.CreateDbContext();
+        var site = await db.Sites.SingleAsync();
+        Assert.Multiple(() =>
+        {
+            Assert.That(db.Pages.Count(), Is.Zero, "no MindAttic pages");
+            Assert.That(db.Settings.Select(s => s.Key).ToList(), Is.EqualTo(new[] { "css.global" }), "no nav/footer/plugin chrome");
+            Assert.That(site.Name, Is.EqualTo("Ideas"));
+            Assert.That(site.DefaultThemeKey, Is.EqualTo("ideas"));
+        });
     }
 }

@@ -82,8 +82,10 @@ public static class ServiceCollectionExtensions
 
         // Phase-5: .idea package install (validate + persist bytes + extract + register rows + ALC resolve).
         // Local file store/extractor by default; the ADR's Azure Blob backing slots in behind IPackageBlobStore.
-        services.AddSingleton<IPackageBlobStore>(_ => new LocalFilePackageBlobStore());
-        services.AddSingleton<IPackageExtractor>(_ => new PackageExtractor());
+        // Ideas:Packages:StorageRoot moves both off the per-user default (%APPDATA%\MindAttic\Ideas), so two
+        // instances on one machine never extract over each other's loaded assemblies.
+        services.AddSingleton<IPackageBlobStore>(sp => new LocalFilePackageBlobStore(PackageStorageDir(sp, "packages")));
+        services.AddSingleton<IPackageExtractor>(sp => new PackageExtractor(PackageStorageDir(sp, "extracted")));
         // The one trusted public certificate every install verifies a package's content signature
         // against (MAI: NuGet distribution + signing) — Vault-backed, cached after first read.
         services.AddSingleton<IPackageSigningTrust, VaultPackageSigningTrust>();
@@ -119,4 +121,8 @@ public static class ServiceCollectionExtensions
         var segment = uri.Segments.FirstOrDefault(s => s.Trim('/').Length > 0);
         return segment?.Trim('/');
     }
+
+    /// <summary>Null keeps the store's own default (%APPDATA%\MindAttic\Ideas\{leaf}).</summary>
+    private static string? PackageStorageDir(IServiceProvider sp, string leaf) =>
+        sp.GetService<IConfiguration>()?["Ideas:Packages:StorageRoot"] is { Length: > 0 } root ? Path.Combine(root, leaf) : null;
 }

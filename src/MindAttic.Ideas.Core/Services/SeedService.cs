@@ -11,20 +11,28 @@ namespace MindAttic.Ideas.Core.Services;
 /// clobber admin-edited content. Seeds the default Site, global CSS, an admin user, and a home Data
 /// page that composes the Cyberspace theme + a component include — the zero-deploy render proof.
 /// </summary>
-public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
+public sealed class SeedService(
+    IDbContextFactory<CmsDbContext> dbFactory,
+    Microsoft.Extensions.Configuration.IConfiguration? configuration = null)
 {
+    // A custom instance (MAI-A41) owns its content through its idealist, so only the structural minimum
+    // is seeded here — never MindAttic's own pages, nav or chrome on somebody else's install.
+    private bool IdealistOwnsContent =>
+        !string.IsNullOrWhiteSpace(configuration?["Ideas:Idealist"] ?? Environment.GetEnvironmentVariable("IDEAS_IDEALIST"));
+
     public async Task SeedAsync(CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         var now = DateTime.UtcNow;
+        var structuralOnly = IdealistOwnsContent;
 
         var site = await db.Sites.FirstOrDefaultAsync(s => s.Key == "default", ct);
         if (site is null)
         {
             site = new Site
             {
-                Key = "default", Name = "MindAttic", HostBindings = "",
-                DefaultThemeKey = "cyberspace", DefaultThemeVersion = 1, IsDefault = true,
+                Key = "default", Name = structuralOnly ? "Ideas" : "MindAttic", HostBindings = "",
+                DefaultThemeKey = structuralOnly ? "ideas" : "cyberspace", DefaultThemeVersion = 1, IsDefault = true,
                 CreatedUtc = now, ModifiedUtc = now,
             };
             db.Sites.Add(site);
@@ -45,6 +53,8 @@ public sealed class SeedService(IDbContextFactory<CmsDbContext> dbFactory)
             globalCss.Value = GlobalCssReset;
             await db.SaveChangesAsync(ct);
         }
+
+        if (structuralOnly) return;
 
         // Site chrome defaults. NavMenu and PoweredBy read these through the Host -> Site -> Page setting
         // chain; without them the nav renders an empty list and the brand falls back to the site key

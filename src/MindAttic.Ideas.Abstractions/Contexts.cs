@@ -189,3 +189,28 @@ public interface IPageTree
         return flat.Select(c => new ChildPageNode(c.Slug, c.Title, Array.Empty<ChildPageNode>(), c.OpenInNewWindow)).ToList();
     }
 }
+
+/// <summary>
+/// What a public demo deployment of this CMS looks like right now — everything a Component may show to
+/// anyone. Deliberately carries NO credentials: those are only ever returned by the host's
+/// <see cref="IDemoAccess.RevealPath"/> endpoint after a human check, never through a render.
+/// </summary>
+/// <param name="Url">The demo's address.</param>
+/// <param name="Ready">False while the demo is resetting (its hourly wipe).</param>
+/// <param name="ResetsAtUtc">When the current login stops working, if known.</param>
+/// <param name="TurnstileSiteKey">The public Cloudflare Turnstile site key, or null when the reveal is off.</param>
+public sealed record DemoInfo(string Url, bool Ready, DateTimeOffset? ResetsAtUtc, string? TurnstileSiteKey);
+
+/// <summary>
+/// Host-provided render seam (resolved via <see cref="IRenderContext.TryGetFeature{T}"/>): the public demo
+/// of this CMS, when the host has one. A Component renders nothing when the feature is absent or
+/// <see cref="GetInfoAsync"/> returns null. MUST never throw into a render. APPEND-ONLY interface.
+/// </summary>
+public interface IDemoAccess
+{
+    /// <summary>The demo's public state, or null when this host has no demo configured.</summary>
+    Task<DemoInfo?> GetInfoAsync(CancellationToken ct = default);
+
+    /// <summary>The POST endpoint a browser calls with a Turnstile token to receive the current login.</summary>
+    string RevealPath => "/_demo/reveal";
+}

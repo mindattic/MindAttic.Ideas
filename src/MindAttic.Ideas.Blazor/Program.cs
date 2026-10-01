@@ -102,6 +102,10 @@ builder.Services.AddMindAtticAuthentication<CmsDbContext>(builder.Configuration,
 builder.Services.AddScoped<IMaClaimsAugmentor, IdeasClaimsAugmentor>();
 builder.Services.AddScoped<InstanceClipboard>();
 
+// The public demo this site advertises (a SEPARATE deployment, MAI-A39). Inert unless Demo:Url and
+// Demo:KeyVaultUri are configured; the login reveal additionally needs both Turnstile keys.
+MindAttic.Ideas.Blazor.Demo.DemoReveal.AddDemoAccess(builder.Services, builder.Configuration);
+
 var app = builder.Build();
 
 // --- Startup: migrate -> discover citizens -> seed CMS content -> bootstrap admin. ---
@@ -114,7 +118,12 @@ using (var scope = app.Services.CreateScope())
         await sp.GetRequiredService<CmsDbContext>().Database.MigrateAsync();
     await sp.GetRequiredService<DiscoveryService>().RunAsync();
     await sp.GetRequiredService<SeedService>().SeedAsync();
-    await sp.GetRequiredService<MindAttic.Authentication.Services.AuthBootstrapper>().SeedAdminAsync();
+    await MindAttic.Ideas.Blazor.AdminBootstrap.ApplyAsync(builder.Configuration,
+        sp.GetRequiredService<MindAttic.Authentication.Services.IUserStore>(),
+        sp.GetRequiredService<MindAttic.Authentication.Services.IUserAdminService>(),
+        sp.GetRequiredService<MindAttic.Authentication.Secrets.IAuthSecrets>(),
+        ct => sp.GetRequiredService<MindAttic.Authentication.Services.AuthBootstrapper>()
+                .SeedAdminAsync(MindAttic.Ideas.Blazor.AdminBootstrap.AdminUserName, ct));
 
     // VANILLA vs. CUSTOM INSTANCE (MAI-A41): absent Ideas:Idealist/IDEAS_IDEALIST installs every
     // first-party .idea physically present in ./library, best-effort, exactly as this codebase always
@@ -163,6 +172,7 @@ app.UseForwardedHeaders(forwardedHeaders);
 // authn + authz + forced-step (MustChangePassword → /account/change-password) + scoped CSP on the auth surface.
 app.UseMindAtticAuthentication();
 app.UseAntiforgery();
+MindAttic.Ideas.Blazor.Demo.DemoReveal.MapDemoReveal(app);
 
 app.MapStaticAssets();
 // Runtime package assets: /_ideas/{category}/{key}/{version}/{**path} -> the package's extracted wwwroot

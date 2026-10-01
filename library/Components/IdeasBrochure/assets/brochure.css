@@ -331,6 +331,34 @@
     border-top: 1px solid rgba(255,255,255,.07);
 }
 
+/* ── Live demo ── */
+.ibr-demo {
+    border: 1px solid rgba(90,160,255,.25);
+    border-radius: var(--ibr-card-radius, 12px);
+    padding: 2rem;
+    background: rgba(90,160,255,.05);
+}
+.ibr-demo-lede { max-width: 46rem; }
+.ibr-demo-link { color: var(--ibr-accent, #5aa0ff); font-weight: 600; word-break: break-all; }
+.ibr-demo-btn {
+    background: var(--ibr-accent, #5aa0ff); color: #0b0f19; border: 0; border-radius: 8px;
+    padding: .65rem 1.3rem; font: inherit; font-weight: 700; cursor: pointer;
+}
+.ibr-demo-btn:disabled { opacity: .6; cursor: default; }
+.ibr-demo-check { margin-top: 1rem; }
+.ibr-demo-login {
+    display: grid; grid-template-columns: max-content 1fr; gap: .5rem 1rem; align-items: center;
+    margin: 1rem 0 0;
+}
+.ibr-demo-login dt { opacity: .7; }
+.ibr-demo-login dd { margin: 0; }
+.ibr-demo-login code { font-size: 1.05rem; padding: .15rem .45rem; border-radius: 5px; background: rgba(255,255,255,.08); user-select: all; }
+.ibr-demo-copy {
+    margin-left: .5rem; background: none; color: inherit; border: 1px solid rgba(255,255,255,.25);
+    border-radius: 6px; padding: .15rem .6rem; font: inherit; font-size: .85rem; cursor: pointer;
+}
+.ibr-demo-msg { margin-top: .75rem; opacity: .8; }
+
 /* Instance setting (MAI-A45): hover effects off. */
 .ibr--no-anim .ibr-pillar,
 .ibr--no-anim .ibr-tech-card { transition: none; }
