@@ -38,16 +38,23 @@ namespace MindAttic.Ideas.Core.Migrations
                 unique: true);
 
             // Migrate existing SeoMetaJson data into PageMetaTags rows before dropping the column.
+            // Wrapped in dynamic SQL (EXEC) so column binding is deferred to execution time: an
+            // idempotent migration script (`dotnet ef migrations script --idempotent`) still compiles
+            // this batch even on a database where this migration already ran and SeoMetaJson is
+            // already gone, and a plain (non-dynamic) reference to a since-dropped column fails at
+            // compile time regardless of the runtime IF NOT EXISTS guard around the whole migration.
             migrationBuilder.Sql("""
+                EXEC(N'
                 INSERT INTO PageMetaTags (PageId, Name, Content)
-                SELECT Id, 'seo.title', JSON_VALUE(SeoMetaJson, '$.title')
+                SELECT Id, ''seo.title'', JSON_VALUE(SeoMetaJson, ''$.title'')
                 FROM Pages
-                WHERE SeoMetaJson IS NOT NULL AND JSON_VALUE(SeoMetaJson, '$.title') IS NOT NULL;
+                WHERE SeoMetaJson IS NOT NULL AND JSON_VALUE(SeoMetaJson, ''$.title'') IS NOT NULL;
 
                 INSERT INTO PageMetaTags (PageId, Name, Content)
-                SELECT Id, 'seo.description', JSON_VALUE(SeoMetaJson, '$.description')
+                SELECT Id, ''seo.description'', JSON_VALUE(SeoMetaJson, ''$.description'')
                 FROM Pages
-                WHERE SeoMetaJson IS NOT NULL AND JSON_VALUE(SeoMetaJson, '$.description') IS NOT NULL;
+                WHERE SeoMetaJson IS NOT NULL AND JSON_VALUE(SeoMetaJson, ''$.description'') IS NOT NULL;
+                ');
                 """);
 
             migrationBuilder.DropColumn(
