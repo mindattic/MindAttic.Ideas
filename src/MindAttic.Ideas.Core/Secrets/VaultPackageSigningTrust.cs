@@ -14,17 +14,31 @@ namespace MindAttic.Ideas.Core.Secrets;
 /// </summary>
 public sealed class VaultPackageSigningTrust(IConfiguration configuration) : IPackageSigningTrust
 {
-    private const string Key = "MindAttic:Vault:PackageSigning:signing-cert-public";
+    private const string Section = "MindAttic:Vault:PackageSigning";
+    private const string Name = "signing-cert-public";
+    private const string Key = Section + ":" + Name;
     private X509Certificate2? _cached;
 
     public X509Certificate2 TrustedCertificate => _cached ??= Load();
 
     private X509Certificate2 Load()
     {
-        var b64 = configuration[Key] ?? throw new InvalidOperationException(
+        var b64 = configuration[Key] ?? FindMangled() ?? throw new InvalidOperationException(
             $"No trusted package-signing certificate at {Key}. Provision it in the MindAttic.Vault " +
             "PackageSigning bucket (%APPDATA%\\MindAttic\\PackageSigning\\providers.json in dev; " +
             "Key Vault/env in prod).");
         return X509CertificateLoader.LoadCertificate(Convert.FromBase64String(b64));
     }
+
+    // App Service on Linux drops hyphens and turns dots into underscores when it injects app settings
+    // as environment variables (MAI-A33), so "signing-cert-public" can arrive as "signingcertpublic".
+    private string? FindMangled()
+    {
+        var wanted = Reduce(Name);
+        return configuration.GetSection(Section).GetChildren()
+            .FirstOrDefault(c => Reduce(c.Key) == wanted && !string.IsNullOrWhiteSpace(c.Value))?.Value;
+    }
+
+    private static string Reduce(string s) =>
+        new(s.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
 }

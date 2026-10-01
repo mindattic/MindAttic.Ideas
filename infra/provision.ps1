@@ -184,6 +184,25 @@ foreach ($secret in $secrets) {
     $value = $null
 }
 
+# The package-signing trust cert is not generated here: it is the PUBLIC half of the publisher's
+# signing cert, copied from this machine's Vault PackageSigning bucket. Without it the host refuses
+# every .idea install (MAI-A42).
+if ($existing -contains 'signing-cert-public') {
+    Write-Host '  = signing-cert-public already present, left alone'
+} else {
+    $signingProviders = Join-Path $env:APPDATA 'MindAttic\PackageSigning\providers.json'
+    if (Test-Path $signingProviders) {
+        $publicCert = (Get-Content $signingProviders -Raw | ConvertFrom-Json).'signing-cert-public'
+        if ($publicCert) {
+            Invoke-Az keyvault secret set --vault-name $keyVaultName --name 'signing-cert-public' --value $publicCert --output none | Out-Null
+            Write-Host '  + signing-cert-public copied from the local PackageSigning bucket'
+        }
+    }
+    if (-not $publicCert) {
+        Write-Warning "No signing-cert-public in $signingProviders - every .idea install will fail until it is set in Key Vault."
+    }
+}
+
 # The references themselves are declared in main.bicep (siteConfig.appSettings is authoritative, so
 # adding them here would only get wiped by the next template deployment). The app cannot resolve a
 # reference until its secret exists, which is why the restart at the end of this script matters.

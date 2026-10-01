@@ -304,20 +304,28 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
         // because siteConfig.appSettings is authoritative -- anything added out-of-band would be
         // wiped by the next template deployment.
         {
-          name: 'MindAttic__Vault__Security__pepper.v1'
+          name: 'MindAttic__Vault__Security__pepperv1'
           value: '@Microsoft.KeyVault(SecretUri=${keyVault.properties.vaultUri}secrets/pepper-v1)'
         }
         {
-          name: 'MindAttic__Vault__Security__bootstrap-token'
+          name: 'MindAttic__Vault__Security__bootstraptoken'
           value: '@Microsoft.KeyVault(SecretUri=${keyVault.properties.vaultUri}secrets/bootstrap-token)'
         }
         {
-          name: 'MindAttic__Vault__Security__reset-token-key'
+          name: 'MindAttic__Vault__Security__resettokenkey'
           value: '@Microsoft.KeyVault(SecretUri=${keyVault.properties.vaultUri}secrets/reset-token-key)'
         }
         {
-          name: 'MindAttic__Vault__Security__dp-kek'
+          name: 'MindAttic__Vault__Security__dpkek'
           value: '@Microsoft.KeyVault(SecretUri=${keyVault.properties.vaultUri}secrets/dp-kek)'
+        }
+        // The ONE trusted package-signing certificate (public half only, MAI-A42). Without it every
+        // .idea install fails closed, so no new or updated package can ever reach production. Named
+        // alphanumerically because App Service on Linux strips hyphens from setting names (MAI-A33);
+        // VaultPackageSigningTrust matches it back to signing-cert-public.
+        {
+          name: 'MindAttic__Vault__PackageSigning__signingcertpublic'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVault.properties.vaultUri}secrets/signing-cert-public)'
         }
       ]
     }

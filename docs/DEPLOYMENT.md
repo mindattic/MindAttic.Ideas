@@ -145,10 +145,11 @@ Set as App Service application settings. `__` maps to `:` in the config chain.
 | `Media__Azure__BlobServiceUri` | `https://….blob.core.windows.net/` | |
 | `Media__Azure__ContainerName` | `media` | |
 | `Media__Azure__SignedUrlMinutes` | `60` | SAS lifetime for `/_media/{uid}` redirects. |
-| `MindAttic__Vault__Security__pepper.v1` | Key Vault reference | Argon2id pepper. |
-| `MindAttic__Vault__Security__bootstrap-token` | Key Vault reference | First-admin seed; rotate after use. |
-| `MindAttic__Vault__Security__reset-token-key` | Key Vault reference | Password-reset token signing key. |
-| `MindAttic__Vault__Security__dp-kek` | Key Vault reference | |
+| `MindAttic__Vault__Security__pepperv1` | Key Vault reference | Argon2id pepper (`pepper.v1`). |
+| `MindAttic__Vault__Security__bootstraptoken` | Key Vault reference | First-admin seed; rotate after use. |
+| `MindAttic__Vault__Security__resettokenkey` | Key Vault reference | Password-reset token signing key. |
+| `MindAttic__Vault__Security__dpkek` | Key Vault reference | |
+| `MindAttic__Vault__PackageSigning__signingcertpublic` | Key Vault reference | Public half of the package-signing cert. Without it **every** `.idea` install fails closed. |
 
 ---
 
@@ -213,7 +214,13 @@ forward slashes (`dotnet publish` then a zip tool that uses `/`).
 names when injecting them as environment variables: hyphens are dropped and dots become underscores,
 so `…Security__pepper.v1` arrives as `…Security__pepper_v1`. MindAttic.Authentication V4 matches
 these by reducing both sides to letters and digits ([A33](AMENDMENTS.md#MAI-A33)); older versions
-fail-closed on a secret that is genuinely present. Prefer alphanumeric setting names.
+fail-closed on a secret that is genuinely present. Azure now also **rejects** hyphenated names
+outright (`AppSetting with name '…' is not allowed`), which blocks every settings update — so every
+setting here is alphanumeric.
+
+**Every `.idea` install fails with "No trusted package-signing certificate".** The
+`MindAttic__Vault__PackageSigning__signingcertpublic` setting (Key Vault secret `signing-cert-public`)
+is missing. And always pack with `pack-all.ps1 -Sign` — an unsigned package is refused on every path.
 
 **App aborts at startup with a stack trace inside `ConfigurationBuilder`.** MindAttic.Vault below V3
 threw when the host had no user profile, which on Linux is during host construction — SIGABRT before
