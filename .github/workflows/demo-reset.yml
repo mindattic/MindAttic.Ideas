@@ -111,6 +111,8 @@ jobs:
           az webapp config appsettings set -g $env:AZURE_RESOURCE_GROUP -n $env:DEMO_APP `
             --settings "DemoResetUtc=$((Get-Date).ToUniversalTime().ToString('o'))" --output none
           if ($LASTEXITCODE) { throw 'Could not restart the demo.' }
+          # A settings change restarts a running site but leaves a stopped one stopped.
+          az webapp start -g $env:AZURE_RESOURCE_GROUP -n $env:DEMO_APP --output none
 
       - name: Wait for the demo to come up
         shell: pwsh
