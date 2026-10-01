@@ -107,7 +107,8 @@ product contains no reset code ([MAI-A39](AMENDMENTS.md#MAI-A39)).
    passed only through files.
 3. Delete `MindAtticIdeasDemo`; copy `MindAtticIdeasDemoTemplate` to it (schema + the demo identity's
    user, no content). Empty `demo-media`.
-4. Touch an app setting: restarts the demo and makes it re-read its Key Vault references. It boots from
+4. Pin the demo's bootstrap-token setting to the new secret **version** (an unversioned Key Vault reference
+   can be served from App Service's cache); the change restarts the demo. It boots from
    `seed/demo.idealist` (every package + the hello page) and creates `admin` from the new password with
    no forced change (`MindAttic:Auth:Bootstrap:RequirePasswordChange=false`). Sessions revalidate every
    15 s and cap at 1 h, so the previous hour's sessions die immediately.
