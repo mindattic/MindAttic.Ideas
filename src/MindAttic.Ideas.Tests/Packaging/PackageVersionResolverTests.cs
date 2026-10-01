@@ -111,4 +111,30 @@ public class PackageVersionResolverTests
         Assert.That(plan.Action, Is.EqualTo(InstallAction.Install));
         Assert.That(plan.ShouldWrite, Is.True);
     }
+
+    [Test]
+    public void PreLockdown_ChangedSameVersion_OverwritesInsteadOfConflicting()
+    {
+        var plan = PackageVersionResolver.Plan(Candidate(2), "sha-different", [Installed(2, active: true, sha: DefaultSha)],
+            compiledKeyExists: false, allowOverride: false, overwriteHashConflicts: true);
+        Assert.That(plan.Action, Is.EqualTo(InstallAction.Install));
+        Assert.That(plan.ShouldWrite, Is.True);
+    }
+
+    [Test]
+    public void PreLockdown_IdenticalSameVersion_IsStillANoOp()
+    {
+        // Overwriting identical content on every boot would be pure churn.
+        var plan = PackageVersionResolver.Plan(Candidate(2), DefaultSha, [Installed(2, active: true, sha: DefaultSha)],
+            compiledKeyExists: false, allowOverride: false, overwriteHashConflicts: true);
+        Assert.That(plan.Action, Is.EqualTo(InstallAction.NoOpAlreadyInstalled));
+    }
+
+    [Test]
+    public void PreLockdown_StillRejectsADowngrade()
+    {
+        var plan = PackageVersionResolver.Plan(Candidate(1), DefaultSha, [Installed(2, active: true)],
+            compiledKeyExists: false, allowOverride: false, overwriteHashConflicts: true);
+        Assert.That(plan.Action, Is.EqualTo(InstallAction.RejectDowngrade));
+    }
 }

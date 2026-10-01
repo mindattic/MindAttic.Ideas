@@ -43,8 +43,14 @@ public sealed class PackageInstallService(
     IPackageExtractor extractor,
     IRenderAlertSink alerts,
     IPackageSigningTrust signingTrust,
-    IAdminInboxService adminInbox) : IPackageInstallService
+    IAdminInboxService adminInbox,
+    Microsoft.Extensions.Configuration.IConfiguration? configuration = null) : IPackageInstallService
 {
+    // Until the system is "locked down", a changed package at an already-installed version overwrites
+    // it instead of being refused. Flip Ideas:Packages:OverwriteVersionConflicts to false to lock down.
+    private bool OverwriteVersionConflicts =>
+        bool.TryParse(configuration?["Ideas:Packages:OverwriteVersionConflicts"], out var on) && on;
+
     public async Task<InstallPlan> InstallAsync(Stream ideaBytes, bool allowOverride, CancellationToken ct = default)
     {
         // Buffer once: we need the bytes for both the (seekable) archive read and blob storage.
@@ -92,7 +98,8 @@ public sealed class PackageInstallService(
         var compiledKeyExists = await db.ContentDefinitions.AnyAsync(
             c => c.Origin == ContentOrigin.Compiled && c.Kind == kind && c.Key == manifest.Key && c.IsActive, ct);
 
-        var plan = PackageVersionResolver.Plan(manifest, sha, installedRefs, compiledKeyExists, allowOverride);
+        var plan = PackageVersionResolver.Plan(manifest, sha, installedRefs, compiledKeyExists, allowOverride,
+            overwriteHashConflicts: OverwriteVersionConflicts);
         switch (plan.Action)
         {
             case InstallAction.NoOpAlreadyInstalled:

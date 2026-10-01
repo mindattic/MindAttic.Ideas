@@ -25,7 +25,8 @@ public static class PackageVersionResolver
         string candidateSha256,
         IReadOnlyList<InstalledRef> installed,
         bool compiledKeyExists,
-        bool allowOverride)
+        bool allowOverride,
+        bool overwriteHashConflicts = false)
     {
         var category = candidate.Category;
         var key = candidate.Key;
@@ -39,14 +40,17 @@ public static class PackageVersionResolver
         if (installed.Any(r => Same(r, category, key) && r.Version == version) && !allowOverride)
         {
             var existing = installed.First(r => Same(r, category, key) && r.Version == version);
-            if (!string.Equals(existing.Sha256, candidateSha256, StringComparison.Ordinal))
+            if (string.Equals(existing.Sha256, candidateSha256, StringComparison.Ordinal))
+                return new InstallPlan(InstallAction.NoOpAlreadyInstalled,
+                    $"{category}/{key} v{version} is already installed.", MakeActiveVersion: false, []);
+
+            // Pre-lockdown policy: a changed same-version package replaces the installed one, exactly
+            // like an allowOverride rebuild-at-the-same-slot. Identical content above stays a no-op.
+            if (!overwriteHashConflicts)
                 return new InstallPlan(InstallAction.HashConflict,
                     $"{category}/{key} v{version} is already installed with different content (sha256 mismatch) — " +
                     "this is a real conflict, not a re-run; resolve it manually.",
                     MakeActiveVersion: false, []);
-
-            return new InstallPlan(InstallAction.NoOpAlreadyInstalled,
-                $"{category}/{key} v{version} is already installed.", MakeActiveVersion: false, []);
         }
 
         // Whole-number versions move forward only.
