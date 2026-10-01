@@ -130,7 +130,12 @@ jobs:
       - name: Apply the schema
         shell: pwsh
         run: |
-          Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber
+          # The runner image usually ships SqlServer; the PowerShell Gallery intermittently "finds no
+          # match" for it, so install only if missing, with retries.
+          for ($i = 1; -not (Get-Module -ListAvailable -Name SqlServer); $i++) {
+            try { Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop }
+            catch { if ($i -ge 4) { throw }; Write-Host "SqlServer install attempt $i failed: $($_.Exception.Message)"; Start-Sleep -Seconds (10 * $i) }
+          }
           Import-Module SqlServer
           $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
           foreach ($db in @('MindAtticIdeas', 'MindAtticIdeasDemoTemplate')) {
