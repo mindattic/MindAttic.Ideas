@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Shadow DOM opt-in (MAI-A44/docs/AUTHORING.md): linked source, not a project/package reference,
+    <!-- Shadow DOM opt-in (MAI-§4.4, docs/AUTHORING.md): linked source, not a project/package reference,
          so it compiles into THIS component's own assembly rather than adding a shared runtime dependency. -->
     <Compile Include="$(MSBuildThisFileDirectory)..\..\_Shared\ShadowDomAttach.cs" Link="ShadowDomAttach.cs" />
   </ItemGroup>

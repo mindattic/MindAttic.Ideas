@@ -5,7 +5,7 @@
        .csproj stays tiny. A component project only needs to declare its own assets/StaticWebAssets
        quirks (if any); identity comes from convention (namespace tail + V{n} class).
 
-       The ONLY reference is the frozen Abstractions SDK in the sibling CMS repo. Private=false +
+       The ONLY reference is the frozen Abstractions SDK in ../src (same repo). Private=false +
        ExcludeAssets=runtime keep Abstractions (and the framework Components it carries) OUT of bin/ —
        the package validator FORBIDS host assemblies in bin/, so the packed bin/ holds exactly one DLL.
        ============================================================================================ -->

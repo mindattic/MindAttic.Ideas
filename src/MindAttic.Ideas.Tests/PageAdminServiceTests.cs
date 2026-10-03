@@ -478,7 +478,7 @@ public class PageAdminServiceTests
         Assert.That(acl[0].RoleName, Is.EqualTo("Editor"));
     }
 
-    // ---- multi-site: an existing page keeps its OWN site (MAI-A35 host-bound sites) ----
+    // ---- multi-site: an existing page keeps its OWN site (MAI-§4.10 host-bound sites) ----
 
     /// <summary>Adds a second, non-default site and returns its id.</summary>
     private static async Task<int> AddSecondSiteAsync(InMemoryFactory factory)

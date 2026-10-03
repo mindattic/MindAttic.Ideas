@@ -80,7 +80,7 @@
 
 .theme-winter ::selection { background: color-mix(in srgb, var(--accent-2) 30%, transparent); }
 
-/* ── Instance-setting modifiers (MAI-A45) — added by V1.razor when a toggle is off or an opt-in value is set ── */
+/* ── Instance-setting modifiers (MAI-§4.5) — added by V1.razor when a toggle is off or an opt-in value is set ── */
 .theme-winter--no-hover button, .theme-winter--no-hover .btn { transition: none; }
 .theme-winter--no-hover button:hover, .theme-winter--no-hover .btn:hover { filter: none; }
 .theme-winter--heading-font h1, .theme-winter--heading-font h2, .theme-winter--heading-font h3, .theme-winter--heading-font h4, .theme-winter--heading-font h5, .theme-winter--heading-font h6 { font-family: var(--theme-heading-font); }

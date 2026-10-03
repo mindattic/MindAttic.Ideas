@@ -4,7 +4,7 @@ using MindAttic.Ideas.Core.Rendering;
 
 namespace MindAttic.Ideas.Tests;
 
-/// <summary>MAI-A45: a citizen's instance settings are its typed [Parameter]s, bound per instance.</summary>
+/// <summary>MAI-§4.5: a citizen's instance settings are its typed [Parameter]s, bound per instance.</summary>
 [TestFixture]
 public class InstanceSettingsTests
 {

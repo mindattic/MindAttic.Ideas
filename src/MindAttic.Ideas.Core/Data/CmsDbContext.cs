@@ -10,7 +10,7 @@ namespace MindAttic.Ideas.Core.Data;
 /// The CMS database. One append-only initial migration; all later migrations are additive.
 /// <see cref="Page"/> is system-versioned (temporal) for wiki-like history.
 /// Also the MindAttic.Authentication data seam (<see cref="IAuthDataContext"/>): the library's
-/// identity tables live here in their isolated <c>auth</c> schema (FOUNDATION_AMENDMENTS A16).
+/// identity tables live here in their isolated <c>auth</c> schema (MAI-LAW-9).
 /// </summary>
 public sealed class CmsDbContext(DbContextOptions<CmsDbContext> options) : DbContext(options), IAuthDataContext
 {

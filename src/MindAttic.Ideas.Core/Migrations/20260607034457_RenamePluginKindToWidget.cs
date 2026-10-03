@@ -10,7 +10,7 @@ namespace MindAttic.Ideas.Core.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Data fix for the Plugin -> Widget content-kind rename (amendment A18, superseding A17). Rows
+            // Data fix for the Plugin -> Widget content-kind rename. Rows
             // written before the rename hold the string 'Plugin' in the ContentKind-mapped column
             // ContentDefinitions.Kind, which no longer maps to any enum member, so EF throws on the very
             // first read (DiscoveryService). This migration runs in MigrateAsync BEFORE discovery, so any
@@ -27,7 +27,7 @@ namespace MindAttic.Ideas.Core.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             // Not cleanly reversible: after the rename, original Plugins and genuinely-new Widgets are
-            // indistinguishable. Down is intentionally a no-op (the rename is forward-only, per A18).
+            // indistinguishable. Down is intentionally a no-op (the rename is forward-only).
         }
     }
 }

@@ -184,7 +184,7 @@ meshtastic --sendtext "ping" # broadcast to all nodes</code></pre>
 </main>
 
 @code {
-    // ── Content ── (instance settings, MAI-A45; defaults reproduce the page as written)
+    // ── Content ── (instance settings, MAI-§4.5; defaults reproduce the page as written)
     [Parameter, Setting("Title", Group = "Content", Order = 1, Copyable = false)] public string Title { get; set; } = "ChiMesh";
     [Parameter, Setting("Tagline", Group = "Content", Order = 2, Copyable = false, Multiline = true)] public string Tagline { get; set; } = "Three solar-powered LoRa nodes running Meshtastic, forming a city-wide off-grid mesh across Chicago rooftops.";
     [Parameter, Setting("GitHub URL", Group = "Content", Order = 3, Copyable = false)] public string GitHubUrl { get; set; } = "https://github.com/mindattic/ChiMesh";

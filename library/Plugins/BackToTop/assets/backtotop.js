@@ -1,6 +1,6 @@
 ﻿/* MindAttic.Ideas.Plugin.BackToTop — creates the floating button and shows it after one screen of
  * scroll; click smooth-scrolls to the top. Safe to load more than once.
- * Instance settings (MAI-A45) are read LIVE from <data data-ma-settings="plugin.backtotop" value="{json}">
+ * Instance settings (MAI-§4.5) are read LIVE from <data data-ma-settings="plugin.backtotop" value="{json}">
  * (re-rendered on in-circuit navigation); every value falls back to the designed behavior. */
 (function () {
   'use strict';

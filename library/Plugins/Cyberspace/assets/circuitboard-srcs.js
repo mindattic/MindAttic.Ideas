@@ -7,7 +7,7 @@ window.__cyberspaceCircuitboardSrcs = [
   '/_ideas/Plugin/cyberspace/1/assets/circuitboard.02.png'
 ];
 
-// Instance settings (MAI-A45): the plugin renders <data data-ma-settings="plugin.cyberspace" value="{json}">.
+// Instance settings (MAI-§4.5): the plugin renders <data data-ma-settings="plugin.cyberspace" value="{json}">.
 // The engine calls this LIVE (every tick / frame), so a page's settings apply after in-circuit navigation too.
 (function () {
   var cache = { raw: null, parsed: {} };

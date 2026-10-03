@@ -1,7 +1,7 @@
 ﻿/* MindAttic.Ideas.Component.Hero — full-width banner. Scoped under .ma-hero (MAIL-LAW-6).
    The background image arrives either as an inline base64 CSS class on the section (the page
    authoring convention) or as an inline style; .ma-hero-img adds the readability overlay for both.
-   Instance settings (MAI-A45) arrive as --ma-hero-* custom properties on the section; every var()
+   Instance settings (MAI-§4.5) arrive as --ma-hero-* custom properties on the section; every var()
    falls back to the as-designed value. */
 .ma-hero {
   --ma-hero-min-height: 18rem;

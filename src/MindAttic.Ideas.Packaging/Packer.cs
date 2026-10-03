@@ -86,7 +86,7 @@ public static partial class Packer
                 .ToList(),
         };
 
-        // MAI-A46: refuse to pack an unsafe or malformed citizen — nothing it produces could ship anyway.
+        // MAI-§4.6: refuse to pack an unsafe or malformed citizen — nothing it produces could ship anyway.
         var problems = CitizenValidator.ValidateSettings(manifest.Settings).ToList();
         if (req.WwwrootDir is not null)
             problems.AddRange(CitizenValidator.ValidateAssets(
@@ -129,13 +129,13 @@ public static partial class Packer
         string Key, string DisplayName, string Kind, string Category, int Version,
         int SdkVersion, string EntryType, string RenderMode, string Scope, IReadOnlyList<string> Uses);
 
-    // ContentKind ordinal -> name (Page=0, Plugin=1, Theme=2; Control=3 reserved MAI-A19 — never reuse; Component=4 MAI-A26).
+    // ContentKind ordinal -> name (Page=0, Plugin=1, Theme=2; 3 reserved — never reuse, MAI-LAW-2; Component=4).
     private static readonly Dictionary<int, string> KindNames = new()
     {
         [0] = "Page",
         [1] = "Plugin",
         [2] = "Theme",
-        // ordinal 3 reserved — never reuse (MAI-A19)
+        // ordinal 3 reserved — never reuse (MAI-LAW-2)
         [4] = "Component",
     };
 
@@ -223,7 +223,7 @@ public static partial class Packer
     }
 
     /// <summary>
-    /// The entry type's instance settings (MAI-A45), reflection-only: every public writable property with a
+    /// The entry type's instance settings (MAI-§4.5), reflection-only: every public writable property with a
     /// non-capturing [Parameter] of a simple type, minus Body/ChildContent and [Setting(Hidden = true)].
     /// </summary>
     private static IReadOnlyList<IdeaManifestSetting> ResolveSettings(Type type)

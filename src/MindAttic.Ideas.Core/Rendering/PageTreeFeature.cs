@@ -38,7 +38,7 @@ public sealed class PageTreeFeature(IDbContextFactory<CmsDbContext> factory) : I
     /// <summary>
     /// Slug lookups are scoped to a site because a slug is unique only within one: the Pages unique index
     /// is on <c>(SiteId, Slug)</c>, so an unscoped match can return ANOTHER domain's page on a deployment
-    /// that serves several sites (MAI-A35). <see cref="Guid.Empty"/> keeps the legacy unscoped behaviour
+    /// that serves several sites (MAI-§4.10). <see cref="Guid.Empty"/> keeps the legacy unscoped behaviour
     /// for the slug-only overload — now at least ORDERED, so which page answers is deterministic instead
     /// of down to row order.
     /// </summary>

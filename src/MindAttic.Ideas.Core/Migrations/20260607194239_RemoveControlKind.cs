@@ -10,7 +10,7 @@ namespace MindAttic.Ideas.Core.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Data heal for the Control-kind REMOVAL (amendment MAI-A19). The `Control` ContentKind ordinal
+            // Data heal for the Control-kind REMOVAL (ordinal 3 reserved: MAI-LAW-2). The `Control` ContentKind ordinal
             // was deleted from the frozen enum (lone pre-1.0 exception), so rows still carrying the string
             // 'Control' would no longer map and EF would throw on the first read (DiscoveryService). This
             // migration runs in MigrateAsync BEFORE discovery, so any existing database self-heals. Atomic
@@ -24,7 +24,7 @@ namespace MindAttic.Ideas.Core.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Not reversible: the Control kind no longer exists. Forward-only (per MAI-A19).
+            // Not reversible: the Control kind no longer exists. Forward-only.
         }
     }
 }

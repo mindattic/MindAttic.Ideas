@@ -365,7 +365,7 @@ public class RenderGuardTests
     {
         // Regression: Walk() called Enum.TryParse with the default already assigned to the out param.
         // TryParse writes default(ContentKind) - i.e. Page - on failure, so an unrecognised kind (a typo,
-        // or a retired name like "Widget", MAI-A26) was recorded as a PAGE reference: the delete guard
+        // or a name outside the four kinds like "Widget", MAI-LAW-1) was recorded as a PAGE reference: the delete guard
         // then protected the wrong citizen while IncludeExpander ignored the bad attribute and resolved
         // Component-then-Plugin. An unparseable kind must leave the documented Component default intact.
         foreach (var bad in new[] { "Widget", "Control", "nonsense" })

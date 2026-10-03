@@ -15,7 +15,7 @@ using MindAttic.Media;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// The vanilla-vs-custom boot decision (MAI-A41), extracted from `Program.cs`'s top-level statements
+/// The vanilla-vs-custom boot decision (MAI-§4.9), extracted from `Program.cs`'s top-level statements
 /// into <see cref="BootProvisioning"/> specifically so it could carry real coverage: no
 /// <c>Ideas:Idealist</c> falls back to installing everything under <c>library/</c> exactly as before;
 /// a configured one is applied via <see cref="IdeaListImporter"/>, and any failure propagates rather

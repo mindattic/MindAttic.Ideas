@@ -88,7 +88,7 @@
 
 .theme-summer ::selection { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 
-/* ── Instance-setting modifiers (MAI-A45) — added by V1.razor when a toggle is off or an opt-in value is set ── */
+/* ── Instance-setting modifiers (MAI-§4.5) — added by V1.razor when a toggle is off or an opt-in value is set ── */
 .theme-summer--no-hover button, .theme-summer--no-hover .btn { transition: none; }
 .theme-summer--no-hover button:hover, .theme-summer--no-hover .btn:hover { filter: none; }
 .theme-summer--plain-h1 h1 { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--theme-heading-color, var(--theme-heading-color-default, #34291a)); }

@@ -18,7 +18,7 @@ namespace MindAttic.Ideas.Component.Tabs;
 /// </code>
 /// Add <c>ma-tabs-board</c> for the mindattic.com tab-board look: a wrapping grid of fixed-size tiles
 /// with the open panel claiming the full row below.
-/// Instance settings (MAI-A45) are page-wide — the activator styles every .ma-tabs on the page — and
+/// Instance settings (MAI-§4.5) are page-wide — the activator styles every .ma-tabs on the page — and
 /// are emitted only when set: CSS custom properties in a &lt;style&gt;, behavior on window.MaTabsConfig.
 /// </summary>
 public sealed class V1 : ComponentBase

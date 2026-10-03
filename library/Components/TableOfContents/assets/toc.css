@@ -3,7 +3,7 @@
    the auto-generated subpage list. Uses `inherit`/neutral grays so it sits cleanly
    on any host theme (light or dark). Scoped under .ma-toc so it never leaks.
    Served from this .idea's wwwroot at /_ideas/Component/tableofcontents/1/.
-   Instance settings (MAI-A45) arrive as --ma-toc-* custom properties on the nav.
+   Instance settings (MAI-§4.5) arrive as --ma-toc-* custom properties on the nav.
    ============================================================================ */
 
 .ma-toc { margin: var(--ma-toc-margin, 1.25rem 0); }

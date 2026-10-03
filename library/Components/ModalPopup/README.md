@@ -89,7 +89,7 @@ A fixed-position overlay dialog with optional header, footer, backdrop dismiss, 
 
 ## Settings
 
-Per-instance settings (MAI-A45), edited in Admin and stored as tag attributes. Blank = as designed.
+Per-instance settings (MAI-§4.5), edited in Admin and stored as tag attributes. Blank = as designed.
 
 - **Behavior:** `IsOpen`, `ShowClose`, `ShowHeader`, `ShowFooter`, `WrapForm`, `CloseOnBackdrop`, `CloseOnEscape`
 - **Content** (not copied between instances): `Title`, `ConfirmText`, `CancelText`; plus `CloseText`, `CloseLabel`

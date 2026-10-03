@@ -9,7 +9,7 @@ public sealed record CopiedConfiguration(
     ContentKind Kind, string Key, string SourceLabel, IReadOnlyDictionary<string, string?> Values);
 
 /// <summary>
-/// The Admin "Copy Configuration" clipboard (MAI-A45). Circuit-scoped, so a copy survives switching pages
+/// The Admin "Copy Configuration" clipboard (MAI-§4.5). Circuit-scoped, so a copy survives switching pages
 /// and Admin tabs, and only ever pastes onto an instance of the SAME citizen (kind + key).
 /// </summary>
 public sealed class InstanceClipboard

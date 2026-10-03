@@ -6,8 +6,8 @@ Two things make up a site, and they are **different kinds of thing**:
 |---|---|---|
 | What it is | content | a reusable capability |
 | Where it lives | a **row in the CMS database**, in the page hierarchy | a compiled **`.idea`** package |
-| How you make it | admin UI: type Html / Css / Js + `{{tags}}` | author a tiny RCL, `ma-idea pack`, upload |
-| How it composes | drops widgets by `{{tag}}` | nests other widgets by `{{tag}}` / `[Uses]` |
+| How you make it | admin UI: type Html / Css / Js + citizen tags | author a tiny RCL, `ma-idea pack`, sign, upload |
+| How it composes | places citizens by tag (`<Component.X />`) | nests other citizens by tag / `<CmsInclude>` + `[Uses]` |
 
 > **The one rule:** a package never references another package's assembly. Everything composes by **stable
 > string id** resolved through the host catalog at runtime. The only shared compile-time dependency is the
@@ -21,27 +21,28 @@ A page is a database record. You create and edit it entirely in the admin UI:
 
 1. Sign in as an admin → **/admin/pages**.
 2. **Add page** (or edit one). Set the slug, title, parent (for the hierarchy), and theme.
-3. Fill in the three content sections — they are plain **`<textarea>`s** today:
-   - **Body HTML** — your markup plus `{{…}}` widget tokens.
-   - **Page CSS** — page-scoped styles (cascade tier 3).
-   - **Page JS** — only emitted when the page is saved as **Author-trusted** (admin); untrusted bodies are
-     sanitized (script/style/event-handlers/`javascript:` stripped — `{{tags}}` survive).
+3. Fill in the three content sections (Body HTML is a Monaco editor with citizen-tag completion):
+   - **Body HTML** — your markup plus citizen tags. Every body is sanitized at every trust level: no
+     script, style element, event handler, `javascript:` URL, frame or form survives in markup. An
+     Author-trusted (admin) body keeps its citizen tags; an Untrusted body keeps none.
+   - **Page CSS** — page-scoped styles (the `page` cascade layer, below `component`).
+   - **Page JS** — the only place deliberate author JavaScript lives; emitted only for Author-trusted pages.
 4. Save. The page is live at its slug, in the hierarchy, wearing its theme.
 
-A page body composes widgets by token:
+A page body composes citizens by tag:
 
 ```html
-{{ Theme.Cyberspace }}                         <!-- the page's chrome -->
-
 <h1>Contact</h1>
-{{ Plugin.Tooltip }}                           <!-- switch on a capability -->
+<Plugin.Tooltip />                             <!-- switch on a capability for this page -->
 <button data-tooltip="Resolved at runtime">Hover me</button>
 
-{{ Component.Textbox label="Email" }}          <!-- place a component; attrs flow through -->
+<Component.Textbox label="Email" />            <!-- place a component; attributes are its settings -->
+<Component.Textbox label="Name" data-version="1" />   <!-- pinned to version 1 -->
 ```
 
-- **Grammar:** `{{ <Kind>.<Name>[.V<n>|.Latest] [attr=value …] }}`. Omit the version (or use `.Latest`) to
-  float to the latest enabled version; pin with `.V<n>` so a later upload can't change a page.
+- **Grammar:** `<Kind.Key [attr="value" …] />`, or paired `<Kind.Key>…</Kind.Key>` to pass children.
+  Omit `data-version` to float to the latest enabled version; pin with `data-version="n"` so a later
+  upload can't change a page. The page's theme and site-wide plugins are chosen in Page Properties.
 - A missing/disabled reference degrades to a **clickable placeholder** (for admins, it opens the uploader
   prefilled with the missing reference) — never a crash.
 - Page nesting is the hierarchy (parent/child + sort order); drag-drop reorder in **/admin/pages**.
@@ -102,7 +103,7 @@ public sealed class V1 : PluginBase
 
 A Plugin or Component composes others two ways — pick per piece:
 
-- **Compile-in (private):** a sub-component inside the widget's own assembly (e.g. `PersonaCard` inside
+- **Compile-in (private):** a sub-component inside the citizen's own assembly (e.g. `PersonaCard` inside
   `LegionPersonas`). Not separately deployed. Use when the piece is only ever used here.
 - **Reference-by-id (separately deployed):** `<CmsInclude Ref="MindAttic.Ideas.Plugin.SacredGeometry.V1" />`
   in markup **plus** `@attribute [Uses(ContentKind.Plugin, "sacredgeometry", 1)]`. The child ships as its own
@@ -112,15 +113,15 @@ A Plugin or Component composes others two ways — pick per piece:
 warning, the **delete reference-guard**, and the pre-upload **compose-graph check** (`ma-idea verify`). Nesting
 is arbitrary-depth; the page drops only the **top** Plugin or Component's tag.
 
-> Interactive widgets (typed `[Parameter]`s, `@bind`, `@onclick` — e.g. the LegionPersonas gallery) work when
-> stamped on a page: `PageHost` renders the content page in one InteractiveServer circuit, so a stamped widget
+> Interactive components (typed `[Parameter]`s, `@bind`, `@onclick` — e.g. the LegionPersonas gallery) work when
+> stamped on a page: `PageHost` renders the content page in one InteractiveServer circuit, so a stamped component
 > is live with **no separate app pool**. Declare it with
 > `@attribute [Idea(RenderMode = CmsRenderMode.InteractiveServer)]`.
 
 ### Shadow DOM isolation (opt-in)
 
 A Component can render its internal markup inside a real browser Shadow DOM shadow root, so Page/Theme
-CSS cannot reach in via ordinary selectors regardless of the cascade-layer order (MAI-A44). This is
+CSS cannot reach in via ordinary selectors regardless of the cascade-layer order (MAI-§4.4). This is
 **opt-in per component** — every existing citizen is unaffected unless it deliberately turns it on.
 
 **The recipe** (see `library/Components/Textbox/V1.razor` for the reference port):
@@ -179,29 +180,34 @@ false`) and swallowed on any JS/interop failure. A page is never invalid because
 
 ### Build, pack, verify
 
-From the `MindAttic.Ideas.Library` repo (the CMS SDK CLI is in the sibling repo):
+From `library/` (the `ma-idea` CLI is `src/MindAttic.Ideas.Sdk`):
 
 ```pwsh
 dotnet build -c Release Plugins/Tooltip
-dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- pack `
+dotnet run --project ../src/MindAttic.Ideas.Sdk -- pack `
   --assembly Plugins/Tooltip/bin/Release/net10.0/MindAttic.Ideas.Plugin.Tooltip.dll `
   --out ./dist --wwwroot Plugins/Tooltip/assets `
-  --refs ../MindAttic.Ideas/src/MindAttic.Ideas.Abstractions/bin/Debug/net10.0
+  --refs ../src/MindAttic.Ideas.Abstractions/bin/Debug/net10.0
 
-dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- inspect ./dist/MindAttic.Ideas.Plugin.Tooltip.V1.idea
-dotnet run --project ../MindAttic.Ideas/src/MindAttic.Ideas.Sdk -- verify ./dist   # whole-library compose-graph
+dotnet run --project ../src/MindAttic.Ideas.Sdk -- inspect ./dist/MindAttic.Ideas.Plugin.Tooltip.V1.idea
+dotnet run --project ../src/MindAttic.Ideas.Sdk -- verify ./dist   # whole-library compose-graph
 ```
 
+`tools/pack-all.ps1` builds and repacks every citizen in one pass (`-Sign` content-signs each package
+from the Vault `PackageSigning` bucket; `-Install` copies them into the host's `library/`).
+
 `inspect` should show one `bin/` dll (host assemblies excluded) and your `wwwroot/` files; `verify` should
-report every declared dependency resolves.
+report every declared dependency resolves. The packer refuses a citizen that fails `CitizenValidator`
+(unsafe JS/CSS patterns, colliding or reserved setting names).
 
 ### Upload
 
-In the CMS admin → **/admin/upload**, drop the `.idea`. The host validates it (same gate as `ma-idea install`),
-registers the type, extracts its `wwwroot/`, and it's immediately referenceable from any page by its `{{tag}}`.
+In the CMS admin → **/admin/upload**, drop the signed `.idea`. The host verifies its signature and validates it
+(same gate as `ma-idea install`), registers the type, extracts its `wwwroot/`, and it's immediately
+referenceable from any page by its tag. An unsigned or tampered package is refused.
 Install `V2` later and pinned pages keep `V1` until nothing references it.
 
-### Instance settings (MAI-A45)
+### Instance settings (MAI-§4.5)
 
 Every public, writable, simple-typed `[Parameter]` (bool / string / number / enum, nullable allowed) is an
 **instance setting**: Admin → Page Management → expand a page → click the instance to edit it, and use
@@ -232,11 +238,11 @@ them live, don't cache at script load. There is intentionally no "all instances 
 
 | You want to… | Do this |
 |---|---|
-| Make a page | admin /admin/pages → add → fill Body HTML/CSS/JS + `{{tags}}` |
-| Activate a site-wide Plugin | `{{ Plugin.<Key> }}` in the body |
-| Place an inline Component | `{{ Component.<Key> attr="…" }}` |
-| Pick a theme | `{{ Theme.<Key> }}` in the body |
+| Make a page | admin /admin/pages → add → fill Body HTML/CSS/JS + citizen tags |
+| Activate a site-wide Plugin | tick it in Page Properties (or `<Plugin.<Key> />` in the body for one page) |
+| Place an inline Component | `<Component.<Key> attr="…" />` |
+| Pick a theme | the Theme dropdown in Page Properties |
 | Nest a citizen inside a citizen | `<CmsInclude Ref="…"/>` + `[Uses(...)]` (or a private sub-component) |
-| Float vs pin a version | omit `.V{n}` to float; `.V{n}` to pin |
+| Float vs pin a version | omit `data-version` to float; `data-version="n"` to pin |
 | Ship a new version | add a `V{n+1}` class; never edit `V{n}` |
-| Author a new Plugin or Component | copy a folder in `library/Plugins/` or `library/Components/`, build, `ma-idea pack`, upload |
+| Author a new Plugin or Component | copy a folder in `library/Plugins/` or `library/Components/`, build, `ma-idea pack`, `ma-idea sign`, upload |

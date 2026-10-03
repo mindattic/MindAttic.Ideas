@@ -9,7 +9,7 @@ namespace MindAttic.Ideas.Plugin.AtticFont;
 /// Emits one stylesheet (base64-embedded @font-face, no external font files) bundled in this package's
 /// wwwroot/ and served under <c>/_ideas/Plugin/atticfont/1/</c>. Registers the family and exposes the
 /// <c>--font-attic</c> token; a Theme/page applies it (e.g. <c>font-family: var(--font-attic)</c>).
-/// Instance settings (MAI-A45) can also apply the face directly (headings / any selector) and change the
+/// Instance settings (MAI-§4.5) can also apply the face directly (headings / any selector) and change the
 /// token's fallback stack; with none set it only registers the face, exactly as before.
 /// </summary>
 public sealed class V1 : PluginBase

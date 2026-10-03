@@ -8,7 +8,7 @@ namespace MindAttic.Ideas.Tests;
 
 /// <summary>
 /// One deployment, many domains. <c>Site.HostBindings</c> has been in the schema since migration #1
-/// and was read by nothing until A35, so these tests pin the two things that decide whether turning
+/// and drives site resolution (MAI-§4.10), so these tests pin the two things that decide whether turning
 /// it on is safe: an unbound host still lands on the default site (every existing single-site install
 /// must behave exactly as before), and a bound host lands on its own site and nowhere else.
 /// </summary>
@@ -100,8 +100,8 @@ public class SiteResolutionTests
     [Test]
     public void TheExistingSingleSiteInstallIsUnaffected()
     {
-        // Exactly the seeded shape: one site, no bindings. It must answer on every hostname, or A35
-        // would silently 404 every deployment that predates it.
+        // Exactly the seeded shape: one site, no bindings. It must answer on every hostname, or
+        // multi-domain resolution would silently 404 every single-site deployment.
         var sites = new[] { S(1, "default", "", isDefault: true) };
         Assert.Multiple(() =>
         {

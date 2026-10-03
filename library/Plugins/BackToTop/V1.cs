@@ -10,7 +10,7 @@ namespace MindAttic.Ideas.Plugin.BackToTop;
 /// Drop the token once and a floating button appears in the bottom-right corner after the visitor
 /// scrolls one screen down; clicking it smooth-scrolls back to the top. Zero author markup — the
 /// script creates the button itself (the arrow is a CSS glyph; no images, no requests).
-/// Instance settings (MAI-A45): look is emitted as <c>--ma-btt-*</c> custom properties; behavior is
+/// Instance settings (MAI-§4.5): look is emitted as <c>--ma-btt-*</c> custom properties; behavior is
 /// published to the script through <c>data-ma-settings="plugin.backtotop"</c>.
 /// </summary>
 public sealed class V1 : PluginBase

@@ -118,7 +118,7 @@ which fires `fullscreenchange` — both paths tear the overlay down, so one pres
 
 ## Settings
 
-All parameters are instance settings (MAI-A45); `url`, `title`, `blurb`, `buttontext`, poster, `expandtext` and `config` are content (not copied by Copy/Paste Configuration). Added:
+All parameters are instance settings (MAI-§4.5); `url`, `title`, `blurb`, `buttontext`, poster, `expandtext` and `config` are content (not copied by Copy/Paste Configuration). Added:
 
 - **Layout:** `maxwidth` (22rem), `radius` (14px), `titlesize` (1.15rem)
 - **Colors:** `background`, `bordercolor`, `buttonbackground`, `buttonbordercolor`, `buttonhoverbackground` — written to the `--ma-applaunch-*` properties above

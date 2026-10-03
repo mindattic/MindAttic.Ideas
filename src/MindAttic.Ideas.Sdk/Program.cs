@@ -18,7 +18,7 @@ using NuGet.Versioning;
 // pure and offline — they never touch a database. Installing a package into a running site is a host
 // operation (PackageInstallService); disabling likewise. All logic lives in MindAttic.Ideas.Packaging.
 //
-// sign/nupkg are the publish-side half of NuGet distribution (MAI-A41 follow-on): sign stamps a .idea's
+// sign/nupkg are the publish-side half of NuGet distribution (MAI-§4.8): sign stamps a .idea's
 // OWN content signature (PackageSigner — independent of NuGet's own signing feature, verified by every
 // install path); nupkg wraps an already-signed .idea into a `MindAttic.Ideas.{Category}.{Key}` package
 // at version `{n}.0.0`, ready for `dotnet nuget push` against a feed (see library/tools/publish-nuget.ps1).

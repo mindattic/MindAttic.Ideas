@@ -1,7 +1,6 @@
 namespace MindAttic.Ideas.Core.Entities;
 
-// The interim BCrypt `User` entity was retired on adoption of MindAttic.Authentication
-// (FOUNDATION_AMENDMENTS A16). Identity now lives in the library's `auth`-schema AuthUser
+// Identity is MindAttic.Authentication's (MAI-LAW-9): it lives in the library's `auth`-schema AuthUser
 // table (CmsDbContext implements IAuthDataContext). UserRoles + CmsClaims stay — they're
 // the Ideas-owned trust vocabulary the raw-content gate and claims augmentor key off of.
 

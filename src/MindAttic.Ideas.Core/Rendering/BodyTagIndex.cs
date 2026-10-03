@@ -25,7 +25,7 @@ public sealed record BodyTag(
 }
 
 /// <summary>
-/// Indexes and rewrites citizen tags in a page's SOURCE html without re-serializing it (MAI-A45): the tag
+/// Indexes and rewrites citizen tags in a page's SOURCE html without re-serializing it (MAI-§4.5): the tag
 /// IS the component instance, so editing an instance's settings rewrites exactly that tag's attribute list
 /// and leaves every other byte of the author's markup untouched. Uses the same PascalCase tag grammar as
 /// <see cref="IncludeExpander"/>; tags inside comments, &lt;script&gt; and &lt;style&gt; are ignored.

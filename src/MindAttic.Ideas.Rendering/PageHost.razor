@@ -102,7 +102,7 @@ else if (_context is not null)
             ? a.Slot
             : PluginSlot.BeforeBody;
 
-    /// <summary>A page plugin's stored instance settings as render parameters (MAI-A45); empty when none.</summary>
+    /// <summary>A page plugin's stored instance settings as render parameters (MAI-§4.5); empty when none.</summary>
     private IDictionary<string, object>? PluginParams(Type t) => _pluginParams.GetValueOrDefault(t);
 
     /// <summary>The "host[:port]" of an absolute URI, or null if it cannot be parsed.</summary>
@@ -339,7 +339,7 @@ else if (_context is not null)
             DefaultThemeKey = site?.DefaultThemeKey ?? "",
             SettingReader = key => siteSettings.GetValueOrDefault(key),
         };
-        // Per-instance settings for this page's theme / plugins / code-page body (MAI-A45). A component's
+        // Per-instance settings for this page's theme / plugins / code-page body (MAI-§4.5). A component's
         // settings live on its own tag in BodyHtml instead, so they never appear here.
         var slots = await db.WidgetPlacementSettings.Where(s => s.PageId == page.Id)
             .ToDictionaryAsync(s => s.SlotName, s => s.SettingsJson, StringComparer.OrdinalIgnoreCase);

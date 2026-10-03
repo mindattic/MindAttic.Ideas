@@ -13,7 +13,7 @@
     private const string Mount = "/_ideas/Theme/spring/1";
     public override IReadOnlyList<string> ThemeCssUrls { get; } = new[] { Mount + "/theme.css" };
 
-    // ── Instance settings (MAI-A45). Null = as designed; a value is emitted as a CSS custom property
+    // ── Instance settings (MAI-§4.5). Null = as designed; a value is emitted as a CSS custom property
     //    on this root element, which theme.css reads with the designed value as its fallback. ──
     [Parameter, Setting("Page background", Group = "Colors", Order = 1, Description = "Full CSS background (color, gradient or url()); empty = the designed background")]
     public string? Background { get; set; }

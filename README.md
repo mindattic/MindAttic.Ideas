@@ -119,7 +119,7 @@ Both are `Page` rows resolved by `(SiteId, Slug)` and rendered through the same 
 
 ## Tag grammar
 
-In a Data page body the composition grammar is the PascalCase tag form ([MAI-A28](docs/AMENDMENTS.md)):
+In a Data page body the composition grammar is the PascalCase tag form ([MAI-§4.4](docs/BIBLE.md#MAI-§4.4)):
 
 ```html
 <Theme.Cyberspace />
@@ -133,9 +133,9 @@ In a Data page body the composition grammar is the PascalCase tag form ([MAI-A28
 - Omit `data-version` to float to the latest enabled version; `data-version="2"` pins version 2.
 - Attributes that match a declared setting are coerced to its type; others pass through.
 - A missing or disabled reference degrades to a clickable placeholder that opens the admin uploader prefilled with the missing reference, never a crash.
-- `<Theme.X />` in the body overrides the page's theme; normally a page picks its theme in Page Properties.
+- A page picks its theme in Page Properties (an inline `<Theme.X />` override is planned, MAI-US-H3).
 
-The older `{{ Kind.Name }}` brace tokens are retired. `SeedService` converts any that survive in stored content into tags at startup.
+`{{ … }}` brace tokens are not part of the grammar; `SeedService` converts any found in stored content into tags at startup.
 
 Identity is inferred by convention: Kind from the base type, Key from the namespace tail, Version from the `V{n}` class name. An optional `[Idea(key:, version:, scope:)]` attribute overrides the convention when a name can't follow it.
 
@@ -196,7 +196,7 @@ Extension points:
 | Plugin | `PluginBase` | `StylesheetUrls` / `ScriptUrls`; override `BuildRenderTree` for markup |
 | Component | `ComponentBase` | `StylesheetUrls` / `ScriptUrls`, `BuildRenderTree`; typed `[Parameter]` settings |
 
-A citizen's instance settings are its public, writable, simple-typed `[Parameter]`s (bool, string, integer, floating, enum). For a Component they are its tag attributes; for a Theme, page-level Plugin or Code page they live in the page's versioned instance-settings slots. There is deliberately no "settings for every instance of X" layer; configuration is shared by Copy and Paste Configuration in the admin ([MAI-A45](docs/AMENDMENTS.md)).
+A citizen's instance settings are its public, writable, simple-typed `[Parameter]`s (bool, string, integer, floating, enum). For a Component they are its tag attributes; for a Theme, page-level Plugin or Code page they live in the page's versioned instance-settings slots. There is deliberately no "settings for every instance of X" layer; configuration is shared by Copy and Paste Configuration in the admin ([MAI-§4.5](docs/BIBLE.md#MAI-§4.5)).
 
 ## The idea package format
 
@@ -253,7 +253,7 @@ templates/maidea-page                 dotnet new template that scaffolds a Page
 seed/                                 demo and mindattic-site idealists
 infra/                                Bicep and provisioning scripts for Azure
 e2e/                                  Cypress end-to-end suite
-docs/                                 Codex canon: BIBLE, AMENDMENTS, USER_STORIES, rfc, guides
+docs/                                 Codex canon: BIBLE, AMENDMENTS, USER_STORIES, guides
 tools/                                build-readme, codex, deploy, install-library, shoot (screenshots)
 ```
 
@@ -357,7 +357,7 @@ That one `assets/` bundle serves three consumers with no duplication: a raw `.ht
 
 ## First-party library
 
-`library/` (`library/MindAttic.Ideas.Library.slnx`) is the home of every official Theme, Plugin and Component. It was merged into this repo from the former sibling repo [MindAttic.Ideas.Library](https://github.com/mindattic/MindAttic.Ideas.Library) ([MAI-A23](docs/AMENDMENTS.md)). It is build-independent of the CMS: it references only Abstractions, and the CMS never compile-references it, it only installs the packed output. A vanilla deployment installs everything in `library/` at boot.
+`library/` (`library/MindAttic.Ideas.Library.slnx`) is the home of every official Theme, Plugin and Component. It is build-independent of the CMS: it references only Abstractions, and the CMS never compile-references it, it only installs the packed output. A vanilla deployment installs everything in `library/` at boot.
 
 | Folder | Citizens with a project on disk |
 |---|---|
@@ -365,7 +365,7 @@ That one `assets/` bundle serves three consumers with no duplication: a raw `.ht
 | `Plugins/` (15) | AtticFont, BackHomeM, BackToTop, Breadcrumbs, Cyberspace, Footer, Header, NavMenu, OutfitFont, PinFooter, PoweredBy, SacredGeometry, SocialLinks, ThemeToggle, Tooltip |
 | `Components/` (31) | Accordion, AppLaunch, Callout, Card, Carousel, ChiMesh, Claudia, CodeBlock, ContactForm, FromHtml, FromMd, Frontpage, Gallery, HardwareHero, HelloWorld, Hero, IdeasBrochure, IdeasFrontpage, LegionPersonas, MediaImage, MediaLink, MindAtticFrontpage, ModalPopup, ProjectBrochure, ProjectGrid, TabBoard, TableOfContents, Tabs, Textbox, VideoEmbed, WebSnapshot |
 
-`library/dist/` holds the 53 packed `.idea` files. The former Light and Dark themes merged into the `Ideas` theme, which carries both palettes ([MAI-A47](docs/AMENDMENTS.md)).
+`library/dist/` holds the 53 packed `.idea` files. Every theme carries a light and a dark palette ([MAI-§4.13](docs/BIBLE.md#MAI-§4.13)).
 
 ```powershell
 # Build one citizen
@@ -394,8 +394,8 @@ GLOBAL (0)  ->  THEME (100)  ->  PAGE (150)  ->  COMPONENT (200)  ->  inline sty
 host setting    e.g. Cyberspace   Page.PageCss    a citizen's own CSS   by DOM nature
 ```
 
-- `CmsHead` emits `@layer global, theme, page, component;` before any CSS and wraps each tier in its named layer, so the order wins by cascade-layer precedence rather than selector specificity. No tier needs `!important` to beat a lower one ([MAI-A43](docs/AMENDMENTS.md)).
-- Component CSS beats Page CSS by design: a Component guarantees its own presentation whatever page it sits in ([MAI-A44](docs/AMENDMENTS.md)).
+- `CmsHead` emits `@layer global, theme, page, component;` before any CSS and wraps each tier in its named layer, so the order wins by cascade-layer precedence rather than selector specificity. No tier needs `!important` to beat a lower one ([MAI-§4.7](docs/BIBLE.md#MAI-§4.7)).
+- Component CSS beats Page CSS by design: a Component guarantees its own presentation whatever page it sits in ([MAI-§4.7](docs/BIBLE.md#MAI-§4.7)).
 - On save, `CssConflictMerger` collapses exact same-selector conflicts in an Untrusted page's own `PageCss`; author-trusted CSS is stored as written. `CssShorthandLinter` flags shorthand/longhand mixes as an advisory.
 
 A per-page tweak is either inline CSS in the Page definition or an uploaded `.idea`.
@@ -405,7 +405,7 @@ A per-page tweak is either inline CSS in the Page definition or an uploaded `.id
 Sign-in is delegated to [MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication) (Argon2id with pepper, Vault-backed, hardened sessions). `src/MindAttic.Ideas.Blazor/Program.cs` wires it with `AddMindAtticAuthentication<CmsDbContext>(...)` and `AppName = "Ideas"`, a hard per-app trust boundary with no cross-app SSO. What stays Ideas-owned is the raw-content trust gate:
 
 - On save, a page body is stamped `ContentTrust.Author` only if the writer holds the `Cms.AuthorRawMarkup` claim (Admin role); otherwise `Untrusted`.
-- Every page body, at every trust level, goes through HtmlSanitizer before rendering ([MAI-A46](docs/AMENDMENTS.md)). No script, event handler, `javascript:` / `vbscript:` / `data:` URL, frame, form, embed or style element survives in page markup.
+- Every page body, at every trust level, goes through HtmlSanitizer before rendering ([MAI-§4.6](docs/BIBLE.md#MAI-§4.6)). No script, event handler, `javascript:` / `vbscript:` / `data:` URL, frame, form, embed or style element survives in page markup.
 - Author trust only keeps more: citizen tags and their settings, `id`, form-less buttons, `target` (always with `rel="noopener noreferrer"`) and sanitized inline `style`. Untrusted bodies drop citizen tags.
 - Deliberate author JavaScript lives only in the separate, Author-only Page JS field, never in markup.
 - Demoting an author is a deliberate policy action (an `AuthorTrustVersion` epoch bump), never a silent re-render of live pages.
@@ -414,7 +414,7 @@ Validation runs in three places with one rule set: on page save (`PageMarkupVali
 
 ## One deployment, many domains
 
-A single Ideas instance can serve several domains ([MAI-A35](docs/AMENDMENTS.md)). Each `Site` row carries a host-bindings list; an incoming request is matched against it and resolved to that site, and `(SiteId, Slug)` does the rest, so two domains can both have a `/frontpage` and never see each other's.
+A single Ideas instance can serve several domains ([MAI-§4.10](docs/BIBLE.md#MAI-§4.10)). Each `Site` row carries a host-bindings list; an incoming request is matched against it and resolved to that site, and `(SiteId, Slug)` does the rest, so two domains can both have a `/frontpage` and never see each other's.
 
 Manage it in Admin, Sites, which also answers "which site would this hostname reach?" with the same rule the render path uses. Bindings are comma-separated, case-insensitive, tolerate a pasted URL, and are port-agnostic unless you name a port:
 
@@ -447,7 +447,7 @@ The Blazor host doubles as a CLI for operations that need the live database and 
 
 ### Moving content between environments
 
-A `.idea` package moves a citizen; a `.idealist` moves what an author built with citizens, plus which citizens a deployment should have installed ([MAI-A41](docs/AMENDMENTS.md), which replaced the `.ideabundle` of A34). `--seed` regenerates the shape of a site, never its curation, so promoting a hand-built site to production is an export and an import. A vanilla deployment has no idealist configured and installs everything in `library/`; a custom instance points `Ideas:Idealist` or `IDEAS_IDEALIST` at one.
+A `.idea` package moves a citizen; a `.idealist` moves what an author built with citizens, plus which citizens a deployment should have installed ([MAI-§4.9](docs/BIBLE.md#MAI-§4.9)). `--seed` regenerates the shape of a site, never its curation, so promoting a hand-built site to production is an export and an import. A vanilla deployment has no idealist configured and installs everything in `library/`; a custom instance points `Ideas:Idealist` or `IDEAS_IDEALIST` at one.
 
 ```powershell
 # on the source environment
@@ -466,7 +466,7 @@ dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist D:\temp\sit
 
 ### NuGet distribution and content signing
 
-A `.idealist` never carries package bytes. Every `.idea` distributes as its own NuGet package (id `MindAttic.Ideas.{Category}.{Key}`, version `{n}.0.0`), and the resolver tries the local `library/` folder first, then a NuGet feed configured by `Ideas:NuGetFeedUrl` ([MAI-A42](docs/AMENDMENTS.md)). Independently of NuGet's own signing, every `.idea` carries `idea.sig.json`, verified once at `PackageInstallService.InstallAsync`, so a tampered or unsigned package is rejected the same way whether it arrived from `library/`, `--install`, admin upload or NuGet. A same-version install with different content is a hard reject raised in the Admin Inbox.
+A `.idealist` never carries package bytes. Every `.idea` distributes as its own NuGet package (id `MindAttic.Ideas.{Category}.{Key}`, version `{n}.0.0`), and the resolver tries the local `library/` folder first, then a NuGet feed configured by `Ideas:NuGetFeedUrl` ([MAI-§4.8](docs/BIBLE.md#MAI-§4.8)). Independently of NuGet's own signing, every `.idea` carries `idea.sig.json`, verified once at `PackageInstallService.InstallAsync`, so a tampered or unsigned package is rejected the same way whether it arrived from `library/`, `--install`, admin upload or NuGet. A same-version install with different content is a hard reject raised in the Admin Inbox.
 
 ```powershell
 dotnet run --project src/MindAttic.Ideas.Sdk -- sign path\to\Foo.V1.idea --pfx signing.pfx --password <password>
@@ -536,7 +536,7 @@ npm run cy:run
 
 ## Deployment
 
-One build runs as two deployments on one App Service plan ([MAI-A48](docs/AMENDMENTS.md)); the full runbook is [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+One build runs as two deployments on one App Service plan ([MAI-§4.14](docs/BIBLE.md#MAI-§4.14)); the full runbook is [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 | Site | What it is |
 |---|---|
@@ -550,34 +550,28 @@ One build runs as two deployments on one App Service plan ([MAI-A48](docs/AMENDM
 
 ## Limitations
 
-- `docs/AUTHORING.md` and the e2e package description still show the retired `{{ Kind.Name }}` brace grammar; the tag form above is current.
 - The Blazor host needs SQL Server (LocalDB locally) and MindAttic.Vault files to run; there is no in-memory mode.
 - Uploaded packages render Static or InteractiveServer only; WebAssembly is excluded by design.
-- `library/Themes/Dark` and `library/Themes/Light` are empty leftover folders from before the merge into the `Ideas` theme.
 - Expect a few minutes of demo downtime at the top of each hour while it resets.
 
 ## Documentation
 
-This README is a practical tour. The canonical source of truth is the Codex canon; an amendment always wins over prose here or in the bible.
+This README is a practical tour. The canonical source of truth is the Codex canon in `docs/`.
 
 | File | What it is |
 |---|---|
 | [docs/BIBLE.md](docs/BIBLE.md) | Source of truth: what the project is and is not, the architecture, the laws. |
-| [docs/AMENDMENTS.md](docs/AMENDMENTS.md) | Append-only change log (MAI-A1 onward). An amendment wins over the bible. |
+| [docs/AMENDMENTS.md](docs/AMENDMENTS.md) | Pending decisions not yet folded into the bible (normally empty). |
 | [`docs/USER_STORIES.md`](docs/USER_STORIES.md) | Test-cited stories; every done story names the test that proves it. |
 | [docs/AUTHORING.md](docs/AUTHORING.md) | The full authoring walkthrough: pages, packages, asset bundles, build, pack, upload. |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Azure provisioning, CI, and the hourly demo reset. |
 | [`docs/DEV_LOGIN.md`](docs/DEV_LOGIN.md) | How to sign in to Admin on localhost safely. |
-| [docs/rfc/0001-unified-page-plan.md](docs/rfc/0001-unified-page-plan.md) | The unified page plan (implemented; historical record). |
-| [`docs/FOUNDATION_ADR.md`](docs/FOUNDATION_ADR.md) | The original foundation deliberation (historical; vocabulary superseded). |
-| [`docs/FOUNDATION_AMENDMENTS.md`](docs/FOUNDATION_AMENDMENTS.md) | Preserved for existing links (historical). |
-| [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) | The original brief (historical). |
 | [docs/BIBLE.digest.md](docs/BIBLE.digest.md) | Generated by `tools/codex.ps1 digest`; never hand-edit. |
 | [library/README.md](library/README.md) | The first-party library's own docs; its canon is under `library/docs/`. |
 | [tools/shoot/README.md](tools/shoot/README.md) | ma-shoot, the manifest-driven screenshot tool for project brochure pages. |
 | [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) | Entry points for coding agents working in this repo. |
 
-A note on vocabulary: the content kinds were renamed as the design settled (`Widget` and `Control` became `Plugin` and `Component`, amendments A18, A19 and A26). If you see `Widget` or `Control` in an old file or comment, it predates that split; the glossary in `docs/BIBLE.md` is authoritative.
+A note on vocabulary: the content kinds are Page, Plugin, Theme and Component. `Widget` and `Control` are not kinds (the manifest validator rejects them); the glossary in `docs/BIBLE.md` is authoritative.
 
 ## License
 

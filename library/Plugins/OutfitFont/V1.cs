@@ -9,7 +9,7 @@ namespace MindAttic.Ideas.Plugin.OutfitFont;
 /// target of the UiUx OutfitFont source). A code-only capability activator: it emits ONE stylesheet
 /// (base64-embedded @font-face, so no external font files) bundled in this package's wwwroot/ and
 /// served under <c>/_ideas/Plugin/outfitfont/1/</c>. Dropping it on a page makes the Outfit family
-/// available page-wide. Instance settings (MAI-A45) can also apply the face (body / headings / any
+/// available page-wide. Instance settings (MAI-§4.5) can also apply the face (body / headings / any
 /// selector) and change the <c>--font-outfit</c> fallback stack; with none set it only registers the face.
 /// </summary>
 public sealed class V1 : PluginBase

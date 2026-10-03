@@ -11,7 +11,7 @@ namespace MindAttic.Ideas.Blazor.Cli;
 /// cref="ExportIdeaListCli"/> or <see cref="ComposeIdeaListCli"/> to this environment.
 /// <para>
 /// Argument parsing and console reporting only — the work is <see cref="IdeaListImporter"/> in Core.
-/// Replaces the retired <c>--import-content</c> (MAI-A34, superseded MAI-A41).
+/// See MAI-§4.9.
 /// </para>
 /// Usage: <c>dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist site.idealist
 /// [--into-site &lt;key&gt;] [--dry-run] [--untrusted] [--prune] [--packages-dir &lt;dir&gt;]</c>

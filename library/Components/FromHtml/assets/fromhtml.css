@@ -21,7 +21,7 @@
     font-size: var(--ma-fromhtml-return-size, 14px);
 }
 
-/* ReturnPosition = Top (instance setting, MAI-A45) */
+/* ReturnPosition = Top (instance setting, MAI-§4.5) */
 .ma-fromhtml-return.ma-fromhtml-return--top { top: 0; bottom: auto; }
 
 .ma-fromhtml-return-link {

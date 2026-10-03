@@ -102,9 +102,6 @@ public interface IContentCatalog
             ? new ResolvedContent(ContentResolution.Missing, null, desc)
             : new ResolvedContent(ContentResolution.Resolved, type, desc);
     }
-
-    // ---- site-scoped lookups (APPEND-ONLY default methods — frozen-interface safe) ----------------
-    //
 }
 
 /// <summary>The outcome of resolving an include tag. APPEND-ONLY.</summary>
@@ -138,7 +135,7 @@ public interface IRawContentGate
     MarkupString Emit(string? html, ContentTrust trust);
 
     /// <summary>
-    /// Sanitizes a page BODY before it is expanded (MAI-A46): every trust level is XSS-sanitized; Author
+    /// Sanitizes a page BODY before it is expanded (MAI-§4.6): every trust level is XSS-sanitized; Author
     /// trust additionally keeps citizen tags and sanitized inline style. Default: unchanged (design-time).
     /// </summary>
     string SanitizeBody(string html, ContentTrust trust) => html;

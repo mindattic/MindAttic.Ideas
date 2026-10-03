@@ -65,7 +65,7 @@ A full-width hero banner with a headline, optional subtitle, optional call-to-ac
 - **Single quotes in URLs**: if `image=` contains a `data:` URI with single quotes, they are percent-encoded (`%27`) automatically to keep the CSS `url('…')` value valid.
 - **Stylesheet**: the component loads `/_ideas/Component/hero/1/hero.css` via a `<link>` tag. This path is served by the MindAttic.Ideas runtime from the `.idea` package.
 
-## Settings (MAI-A45)
+## Settings (MAI-§4.5)
 
 Every parameter is a per-instance setting in Admin (stored as the tag's attributes). Unset values keep the as-designed look.
 

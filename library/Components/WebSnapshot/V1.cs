@@ -12,7 +12,7 @@ namespace MindAttic.Ideas.Component.WebSnapshot;
 /// .b64 capture) or inline mode (set the inner <c>&lt;img src&gt;</c> yourself, e.g. a base64 data
 /// URI per the page convention). Exposes <c>window.WebSnapshot.autoInit()</c> for containers built
 /// after load (the frontpage's tabified Portfolio tiles).
-/// Instance settings (MAI-A45) are page-wide — the activator serves every .web-snapshot on the page —
+/// Instance settings (MAI-§4.5) are page-wide — the activator serves every .web-snapshot on the page —
 /// and are emitted only when set: CSS custom properties in a &lt;style&gt;, behavior on
 /// window.WebSnapshotConfig.
 /// </summary>

@@ -77,7 +77,7 @@ A 3-column fixed header: logo link on the left, free-form center column, and an 
 
 ## Settings
 
-Per-instance settings (MAI-A45), edited in Admin; empty = as designed.
+Per-instance settings (MAI-§4.5), edited in Admin; empty = as designed.
 
 - **Content:** Logo text, Logo link, Admin link text, Sign-out text (not copied by Copy Configuration)
 - **Layout:** Padding, Margin, Alignment, Positioning (Fixed / Sticky / Static), Height, Column gap, Stacking order

@@ -121,6 +121,6 @@
 .mah-uc-signout { color: #c9d0dc; }
 .mah-uc-signout:hover { color: #e7eaf0; }
 
-/* ── Instance-setting modifiers (MAI-A45) — added to .mah-root by V1.razor when a toggle is off ── */
+/* ── Instance-setting modifiers (MAI-§4.5) — added to .mah-root by V1.razor when a toggle is off ── */
 .mah-root.mah-root--no-anim .mah-logo-link { transition: none; }
 .mah-root.mah-root--no-hover .mah-logo-link:hover { opacity: var(--mah-logo-opacity, .8); }

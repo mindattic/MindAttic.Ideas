@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// MAI-A32. A GitHub runner has no <c>C:\LocalNuGet</c> and no <c>../local-feed</c>, and NuGet
+/// MAI-§4.14. A GitHub runner has no <c>C:\LocalNuGet</c> and no <c>../local-feed</c>, and NuGet
 /// tolerates a missing local source <i>silently</i> — so a MindAttic package that was bumped in a
 /// csproj but never vendored into <c>lib/local-packages/</c> does not fail here, it fails in CI with
 /// a confusing NU1101 about a package that plainly exists on the dev box. This fixture closes that
@@ -108,7 +108,7 @@ public class DeploymentPackagingTests
     }
 
     /// <summary>
-    /// Floors for the three packages bumped to clear security advisories (MAI-A32). Pinned versions
+    /// Floors for the three packages bumped to clear security advisories (MAI-§4.14). Pinned versions
     /// are easy to revert by accident during a merge, and a downgrade silently reintroduces the
     /// advisory — nothing else in the build would notice.
     /// </summary>

@@ -12,7 +12,7 @@ namespace MindAttic.Ideas.Plugin.PinFooter;
 /// document is shorter than the viewport and flows normally once content scrolls — re-evaluated on
 /// resize, font load, and (CMS adapter) host DOM swaps. Distinct from the generic
 /// <c>Plugin.Footer</c> baseline activator: this is the authentic mindattic.com implementation and
-/// class contract. Instance settings (MAI-A45): the on/off toggle reaches the script through
+/// class contract. Instance settings (MAI-§4.5): the on/off toggle reaches the script through
 /// <c>data-ma-settings="plugin.pinfooter"</c>; the pinned look is emitted as a small style block.
 /// </summary>
 public sealed class V1 : PluginBase

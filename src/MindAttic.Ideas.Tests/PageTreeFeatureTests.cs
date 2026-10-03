@@ -126,7 +126,7 @@ public class PageTreeFeatureTests
         Assert.That(await feature.ChildrenOfSlugAsync("no-such-page"), Is.Empty);
     }
 
-    // ---- multi-site: a slug is unique only within a site (MAI-A35 host-bound sites) ----
+    // ---- multi-site: a slug is unique only within a site (MAI-§4.10 host-bound sites) ----
 
     /// <summary>
     /// Two sites, each with a page at the SAME slug and its own children. Returns the feature plus both

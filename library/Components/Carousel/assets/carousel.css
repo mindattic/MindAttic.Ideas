@@ -1,5 +1,5 @@
 ﻿/* MindAttic.Ideas.Component.Carousel — slider chrome. Scoped under .ma-carousel (MAIL-LAW-6).
-   Values read optional custom properties (instance settings, MAI-A45) with the as-designed fallback. */
+   Values read optional custom properties (instance settings, MAI-§4.5) with the as-designed fallback. */
 .ma-carousel {
   --ma-carousel-height: 20rem;
   position: relative;

@@ -8,7 +8,7 @@ using MindAttic.Ideas.Packaging;
 
 namespace MindAttic.Ideas.Tests;
 
-/// <summary>MAI-A46: page bodies are validated at save, citizens at pack, and both again in this suite.</summary>
+/// <summary>MAI-§4.6: page bodies are validated at save, citizens at pack, and both again in this suite.</summary>
 [TestFixture]
 public class PageMarkupValidatorTests
 {

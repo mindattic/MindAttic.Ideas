@@ -35,5 +35,5 @@
   border-top: 3px solid currentColor;
   transform: rotate(45deg);
 }
-/* Instance setting "Animations" off (MAI-A45): backtotop.js adds this class. */
+/* Instance setting "Animations" off (MAI-§4.5): backtotop.js adds this class. */
 .ma-backtotop.ma-backtotop--no-anim { transition: none; transform: none; }

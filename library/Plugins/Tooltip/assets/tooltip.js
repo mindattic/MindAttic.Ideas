@@ -25,7 +25,7 @@
   var EDGE = 6;        // min distance from viewport edge (default; instance setting "edge")
   var tip, arrow, body, current, timer;
 
-  // Instance settings (MAI-A45), read LIVE from <data data-ma-settings="plugin.tooltip" value="{json}">.
+  // Instance settings (MAI-§4.5), read LIVE from <data data-ma-settings="plugin.tooltip" value="{json}">.
   // Every value falls back to the designed behavior when absent.
   var cache = { raw: null, parsed: {} };
   function settings() {

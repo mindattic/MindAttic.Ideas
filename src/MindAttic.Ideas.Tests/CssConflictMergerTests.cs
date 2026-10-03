@@ -3,7 +3,7 @@ using MindAttic.Ideas.Core.Services;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// MAI-A44: CssConflictMerger collapses same-selector shorthand/longhand conflicts WITHIN one CSS text
+/// MAI-§4.7: CssConflictMerger collapses same-selector shorthand/longhand conflicts WITHIN one CSS text
 /// (never across texts -- see the class doc comment for why GlobalCss/Theme/Component are out of scope).
 /// </summary>
 [TestFixture]

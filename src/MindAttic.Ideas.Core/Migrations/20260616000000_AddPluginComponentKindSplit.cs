@@ -20,7 +20,7 @@ namespace MindAttic.Ideas.Core.Migrations
             // Data rewrite: Widget is no longer a valid ContentKind (ordinal 1 is now Plugin).
             // Databases that went through the Widget era (RenamePluginKindToWidget migration) must
             // have their rows updated so DiscoveryService and PackageInstallService can parse them.
-            // Plugin-classified keys per MAIL-A6; all remaining Widget rows → Component.
+            // Plugin-classified keys (library/docs/data/components.json); all remaining Widget rows → Component.
             migrationBuilder.Sql(@"
 UPDATE [InstalledPackages]
 SET [Category] = 'Plugin'

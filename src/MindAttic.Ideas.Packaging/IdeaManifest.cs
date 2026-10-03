@@ -7,8 +7,8 @@ namespace MindAttic.Ideas.Packaging;
 /// The <c>idea.json</c> manifest the packer emits and the host reads to register a package. This is a
 /// FROZEN WIRE CONTRACT — once a <c>.idea</c> ships, the kernel field names and meanings cannot change,
 /// only grow (forward-compat is preserved by <see cref="Extra"/>, which losslessly round-trips any field
-/// a newer packer adds that this host doesn't yet model). Mirrors the install-package model in
-/// docs/FOUNDATION_ADR.md §5/Appendix E. JSON keys are camelCase.
+/// a newer packer adds that this host doesn't yet model). See MAI-§4.8 and
+/// HOUSE-LAW-5. JSON keys are camelCase.
 /// </summary>
 public sealed record IdeaManifest
 {
@@ -63,7 +63,7 @@ public sealed record IdeaManifest
     [JsonPropertyName("uses")] public IReadOnlyList<string> Uses { get; init; } = [];
 
     /// <summary>
-    /// The citizen's declared INSTANCE SETTINGS (MAI-A45): its simple-typed [Parameter]s with their
+    /// The citizen's declared INSTANCE SETTINGS (MAI-§4.5): its simple-typed [Parameter]s with their
     /// [Setting] metadata, read reflection-only by the packer. Informational — the host reflects the
     /// loaded type for the live schema — so a package describes its configuration surface without loading.
     /// </summary>

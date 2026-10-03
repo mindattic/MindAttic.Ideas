@@ -1,5 +1,5 @@
 ﻿/* MindAttic.Ideas.Component.Card — content card + .ma-cards row helper. Scoped (MAIL-LAW-6).
-   Values read optional --ma-card-* custom properties (instance settings, MAI-A45) with the
+   Values read optional --ma-card-* custom properties (instance settings, MAI-§4.5) with the
    as-designed fallback. */
 .ma-cards {
   display: grid;

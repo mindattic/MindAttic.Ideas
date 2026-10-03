@@ -1,6 +1,6 @@
 %% MindAttic.Vault — how a storage root is chosen, on any OS.
 %%
-%% This is the chain introduced in Vault V3 (VLT-A3). The red node is the one that actually took
+%% This is the root-resolution chain of MindAttic.Vault V3 and later. The red node is the one that actually took
 %% production down: GetFolderPath returns an EMPTY STRING on a container with no user profile — it
 %% does not throw — and the old code turned that into an exception during host construction, so the
 %% process aborted before a line of application code ran.

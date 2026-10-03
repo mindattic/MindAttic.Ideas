@@ -33,7 +33,7 @@ public sealed class CmsContentDefinition
     public int Priority { get; set; }                // Compiled=100, Package=50 by convention
     public bool IsShadowed { get; set; }             // lost a collision but kept visible
     public bool IsActive { get; set; } = true;       // discovery-managed presence
-    /// <summary>Admin disable: a disabled Theme/Component cannot be used until re-enabled (A3).</summary>
+    /// <summary>Admin disable: a disabled Theme/Component cannot be used until re-enabled (HOUSE-LAW-2).</summary>
     public bool Enabled { get; set; } = true;
     public bool AllowOverride { get; set; }          // a package may shadow a compiled key only if true
 

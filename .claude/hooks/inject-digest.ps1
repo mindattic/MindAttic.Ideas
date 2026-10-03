@@ -40,8 +40,8 @@ try {
   $preamble = @"
 [MindAttic.Ideas Codex] The following digest of docs/BIBLE.md is the AUTHORITATIVE source of truth
 for this project (what it IS, is NOT, its Laws, and current status). Treat it as binding context.
-Full detail lives in docs/BIBLE.md; amendments win over the bible (docs/AMENDMENTS.md); stories and
-their verifying tests are in docs/USER_STORIES.md. Org-wide laws are inherited from
+Full detail lives in docs/BIBLE.md; stories and their verifying tests are in
+docs/USER_STORIES.md. Org-wide laws are inherited from
 MindAttic.HouseRules.md. Do not contradict this digest; if a change is needed, amend the canon.
 
 "@

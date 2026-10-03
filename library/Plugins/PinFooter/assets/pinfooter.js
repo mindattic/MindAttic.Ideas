@@ -20,7 +20,7 @@
     if (window.__pinFooterInited) return;
     window.__pinFooterInited = true;
 
-    // CMS adapter: instance setting (MAI-A45) "enabled" read LIVE from
+    // CMS adapter: instance setting (MAI-§4.5) "enabled" read LIVE from
     // <data data-ma-settings="plugin.pinfooter" value="{json}">; absent = pin (the verbatim behavior).
     var settingsCache = { raw: null, parsed: {} };
     function pinEnabled() {

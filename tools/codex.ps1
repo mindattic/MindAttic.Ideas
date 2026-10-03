@@ -6,8 +6,8 @@
   doctor : validate the docs/ canon (front-matter, unique IDs, resolvable cross-refs, JSON-schema
            for any docs/data, done-stories-name-a-test, cited paths exist, generatedFrom freshness).
            Exits non-zero on any hard error.
-  digest : regenerate docs/BIBLE.digest.md from BIBLE.md s1/s3/s5/s9 + a status index + the latest
-           amendment head. Never hand-edit the digest.
+  digest : regenerate docs/BIBLE.digest.md from BIBLE.md s1/s3/s5/s9 + a status index + any pending
+           decision heads from AMENDMENTS.md. Never hand-edit the digest.
   Windows PowerShell 5.1 safe (no pwsh-only syntax).
 #>
 [CmdletBinding()]
@@ -234,12 +234,13 @@ function Invoke-Digest {
     }
   }
 
-  # latest amendment head
-  $amendHead = ''
+  # pending decision heads (AMENDMENTS.md is normally empty)
+  $pending = @()
   if (Test-Path -LiteralPath $Amend) {
     $am = Read-Text $Amend
-    $heads = [regex]::Matches($am, '##\s+(MAI-A\d+\s+\S\s+[^\n\{]+)')
-    if ($heads.Count -gt 0) { $amendHead = $heads[$heads.Count - 1].Groups[1].Value.Trim() }
+    $heads = [regex]::Matches($am, '(?m)^##\s+(MAI-A\d+\s+\S\s+[^
+\{]+)')
+    foreach ($h in $heads) { $pending += $h.Groups[1].Value.Trim() }
   }
 
   $today = (Get-Date).ToString('yyyy-MM-dd')
@@ -270,14 +271,16 @@ function Invoke-Digest {
   [void]$sb.AppendLine($s9)
   [void]$sb.AppendLine('')
   [void]$sb.AppendLine('## Status index (from USER_STORIES.md)')
-  [void]$sb.AppendLine("- done: $done  |  partial: $partial  |  planned: $planned  |  cut: $cut")
-  [void]$sb.AppendLine('')
-  [void]$sb.AppendLine('## Latest amendment')
-  [void]$sb.AppendLine("- $amendHead")
+  [void]$sb.AppendLine("- done: $done  |  partial: $partial  |  planned: $planned")
+  if ($pending.Count -gt 0) {
+    [void]$sb.AppendLine('')
+    [void]$sb.AppendLine('## Pending decisions (docs/AMENDMENTS.md)')
+    foreach ($p in $pending) { [void]$sb.AppendLine("- $p") }
+  }
 
   Set-Content -LiteralPath $Digest -Value $sb.ToString() -Encoding UTF8
   $tok = [math]::Round(($sb.ToString().Length / 4))
-  Write-Host "Wrote docs/BIBLE.digest.md (~$tok tokens). done=$done partial=$partial planned=$planned cut=$cut"
+  Write-Host "Wrote docs/BIBLE.digest.md (~$tok tokens). done=$done partial=$partial planned=$planned"
 }
 
 switch ($Command) {

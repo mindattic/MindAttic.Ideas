@@ -1,6 +1,6 @@
 # Deploying MindAttic.Ideas to Azure
 
-One build of the CMS runs as **two deployments** on one App Service plan ([MAI-A48](AMENDMENTS.md#MAI-A48)):
+One build of the CMS runs as **two deployments** on one App Service plan ([BIBLE §4.14](BIBLE.md#MAI-§4.14)):
 
 | Site | What it is |
 |---|---|
@@ -100,7 +100,7 @@ Never deploys when migrate *ran and failed*: that is how you get a half-migrated
 ## The hourly demo reset — `.github/workflows/demo-reset.yml`
 
 Hourly (`cron: '0 * * * *'`), after every deploy, and on dispatch. It is the demo's operator; the
-product contains no reset code ([MAI-A39](AMENDMENTS.md#MAI-A39)).
+product contains no reset code ([MAI-LAW-11](BIBLE.md#MAI-LAW-11)).
 
 1. `credentials` := `{"status":"resetting"}` — the Ideas page says the demo is resetting.
 2. A new password (CSPRNG, 4×5 unambiguous characters) → demo vault `admin-password`. Masked in logs,
@@ -175,19 +175,19 @@ Set as App Service application settings. `__` maps to `:` in the config chain.
   ```
   Point it at production by exporting the same `Media__*` and `ConnectionStrings__Ideas` values
   locally. `/_media/{uid}` then 302s to a short-lived SAS and Azure serves the Range requests
-  ([A31](AMENDMENTS.md#MAI-A31)).
+  ([BIBLE §4.11](BIBLE.md#MAI-§4.11)).
 - **A whole authored site** — export it where you built it, import it where it should live
-  ([A41](AMENDMENTS.md#MAI-A41), superseding [A34](AMENDMENTS.md#MAI-A34)). This is the only path that
+  ([BIBLE §4.9](BIBLE.md#MAI-§4.9)). This is the only path that
   carries hand-curation: composed page bodies, extracted media and the `ComponentMetadata` rows behind
   `frommd`/`fromhtml` slots — plus, for a fresh deployment, which `.idea` packages it should install.
   ```pwsh
   # on the source (your dev box)
-  dotnet run --project src/MindAttic.Ideas.Blazor -- --export-idealist D:	mp\site.idealist
+  dotnet run --project src/MindAttic.Ideas.Blazor -- --export-idealist D:	emp\site.idealist
 
   # against production — dry run first; it prints exactly what it would create and update
   $env:ConnectionStrings__Ideas = '<production connection string>'
-  dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist D:	mp\site.idealist --dry-run
-  dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist D:	mp\site.idealist
+  dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist D:	emp\site.idealist --dry-run
+  dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist D:	emp\site.idealist
   ```
   Safe to re-run: pages reconcile on uid then slug (so the baseline seed's pages are **adopted**, not
   duplicated) and media is matched by SHA-256 (so nothing re-uploads). The import reports how many
@@ -213,7 +213,7 @@ falls back to streaming, which then finds no bytes.
 If a run was killed mid-flight, delete the leftover `gh-<runid>` rule on the SQL server.
 
 **`az webapp deploy` reports failure but the site is fine.** The CLI stops polling at ten minutes;
-first boot installs 51 `.idea`s against a 5-DTU database and takes longer. Trust `/_health`, not the
+first boot installs 53 `.idea`s against a 5-DTU database and takes longer. Trust `/_health`, not the
 CLI's verdict — the template sets `WEBSITES_CONTAINER_START_TIME_LIMIT=1800` so the container itself
 is allowed to finish.
 
@@ -224,8 +224,7 @@ forward slashes (`dotnet publish` then a zip tool that uses `/`).
 **A secret you definitely set is "not found" on Linux.** App Service rewrites application-setting
 names when injecting them as environment variables: hyphens are dropped and dots become underscores,
 so `…Security__pepper.v1` arrives as `…Security__pepper_v1`. MindAttic.Authentication V4 matches
-these by reducing both sides to letters and digits ([A33](AMENDMENTS.md#MAI-A33)); older versions
-fail-closed on a secret that is genuinely present. Azure now also **rejects** hyphenated names
+these by reducing both sides to letters and digits ([BIBLE §4.14](BIBLE.md#MAI-§4.14)). Azure now also **rejects** hyphenated names
 outright (`AppSetting with name '…' is not allowed`), which blocks every settings update — so every
 setting here is alphanumeric.
 
@@ -234,5 +233,5 @@ setting here is alphanumeric.
 is missing. And always pack with `pack-all.ps1 -Sign` — an unsigned package is refused on every path.
 
 **App aborts at startup with a stack trace inside `ConfigurationBuilder`.** MindAttic.Vault below V3
-threw when the host had no user profile, which on Linux is during host construction — SIGABRT before
-any application code runs. V3 resolves a root on every OS instead ([VLT-A3](../../MindAttic.Vault/docs/AMENDMENTS.md)).
+throws when the host has no user profile, which on Linux is during host construction — SIGABRT before
+any application code runs. Use MindAttic.Vault V3 or later, which resolves a root on every OS.

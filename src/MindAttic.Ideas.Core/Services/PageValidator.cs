@@ -6,7 +6,7 @@ namespace MindAttic.Ideas.Core.Services;
 
 public enum PageIssueSeverity { Warning, Error }
 
-/// <summary>One finding about a page body (MAI-A46).</summary>
+/// <summary>One finding about a page body (MAI-§4.6).</summary>
 public sealed record PageIssue(PageIssueSeverity Severity, string Message);
 
 /// <summary>
@@ -17,7 +17,7 @@ public sealed record PageIssue(PageIssueSeverity Severity, string Message);
 public delegate IReadOnlyDictionary<string, string>? CitizenSchemaLookup(ContentKind kind, string key, int? version);
 
 /// <summary>
-/// Validates a page body (MAI-A46): every citizen tag resolves, its attributes are declared settings with
+/// Validates a page body (MAI-§4.6): every citizen tag resolves, its attributes are declared settings with
 /// values of the right type, and nothing in the markup is silently removed by the XSS sanitizer.
 /// </summary>
 public static class PageMarkupValidator

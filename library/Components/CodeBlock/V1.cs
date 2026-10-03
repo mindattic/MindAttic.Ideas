@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Components.Rendering;
 using MindAttic.Ideas.Abstractions;
-using ParameterAttribute = Microsoft.AspNetCore.Components.ParameterAttribute;  // not the namespace: its ComponentBase would clash (MAI-A26)
+using ParameterAttribute = Microsoft.AspNetCore.Components.ParameterAttribute;  // not the namespace: its ComponentBase would clash (MAI-LAW-1)
 
 namespace MindAttic.Ideas.Component.CodeBlock;
 
@@ -12,7 +12,7 @@ namespace MindAttic.Ideas.Component.CodeBlock;
 /// <code>&lt;pre data-lang="csharp"&gt;&lt;code&gt;var x = 1;&lt;/code&gt;&lt;/pre&gt;</code>
 /// Styling + copy only — syntax highlighting is a V2 candidate (kept out so V1 ships zero parsing
 /// risk and zero external dependencies).
-/// Instance settings (MAI-A45) are page-wide: visual ones are emitted as a scoped custom-property
+/// Instance settings (MAI-§4.5) are page-wide: visual ones are emitted as a scoped custom-property
 /// block (only when set), behavioral ones reach codeblock.js through
 /// <c>data-ma-settings="component.codeblock"</c>.
 /// </summary>

@@ -6,7 +6,7 @@ namespace MindAttic.Ideas.Core.Rendering;
 
 /// <summary>
 /// The SOLE place a <see cref="MarkupString"/> is constructed from author content, and the one XSS policy
-/// for page HTML (MAI-A46, HtmlSanitizer / Ganss.Xss). EVERY trust level is sanitized: no script, event
+/// for page HTML (MAI-§4.6, HtmlSanitizer / Ganss.Xss). EVERY trust level is sanitized: no script, event
 /// handler, javascript:/data: URL, frame, form or embed survives in page markup. Author trust differs only
 /// in what it may additionally keep — citizen tags (<c>&lt;ma-component&gt;</c>, the instance-settings
 /// carriers) and sanitized inline style. Deliberate author JavaScript lives solely in the separate,

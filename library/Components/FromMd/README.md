@@ -71,7 +71,7 @@ No `slot` needed when only one instance exists; `"main"` is used automatically.
 
 ## Settings
 
-All parameters are instance settings (MAI-A45); `slot` is not copied by Copy/Paste Configuration. Added (unset = the stock `frommd.css` values, emitted as `--ma-frommd-*` custom properties on the root):
+All parameters are instance settings (MAI-§4.5); `slot` is not copied by Copy/Paste Configuration. Added (unset = the stock `frommd.css` values, emitted as `--ma-frommd-*` custom properties on the root):
 
 - **Layout:** `maxwidth` (860px), `codepadding`, `coderadius`, `imageradius`, `cellpadding`
 - **Typography:** `fontsize`, `lineheight`, `headinglineheight`, `h1size`, `h2size`, `h3size`, `paragraphspacing`, `codefont`

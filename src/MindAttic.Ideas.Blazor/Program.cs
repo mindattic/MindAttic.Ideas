@@ -17,7 +17,7 @@ using MindAttic.Vault.Configuration;
 using MindAttic.Vault.DependencyInjection;
 
 // ---- CLI mode: --expand-css-shorthand -------------------------------------------------------
-// Pure filesystem migration (MAI-A44) -- runs before any Vault/DB wiring since it needs no
+// Pure filesystem pass (MAI-§4.7) -- runs before any Vault/DB wiring since it needs no
 // configured secrets and no running app; rewrites library/**/*.css in place via CssConflictMerger.
 // dotnet run --project src/MindAttic.Ideas.Blazor -- --expand-css-shorthand [--path library] [--dry-run]
 if (args.Contains("--expand-css-shorthand"))
@@ -27,7 +27,7 @@ if (args.Contains("--expand-css-shorthand"))
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- MindAttic.Vault: all credentials/config flow through the Vault chain (A6). No User Secrets. ---
+// --- MindAttic.Vault: all credentials/config flow through the Vault chain (HOUSE-LAW-3). No User Secrets. ---
 // "Security" is the MindAttic.Authentication trust domain (pepper, bootstrap-token, reset-token-key);
 // it is NOT in the default bucket list, so it must be named explicitly or the auth secrets at
 // %APPDATA%\MindAttic\Security\providers.json never bind and AuthBootstrapper fail-closes.
@@ -52,21 +52,21 @@ builder.Services.AddIdeasCore(
     typeof(Program).Assembly,
     typeof(MindAttic.Ideas.Page.Frontpage.V1).Assembly);
 
-// --- Media store (A31): local disk by default, Azure Blob when Media:Provider=azure. AddIdeasCore
+// --- Media store (MAI-§4.11): local disk by default, Azure Blob when Media:Provider=azure. AddIdeasCore
 //     already registered the local store; the Azure registration replaces it. The page-facing contract
 //     is /_media/{uid} either way, so switching the backing store changes no page markup. Blob-backed
 //     media serves via a short-lived SAS redirect, which is what gives video working Range/seek. ---
 var mediaRoot = Path.Combine(builder.Environment.ContentRootPath, "media");
 builder.Services.AddConfiguredMediaStore<CmsDbContext>(builder.Configuration, mediaRoot);
 
-// --- MindAttic.Legion: LLM + voting (A7). Zero-config; keys resolve via Vault when used. ---
+// --- MindAttic.Legion: LLM + voting (HOUSE-LAW-4). Zero-config; keys resolve via Vault when used. ---
 builder.Services.AddLegionClient();
 
 // --- Blazor (global InteractiveServer available; auth pages stay static SSR). ---
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddHttpContextAccessor();
 
-// --- Auth: the unified, Vault-backed MindAttic.Authentication engine (FOUNDATION_AMENDMENTS A16),
+// --- Auth: the unified, Vault-backed MindAttic.Authentication engine (MAI-LAW-9),
 //     replacing the interim cookie/AuthService stack. It registers the cookie schemes, MaPolicies.Admin,
 //     Data Protection, cascading auth state + a revalidating provider, and all auth services over
 //     CmsDbContext (the IAuthDataContext). MFA is off for now ⇒ MaPolicies.Admin is role-only. ---
@@ -102,7 +102,7 @@ builder.Services.AddMindAtticAuthentication<CmsDbContext>(builder.Configuration,
 builder.Services.AddScoped<IMaClaimsAugmentor, IdeasClaimsAugmentor>();
 builder.Services.AddScoped<InstanceClipboard>();
 
-// The public demo this site advertises (a SEPARATE deployment, MAI-A39). Inert unless Demo:Url and
+// The public demo this site advertises (a SEPARATE deployment, MAI-LAW-11). Inert unless Demo:Url and
 // Demo:KeyVaultUri are configured; the login reveal additionally needs both Turnstile keys.
 MindAttic.Ideas.Blazor.Demo.DemoReveal.AddDemoAccess(builder.Services, builder.Configuration);
 
@@ -125,7 +125,7 @@ using (var scope = app.Services.CreateScope())
         ct => sp.GetRequiredService<MindAttic.Authentication.Services.AuthBootstrapper>()
                 .SeedAdminAsync(MindAttic.Ideas.Blazor.AdminBootstrap.AdminUserName, ct));
 
-    // VANILLA vs. CUSTOM INSTANCE (MAI-A41): absent Ideas:Idealist/IDEAS_IDEALIST installs every
+    // VANILLA vs. CUSTOM INSTANCE (MAI-§4.9): absent Ideas:Idealist/IDEAS_IDEALIST installs every
     // first-party .idea physically present in ./library, best-effort, exactly as this codebase always
     // did. A configured .idealist is applied instead — packages, then pages — and any failure aborts
     // startup rather than leaving a curated instance half-provisioned.
@@ -256,8 +256,7 @@ if (args.Contains("--upload-media"))
 }
 
 // ---- CLI mode: --export-idealist / --import-idealist / --compose-idealist --------------------
-// Move AUTHORED CONTENT between environments and/or describe a deployment's provisioning (MAI-A41,
-// supersedes the retired .ideabundle/MAI-A34). A .idea package carries a citizen; an idealist carries
+// Move AUTHORED CONTENT between environments and/or describe a deployment's provisioning (MAI-§4.9). A .idea package carries a citizen; an idealist carries
 // what an author built with citizens — pages, settings, per-component metadata, media — PLUS the
 // Packages[] list of citizens a fresh instance should install. This is the only path that reproduces
 // hand-curation, which --seed regenerates the shape of but not the substance of.

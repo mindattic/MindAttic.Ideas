@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Components.Rendering;
-using ParameterAttribute = Microsoft.AspNetCore.Components.ParameterAttribute;  // not the namespace: its ComponentBase would clash (MAI-A26)
+using ParameterAttribute = Microsoft.AspNetCore.Components.ParameterAttribute;  // not the namespace: its ComponentBase would clash (MAI-LAW-1)
 using MindAttic.Ideas.Abstractions;
 
 namespace MindAttic.Ideas.Component.Accordion;
@@ -16,7 +16,7 @@ namespace MindAttic.Ideas.Component.Accordion;
 ///     &lt;details&gt;&lt;summary&gt;Question&lt;/summary&gt;&lt;p&gt;Answer.&lt;/p&gt;&lt;/details&gt;
 ///   &lt;/div&gt;
 /// </code>
-/// Instance settings (MAI-A45) are page-wide defaults for every accordion on the page: visual ones
+/// Instance settings (MAI-§4.5) are page-wide defaults for every accordion on the page: visual ones
 /// are emitted as a scoped custom-property block (only when set), behavioral ones reach the script
 /// through <c>data-ma-settings="component.accordion"</c>. Per-element attributes/styles still win.
 /// </summary>

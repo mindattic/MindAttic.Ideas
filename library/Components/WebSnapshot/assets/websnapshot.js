@@ -17,7 +17,7 @@
 //   WebSnapshot.autoInit(root?)  — rescan; call after DOM mutations
 
 (function (global) {
-  // Instance settings (MAI-A45) from the token's inline script, read lazily; each falls back to the
+  // Instance settings (MAI-§4.5) from the token's inline script, read lazily; each falls back to the
   // verbatim behavior when unset.
   function cfg(name, fallback) {
     const c = global.WebSnapshotConfig;

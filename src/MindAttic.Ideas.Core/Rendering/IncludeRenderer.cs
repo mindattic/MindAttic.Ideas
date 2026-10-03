@@ -35,7 +35,7 @@ public sealed class IncludeRenderer(IContentCatalog catalog, IRenderAlertSink al
             }
 
             var attrs = ToAttrList(attributes);
-            // A Plugin a compiled Theme/Page composes by string id is still a per-page INSTANCE (MAI-A45):
+            // A Plugin a compiled Theme/Page composes by string id is still a per-page INSTANCE (MAI-§4.5):
             // its stored slot overrides whatever defaults the composing author passed as attributes.
             if (kind == ContentKind.Plugin && context.GetInstanceSettingsJson(InstanceSlots.Plugin(key)) is { } slotJson
                 && catalog.ResolveTag(kind, key, version) is { Outcome: ContentResolution.Resolved, Type: { } pluginType })

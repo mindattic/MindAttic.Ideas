@@ -31,7 +31,7 @@ public sealed class VaultPackageSigningTrust(IConfiguration configuration) : IPa
     }
 
     // App Service on Linux drops hyphens and turns dots into underscores when it injects app settings
-    // as environment variables (MAI-A33), so "signing-cert-public" can arrive as "signingcertpublic".
+    // as environment variables (MAI-§4.14), so "signing-cert-public" can arrive as "signingcertpublic".
     private string? FindMangled()
     {
         var wanted = Reduce(Name);

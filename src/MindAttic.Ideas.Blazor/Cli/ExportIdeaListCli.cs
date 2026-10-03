@@ -14,7 +14,7 @@ namespace MindAttic.Ideas.Blazor.Cli;
 /// list auto-discovered from what those pages actually reference.
 /// <para>
 /// Argument parsing and console reporting only — the work is <see cref="IdeaListExporter"/> in Core.
-/// Replaces the retired <c>--export-content</c> (MAI-A34, superseded MAI-A41).
+/// See MAI-§4.9.
 /// </para>
 /// Usage: <c>dotnet run --project src/MindAttic.Ideas.Blazor -- --export-idealist site.idealist
 /// [--site rdb] [--slug projects/] [--no-media] [--dry-run]</c>
@@ -40,7 +40,7 @@ public static class ExportIdeaListCli
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<CmsDbContext>();
 
-        // Since A35 a deployment can host several domains, so an export names WHICH site it carries.
+        // A deployment can host several domains (MAI-§4.10), so an export names WHICH site it carries.
         // Default: the default site — the single-site behaviour, unchanged.
         var siteKey = ArgValue(args, "--site")?.Trim().ToLowerInvariant();
         var site = siteKey is { Length: > 0 }

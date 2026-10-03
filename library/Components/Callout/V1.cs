@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Components.Rendering;
 using MindAttic.Ideas.Abstractions;
-using ParameterAttribute = Microsoft.AspNetCore.Components.ParameterAttribute;  // not the namespace: its ComponentBase would clash (MAI-A26)
+using ParameterAttribute = Microsoft.AspNetCore.Components.ParameterAttribute;  // not the namespace: its ComponentBase would clash (MAI-LAW-1)
 
 namespace MindAttic.Ideas.Component.Callout;
 
@@ -12,7 +12,7 @@ namespace MindAttic.Ideas.Component.Callout;
 /// <c>ma-callout-warn</c>, <c>ma-callout-error</c>. Pure CSS — icons are drawn glyphs, no images,
 /// no script:
 /// <code>&lt;div class="ma-callout ma-callout-warn"&gt;&lt;strong&gt;Heads up.&lt;/strong&gt; Versions never mutate.&lt;/div&gt;</code>
-/// Instance settings (MAI-A45) are page-wide defaults for every callout on the page, emitted as a
+/// Instance settings (MAI-§4.5) are page-wide defaults for every callout on the page, emitted as a
 /// scoped custom-property block only when something is set.
 /// </summary>
 public sealed class V1 : ComponentBase

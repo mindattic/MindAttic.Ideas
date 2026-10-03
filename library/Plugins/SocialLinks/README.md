@@ -69,7 +69,7 @@ When no parameter is supplied, the component reads `social.github`, `social.x`, 
 
 ## Settings
 
-Per-instance settings (MAI-A45), edited in Admin; empty = as designed.
+Per-instance settings (MAI-§4.5), edited in Admin; empty = as designed.
 
 - **Content:** GitHub, X / Twitter, LinkedIn, YouTube, Email, Website, RSS, List label (not copied by Copy Configuration)
 - **Layout:** Padding, Margin, Alignment (also justifies the row), Gap

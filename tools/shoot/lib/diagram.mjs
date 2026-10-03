@@ -10,8 +10,8 @@ const require = createRequire(import.meta.url);
  * WHY RENDER HERE INSTEAD OF IN THE BROWSER
  * -----------------------------------------
  * mermaid.min.js is 3.5 MB. Shipping it to every brochure page to draw one flowchart is a poor
- * trade, and it would put a hard JS dependency on pages that otherwise need none (see MAI-A30, where
- * the home page was deliberately made JS-free). Rendering once, at author time, gives a few hundred
+ * trade, and it would put a hard JS dependency on pages that otherwise need none (the home page
+ * carries no page JS, MAI-§4.11). Rendering once, at author time, gives a few hundred
  * bytes of SVG that needs no script, scales without blurring, and is a reviewable artifact — the
  * same trade already accepted for screenshots.
  *

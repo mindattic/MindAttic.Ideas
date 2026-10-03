@@ -17,7 +17,7 @@
     if (window.__maSacredInit) return; // re-evaluation would stack another rAF loop + MutationObserver
     window.__maSacredInit = true;
 
-    // Instance settings (MAI-A45), read LIVE from <data data-ma-settings="plugin.sacredgeometry" value="{json}">.
+    // Instance settings (MAI-§4.5), read LIVE from <data data-ma-settings="plugin.sacredgeometry" value="{json}">.
     // Page-wide defaults only: a canvas's own data-sacred-spin / data-sacred-bg still win.
     var cache = { raw: null, parsed: {} };
     function settings() {

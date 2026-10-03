@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace MindAttic.Ideas.Packaging;
 
 /// <summary>
-/// Build/pack-time safety gate for a library citizen (MAI-A46). The packer refuses to produce a package
+/// Build/pack-time safety gate for a library citizen (MAI-§4.6). The packer refuses to produce a package
 /// that fails it, and the test suite runs the same checks over every shipped package, so an unsafe or
 /// malformed citizen can never reach a site. Deliberately a short list of patterns with no legitimate use
 /// in a citizen asset — not a general linter.
@@ -35,7 +35,7 @@ public static partial class CitizenValidator
         return problems;
     }
 
-    /// <summary>Malformed instance-settings declarations (MAI-A45), as messages.</summary>
+    /// <summary>Malformed instance-settings declarations (MAI-§4.5), as messages.</summary>
     public static IReadOnlyList<string> ValidateSettings(IEnumerable<IdeaManifestSetting> settings)
     {
         var problems = new List<string>();

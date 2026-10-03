@@ -75,7 +75,7 @@ html, body {
     .btn { min-width: 132px; padding: 11px 18px; font-size: 0.95rem; }
 }
 
-/* ── Instance-setting modifiers (MAI-A45) — added to .page by V1.razor when a toggle is off ── */
+/* ── Instance-setting modifiers (MAI-§4.5) — added to .page by V1.razor when a toggle is off ── */
 .cs-no-hover .btn { transition: none; }
 .cs-no-hover .btn:hover, .cs-no-hover .btn:focus-visible { transform: none; }
 .cs-no-hover .btn-primary:hover { box-shadow: none; }

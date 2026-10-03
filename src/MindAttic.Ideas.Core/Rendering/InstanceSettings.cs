@@ -8,7 +8,7 @@ using MindAttic.Ideas.Abstractions;
 
 namespace MindAttic.Ideas.Core.Rendering;
 
-/// <summary>Well-known instance-settings slot names on a page (MAI-A45).</summary>
+/// <summary>Well-known instance-settings slot names on a page (MAI-§4.5).</summary>
 public static class InstanceSlots
 {
     public const string Theme = "theme";

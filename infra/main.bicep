@@ -104,7 +104,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   properties: {
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
-    // No anonymous access: media is served through a short-lived SAS minted by the app (MAI-A31).
+    // No anonymous access: media is served through a short-lived SAS minted by the app (MAI-§4.11).
     allowBlobPublicAccess: false
     // Shared keys off — every caller authenticates with an Entra identity; a SAS is user-delegation signed.
     allowSharedKeyAccess: false
@@ -360,7 +360,7 @@ func connectionString(fqdn string, db string) string =>
   'Server=tcp:${fqdn},1433;Initial Catalog=${db};Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;'
 
 // Every app-setting NAME is alphanumeric: App Service on Linux strips hyphens and rewrites dots in
-// setting names (MAI-A33) and now rejects hyphenated names outright. MindAttic.Authentication and
+// setting names (MAI-§4.14) and now rejects hyphenated names outright. MindAttic.Authentication and
 // VaultPackageSigningTrust match them back to the dotted/hyphenated config keys.
 var siteSettings = concat(commonSettings, [
   { name: 'ConnectionStrings__Ideas', value: connectionString(sqlServer.properties.fullyQualifiedDomainName, sqlDatabaseName) }
@@ -371,7 +371,7 @@ var siteSettings = concat(commonSettings, [
   { name: 'MindAttic__Vault__Security__bootstraptoken', value: kvRef(keyVault.properties.vaultUri, 'bootstrap-token') }
   { name: 'MindAttic__Vault__Security__resettokenkey', value: kvRef(keyVault.properties.vaultUri, 'reset-token-key') }
   { name: 'MindAttic__Vault__Security__dpkek', value: kvRef(keyVault.properties.vaultUri, 'dp-kek') }
-  // The ONE trusted package-signing certificate (public half only, MAI-A42).
+  // The ONE trusted package-signing certificate (public half only, MAI-§4.8).
   { name: 'MindAttic__Vault__PackageSigning__signingcertpublic', value: kvRef(keyVault.properties.vaultUri, 'signing-cert-public') }
   // The demo this site advertises. Read with SecretClient (not a reference): it rotates hourly.
   { name: 'Demo__Url', value: 'https://${demoAppName}.azurewebsites.net' }

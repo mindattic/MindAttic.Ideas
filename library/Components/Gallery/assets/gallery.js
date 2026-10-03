@@ -11,7 +11,7 @@
 
   var box, img, items = [], index = -1;
 
-  // Instance settings (MAI-A45) published by the Gallery component as
+  // Instance settings (MAI-§4.5) published by the Gallery component as
   // <data data-ma-settings="component.gallery" value="{json}">. Read live so in-circuit navigation
   // picks up the current page's values; every missing key falls back to the as-designed behaviour.
   function settings() {

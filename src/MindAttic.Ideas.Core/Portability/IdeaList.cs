@@ -1,13 +1,13 @@
 namespace MindAttic.Ideas.Core.Portability;
 
 /// <summary>
-/// Replaces the `.ideabundle` (retired, MAI-A41 supersedes MAI-A34) with one artifact that serves two
+/// One artifact (MAI-§4.9) that serves two
 /// jobs: deployment provisioning (which `.idea` citizens a fresh instance installs, and what it seeds)
-/// and ad-hoc content portability (what `.ideabundle` did — move authored content between environments).
+/// and ad-hoc content portability (move authored content between environments).
 /// <para>
 /// <see cref="Packages"/> is deployment-wide and installs in listed order. Everything else — <see
 /// cref="Site"/>, <see cref="Settings"/>, <see cref="Pages"/>, <see cref="ComponentMetadata"/>, <see
-/// cref="Media"/> — is exactly one site's content, never multi-site per file, same as `.ideabundle` was.
+/// cref="Media"/> — is exactly one site's content, never multi-site per file.
 /// </para>
 /// <para>
 /// Identity travels on <see cref="Entities.ContentEntityBase.Uid"/>, the portable secondary identity;
@@ -118,7 +118,7 @@ public sealed class IdeaListPage
     public List<IdeaListSlugAlias> SlugHistory { get; set; } = [];
 
     /// <summary>
-    /// The page's theme / plugin / code-page INSTANCE settings (MAI-A45), one per slot. Component
+    /// The page's theme / plugin / code-page INSTANCE settings (MAI-§4.5), one per slot. Component
     /// instances need no entry: their settings are attributes on their tags in <see cref="BodyHtml"/>.
     /// Null = the list predates instance settings, so import leaves the page's slots untouched; a present
     /// list (even empty) is the whole truth, so import removes slots it does not name.

@@ -1,5 +1,5 @@
 ﻿/* MindAttic.Ideas.Component.ContactForm — form chrome. Scoped under .ma-contact (MAIL-LAW-6).
-   Values read optional --ma-contact-* custom properties (instance settings, MAI-A45) with the
+   Values read optional --ma-contact-* custom properties (instance settings, MAI-§4.5) with the
    as-designed fallback. */
 .ma-contact {
   --ma-contact-accent: #4a6cf7;

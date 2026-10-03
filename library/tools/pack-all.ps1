@@ -15,10 +15,10 @@
   Repack every citizen, even when its .idea is already newer than its assembly.
 
 .PARAMETER Sign
-  After packing, content-sign every dist/*.idea (MAI-A42) with the signing pfx + password from the
+  After packing, content-sign every dist/*.idea (MAI-§4.8) with the signing pfx + password from the
   MindAttic.Vault PackageSigning bucket (%APPDATA%\MindAttic\PackageSigning\providers.json). The host
-  rejects an unsigned package on EVERY install path, so -Install without -Sign only helps a host whose
-  trust cert is absent from the Vault as well.
+  rejects an unsigned package on EVERY install path (and fails closed when no trust cert is configured),
+  so pair -Install with -Sign.
 
 .PARAMETER Install
   After packing, copy the packed .idea files into the CMS host's library/ folder, so a FRESH database

@@ -5,7 +5,7 @@ using MindAttic.Media.Azure;
 namespace MindAttic.Ideas.Blazor.Services;
 
 /// <summary>
-/// Chooses the media backing store from configuration (MAI-A31). The page-facing contract is
+/// Chooses the media backing store from configuration (MAI-§4.11). The page-facing contract is
 /// <c>/_media/{uid}</c> whichever provider wins, so switching stores never touches page markup.
 /// </summary>
 public static class MediaProviderSetup

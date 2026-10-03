@@ -89,7 +89,7 @@
 
 .theme-ideas ::selection { background: color-mix(in srgb, var(--accent) var(--theme-selection-alpha), transparent); }
 
-/* ── Instance-setting modifiers (MAI-A45) — added by V1.razor when a toggle is off or an opt-in value is set ── */
+/* ── Instance-setting modifiers (MAI-§4.5) — added by V1.razor when a toggle is off or an opt-in value is set ── */
 .theme-ideas--no-hover button, .theme-ideas--no-hover .btn { transition: none; }
 .theme-ideas--no-hover button:hover, .theme-ideas--no-hover .btn:hover { filter: none; }
 .theme-ideas--heading-font h1, .theme-ideas--heading-font h2, .theme-ideas--heading-font h3, .theme-ideas--heading-font h4, .theme-ideas--heading-font h5, .theme-ideas--heading-font h6 { font-family: var(--theme-heading-font); }

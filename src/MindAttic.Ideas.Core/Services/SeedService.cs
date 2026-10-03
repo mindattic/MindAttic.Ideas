@@ -15,7 +15,7 @@ public sealed class SeedService(
     IDbContextFactory<CmsDbContext> dbFactory,
     Microsoft.Extensions.Configuration.IConfiguration? configuration = null)
 {
-    // A custom instance (MAI-A41) owns its content through its idealist, so only the structural minimum
+    // A custom instance (MAI-§4.9) owns its content through its idealist, so only the structural minimum
     // is seeded here — never MindAttic's own pages, nav or chrome on somebody else's install.
     private bool IdealistOwnsContent =>
         !string.IsNullOrWhiteSpace(configuration?["Ideas:Idealist"] ?? Environment.GetEnvironmentVariable("IDEAS_IDEALIST"));
@@ -138,7 +138,7 @@ public sealed class SeedService(
             await db.SaveChangesAsync(ct);
         }
 
-        // Personas page — MindAttic.Legion.Frontend collapsed into a Data page (MAI-A22): the
+        // Personas page — MindAttic.Legion.Frontend collapsed into a Data page: the
         // persona gallery ships as the LegionPersonas Component .idea, so the standalone Blazor app
         // reduces to one token through the theme. Upsert by (SiteId, Slug); never clobber.
         var personas = await db.Pages.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.SiteId == site.Id && p.Slug == "personas", ct);
@@ -461,7 +461,7 @@ public sealed class SeedService(
         """;
 
 
-    // ── The Personas page: MindAttic.Legion.Frontend collapsed into one tag (MAI-A22) ──────────
+    // ── The Personas page: MindAttic.Legion.Frontend collapsed into one tag ──────────
     private const string PersonasBodyHtml =
         """
         <main class="personas">

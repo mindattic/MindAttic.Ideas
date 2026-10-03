@@ -4,133 +4,87 @@ project: MindAttic.Ideas.Library
 code: MAIL
 layer: stories
 status: living
-updated: 2026-06-09
+updated: 2026-10-03
 ---
 
 # MindAttic.Ideas.Library — User Stories
 
-> ✅ done (shipped & verified) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the proof.
-> This is a component RCL library with **no test project**; "verified" here means a clean
-> `dotnet build` and/or an observed interactive/raw-HTML demo (see [MAIL-§8](BIBLE.md#MAIL-§8) and
-> [HOUSE-LAW-8](../../MindAttic.HouseRules.md)). Where a story would normally cite a `[Test]`, it cites the
-> build target or demo that proves it; absent an automated test those stories stay 🟡.
+> ✅ done (shipped & verified) · 🟡 partial · ⬜ planned. Every ✅ cites the proof. `library/` has no
+> test project of its own; proofs are a clean build, a CMS-suite test in `../src/MindAttic.Ideas.Tests`,
+> or an observed demo (see [MAIL-§8](BIBLE.md#MAIL-§8) and [HOUSE-LAW-8](../../../MindAttic.HouseRules.md)).
 
-## Epic A — Authoring a component
+## Epic A — Authoring a citizen
 
-- **MAIL-US-A1 ✅** As a component author, I can add a Theme/Plugin/Component as a tiny RCL and have its
+- **MAIL-US-A1 ✅** As a citizen author, I can add a Theme/Plugin/Component as a tiny RCL and have its
   identity come from convention (namespace tail = key, `V{n}` = version), so no per-project key/version
-  config exists. *Given a new project under `Themes/`/`Plugins/`/`Components/`, When I build it, Then it
-  compiles against Abstractions alone and is identified by convention.* *(verified by
-  `dotnet build -c Release MindAttic.Ideas.Library.slnx` → 0/0; identity convention documented at
+  config exists. *(verified by `dotnet build -c Release MindAttic.Ideas.Library.slnx`; rule at
   [MAIL-LAW-2](BIBLE.md#MAIL-LAW-2).)*
-- **MAIL-US-A2 ✅** As a component author, I get common build settings and the one Abstractions reference
-  for free, so my `.csproj` stays tiny. *Given `Directory.Build.props`, When I add a component, Then I
-  declare only my own asset quirks.* *(verified by [`Directory.Build.props`](../Directory.Build.props) +
-  the clean solution build.)*
-- **MAIL-US-A3 ✅** As a component author, my css/js live in a plain `assets/` folder (not `wwwroot/`) so
-  the Razor SDK never causes cross-host static-asset collisions. *Given `StaticWebAssetsEnabled=false` and
-  `assets/`, When the solution builds, Then no static-web-asset collision occurs.* *(verified by the clean
-  solution build; rule at [MAIL-LAW-5](BIBLE.md#MAIL-LAW-5).)*
-- **MAIL-US-A4 🟡** As a site builder, I can compose ordinary-website UI from a **baseline widget set**
-  ([MAIL-A3](AMENDMENTS.md#MAIL-A3)): NavMenu, Breadcrumbs, Hero, Card, Accordion, Tabs (incl. the
-  mindattic.com tab-board variant), Gallery (incl. linked books-grid + lightbox), Carousel, Callout,
-  CodeBlock, VideoEmbed, ContactForm, SocialLinks, BackToTop, Footer (pin-when-short). *Given the 15
-  baseline projects, When the solution builds and each packs, Then 15 `dist/*.idea` exist and every Plugin/Component
-  carries a raw-HTML `demo.html` proving the bundle stands alone.* *(build + pack verified 2026-06-09
-  — `dotnet build -c Release` 0/0 and 43 artifacts in `dist/`; 🟡 until the per-Plugin/Component demos and a live
-  CMS render are observed per [MAIL-§8](BIBLE.md#MAIL-§8).)*
+- **MAIL-US-A2 ✅** As a citizen author, I get common build settings and the one Abstractions reference
+  for free, so my `.csproj` stays tiny. *(verified by [`Directory.Build.props`](../Directory.Build.props)
+  + the clean solution build.)*
+- **MAIL-US-A3 ✅** As a citizen author, my css/js live in a plain `assets/` folder (not `wwwroot/`) so the
+  Razor SDK never causes cross-host static-asset collisions. *(verified by the clean solution build; rule
+  at [MAIL-LAW-5](BIBLE.md#MAIL-LAW-5).)*
+- **MAIL-US-A4 🟡** As a site builder, I can compose ordinary-website UI from the **baseline set**
+  ([MAIL-§4.1](BIBLE.md#MAIL-§4.1)). *(built, packed and validated —
+  `ShippedContentValidationTests.EveryShippedPackage_PassesCitizenValidation`; 🟡 until each baseline
+  citizen's interactive behavior is observed.)*
+- **MAIL-US-A5 ✅** As a page author, every citizen exposes its look and behavior as instance settings
+  whose defaults reproduce the design, so I can tune one instance without forking it. *(verified by
+  `ShippedContentValidationTests.EveryShippedPackage_PassesCitizenValidation` (settings declarations) and
+  the CMS `InstanceSettingsTests`; rule at [MAIL-LAW-9](BIBLE.md#MAIL-LAW-9).)*
 
-## Epic B — The one bundle, three consumers
+## Epic B — The one bundle, many consumers
 
-- **MAIL-US-B1 ✅** As a raw-HTML author, I can link a component's `assets/*` directly and see it render
-  with no CMS, build, or Blazor. *Given `Themes/Cyberspace/demo.html`, When I open it, Then the theme
-  chrome renders from `assets/theme.css` alone.* *(verified by [`Themes/Cyberspace/demo.html`](../Themes/Cyberspace/demo.html)
+- **MAIL-US-B1 ✅** As a raw-HTML author, I can link a citizen's `assets/*` directly and see it render with
+  no CMS, build, or Blazor. *(verified by [`Themes/Cyberspace/demo.html`](../Themes/Cyberspace/demo.html)
   linking the same `theme.css` the `.idea` bundles.)*
-- **MAIL-US-B2 🟡** As a standalone Blazor app, I can reference a component RCL (or link the same `assets/`)
-  and get identical output to the CMS. *Given the component RCL, When an app references it, Then it renders
-  the same bundle.* *(no standalone-app harness in this repo yet; the RCLs build and the bundle is shared by
-  construction — not independently observed here.)*
-- **MAIL-US-B3 ✅** As the CMS, I can upload a packed `.idea` and serve its bundle under
-  the component mount. *Given a packed artifact in [`dist/`](../dist), When the CMS installs it, Then the
-  bundle is served at the mount.* *(verified by an observed live run 2026-06-09: all 43 `dist/*.idea` installed through the
-  CMS startup library path and the rendered frontpage served `/_ideas/Component/tabs/1/tabs.css`,
-  `/_ideas/Theme/cyberspace/1/theme.css`, … with HTTP 200 — see MAI BIBLE §6 live-render evidence. Repacked to 43 after [MAIL-A6](AMENDMENTS.md#MAIL-A6).)*
+- **MAIL-US-B2 ⬜** As a standalone Blazor app, I can reference a citizen RCL (or link the same `assets/`)
+  and get identical output to the CMS. *(no standalone-app harness yet — [RFC 0001](rfc/0001-component-test-harness.md).)*
+- **MAIL-US-B3 ✅** As the CMS, I can install a packed `.idea` and serve its bundle under the citizen
+  mount. *(verified by the CMS `RenderPipelineTests` and live renders serving `/_ideas/...` mounts with
+  HTTP 200.)*
 
 ## Epic C — Composition by string id
 
 - **MAIL-US-C1 ✅** As a Theme author, I can compose installed Plugins by string key without a project
-  reference, so themes stay decoupled. *Given `theme.cyberspace` with `[Uses(ContentKind.Plugin,"outfitfont",1)]`…
-  `[Uses(ContentKind.Plugin,"cyberspace",1)]` and matching `<CmsInclude>`, When it builds, Then it carries only its own
-  chrome and pulls the rest by id.* *(verified by the clean build of `Themes/Cyberspace`; edges recorded on
-  [theme.cyberspace](data/components.json). Updated by [MAIL-A6](AMENDMENTS.md#MAIL-A6).)*
-- **MAIL-US-C2 ✅** As a Component author, I can compose other citizens by id (Frontpage→tooltip,
-  LegionPersonas→sacredgeometry). *Given those `[Uses]` declarations, When the components build, Then the
-  edges resolve by id only.* *(verified by the clean solution build; edges on
-  [component.frontpage](data/components.json) and [component.legionpersonas](data/components.json). Updated by [MAIL-A6](AMENDMENTS.md#MAIL-A6).)*
+  reference. *(verified by the clean build of `Themes/Cyberspace`, whose `[Uses]` edges are recorded on
+  [theme.cyberspace](data/components.json).)*
+- **MAIL-US-C2 ✅** As a Component author, I can compose other citizens by id (Frontpage → tooltip,
+  LegionPersonas → sacredgeometry). *(verified by the clean solution build; edges on
+  [component.frontpage](data/components.json) and [component.legionpersonas](data/components.json).)*
 
 ## Epic D — Catalog & lifecycle
 
-- **MAIL-US-D1 ✅** As a maintainer, I can read one catalog of every shipped component (key, kind, version,
-  assembly, artifact, composition). *Given [`components.json`](data/components.json), When I open it, Then
-  all 43 (8 Themes + 12 Plugins + 23 Components) are enumerated and validate against their schema.* *(verified by
-  `tools/codex.ps1 doctor` schema + id-uniqueness checks.)*
-- **MAIL-US-D2 ✅** As a maintainer, every component versions by whole numbers only. *Given `<Version>` and
-  the `V{n}` class, When I inspect any component, Then the version is a whole number.* *(verified by
-  [`Directory.Build.props`](../Directory.Build.props) `<Version>1.0.0</Version>` + `V1` classes;
-  [HOUSE-LAW-1](../../MindAttic.HouseRules.md).)*
-- **MAIL-US-D3 ✅** As a maintainer, I can re-`pack` any component into a fresh `.idea`. *Given a built DLL
-  + `assets/`, When I run the pack command, Then a `dist/*.idea` is produced.* *(verified by the pack re-run 2026-06-09: the 15
-  baseline Plugins/Components were packed via `ma-idea pack --wwwroot assets` and `ma-idea verify ./dist` reports
-  "OK — every declared dependency resolves" across all 43 artifacts.)*
+- **MAIL-US-D1 ✅** As a maintainer, I can read one catalog of every shipped citizen. *(verified by
+  `tools/codex.ps1 doctor` schema + id-uniqueness checks over [`components.json`](data/components.json):
+  53 rows — 7 Themes, 15 Plugins, 31 Components.)*
+- **MAIL-US-D2 ✅** As a maintainer, every citizen versions by whole numbers only. *(verified by the `V{n}`
+  classes and [HOUSE-LAW-1](../../../MindAttic.HouseRules.md).)*
+- **MAIL-US-D3 ✅** As a maintainer, I can rebuild, repack and sign the whole library in one command.
+  *(verified by `tools/pack-all.ps1 -Sign -Install` producing the 53 signed packages the CMS suite
+  validates in `ShippedContentValidationTests`.)*
 
-## Epic E — Pages stay records
-
-- **MAIL-US-E1 🗑️** As a maintainer, frozen page source is preserved losslessly without polluting the build.
-  *(original spec — audit log: "Given `Pages/_wip/*` with `*.csproj.wip` + an empty `Directory.Build.props`
-  and absence from `.slnx`, When the solution builds, Then nothing under `Pages/_wip` compiles or packs.")*
-  **Cut 2026-06-09 by [MAIL-A4](AMENDMENTS.md#MAIL-A4):** the parked sources are no longer applicable —
-  the frontpage is assembled verbatim from mindattic.com's `index.htm` into a Data page, and
-  LegionPersonas ships as `Component.LegionPersonas`. The `Pages/` tree was deleted; history stays in git.
-  [MAIL-LAW-8](BIBLE.md#MAIL-LAW-8) (pages are DB records, never `.idea`s) is unchanged.
-
-## Epic F — Apps as landing pages (A9)
+## Epic F — Apps and project pages
 
 - **MAIL-US-F1 ✅** As a project owner, my landing page can open the app **borderless**, because
-  `Component.AppLaunch` overlays a full-viewport iframe and calls the Fullscreen API on the launch
-  click. *A page cannot fullscreen a window it opened — `requestFullscreen()` from the opener is
-  rejected "Permissions check failed" even same-origin — so the component is a fallback ladder, not
-  a switch ([MAIL-A9](AMENDMENTS.md#MAIL-A9)).*
-  *(verified by demo, driven with Playwright against a live host: clicking the tile produced
-  `document.fullscreenElement = .ma-applaunch-overlay`, an overlay measuring exactly the 1280×720
-  viewport, `overflow:hidden` on the host page, and Escape restored both. Inline mode's expand button
-  fullscreens the frame; `mode="window"` opened a real window at `?ma-fs=1` whose first click gave
-  `document.fullscreenElement = HTML`. Zero page errors.)*
-- **MAIL-US-F2 ✅** As a project owner, Ideas can **host** the app as well as launch it, because a
-  built bundle packs as an asset-only `.idea` and serves from `/_ideas/Component/{key}/{version}/…`.
-  *Asset-only means it declares no `StylesheetUrls`/`ScriptUrls`, so the bundle loads in its own
-  iframe and is never hoisted into the landing page head.*
-  *(verified by demo: ExperimentRTS built with `--base=./`, packed to a 2.8 MB `.idea`, installed — `index.html`
-  200 `text/html`, the 6.65 MB entry chunk 200 `text/javascript`, `favicon.svg` 200, Babylon booted
-  with a live WebGL context and a 1280×720 canvas rendering inside the fullscreen overlay.)*
-
+  `Component.AppLaunch` overlays a full-viewport iframe and calls the Fullscreen API on the launch click.
+  A page cannot fullscreen a window it opened, so the component is a fallback ladder: `fullscreen`
+  (default) → `window` (a separate window that arms itself via `?ma-fs=1` on its own first click) →
+  `inline`. *(verified by demo with Playwright against a live host: `document.fullscreenElement =
+  .ma-applaunch-overlay` at the full viewport, Escape restored; `mode="window"` went fullscreen on its
+  own first click. Zero page errors.)*
+- **MAIL-US-F2 ✅** As a project owner, Ideas can **host** the app as well as launch it, because a built
+  bundle packs as an asset-only Component and serves from `/_ideas/Component/{key}/{version}/…`.
+  *(verified by demo: ExperimentRTS packed, installed and served — `index.html` and the entry chunk 200
+  with correct MIME types, Babylon booted inside the fullscreen overlay.)*
 - **MAIL-US-F3 ✅** As a reader, every project gets a brochure page that opens the same way, because
-  `Component.ProjectBrochure` renders the identity all 34 share and hands the body back for whatever
-  that project needs ([MAIL-A10](AMENDMENTS.md#MAIL-A10)).
-  *(verified by demo against a live host: `/projects/mindattic-vault` renders a status pill, tagline,
-  tech badges, Source link, a full-bleed flowchart with its caption held in the reading column, and
-  the README below — a library with NO UI carried entirely by explanation. `/projects/hyperspace`,
-  `/projects/experimentrts` and `/projects/prose` render the same shell with a screenshot and a
-  working `<Component.AppLaunch />`. All four: zero `ma-missing` placeholders.)*
+  `Component.ProjectBrochure` renders the shared identity (status, tagline, tech badges, links, lead
+  image) and hands `ChildContent` back for whatever that project needs. *(verified by demo against a live
+  host: `/projects/mindattic-vault`, `/projects/hyperspace`, `/projects/experimentrts` and
+  `/projects/prose` render with zero `ma-missing` placeholders.)*
 
 ## Priority backlog
 
-1. **MAIL-US-B2** — a standalone-Blazor-app smoke harness ([RFC 0001](rfc/0001-component-test-harness.md))
-   — the remaining ⬜ test gap in [MAIL-§6](BIBLE.md#MAIL-§6). (D3's pack round-trip and B3's
-   install/serve were proven 2026-06-09.)
-2. **MAIL-US-A4** — observe the 15 baseline Plugin/Component demos interactively (build/pack already proven).
-
-### Audit log
-
-No story has been re-scoped from an original written spec; this file is the first formal statement of the
-library's stories, derived from the README, the per-component source/conventions, and the verified build.
-When a story is later re-scoped, preserve its original ask verbatim here, marked "(original spec — audit log)".
+1. **MAIL-US-B2** — a standalone-Blazor-app smoke harness ([RFC 0001](rfc/0001-component-test-harness.md)).
+2. **MAIL-US-A4** — observe the baseline set's interactive behavior.

@@ -1,6 +1,6 @@
 ﻿/* MindAttic.Ideas.Component.Callout — notice boxes. Scoped under .ma-callout (MAIL-LAW-6).
    Icons are text glyphs (no images, no requests); accents are custom properties per variant.
-   Geometry reads optional custom properties (instance settings, MAI-A45) with the as-designed fallback. */
+   Geometry reads optional custom properties (instance settings, MAI-§4.5) with the as-designed fallback. */
 .ma-callout {
   --ma-callout-accent: #3b82d4;
   --ma-callout-icon: "\2139";       /* ℹ */

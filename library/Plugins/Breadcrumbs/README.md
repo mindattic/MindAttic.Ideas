@@ -66,7 +66,7 @@ Renders: Knowledge Base / ... with a bottom margin separating it from page conte
 
 ## Settings
 
-Per-instance settings (MAI-A45), edited in Admin; empty = as designed.
+Per-instance settings (MAI-§4.5), edited in Admin; empty = as designed.
 
 - **Content:** Home text, Home link (not copied by Copy Configuration)
 - **Layout:** Padding, Margin, Alignment (also justifies the row), Gap, List padding

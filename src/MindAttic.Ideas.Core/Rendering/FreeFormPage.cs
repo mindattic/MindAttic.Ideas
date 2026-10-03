@@ -30,7 +30,7 @@ public sealed class FreeFormPage : PageBase
         //
         // The trust-gated text is wrapped in "@layer page { }" so it beats Global/Theme CSS by
         // cascade-layer precedence regardless of selector specificity, with no !important needed — but
-        // Component now beats Page (MAI-A44 reversed MAI-A43's order: a Component citizen's own
+        // Component beats Page (MAI-§4.7: a Component citizen's own
         // stylesheet outranks whatever a Page author writes, since a Component is meant to guarantee its
         // own presentation). The wrapper is renderer-owned literal text added AFTER the trust decision
         // above, so it changes neither the verbatim-vs-escaped choice nor the escaped text itself.

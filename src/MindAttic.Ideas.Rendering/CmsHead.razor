@@ -1,7 +1,7 @@
 @namespace MindAttic.Ideas.Rendering
-@* Emits CSS in the FROZEN cascade order (MAI-LAW-4, reordered by MAI-A44): GLOBAL -> THEME -> PAGE ->
-   COMPONENT. Component now beats Page (MAI-A44 reversed A43's order: a Page author's PageCss can no
-   longer out-rank a Component citizen's own stylesheet, since a Component is meant to guarantee its own
+@* Emits CSS in the FROZEN cascade order (MAI-LAW-4, MAI-§4.7): GLOBAL -> THEME -> PAGE ->
+   COMPONENT. Component beats Page (a Page author's PageCss cannot out-rank a Component citizen's own
+   stylesheet, since a Component is meant to guarantee its own
    presentation regardless of what a page composes around it). Cascade layers make that order win by
    LAYER PRECEDENCE rather than by accidental document-order + matching specificity: an explicit
    "@layer global, theme, page, component;" statement is emitted first, and every tier's CSS is

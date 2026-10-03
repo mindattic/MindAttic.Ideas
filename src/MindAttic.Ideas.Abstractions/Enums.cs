@@ -16,10 +16,10 @@ namespace MindAttic.Ideas.Abstractions;
 public enum ContentKind
 {
     Page = 0,
-    Plugin = 1,      // site-wide .idea: activates a behavior/capability across the whole page (MAI-A26)
+    Plugin = 1,      // site-wide .idea: activates a behavior/capability across the whole page (MAI-LAW-1)
     Theme = 2,
-    // Control = 3 was REMOVED pre-1.0 (MAI-A19) — atomic UI is authored as a Component. NEVER reuse ordinal 3.
-    Component = 4,   // inline-placed .idea: renders at the <Component.X /> tag position; can nest (MAI-A26)
+    // Ordinal 3 is reserved and NEVER reused (MAI-LAW-2) — atomic UI is authored as a Component.
+    Component = 4,   // inline-placed .idea: renders at the <Component.X /> tag position; can nest (MAI-LAW-1)
 }
 
 /// <summary>How a Page renders. A Page row carries exactly one of these.</summary>

@@ -5,7 +5,7 @@
     text-decoration: var(--ma-media-link-decoration, underline);
     text-underline-offset: 3px;
 }
-/* Only when a hover color is configured (MAI-A45 setting) — otherwise the theme's hover wins. */
+/* Only when a hover color is configured (MAI-§4.5 setting) — otherwise the theme's hover wins. */
 .ma-media-link--hover:hover,
 .ma-media-link--hover:focus-visible {
     color: var(--ma-media-link-hover-color) !important;

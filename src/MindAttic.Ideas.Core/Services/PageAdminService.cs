@@ -226,7 +226,7 @@ public sealed class PageAdminService(IDbContextFactory<CmsDbContext> dbFactory) 
         page.ThemeVersion = model.ThemeVersion;
         page.Kind = model.Kind;
         page.BodyHtml = model.BodyHtml;
-        // MAI-A44: Untrusted PageCss is normalized at save time -- same-selector shorthand/longhand
+        // MAI-§4.7: Untrusted PageCss is normalized at save time -- same-selector shorthand/longhand
         // conflicts within the author's OWN text are collapsed (CssConflictMerger never reads or
         // rewrites Theme/Component/Global CSS, only this one field). Author-trusted PageCss is stored
         // exactly as submitted, preserving the MAI-LAW-5 byte-for-byte verbatim guarantee.

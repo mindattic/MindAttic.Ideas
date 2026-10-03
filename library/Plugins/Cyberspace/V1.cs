@@ -11,7 +11,7 @@ namespace MindAttic.Ideas.Plugin.Cyberspace;
 /// <c>/_ideas/Plugin/cyberspace/1/</c>. The Theme renders the effect-layer divs (.cyberspace-sl-fine /
 /// .cyberspace-sl-coarse / .console-bg-host) and composes this Plugin; the engine paints into them.
 /// circuitboard-srcs.js MUST load before console-bg.js (it reads window.__cyberspaceCircuitboardSrcs at init).
-/// Every effect is a per-page instance setting (MAI-A45), published to the engine through a
+/// Every effect is a per-page instance setting (MAI-§4.5), published to the engine through a
 /// <c>data-ma-settings="plugin.cyberspace"</c> element the glue shim reads live.
 /// </summary>
 public sealed class V1 : PluginBase

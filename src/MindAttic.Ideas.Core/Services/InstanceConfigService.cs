@@ -11,7 +11,7 @@ namespace MindAttic.Ideas.Core.Services;
 public enum InstanceSource { Page, Theme, ThemeUses, PagePlugin, SiteDefaultPlugin, BodyTag }
 
 /// <summary>
-/// One configurable citizen INSTANCE on a page (MAI-A45). <see cref="Path"/> addresses it: <c>page</c>,
+/// One configurable citizen INSTANCE on a page (MAI-§4.5). <see cref="Path"/> addresses it: <c>page</c>,
 /// <c>theme</c>, <c>plugin:{key}</c>, or <c>tag:{index}:{key}</c> for the index-th citizen tag in BodyHtml.
 /// </summary>
 public sealed record InstanceNode(

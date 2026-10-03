@@ -10,7 +10,7 @@ namespace MindAttic.Ideas.Blazor.Services;
 /// <summary>
 /// Bakes the Ideas-owned <see cref="CmsClaims.AuthorRawMarkup"/> claim into the auth cookie at sign-in,
 /// so MindAttic.Authentication issues a principal the CMS raw-content gate already understands — only the
-/// issuer of the ticket changed, not the trust vocabulary (FOUNDATION_AMENDMENTS A16). The library runs
+/// issuer of the ticket changed, not the trust vocabulary (MAI-LAW-9). The library runs
 /// every registered augmentor once, just before SignInAsync, over the freshly-built identity; because
 /// claims are NOT rebuilt on revalidation, this MUST be deterministic from the identity's existing claims.
 /// An Admin gets the claim; with MFA on it is withheld until amr=mfa is present (the final cookie sign-in

@@ -97,8 +97,8 @@ public class FreeFormPageCssTests
     public async Task PageCss_IsWrappedInThePageCascadeLayer()
     {
         // Page CSS beats Global/Theme CSS by cascade-layer precedence, not by accidental document-order
-        // + matching specificity — so !important is never needed (MAI-A43). Component now beats Page
-        // (MAI-A44); this test only pins the wrapper itself, not the cross-tier ordering.
+        // + matching specificity — so !important is never needed (MAI-§4.7). Component beats Page
+        // (MAI-§4.7); this test only pins the wrapper itself, not the cross-tier ordering.
         var html = await RenderAsync("body{color:red}", html: null, trusted: true);
 
         Assert.That(html, Does.Contain("@layer page {"));

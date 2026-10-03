@@ -11,7 +11,7 @@ namespace MindAttic.Ideas.Plugin.Footer;
 /// footer chrome plus the mindattic.com <em>pin-when-short</em> behavior: when the page content is
 /// shorter than the viewport the footer pins to the bottom edge; when content is taller it flows
 /// normally after the content (never overlaps). The author keeps full control of the footer's HTML.
-/// Instance settings (MAI-A45): chrome is emitted as <c>--ma-footer-*</c> custom properties; the pin
+/// Instance settings (MAI-§4.5): chrome is emitted as <c>--ma-footer-*</c> custom properties; the pin
 /// toggle reaches footer.js through <c>data-ma-settings="plugin.footer"</c>.
 /// </summary>
 public sealed class V1 : PluginBase

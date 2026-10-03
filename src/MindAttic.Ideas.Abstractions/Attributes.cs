@@ -53,7 +53,7 @@ public sealed class UsesAttribute(ContentKind kind, string key, int version = 0)
 }
 
 /// <summary>
-/// Describes one INSTANCE SETTING (MAI-A45). Every public, writable, typed <c>[Parameter]</c> of a citizen
+/// Describes one INSTANCE SETTING (MAI-§4.5). Every public, writable, typed <c>[Parameter]</c> of a citizen
 /// (bool / string / number / enum, nullable allowed) is an instance setting whether or not it carries this
 /// attribute; this attribute only adds the Admin-facing label, grouping and help, or hides/marks it.
 /// A bool setting is how a citizen exposes an on/off feature toggle. Values are per INSTANCE: a Component's

@@ -84,7 +84,7 @@
 
 .theme-autumn ::selection { background: color-mix(in srgb, var(--accent-2) 28%, transparent); }
 
-/* ── Instance-setting modifiers (MAI-A45) — added by V1.razor when a toggle is off or an opt-in value is set ── */
+/* ── Instance-setting modifiers (MAI-§4.5) — added by V1.razor when a toggle is off or an opt-in value is set ── */
 .theme-autumn--no-hover button, .theme-autumn--no-hover .btn { transition: none; }
 .theme-autumn--no-hover button:hover, .theme-autumn--no-hover .btn:hover { filter: none; }
 .theme-autumn--no-bar h1::after { display: none; }

@@ -20,7 +20,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Stable entity id, '<kind>.<key>' (kind lowercased). Plugin/Component from MAIL-A6.",
+          "description": "Stable entity id, '<kind>.<key>' (kind lowercased).",
           "pattern": "^(theme|plugin|component)\\.[a-z0-9]+$"
         },
         "key": {

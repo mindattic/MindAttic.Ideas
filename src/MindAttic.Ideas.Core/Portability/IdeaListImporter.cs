@@ -57,7 +57,7 @@ public sealed class IdeaListImportException(string message, IReadOnlyList<string
 /// Packages install first, in listed order (§0), then every page's declared <c>Uses[]</c> is validated
 /// against the catalog (§1) before anything else is written — a curated instance should render
 /// correctly on first boot, not degrade to a placeholder. Everything from §2 on is the unchanged
-/// content-import algorithm `.ideabundle` used (MAI-A34), ported onto <see cref="IdeaList"/> types.
+/// content-import algorithm (MAI-§4.9) over <see cref="IdeaList"/> types.
 /// </para>
 /// <para>
 /// Re-runnable by construction. Pages reconcile on <c>Uid</c> first and <c>(SiteId, Slug)</c> second, both
@@ -200,7 +200,7 @@ public sealed class IdeaListImporter(
         if (list.Site is { } ls)
         {
             // Match on the site KEY, and CREATE when it is absent rather than falling back to the
-            // default site. Since A35 a deployment can host several domains, so quietly redirecting
+            // default site. A deployment can host several domains (MAI-§4.10), so quietly redirecting
             // another site's pages onto the default one would republish them under the wrong domain.
             var targetKey = (options.IntoSiteKey ?? ls.Key).Trim().ToLowerInvariant();
             site = await db.Sites.FirstOrDefaultAsync(s => s.Key == targetKey, ct);
@@ -260,7 +260,7 @@ public sealed class IdeaListImporter(
             // BOTH lookups are scoped to the target site. Uid is portable and therefore GLOBAL, so an
             // unscoped uid match would adopt ANOTHER site's page and re-point its SiteId: importing an
             // idealist with --into-site, on a deployment that already holds those pages under a different
-            // site, would MOVE them rather than copy them (MAI-A39, carried forward unchanged).
+            // site, would MOVE them rather than copy them (MAI-§4.9).
             var page = await db.Pages.IgnoreQueryFilters().Include(p => p.MetaTags)
                            .FirstOrDefaultAsync(p => p.Uid == lp.Uid && p.SiteId == siteId, ct)
                        ?? await db.Pages.IgnoreQueryFilters().Include(p => p.MetaTags)
@@ -336,7 +336,7 @@ public sealed class IdeaListImporter(
                         });
                 }
 
-                // Instance settings (MAI-A45): upsert each slot, snapshotting a changed row into its history
+                // Instance settings (MAI-§4.5): upsert each slot, snapshotting a changed row into its history
                 // exactly as IWidgetInstanceSettingsService would, so an import is rollback-able too.
                 if (lp.InstanceSettings is { } listedSlots)
                 {

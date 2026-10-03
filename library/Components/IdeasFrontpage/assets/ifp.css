@@ -744,7 +744,7 @@
   .ifp-cta-btn svg { animation: none; }
 }
 
-/* ── Instance settings (MAI-A45) ────────────────────────────────────────────── */
+/* ── Instance settings (MAI-§4.5) ────────────────────────────────────────────── */
 .ifp--no-reveal .ifp-reveal { opacity: 1; transform: none; transition: none; }
 .ifp--no-anim *,
 .ifp--no-anim *::before,

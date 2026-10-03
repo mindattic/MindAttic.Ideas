@@ -9,7 +9,7 @@
       "assembly": "MindAttic.Ideas.Component.Accordion",
       "artifact": "MindAttic.Ideas.Component.Accordion.V1.idea",
       "mount": "/_ideas/Component/accordion/1",
-      "notes": "Baseline set (MAIL-A3). Activator: chrome for native <details> groups in .ma-accordion; data-exclusive keeps one open."
+      "notes": "Baseline set. Activator: chrome for native <details> groups in .ma-accordion; data-exclusive keeps one open."
     },
     {
       "id": "component.applaunch",
@@ -20,7 +20,7 @@
       "assembly": "MindAttic.Ideas.Component.AppLaunch",
       "artifact": "MindAttic.Ideas.Component.AppLaunch.V1.idea",
       "mount": "/_ideas/Component/applaunch/1",
-      "notes": "Launches a hosted app borderless (MAIL-A9). Three modes: fullscreen overlay + Fullscreen API (default), a separate window that arms itself via ?ma-fs=1, or inline. A page cannot fullscreen a window it opened, so the modes are a fallback ladder, not a switch."
+      "notes": "Launches a hosted app borderless. Three modes: fullscreen overlay + Fullscreen API (default), a separate window that arms itself via ?ma-fs=1, or inline. A page cannot fullscreen a window it opened, so the modes are a fallback ladder, not a switch."
     },
     {
       "id": "component.callout",
@@ -31,7 +31,7 @@
       "assembly": "MindAttic.Ideas.Component.Callout",
       "artifact": "MindAttic.Ideas.Component.Callout.V1.idea",
       "mount": "/_ideas/Component/callout/1",
-      "notes": "Baseline set (MAIL-A3). CSS-only activator: .ma-callout info/success/warn/error admonition boxes; glyph icons, no images."
+      "notes": "Baseline set. CSS-only activator: .ma-callout info/success/warn/error admonition boxes; glyph icons, no images."
     },
     {
       "id": "component.card",
@@ -43,7 +43,7 @@
       "artifact": "MindAttic.Ideas.Component.Card.V1.idea",
       "mount": "/_ideas/Component/card/1",
       "interactive": true,
-      "notes": "Baseline set (MAIL-A3). Content card (imageclass=/image=, title, text, href, footer); ships the .ma-cards responsive grid helper."
+      "notes": "Baseline set. Content card (imageclass=/image=, title, text, href, footer); ships the .ma-cards responsive grid helper."
     },
     {
       "id": "component.carousel",
@@ -54,7 +54,7 @@
       "assembly": "MindAttic.Ideas.Component.Carousel",
       "artifact": "MindAttic.Ideas.Component.Carousel.V1.idea",
       "mount": "/_ideas/Component/carousel/1",
-      "notes": "Baseline set (MAIL-A3). Activator: .ma-carousel of .ma-slide children — arrows, dots, keyboard, optional data-autoplay."
+      "notes": "Baseline set. Activator: .ma-carousel of .ma-slide children — arrows, dots, keyboard, optional data-autoplay."
     },
     {
       "id": "component.chimesh",
@@ -95,7 +95,7 @@
       "assembly": "MindAttic.Ideas.Component.CodeBlock",
       "artifact": "MindAttic.Ideas.Component.CodeBlock.V1.idea",
       "mount": "/_ideas/Component/codeblock/1",
-      "notes": "Baseline set (MAIL-A3). Activator: dresses every pre>code with chrome, copy button, data-lang badge. Highlighting = V2 candidate."
+      "notes": "Baseline set. Activator: dresses every pre>code with chrome, copy button, data-lang badge. Highlighting = V2 candidate."
     },
     {
       "id": "component.contactform",
@@ -107,7 +107,7 @@
       "artifact": "MindAttic.Ideas.Component.ContactForm.V1.idea",
       "mount": "/_ideas/Component/contactform/1",
       "interactive": true,
-      "notes": "Baseline set (MAIL-A3). Name/email/message form POSTing to action= or the contact.action site setting; honeypot included; renders a config hint when unset."
+      "notes": "Baseline set. Name/email/message form POSTing to action= or the contact.action site setting; honeypot included; renders a config hint when unset."
     },
     {
       "id": "component.fromhtml",
@@ -129,7 +129,7 @@
       "assembly": "MindAttic.Ideas.Component.FromMd",
       "artifact": "MindAttic.Ideas.Component.FromMd.V1.idea",
       "mount": "/_ideas/Component/frommd/1",
-      "notes": "Renders Markdown (Markdig) held in the page's 'frommd' metadata slot, with an in-page edit mode that re-syncs from a source file. Ships Markdig in its bin/ -- the first citizen to carry a third-party dependency, which is what surfaced the packer/ALC gap fixed in MAI-A27's sibling commit. Uses Plugin.header."
+      "notes": "Renders Markdown (Markdig) held in the page's 'frommd' metadata slot, with an in-page edit mode that re-syncs from a source file. Ships Markdig in its bin/ -- the first citizen to carry a third-party dependency, which the packer and ALC load support. Uses Plugin.header."
     },
     {
       "id": "component.frontpage",
@@ -143,7 +143,7 @@
       "uses": [
         "tooltip"
       ],
-      "notes": "Frontpage hub widget (SiteNav/NavTabItem, hub.json seed data, cover images)."
+      "notes": "Frontpage hub component (SiteNav/NavTabItem, hub.json seed data, cover images)."
     },
     {
       "id": "component.gallery",
@@ -154,7 +154,7 @@
       "assembly": "MindAttic.Ideas.Component.Gallery",
       "artifact": "MindAttic.Ideas.Component.Gallery.V1.idea",
       "mount": "/_ideas/Component/gallery/1",
-      "notes": "Baseline set (MAIL-A3). Activator: .ma-gallery grid of base64-class tiles; linked tiles = books grid, unlinked tiles get a lightbox."
+      "notes": "Baseline set. Activator: .ma-gallery grid of base64-class tiles; linked tiles = books grid, unlinked tiles get a lightbox."
     },
     {
       "id": "component.hardwarehero",
@@ -165,7 +165,7 @@
       "assembly": "MindAttic.Ideas.Component.HardwareHero",
       "artifact": "MindAttic.Ideas.Component.HardwareHero.V1.idea",
       "mount": "/_ideas/Component/hardwarehero/1",
-      "notes": "CSS-only activator: ships all .hw-* structural layout classes (.hw-hero, .hw-title, .hw-tagline, .hw-badge-row, .hw-section, .hw-stack-table, .hw-warn, .hw-btn, .hw-steps) shared by the Claudia and ChiMesh widgets and any future hardware project page."
+      "notes": "CSS-only activator: ships all .hw-* structural layout classes (.hw-hero, .hw-title, .hw-tagline, .hw-badge-row, .hw-section, .hw-stack-table, .hw-warn, .hw-btn, .hw-steps) shared by the Claudia and ChiMesh components and any future hardware project page."
     },
     {
       "id": "component.helloworld",
@@ -176,7 +176,7 @@
       "assembly": "MindAttic.Ideas.Component.HelloWorld",
       "artifact": "MindAttic.Ideas.Component.HelloWorld.V1.idea",
       "interactive": true,
-      "notes": "Canonical smallest widget; click-counter is a live interactive-render smoke test. Fully inline, no assets."
+      "notes": "Canonical smallest component; click-counter is a live interactive-render smoke test. Fully inline, no assets."
     },
     {
       "id": "component.hero",
@@ -188,7 +188,7 @@
       "artifact": "MindAttic.Ideas.Component.Hero.V1.idea",
       "mount": "/_ideas/Component/hero/1",
       "interactive": true,
-      "notes": "Baseline set (MAIL-A3). Banner with title/subtitle/CTA; background via imageclass= (inline base64 CSS class convention) or image=."
+      "notes": "Baseline set. Banner with title/subtitle/CTA; background via imageclass= (inline base64 CSS class convention) or image=."
     },
     {
       "id": "component.ideasbrochure",
@@ -225,7 +225,7 @@
         "sacredgeometry",
         "modalpopup"
       ],
-      "notes": "Persona gallery widget (PersonaCard/PersonaDetail, personas.json). Detail panel uses ModalPopup widget."
+      "notes": "Persona gallery component (PersonaCard/PersonaDetail, personas.json). Detail panel uses the ModalPopup component."
     },
     {
       "id": "component.mediaimage",
@@ -263,7 +263,7 @@
         "gallery",
         "footer"
       ],
-      "notes": "Self-contained mindattic.com frontpage widget. All CSS scoped under .maf-* (assets/maf.css); copyright-year JS runs as a scoped IIFE. Replaces the inline FrontpageBodyHtml/FrontpageCss/FrontpageJs seed constants."
+      "notes": "Self-contained mindattic.com frontpage component. All CSS scoped under .maf-* (assets/maf.css); copyright-year JS runs as a scoped IIFE."
     },
     {
       "id": "component.modalpopup",
@@ -286,7 +286,7 @@
       "assembly": "MindAttic.Ideas.Component.ProjectBrochure",
       "artifact": "MindAttic.Ideas.Component.ProjectBrochure.V1.idea",
       "mount": "/_ideas/Component/projectbrochure/1",
-      "notes": "The masthead a project page opens with (MAIL-A10): status, tagline, tech badges, links and a lead image, then ChildContent for whatever that project needs. A SHELL, not a page -- 34 projects share only an identity. widehero breaks a 5:1 flowchart out of the reading column."
+      "notes": "The masthead a project page opens with: status, tagline, tech badges, links and a lead image, then ChildContent for whatever that project needs. A SHELL, not a page -- 34 projects share only an identity. widehero breaks a 5:1 flowchart out of the reading column."
     },
     {
       "id": "component.projectgrid",
@@ -308,7 +308,7 @@
       "assembly": "MindAttic.Ideas.Component.TabBoard",
       "artifact": "MindAttic.Ideas.Component.TabBoard.V1.idea",
       "mount": "/_ideas/Component/tabboard/1",
-      "notes": "mindattic.com verbatim set (MAIL-A5). The project-board engine: .tabButton/.tabPage styles + board script (panel lift, procedural tile art, localStorage persistence, single-active click handling); window.TabBoard.build/art/images for data-built boards. Placement option alwaysShowTabPage=true keeps a selected item always visible (no fully-collapsed boards; first tab opens when nothing is saved)."
+      "notes": "mindattic.com verbatim set. The project-board engine: .tabButton/.tabPage styles + board script (panel lift, procedural tile art, localStorage persistence, single-active click handling); window.TabBoard.build/art/images for data-built boards. Placement option alwaysShowTabPage=true keeps a selected item always visible (no fully-collapsed boards; first tab opens when nothing is saved)."
     },
     {
       "id": "component.tableofcontents",
@@ -318,7 +318,7 @@
       "displayName": "tableofcontents",
       "assembly": "MindAttic.Ideas.Component.TableOfContents",
       "artifact": "MindAttic.Ideas.Component.TableOfContents.V1.idea",
-      "notes": "Razor widget; renders a table of contents. Inline markup, no bundled assets."
+      "notes": "Razor component; renders a table of contents. Inline markup, no bundled assets."
     },
     {
       "id": "component.tabs",
@@ -329,7 +329,7 @@
       "assembly": "MindAttic.Ideas.Component.Tabs",
       "artifact": "MindAttic.Ideas.Component.Tabs.V1.idea",
       "mount": "/_ideas/Component/tabs/1",
-      "notes": "Baseline set (MAIL-A3). Activator: .ma-tabs sections with data-title become an ARIA tab control; ma-tabs-board = the mindattic.com tile board."
+      "notes": "Baseline set. Activator: .ma-tabs sections with data-title become an ARIA tab control; ma-tabs-board = the mindattic.com tile board."
     },
     {
       "id": "component.textbox",
@@ -340,7 +340,7 @@
       "assembly": "MindAttic.Ideas.Component.Textbox",
       "artifact": "MindAttic.Ideas.Component.Textbox.V1.idea",
       "mount": "/_ideas/Component/textbox/1",
-      "notes": "Angular-Material-style outlined text field; typed [Parameter] props plus pass-through attributes. Folded from a Control to a Widget (MAI-A19)."
+      "notes": "Angular-Material-style outlined text field; typed [Parameter] props plus pass-through attributes."
     },
     {
       "id": "component.videoembed",
@@ -352,7 +352,7 @@
       "artifact": "MindAttic.Ideas.Component.VideoEmbed.V1.idea",
       "mount": "/_ideas/Component/videoembed/1",
       "interactive": true,
-      "notes": "Baseline set (MAIL-A3). Responsive player: YouTube/Vimeo URLs become privacy-friendly embeds; other URLs (incl. data:) render native <video>."
+      "notes": "Baseline set. Responsive player: YouTube/Vimeo URLs become privacy-friendly embeds; other URLs (incl. data:) render native <video>."
     },
     {
       "id": "component.websnapshot",
@@ -363,7 +363,7 @@
       "assembly": "MindAttic.Ideas.Component.WebSnapshot",
       "artifact": "MindAttic.Ideas.Component.WebSnapshot.V1.idea",
       "mount": "/_ideas/Component/websnapshot/1",
-      "notes": "mindattic.com verbatim set (MAIL-A5). The UiUx WEBSNAPSHOT bundle: .web-snapshot framed screenshot viewer (fetch or inline-base64 mode); window.WebSnapshot.autoInit() for late-built containers."
+      "notes": "mindattic.com verbatim set. The UiUx WEBSNAPSHOT bundle: .web-snapshot framed screenshot viewer (fetch or inline-base64 mode); window.WebSnapshot.autoInit() for late-built containers."
     },
     {
       "id": "plugin.atticfont",
@@ -385,7 +385,7 @@
       "assembly": "MindAttic.Ideas.Plugin.BackHomeM",
       "artifact": "MindAttic.Ideas.Plugin.BackHomeM.V1.idea",
       "mount": "/_ideas/Plugin/backhomem/1",
-      "notes": "Back-home glyph/link widget."
+      "notes": "Back-home glyph/link plugin."
     },
     {
       "id": "plugin.backtotop",
@@ -396,7 +396,7 @@
       "assembly": "MindAttic.Ideas.Plugin.BackToTop",
       "artifact": "MindAttic.Ideas.Plugin.BackToTop.V1.idea",
       "mount": "/_ideas/Plugin/backtotop/1",
-      "notes": "Baseline set (MAIL-A3). Activator: zero author markup — a floating scroll-to-top button appears after one screen of scroll."
+      "notes": "Baseline set. Activator: zero author markup — a floating scroll-to-top button appears after one screen of scroll."
     },
     {
       "id": "plugin.breadcrumbs",
@@ -408,7 +408,7 @@
       "artifact": "MindAttic.Ideas.Plugin.Breadcrumbs.V1.idea",
       "mount": "/_ideas/Plugin/breadcrumbs/1",
       "interactive": true,
-      "notes": "Baseline set (MAIL-A3). Trail derived lexically from slug segments; renders nothing on the home page."
+      "notes": "Baseline set. Trail derived lexically from slug segments; renders nothing on the home page."
     },
     {
       "id": "plugin.cyberspace",
@@ -430,7 +430,7 @@
       "assembly": "MindAttic.Ideas.Plugin.Footer",
       "artifact": "MindAttic.Ideas.Plugin.Footer.V1.idea",
       "mount": "/_ideas/Plugin/footer/1",
-      "notes": "Baseline set (MAIL-A3). Activator: chrome + the mindattic.com pin-when-short behavior for any author-written footer.ma-footer."
+      "notes": "Baseline set. Activator: chrome + the mindattic.com pin-when-short behavior for any author-written footer.ma-footer."
     },
     {
       "id": "plugin.header",
@@ -453,7 +453,7 @@
       "artifact": "MindAttic.Ideas.Plugin.NavMenu.V1.idea",
       "mount": "/_ideas/Plugin/navmenu/1",
       "interactive": true,
-      "notes": "Baseline set (MAIL-A3). Site nav bar; links= attribute or nav.links site setting (per-site menus); hamburger below 720px."
+      "notes": "Baseline set. Site nav bar; links= attribute or nav.links site setting (per-site menus); hamburger below 720px."
     },
     {
       "id": "plugin.outfitfont",
@@ -464,7 +464,7 @@
       "assembly": "MindAttic.Ideas.Plugin.OutfitFont",
       "artifact": "MindAttic.Ideas.Plugin.OutfitFont.V1.idea",
       "mount": "/_ideas/Plugin/outfitfont/1",
-      "notes": "Display typeface widget; emits one stylesheet, registers a font family + token."
+      "notes": "Display typeface plugin; emits one stylesheet, registers a font family + token."
     },
     {
       "id": "plugin.pinfooter",
@@ -475,7 +475,7 @@
       "assembly": "MindAttic.Ideas.Plugin.PinFooter",
       "artifact": "MindAttic.Ideas.Plugin.PinFooter.V1.idea",
       "mount": "/_ideas/Plugin/pinfooter/1",
-      "notes": "mindattic.com verbatim set (MAIL-A5). The UiUx PINFOOTER bundle: .pin-when-short pins while the document is shorter than the viewport. Authentic implementation; distinct from the generic widget.footer."
+      "notes": "mindattic.com verbatim set. The UiUx PINFOOTER bundle: .pin-when-short pins while the document is shorter than the viewport. Authentic implementation; distinct from the generic plugin.footer."
     },
     {
       "id": "plugin.poweredby",
@@ -509,7 +509,7 @@
       "artifact": "MindAttic.Ideas.Plugin.SocialLinks.V1.idea",
       "mount": "/_ideas/Plugin/sociallinks/1",
       "interactive": true,
-      "notes": "Baseline set (MAIL-A3). Icon row for GitHub/X/LinkedIn/YouTube/email/website/RSS; inline SVG path data (no icon files); social.* site-setting fallbacks."
+      "notes": "Baseline set. Icon row for GitHub/X/LinkedIn/YouTube/email/website/RSS; inline SVG path data (no icon files); social.* site-setting fallbacks."
     },
     {
       "id": "plugin.themetoggle",
@@ -558,7 +558,7 @@
         "backhomem",
         "cyberspace"
       ],
-      "notes": "Composes its look from four separately-installed Widget .ideas by string id; bundles only its own chrome (theme.css)."
+      "notes": "Composes its look from four separately-installed Plugin .ideas by string id; bundles only its own chrome (theme.css)."
     },
     {
       "id": "theme.hardware",
@@ -569,7 +569,7 @@
       "assembly": "MindAttic.Ideas.Theme.Hardware",
       "artifact": "MindAttic.Ideas.Theme.Hardware.V1.idea",
       "mount": "/_ideas/Theme/hardware/1",
-      "notes": "Industrial/maker dark chrome: PCB-green palette, monospace typography, scan-line texture. Structural .hw-* layout classes live in the HardwareHero widget; compose that alongside any page that uses this theme. Both light and dark palettes verified WCAG 2.2 AA, switched via html[data-theme-mode]."
+      "notes": "Industrial/maker dark chrome: PCB-green palette, monospace typography, scan-line texture. Structural .hw-* layout classes live in the HardwareHero component; compose that alongside any page that uses this theme. Both light and dark palettes verified WCAG 2.2 AA, switched via html[data-theme-mode]."
     },
     {
       "id": "theme.ideas",

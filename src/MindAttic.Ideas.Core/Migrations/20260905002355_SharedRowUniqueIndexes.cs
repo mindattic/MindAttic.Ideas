@@ -5,10 +5,10 @@
 namespace MindAttic.Ideas.Core.Migrations
 {
     /// <summary>
-    /// Restores the uniqueness A36 silently dropped. Making SiteId part of the identity produced a unique
+    /// Restores uniqueness for shared rows while SiteId was part of the catalog identity. Making SiteId part of the identity produced a unique
     /// index over a nullable column, which SQL Server filters to IS NOT NULL — leaving every SHARED row
-    /// (every row predating A36, and every row the library seeder installs) unconstrained. These two
-    /// complementary IS NULL indexes cover exactly the rows the other one cannot, so the pre-A36 guarantee
+    /// (including every row the library seeder installs) unconstrained. These two
+    /// complementary IS NULL indexes cover exactly the rows the other one cannot, so the uniqueness guarantee
     /// is back and the install path’s concurrency guard — a caught DbUpdateException from this very
     /// index — works again for a shared install.
     /// </summary>

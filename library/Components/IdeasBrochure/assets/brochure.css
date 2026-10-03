@@ -359,7 +359,7 @@
 }
 .ibr-demo-msg { margin-top: .75rem; opacity: .8; }
 
-/* Instance setting (MAI-A45): hover effects off. */
+/* Instance setting (MAI-§4.5): hover effects off. */
 .ibr--no-anim .ibr-pillar,
 .ibr--no-anim .ibr-tech-card { transition: none; }
 .ibr--no-anim .ibr-pillar:hover { border-color: rgba(90,160,255,.15); }

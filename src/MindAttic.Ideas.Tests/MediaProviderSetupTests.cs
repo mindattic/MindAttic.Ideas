@@ -9,7 +9,7 @@ using MindAttic.Media.Azure;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// MAI-A31: the media backing store is chosen by configuration, and <c>/_media/{uid}</c> is the
+/// MAI-§4.11: the media backing store is chosen by configuration, and <c>/_media/{uid}</c> is the
 /// page-facing contract either way. These assert the selection itself — no Azure account is touched,
 /// only the service descriptors the selection produces.
 /// </summary>

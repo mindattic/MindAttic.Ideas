@@ -1,6 +1,6 @@
 ﻿/* MindAttic.Ideas.Component.MindAtticFrontpage — all rules scoped under .maf or .maf-* */
 
-/* The host .page width override (50%) is emitted inline by V1 — toggleable instance setting (MAI-A45). */
+/* The host .page width override (50%) is emitted inline by V1 — toggleable instance setting (MAI-§4.5). */
 
 .maf { display: flex; flex-direction: column; gap: var(--maf-gap, 1.5rem); max-width: var(--maf-max-width, 64rem); min-height: var(--maf-min-height, 100vh); margin: 0 auto; padding: var(--maf-padding, 1.5rem); }
 .maf-header { display: contents; }

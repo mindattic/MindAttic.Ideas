@@ -8,7 +8,7 @@ public sealed record CssLintWarning(string Shorthand, IReadOnlyList<string> CoOc
 
 /// <summary>
 /// Advisory (never blocking) scan of author-typed PageCss for a specific footgun: cascade layers
-/// guarantee which TIER wins (Component now beats Page, MAI-A44), but WITHIN a tier a shorthand
+/// guarantee which TIER wins (Component beats Page, MAI-§4.7), but WITHIN a tier a shorthand
 /// declaration (e.g. "margin: 10px") still overwrites all of its longhand sub-properties in source
 /// order, same as always. An author who writes both a shorthand and one (but not all) of its longhand
 /// siblings anywhere in PageCss most likely meant a single-side override that the shorthand will
@@ -16,7 +16,7 @@ public sealed record CssLintWarning(string Shorthand, IReadOnlyList<string> CoOc
 /// selector-block scoped) and blind to Theme/Global CSS, so it can flag pairs that don't actually target
 /// the same element, and can't see cross-tier collisions -- acceptable for an advisory hint.
 ///
-/// <see cref="CssConflictMerger"/> (MAI-A44) now automatically expands and collapses same-selector
+/// <see cref="CssConflictMerger"/> (MAI-§4.7) automatically expands and collapses same-selector
 /// shorthand/longhand conflicts within Untrusted PageCss at save time, using AngleSharp.Css's real
 /// parser rather than this regex heuristic. This linter's remaining job is everything the merger
 /// doesn't cover: Author-trusted PageCss (the merger never touches it -- MAI-LAW-5 verbatim guarantee),

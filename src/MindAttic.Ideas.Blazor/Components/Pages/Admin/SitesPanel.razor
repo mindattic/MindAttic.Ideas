@@ -1,7 +1,7 @@
 @attribute [Authorize(Policy = MaPolicies.Admin)]
 @inject ISiteAdminService SitesSvc
 
-@* Sites panel — one deployment, many domains (MAI-A35). A site's HostBindings decide which requests
+@* Sites panel — one deployment, many domains (MAI-§4.10). A site's HostBindings decide which requests
    land on it; the default site answers everything unclaimed, which is why a single-site install needs
    no bindings at all and behaves exactly as it always has. *@
 

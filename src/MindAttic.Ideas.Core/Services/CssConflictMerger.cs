@@ -6,12 +6,12 @@ using AngleSharp.Css.Parser;
 namespace MindAttic.Ideas.Core.Services;
 
 /// <summary>
-/// MAI-A44: physically eliminates conflicting older CSS within a single author's own CSS text, rather
+/// MAI-§4.7: physically eliminates conflicting older CSS within a single author's own CSS text, rather
 /// than leaving it for the browser's cascade to sort out. This is deliberately scoped to ONE CSS text at
 /// a time -- it never reads or rewrites Theme/Component/Global CSS (those are either external files this
 /// app doesn't own, or a host-wide setting shared by every page, so mutating them as a side effect of
 /// saving one page would corrupt every other page's rendering). Precedence ACROSS tiers remains entirely
-/// the job of cascade layers (MAI-A43/A44, CmsHead.razor); this class only cleans up a single tier's own
+/// the job of cascade layers (MAI-§4.7, CmsHead.razor); this class only cleans up a single tier's own
 /// accumulated, possibly self-contradicting declarations.
 ///
 /// The browser's cascade already resolves two separate "same selector" rule blocks correctly on its own

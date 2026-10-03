@@ -4,108 +4,110 @@ project: MindAttic.Ideas
 code: MAI
 layer: stories
 status: living
-updated: 2026-06-16
+updated: 2026-10-03
 ---
 
 # MindAttic.Ideas — User Stories
 
-> ✅ done (shipped & tested) · 🟡 partial · ⬜ planned · 🗑️ cut. Every ✅ cites the test that proves
-> it. Derived from the [`README.md`](../README.md) living feature spec; test tokens name NUnit
-> fixtures in `src/MindAttic.Ideas.Tests`. Build/test evidence: see [BIBLE §6](BIBLE.md#MAI-§6) —
-> `dotnet test` reports **224 passed, 0 failed (2026-06-12)**, plus the [Explicit] SQL Server temporal proof.
+> ✅ done (shipped & tested) · 🟡 partial · ⬜ planned. Every ✅ cites the test that proves it. Test
+> tokens name NUnit fixtures in `src/MindAttic.Ideas.Tests` unless noted. Build/test evidence: see
+> [BIBLE §6](BIBLE.md#MAI-§6).
 >
-> Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages),
-> **Visitor** (reads a rendered page), **Widget-Dev** (builds first-party content in MindAttic.Ideas.Library).
+> Personas: **Author** (an admin who writes pages), **Operator** (installs/manages `.idea` packages and
+> sites), **Visitor** (reads a rendered page), **Citizen-Dev** (builds first-party content in `library/`),
+> **Maintainer** (builds and deploys the engine).
 
 ## Epic A — Authoring & rendering a page
 
-- **MAI-US-A1 ✅** As an Author, I can drop a `{{Kind.Name[.Vn]}}` token into free-form markup and have
-  it resolve to the right citizen, so I compose without zones. *Given a body with include tokens, When
-  the reference parser runs, Then pinned/floating/`.Latest`/short-form/dotted-key tokens parse to the
-  right `(Kind,Key,Version)` and attributes are ignored for resolution.* *(verified by `RenderGuardTests`,
-  `IncludeReferenceParser` cases.)*
-- **MAI-US-A2 ✅** As a Visitor, a code-page `<CmsInclude>` and a data-page include token render
-  **identically** for Resolved/Missing/Disabled outcomes, so the authoring path doesn't change behavior.
+- **MAI-US-A1 ✅** As an Author, I can place a `<Kind.Key />` tag (optionally `data-version="n"`) in
+  free-form markup and have it resolve to the right citizen, so I compose without zones. *Given a body
+  with citizen tags, When the reference parser runs, Then dotted, short-form and kind-attribute tags
+  parse to the right `(Kind,Key,Version)`; an unknown kind never becomes a Page reference; any stored
+  brace token is migrated to a tag.* *(verified by
+  `RenderGuardTests.TryParseTag_ShortForm_WithVersionAndDottedKey`,
+  `RenderGuardTests.Parse_DottedTag_CollectedWithCorrectKind`,
+  `RenderGuardTests.Parse_PascalTag_WithUnrecognisedKind_StillDefaultsToComponent`,
+  `LegacyTokenMigrationTests`.)* See [BIBLE §4.4](BIBLE.md#MAI-§4.4).
+- **MAI-US-A2 ✅** As a Visitor, a code-page `<CmsInclude>` and a data-page tag render **identically** for
+  Resolved/Missing/Disabled outcomes, so the authoring path doesn't change behavior.
   *(verified by `CmsIncludeParityTests.CmsInclude_MatchesDataPageInclude`.)*
-- **MAI-US-A3 ✅** As an Author with the `Cms.AuthorRawMarkup` claim, my inline JS runs (raw passthrough);
-  without it, my body is sanitized — set at **write time**. *Given a save, When the writer holds/doesn't
-  hold the claim, Then `BodyTrust` is Author/Untrusted and the author Uid is captured (truncated to 64).*
-  *(verified by `PageAuthoringTests.Stamp_WithClaim_IsAuthor_AndCapturesUid`,
-  `Stamp_WithoutClaim_IsUntrusted`.)* See [MAI-LAW-5](BIBLE.md#MAI-§5).
-- **MAI-US-A4 ✅** As a Visitor, untrusted markup is neutralized (script/style/inline-handler/`javascript:`
-  stripped) while `{{tokens}}` survive so widgets still compose. *(verified by `RawContentGateTests`:
-  `Untrusted_StripsScriptTag`, `Untrusted_NeutralizesJavascriptUri`,
-  `Untrusted_PreservesIncludeTokens_SoWidgetsStillCompose`.)*
+- **MAI-US-A3 ✅** As an Author with the `Cms.AuthorRawMarkup` claim, my page is stamped `Author` trust at
+  **write time** (without it, `Untrusted`), and my deliberate JavaScript runs from the Page JS field.
+  *Given a save, When the writer holds/doesn't hold the claim, Then `BodyTrust` is Author/Untrusted and
+  the author Uid is captured (truncated to 64).* *(verified by
+  `PageAuthoringTests.Stamp_WithClaim_IsAuthor_AndCapturesUid`, `Stamp_WithoutClaim_IsUntrusted`,
+  `Stamp_TruncatesUidTo64`.)* See [MAI-LAW-5](BIBLE.md#MAI-LAW-5).
+- **MAI-US-A4 ✅** As a Visitor, every page body is sanitized before it renders: no script, handler,
+  executable URL, frame, form or style element survives at any trust level; Author pages keep their
+  citizen tags and settings, Untrusted pages keep none. *(verified by `RawContentGateTests`:
+  `Author_ScriptStyleHandlersAndFrames_AreStripped`,
+  `Author_KeepsCitizenTagsAndTheirSettings_ButNotHandlersOrScriptUrls`,
+  `Author_KeepsSanitizedInlineStyleAndCustomProperties`, `Untrusted_DropsCitizenTags`,
+  `Untrusted_StripsScriptTag`, `Untrusted_NeutralizesJavascriptUri`;
+  `RawTextElementFrameTests.FreeFormPage_EmitsStyleAndScriptAsSingleMarkupFrames`.)* See
+  [BIBLE §4.6](BIBLE.md#MAI-§4.6).
 - **MAI-US-A5 ✅** As an Author, I can CRUD pages with soft-delete and publish/enable under the Admin
   policy. *(verified by `PageAdminServiceTests`, `AdminServiceContractTests`.)*
-- **MAI-US-A6 ✅** As a Visitor on the running host, the seeded **Frontpage** — the mindattic.com
-  recreation as a Data page ([A21](AMENDMENTS.md#MAI-A21)) — renders its widget capabilities (Tabs
-  board, Gallery, pin-when-short Footer) through the Cyberspace theme end-to-end. *NUnit proves the
-  mechanics (the real seeded body parses to exactly the three floating Widget tokens; the install →
-  catalog → IncludeExpander pipeline resolves them to Component frames; the seed's
-  create/migrate/never-clobber behavior holds), and an attended run proves the live render.*
-  *(verified by `CmsIncludeParityTests`, `RawContentGateTests`, `SeededPageRenderTests`:
-  `SeedBodyTokens_ParseToWidgetKind_FloatingVersion`, `FrontpageBody_AllSeedTokens_ParseFromTheRealSeededPage`,
+- **MAI-US-A6 ✅** As a Visitor, the seeded **Frontpage** Data page renders its library components through
+  its theme; the seed creates it, migrates a stock compiled copy to the Data page, and never overwrites an
+  admin-authored one. *(verified by `SeededPageRenderTests`:
+  `SeedBodyTags_ParseToCorrectKind_FloatingVersion`, `FrontpageBody_AllSeedTokens_ParseFromTheRealSeededPage`,
   `Seed_MigratesStockCodeFrontpage_ToDataPage_ButNeverAnAdminPage`,
-  `Seed_SoftDisablesStockHomePage_AndNeverAnEditedOne`,
-  `SeedBody_InstalledTabsWidget_ExpandsToResolvedFrame`; live render observed 2026-06-09 — see
-  [BIBLE §6](BIBLE.md#MAI-§6) live-render evidence: zero `ma-missing` placeholders. Interactive
-  circuit behavior (clicking a tab tile) remains browser-only.)*
+  `SeedBody_InstalledTabsComponent_ExpandsToResolvedFrame`.)*
 - **MAI-US-A7 ✅** As a Visitor, navigating to the application with **no route** forwards me to the
-  Frontpage. *`PageHost` forwards the `""` slug to the slug named by the Host setting `page.frontpage`
-  (default `frontpage`) instead of resolving it to a page; the retired stock home page is soft-disabled
-  by the seed.* *(seed-side behavior verified by
-  `SeededPageRenderTests.Seed_SoftDisablesStockHomePage_AndNeverAnEditedOne`; the forward observed live
-  2026-06-09 — `GET /` → 302 → `/frontpage` ([BIBLE §6](BIBLE.md#MAI-§6)). See [A21](AMENDMENTS.md#MAI-A21).)*
+  site's front page: the Site-scope `page.frontpage` setting, else the Host-scope one (default
+  `frontpage`); the stock home page is soft-disabled by the seed. *(verified by
+  `SeededPageRenderTests.Seed_SoftDisablesStockHomePage_AndNeverAnEditedOne`; the forward observed live —
+  `GET /` → 302 → `/frontpage`.)*
 
 ## Epic B — Versioning, lifecycle & history
 
-- **MAI-US-B1 ✅** As an Author, I pin a version (`.V3`) or float to latest (omit / `.Latest`), so I juggle
-  versions only when I care. *(verified by `RenderGuardTests.Parse_FloatingAndLatest_HaveNullVersion`,
-  `Parse_PinnedVersion`.)* See [MAI-A12](AMENDMENTS.md#MAI-A12).
-- **MAI-US-B2 ✅** As an Operator, I cannot delete a version while any page pins it; a floating reference
-  blocks only when deleting would orphan it. *(verified by `ContentLifecycleServiceTests`:
-  `PinnedVersion_AlwaysBlocks_AndListsSlug`, `FloatingReference_BlocksOnlyWhenItWouldOrphan`,
-  `DisabledOrUnpublishedPage_IsNotABlockingReference`; and
+- **MAI-US-B1 ✅** As an Author, I pin a version (`data-version="3"`) or float to the highest enabled
+  version (omit it), so I juggle versions only when I care. *(verified by
+  `ContentCatalogTests.FindLatest_StillPicksTheHighestVersion`,
+  `PageAssetCollectorTests.PinnedVersion_ResolvesViaFind_FloatingResolvesToHighest`.)*
+- **MAI-US-B2 ✅** As an Operator, I cannot delete a version while any page pins it (body tag, `uses[]`,
+  theme pin or `ActivePluginsJson`); a floating reference blocks only when deleting would orphan it.
+  *(verified by `ContentLifecycleServiceTests`: `PinnedVersion_AlwaysBlocks_AndListsSlug`,
+  `FloatingReference_BlocksOnlyWhenItWouldOrphan`, `DisabledOrUnpublishedPage_IsNotABlockingReference`,
+  `ActivePluginsJson_VersionedPin_BlocksDeletion`, `ThemePin_Blocks_AndThemeFloatFollowsOrphanRule`; and
   `UsesDeclarationTests.DeleteGuard_BlocksDeletingAComponentACompiledPagePins`.)* See
-  [MAI-A3](AMENDMENTS.md#MAI-A3), [HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2).
-- **MAI-US-B3 ✅** As an Operator, disabling a content version reloads the catalog so the token then
+  [HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2).
+- **MAI-US-B3 ✅** As an Operator, disabling a content version reloads the catalog so the tag then
   resolves as Disabled. *(verified by
   `ContentLifecycleServiceTests.SetEnabledFalse_ReloadsCatalog_SoResolveTagReportsDisabled`.)*
 - **MAI-US-B4 ✅** As an Operator, the EF model guards reserved columns and a delete-guard projection, so
   integrity holds at the data layer. *(verified by `CmsModelGuardTests`.)*
 - **MAI-US-B5 ✅** As an Operator, I can inspect and roll back to any prior page state via temporal
-  history. *`IPageHistoryService` + `PageHistoryService` implemented; Admin "Page History" panel
-  surfaces the temporal record inline in the page editor. `RestoreAsync` is unit-tested (4 tests);
-  the live temporal query is proven against real SQL Server.*
-  *(verified by `PageHistoryServiceTests`: `RestoreAsync_CopiesSnapshotContentFields_OntoCurrentPage`,
-  `RestoreAsync_ReStampsTrust_FromRestoringUserClaims`, `RestoreAsync_NonAdminUser_StampsUntrusted`,
-  `RestoreAsync_UnknownPage_ReturnsFalse`,
-  `GetHistoryAsync_RequiresSqlServer_ThrowsOnInMemoryDb`; and the LIVE proof
-  `PageHistorySqlServerTests.GetHistoryAsync_OnSqlServer_ReturnsOrderedTemporalVersions` —
-  [Explicit], run 2026-06-09 against LocalDB: multiple ordered temporal versions of the frontpage
-  row. See [A22](AMENDMENTS.md#MAI-A22).)*
+  history in the Admin Page History panel. *(verified by `PageHistoryServiceTests`:
+  `RestoreAsync_CopiesSnapshotContentFields_OntoCurrentPage`, `RestoreAsync_ReStampsTrust_FromRestoringUserClaims`,
+  `RestoreAsync_NonAdminUser_StampsUntrusted`, `RestoreAsync_UnknownPage_ReturnsFalse`; and the live
+  `PageHistorySqlServerTests.GetHistoryAsync_OnSqlServer_ReturnsOrderedTemporalVersions` ([Explicit],
+  LocalDB).)*
 
-## Epic C — Trust, degradation & the Admin Inbox
+## Epic C — Degradation & the Admin Inbox
 
 - **MAI-US-C1 ✅** As an Operator, a missing/disabled dependency raises a deduped Admin Inbox message that
   collapses recurrences and reopens after resolution. *(verified by `AdminInboxServiceTests`:
   `RaiseAsync_SameDedupKey_CollapsesToOneRow`, `RaiseAsync_AfterResolve_ReopensToNew`,
-  `UnreadCount_CountsOnlyNew`.)* See [MAI-A5](AMENDMENTS.md#MAI-A5).
+  `UnreadCount_CountsOnlyNew`.)*
 - **MAI-US-C2 ✅** As a Visitor, the render thread never throws on a bad reference — it degrades to a
-  placeholder and fire-and-forgets the alert. *(verified by `RenderGuardTests`, `RawContentGateTests`,
-  `RenderAlertSink` wiring.)* See [MAI-LAW-7](BIBLE.md#MAI-§5).
+  placeholder that links to `/admin/upload?missing=<reference>` and fire-and-forgets the alert.
+  *(verified by `RenderGuardTests`: `MissingInclude_RendersPlaceholder_AndRaisesOneMissingAlert`,
+  `DisabledInclude_RendersPlaceholder_AndRaisesOneDisabledAlert`,
+  `MissingPlaceholder_LinksToAdminUpload_WithTheMissingKey`.)* See [MAI-LAW-7](BIBLE.md#MAI-LAW-7).
 
 ## Epic D — The `.idea` package & install
 
-- **MAI-US-D1 ✅** As a Widget-Dev, the `.idea` manifest kernel reads and validates with explicit errors,
-  rejecting host assemblies in `bin/` and enforcing the six-field kernel. *(verified by
-  `ManifestReaderTests`, `ManifestValidatorTests`, `IdeaArchiveReaderTests`.)*
-- **MAI-US-D2 ✅** As a Widget-Dev, packing is reflection-only and lossless/forward-compatible, with
+- **MAI-US-D1 ✅** As a Citizen-Dev, the `.idea` manifest kernel reads and validates with explicit errors,
+  rejecting host assemblies in `bin/` and retired categories. *(verified by `ManifestReaderTests`,
+  `ManifestValidatorTests`, `IdeaArchiveReaderTests`.)*
+- **MAI-US-D2 ✅** As a Citizen-Dev, packing is reflection-only and lossless/forward-compatible, with
   SHA-256 integrity and a zip-slip-guarded reader. *(verified by `PackerTests`, `ManifestAssetPackerTests`,
   `Sha256HasherTests`, `PackageExtractorTests`.)* See [HOUSE-LAW-5](../../MindAttic.HouseRules.md#HOUSE-LAW-5).
-- **MAI-US-D3 ✅** As an Operator, the whole-number version/collision resolver picks the active version and
-  refuses bad collisions. *(verified by `PackageVersionResolverTests`.)* See [MAI-A1](AMENDMENTS.md#MAI-A1).
+- **MAI-US-D3 ✅** As an Operator, the whole-number version/collision resolver picks the active version,
+  refuses downgrades, and refuses a compiled-citizen collision without confirmation. *(verified by
+  `PackageVersionResolverTests`.)*
 - **MAI-US-D4 ✅** As an Operator, installing a `.idea` is idempotent: it registers the `InstalledPackage`
   row + a mirrored catalog row, retains prior versions on upgrade, soft-disables, and reloads the catalog.
   *(verified by `PackageInstallServiceTests`, `SeedOnInstallTests`.)*
@@ -113,370 +115,279 @@ updated: 2026-06-16
   *(verified by `LocalFilePackageBlobStoreTests`.)*
 - **MAI-US-D6 ✅** As an Operator, a local folder source discovers packable `.idea` candidates.
   *(verified by `LocalFolderPackageSourceTests`.)*
+- **MAI-US-D7 ✅** As an Operator, only a `.idea` signed by the host-trusted certificate installs, whatever
+  path its bytes took. *(verified by `PackageSignerTests`; `PackageInstallServiceTests`:
+  `Install_UnsignedPackage_ThrowsPackageSignatureException_NoRowsWritten`,
+  `Install_TamperedPackage_ThrowsPackageSignatureException_NoRowsWritten`,
+  `Install_UntrustedSigner_ThrowsPackageSignatureException`; `VaultPackageSigningTrustTests`.)* See
+  [MAI-LAW-10](BIBLE.md#MAI-LAW-10).
+- **MAI-US-D8 ✅** As an Operator, re-publishing the same version with different content is a conflict I
+  am told about, not a silent no-op, while a re-sign of unchanged content is a no-op. *(verified by
+  `PackageInstallServiceTests.Install_HashConflict_ThrowsInstallException_AndRaisesAdminInboxAlert`,
+  `PackageInstallServiceTests.Install_SameVersion_SameContent_ReSignedDifferently_IsStillANoOp`,
+  `PackageVersionResolverTests.SameVersion_DifferentHash_IsAConflict_NotANoOp`.)*
+- **MAI-US-D9 ✅** As an Operator, a package whose `requires[]` is unmet, or whose `minHostVersion` exceeds
+  the host, is refused with nothing written. *(verified by
+  `PackageInstallServiceTests.Requires_Missing_ThrowsInstallException_NoRowsWritten`,
+  `PackageInstallServiceTests.Requires_AllPresent_InstallSucceeds`, `ManifestValidatorTests`.)*
+- **MAI-US-D10 ✅** As an Operator, an `.idealist` entry not present locally is fetched from a NuGet feed
+  (`MindAttic.Ideas.{Category}.{Key}` at `{n}.0.0`) and cached. *(verified by
+  `NuGetIdeaListPackageResolverTests` against a fake fetcher; the live GitHub Packages fetch is not
+  automated.)*
 
 ## Epic E — Runtime load & asset cascade
 
 - **MAI-US-E1 ✅** As an Operator, a `.idea` citizen loads through a per-package collectible ALC; host
   types unify by reference identity and others delegate to the default resolver. *(verified by
-  `AlcAwareTypeResolverTests`, `CmsPackageLoadContextTests`.)* See [MAI-LAW-6](BIBLE.md#MAI-§5).
-- **MAI-US-E2 ✅** As an Author, a page's citizen css/scripts are cascade-ordered, deduped, and hoisted
-  into `<head>` (Global → Theme → Plugin → Component → Page → inline), fed by a no-schema manifest→`Extra`
-  data path.
-  *(verified by `PageAssetCollectorTests`, `AssetDataPathTests.Install_Then_Reload_SurfacesManifestCssScripts_OntoDescriptorExtra`,
-  `UsesDeclarationTests.Collect_FromUses_HoistsReferencedCitizenAssets`.)* See [MAI-LAW-4](BIBLE.md#MAI-§5).
-- **MAI-US-E3 ✅** As a Widget-Dev, a `[Uses]`/`uses[]` declaration parses (bare floats, pinned, case-
-  insensitive kind, rejects malformed) and drives hoisting + the delete-guard. *(verified by
+  `AlcAwareTypeResolverTests`, `CmsPackageLoadContextTests`.)* See [MAI-LAW-6](BIBLE.md#MAI-LAW-6).
+- **MAI-US-E2 ✅** As an Author, a page's citizen css/scripts are ordered, deduped, and hoisted into
+  `<head>`, fed by the manifest→`Extra` data path. *(verified by `PageAssetCollectorTests`,
+  `AssetDataPathTests.Install_Then_Reload_SurfacesManifestCssScripts_OntoDescriptorExtra`,
+  `UsesDeclarationTests.Collect_FromUses_HoistsReferencedCitizenAssets`.)*
+- **MAI-US-E3 ✅** As a Citizen-Dev, a `[Uses]`/`uses[]` declaration parses (bare floats, pinned,
+  case-insensitive kind, rejects malformed) and drives hoisting + the delete-guard. *(verified by
   `UsesDeclarationTests.TryParseUse_BareKey_FloatsToLatest`, `UsesDeclarationTests.TryParseUse_RejectsMalformed`.)*
 - **MAI-US-E4 ✅** As an Operator, a corrupt manifest during reload doesn't abort the reload — it leaves
   that descriptor's `Extra` null. *(verified by `AssetDataPathTests.CorruptManifestJson_DoesNotAbortReload_LeavesThatExtraNull`.)*
+- **MAI-US-E5 ✅** As an Author, tiers win by cascade layer — Global → Theme → Page → Component — so I never
+  need `!important` to beat a lower tier, and a Component keeps its own look on any page. *(verified by
+  `CmsHeadCssLayerTests.LayerOrderStatement_IsEmittedOnceAndFirst_EvenWhenAllTiersAreEmpty`,
+  `CmsHeadCssLayerTests.ComponentLayer_IsDeclaredAfterPageLayer_SoComponentWinsPrecedence`,
+  `FreeFormPageCssTests`.)* See [MAI-LAW-4](BIBLE.md#MAI-LAW-4).
+- **MAI-US-E6 ✅** As an Author, saving Untrusted page CSS collapses same-selector duplicate blocks into one
+  without touching anything else, and I am warned about a shorthand that overrides some of its longhands.
+  *(verified by `CssConflictMergerTests`, `CssShorthandLinterTests`.)*
 
-## Epic F — Frontier (planned / partial)
+## Epic F — Admin, CLI and authoring tools
 
-- **MAI-US-F1 ✅** As an Operator, the `ma-idea` CLI can pack / inspect / list / install / verify. *(CLI in
-  `src/MindAttic.Ideas.Sdk`; pack/validate paths covered by `PackerTests`/`ManifestValidatorTests`; an
-  attended CLI-roundtrip e2e is not separately automated.)*
+- **MAI-US-F1 ✅** As an Operator, the `ma-idea` CLI can pack / inspect / list / install / verify / sign /
+  nupkg. *(CLI in `src/MindAttic.Ideas.Sdk`; pack/validate/sign paths covered by `PackerTests`,
+  `ManifestValidatorTests`, `PackageSignerTests`, `ArgParserTests`.)*
 - **MAI-US-F2 ✅** As an Operator, the Admin can enable/disable/guarded-delete content definitions and
   triage the Admin Inbox under the Admin policy. *(verified by `AdminServiceContractTests`,
   `UsersAdminContractTests`, `IdeasClaimsAugmentorTests`.)*
-- **MAI-US-F3 ✅** As an Author, a theme/component/plugin **assignment UI**, a file manager, and roles
-  management. *Theme picker (catalog-driven `<select>` for key/version), component palette (catalog-driven
-  token-insert), Assets panel (mounted CSS/scripts browser), and Packages panel (installed `.idea` blob
-  browser with SHA-256 + admin-protected download) are all implemented in the admin shell. Roles
-  management is already done at `/users`.*
-  *(verified by `AdminAssignmentTests`: `WidgetToken_PinnedVersion_ParsesBack` (renamed to
-  `ComponentToken_PinnedVersion_ParsesBack` in A26 refactor),
+- **MAI-US-F3 ✅** As an Author, I have a theme picker, a component palette, an Assets panel and a
+  Packages panel (installed blobs with content hash and admin-protected download); roles are managed at
+  `/users`. *(verified by `AdminAssignmentTests`: `PluginToken_PinnedVersion_ParsesBack`,
   `ThemeToken_PinnedVersion_ParsesBack`, `CatalogFilter_Theme_ReturnsOnlyThemes`,
-  `CatalogFilter_Widget_ReturnsOnlyWidgets` (renamed to `CatalogFilter_Plugin_ReturnsOnlyPlugins` /
-  `CatalogFilter_Component_ReturnsOnlyComponents` in A26 refactor);
-  and `PackageRegistryServiceTests`: `ListAsync_ReturnsAllPackages_SortedByCategoryKeyVersionDesc`,
-  `ListAsync_Empty_ReturnsEmptyList`, `ListAsync_MapsAllFields`.)*
-- **MAI-US-F4 ✅** As an Operator, I sign in via **MindAttic.Authentication** (the package, not Ideas-owned).
-  *`Program.cs` already wires `AddMindAtticAuthentication<CmsDbContext>`, `UseMindAtticAuthentication()`,
-  and `MapMindAtticAuthEndpoints()`; claim augmentation is fully adopted.*
-  *(verified by `IdeasClaimsAugmentorTests`; see [A16](AMENDMENTS.md#MAI-A16),
-  [HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7).)*
-- **MAI-US-F5 ✅** As a Visitor, a real packed `.idea` renders end-to-end through the **running** host.
-  *NUnit verifies the pipeline (install → catalog reload → IncludeExpander produces a Resolved
-  Component frame; unknown tokens correctly degrade), and an attended run proves the HTTP layer: all
-  43 library `.idea`s installed at startup and the frontpage rendered their citizens with hoisted
-  assets served at `/_ideas/...` mounts (200), zero placeholders.*
+  `CatalogFilter_Plugin_ReturnsOnlyPlugins`; `PackageRegistryServiceTests`.)*
+- **MAI-US-F4 ✅** As an Operator, I sign in via **MindAttic.Authentication**; the Admin role carries the
+  `Cms.AuthorRawMarkup` claim. *(verified by `IdeasClaimsAugmentorTests`, `CmsDbContextAuthModelTests`;
+  see [HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7).)*
+- **MAI-US-F5 ✅** As a Visitor, a real packed `.idea` renders end-to-end through the running host.
   *(verified by `RenderPipelineTests`: `Install_ThenReload_ThenExpand_ProducesResolvedFrame`,
-  `Install_ThenExpand_UnknownToken_ProducesMissingFrame`; live HTTP render observed 2026-06-09 —
-  [BIBLE §6](BIBLE.md#MAI-§6).)*
-- **MAI-US-F6 ✅** As a Widget-Dev, compiled-citizen asset harvest (`Activator` on `PluginBase`/`ComponentBase`)
-  hoists declared `StylesheetUrls`/`ScriptUrls` into `<head>` via `PageAssets.AllAssetsOf` — the same
-  `PageAssetCollector` delegate used for package citizens, consistent with how `PageHost` harvests Theme
-  assets. *(verified by `PageAssetsTests`: `CompiledWidget_AllAssetsOf_HarvestsViaActivator` (covers
-  both Plugin and Component bases post-A26), `CompiledWidget_UnresolvableType_ReturnsEmpty`,
-  `PackageWidget_AllAssetsOf_DelegatesToMountedManifestAssets`.)*
-- **MAI-US-F7 ✅** As an Operator, official content lives in the first-party library and
-  `MindAttic.Frontpage` / `MindAttic.Legion.Frontend` collapse into Pages. *(original spec said
-  "official content lives in MindAttic.UiUx" — restated by [A22](AMENDMENTS.md#MAI-A22) per A19/A20:
-  the single first-party home is **MindAttic.Ideas.Library**; UiUx remains upstream raw source.)*
-  *Both frontends are collapsed: mindattic.com → the `frontpage` Data page
-  ([A21](AMENDMENTS.md#MAI-A21)), Legion.Frontend → the seeded `personas` Data page whose body is one
-  `{{ MindAttic.Ideas.Component.LegionPersonas }}` token.*
-  *(verified by `SeededPageRenderTests.Seed_CreatesPersonasPage_CollapsingLegionFrontendIntoOneToken`
-  and live renders 2026-06-09: `/personas` 200 with the full gallery and zero placeholders,
-  `/frontpage` zero placeholders. See [A8](AMENDMENTS.md#MAI-A8), [A14](AMENDMENTS.md#MAI-A14),
-  [A20](AMENDMENTS.md#MAI-A20), [A22](AMENDMENTS.md#MAI-A22).)*
-- **MAI-US-F8 ✅** As an Author, I edit pages with **Monaco** catalog-driven IntelliSense, the unified
-  `{{double-brace}}` grammar. *`MonacoEditor.razor` wraps Monaco (lazy-loaded from CDN) with a
-  `{{ }}` completion provider fed by the live catalog; the BodyHtml textarea in the page editor is
-  replaced by this component. RFC 0001 is now fully implemented ([A22](AMENDMENTS.md#MAI-A22)):
-  **typed-attribute coercion** (token attributes bind to bool/int/double/enum `[Parameter]`s through
-  the one shared `EmitInclude` path) and **clickable upload-to-fix placeholders** (`MissingContent`
-  links to `/admin/upload?missing=<reference>`; the Upload panel shows what the page is waiting on).*
-  *(verified by `MonacoEditorTokenTests`: `IntelliSenseToken_ParsesBackViaTagGrammar`,
-  `IntelliSenseToken_InsertedInBody_ParsedByIncludeReferenceParser`;
-  `IncludeAttributeCoercionTests` (9 tests incl. `Expand_TokenAttributes_BindTyped_AndLeaveUnmatchedRaw`);
-  `RenderGuardTests.MissingPlaceholder_LinksToAdminUpload_WithTheMissingKey`; live Monaco interaction
-  is browser-tested.)*
+  `Install_ThenExpand_UnknownToken_ProducesMissingFrame`; live renders serve `/_ideas/...` mounts with
+  zero placeholders.)*
+- **MAI-US-F6 ✅** As a Citizen-Dev, a compiled citizen's declared `StylesheetUrls`/`ScriptUrls` are
+  harvested into `<head>` through the same `PageAssetCollector` path as package citizens. *(verified by
+  `PageAssetsTests`: `CompiledPlugin_AllAssetsOf_HarvestsViaActivator`,
+  `CompiledPlugin_UnresolvableType_ReturnsEmpty`, `PackagePlugin_AllAssetsOf_DelegatesToMountedManifestAssets`.)*
+- **MAI-US-F7 ✅** As an Operator, official content lives in the first-party library and standalone
+  frontends collapse into Pages: mindattic.com is the `frontpage` Data page and Legion.Frontend is the
+  `personas` page, whose body is one `<Component.LegionPersonas />` tag. *(verified by
+  `SeededPageRenderTests.Seed_CreatesPersonasPage_CollapsingLegionFrontendIntoOneToken`; `/personas` and
+  `/frontpage` render live with zero placeholders.)*
+- **MAI-US-F8 ✅** As an Author, I edit pages with **Monaco** and catalog-driven completion of citizen
+  tags; tag attributes bind to typed `[Parameter]`s. *(verified by `MonacoEditorTokenTests`:
+  `IntelliSenseTag_ParsesBackViaIncludeReferenceParser`,
+  `IntelliSenseTag_InsertedInBody_ParsedByIncludeReferenceParser`; `IncludeAttributeCoercionTests`
+  (incl. `Expand_TagAttributes_BindTyped_AndLeaveUnmatchedRaw`); live Monaco interaction is
+  browser-tested.)*
+- **MAI-US-F9 ✅** As an Author, saving a page tells me about unresolved tags, undeclared attributes,
+  badly typed values and anything the sanitizer would strip; a library citizen with unsafe JS/CSS or
+  malformed settings cannot be packed; CI checks every shipped package and seed page. *(verified by
+  `PageMarkupValidatorTests`, `CitizenValidatorTests`,
+  `ShippedContentValidationTests.EveryShippedPackage_PassesCitizenValidation`,
+  `ShippedContentValidationTests.EverySeedPage_ValidatesAgainstTheShippedPackages`.)*
 
-## Epic G — Page authoring enhancements (post-A22)
+## Epic G — Page authoring enhancements
 
-- **MAI-US-G1 ✅** As an Author, I can set a Theme for a page from a dropdown in the admin UI
-  (catalog-driven, no token in the HTML body required), so theme assignment is a metadata operation
-  not a markup change. *`ThemeKey`/`ThemeVersion` columns already existed; the Page Properties
-  collapsible `<details>` panel and admin CSS (A24) make them accessible.* *(verified by the
-  existing `AdminAssignmentTests`: `CatalogFilter_Theme_ReturnsOnlyThemes`,
-  `ThemeToken_PinnedVersion_ParsesBack`; the panel UI is browser-confirmed.)*
-- **MAI-US-G2 ✅** As an Author, I can set a custom SEO Title and SEO Description for a page,
-  overriding the page title in the browser tab and providing a `<meta name="description">` tag.
-  *`PageAdminService.SaveAsync` serializes `{title,description}` to `Page.SeoMetaJson`; `GetAsync`
-  deserializes it; `PageHost.razor` reads `seo.title`/`seo.description` from the `IPageContext.Meta`
-  dictionary.*
-  *(verified by `PageAdminServiceTests`:
-  `SeoMeta_Parse_ReturnsNull_ForNullOrEmpty`, `SeoMeta_Parse_ExtractsFields`,
-  `SeoMeta_Parse_ReturnsNull_ForMalformedJson`, `SeoMeta_Serialize_ReturnsNull_WhenBothFieldsNull`,
-  `SeoMeta_Serialize_ReturnsJson_WhenAnyFieldSet`, `Save_WithSeoFields_PersistsThroughGetAsync`,
-  `Save_WithNullSeoFields_LeavesJsonNull`. See [A24](AMENDMENTS.md#MAI-A24).)*
-- **MAI-US-G3 ✅** As a Widget-Dev, the first-party widget/theme library lives in the same git
-  repo as the CMS engine (`library/` directory), so the project is maintained in one place without
-  coupling the two build graphs. *`library/Directory.Build.props` carries a single intra-repo
-  `Abstractions` reference; the CMS `src/` and `library/` each have their own `.slnx` and never
-  cross-reference at build time. Abstractions types used by library widgets are exercised by
-  `PackerTests` and `ManifestAssetPackerTests`; compose-graph independence is confirmed by
-  `ma-idea verify` across all 37 `.idea`s.* *(see [A23](AMENDMENTS.md#MAI-A23).)*
+- **MAI-US-G1 ✅** As an Author, I set a page's Theme from a dropdown in the collapsible Page Properties
+  panel, so theme assignment is metadata, not markup. *(verified by
+  `AdminAssignmentTests.CatalogFilter_Theme_ReturnsOnlyThemes`,
+  `AdminAssignmentTests.ThemeToken_PinnedVersion_ParsesBack`; the panel UI is browser-confirmed.)*
+- **MAI-US-G2 ✅** As an Author, I can set a custom SEO Title and Description for a page.
+  *(verified by `PageAdminServiceTests`: `Save_WithSeoFields_PersistsThroughGetAsync`,
+  `Save_WithNullSeoFields_ReturnsNullOnLoad`.)*
+- **MAI-US-G3 ✅** As a Citizen-Dev, the first-party library lives in the same git repo as the engine
+  (`library/`) without coupling the two build graphs. *(Abstractions types used by library citizens are
+  exercised by `PackerTests` and `ManifestAssetPackerTests`; `ma-idea verify` is green across all 53
+  `.idea`s.)*
+- **MAI-US-G4 ✅** As an Author, I configure each citizen instance on a page — a component's tag
+  attributes, or the theme/plugin/code-page slots — from a generated editor, and share configuration by
+  Copy/Paste between instances of the same citizen. *(verified by `InstanceSettingsTests`,
+  `BodyTagIndexTests`, `InstanceClipboardTests`,
+  `IdeaListTests.RoundTrip_CarriesThemeAndPluginInstanceSettings`.)* See [BIBLE §4.5](BIBLE.md#MAI-§4.5).
+- **MAI-US-G5 ✅** As an Author, I can move a page through a named workflow whose transitions are
+  role-gated, and only the `Published` state publishes it. *(verified by `WorkflowServiceTests`.)*
+- **MAI-US-G6 ✅** As a Visitor, an old or vanity slug answers 301 to the page's current slug.
+  *(verified by `SlugRedirectServiceTests`.)*
+- **MAI-US-G7 ✅** As an Author, tagless instance settings keep a version history and roll back.
+  *(verified by `WidgetInstanceSettingsServiceTests`.)*
 
-## Epic H — Plugin/Component taxonomy (A26)
+## Epic H — Plugin/Component taxonomy
 
-- **MAI-US-H1 ⬜** As an Operator, I can see a **Plugin checkbox list** in the Admin Page Properties
-  panel (after the Theme dropdown, before SEO fields), scroll through all installed Plugins, and check
-  those that should be active for the current page. *`Page.ActivePluginsJson` persists the selection as
-  a JSON array of `"Plugin.key[@n]"` refs; `PageHost.razor` reads and emits each selected Plugin before
-  the page body renders.* *(test: `PageAdminServiceTests.ActivePlugins_SaveAndLoad_RoundTrip`,
-  `PageHost_ActivePlugins_EmittedBeforeBody`.)*
-- **MAI-US-H2 ⬜** As an Author, I can inject `{{Plugin.tooltip}}` inline in a page body to activate a
-  Plugin for that page without going through the Admin Plugin selection, so I have a one-off escape
-  hatch. *`IncludeReferenceParser.TryParseTag` recognizes `ContentKind.Plugin` as a valid first
-  segment; `IncludeExpander` emits the Plugin's assets into the page cascade.* *(test:
-  `IncludeReferenceParser_ParsesPluginKind`, `IncludeExpander_InlinePlugin_EmitsAssets`.)*
-- **MAI-US-H3 ⬜** As an Author, I can place `{{Theme.cyberspace}}` inline in a page body to override
-  the page's Theme for asset injection on that page, so I can apply a non-default theme without
-  changing the admin-panel Theme selection. *The tag emits no markup; it only swaps the theme asset
-  cascade for that page render.* *(test: `IncludeExpander_InlineThemeOverride_SwapsAssetCascade`.)*
-- **MAI-US-H4 ⬜** As a Widget-Dev, a Component can declare sub-Components via `[Uses]`/`uses[]` and
-  the include expander nests them correctly, so a `TabControl` containing `TabButtonContainer`,
-  `TabButton` instances, `TabPageContainer`, and `TabPage` instances (each of which may contain
-  `Textbox`) renders the full composite tree. *`ContentKind.Component` is valid in `TryParseUse`
-  and `TryParseTag`; `IncludeExpander` recurses through nested Component tokens.* *(test:
-  `ComponentNestingTests.TabControl_RendersFullHierarchy_ViaNestedComponentTokens`.)*
-- **MAI-US-H5 ⬜** As a Widget-Dev, the library's 43 `.idea`s are split into Themes (8), Plugins (12),
-  and Components (23) with correct `ContentKind` on each, all packing clean and passing `ma-idea
-  verify`. *(test: `LibraryKindClassificationTests.AllLibraryIdeas_HaveExpectedKind`; live: `ma-idea
-  verify` reports compose-graph green with zero kind mismatches.)*
+- **MAI-US-H1 ✅** As an Operator, I pick the Plugins active on a page from a checkbox list in Page
+  Properties, or let the page inherit the site's `plugins.default`; an explicitly empty selection means
+  none. *(verified by `EffectivePluginsTests`: `NoSelection_InheritsTheSiteDefaults`,
+  `ExplicitEmptySelection_MeansNoPlugins`, `OwnSelection_Wins`;
+  `ContentLifecycleServiceTests.ActivePluginsJson_VersionedPin_BlocksDeletion`.)*
+- **MAI-US-H2 ✅** As an Author, I can place `<Plugin.Tooltip />` inline in a page body to activate a
+  Plugin on that page without going through the Admin selection. *(verified by
+  `RenderGuardTests.Parse_DottedTag_CollectedWithCorrectKind`,
+  `PageAssetsTests.CompiledPlugin_AllAssetsOf_HarvestsViaActivator`.)*
+- **MAI-US-H3 ⬜** As an Author, I can place `<Theme.Cyberspace />` inline in a page body to override the
+  page's Theme for that render without changing the Page Properties selection. *(not implemented:
+  `PageHost` takes the theme from the page or site only.)*
+- **MAI-US-H4 ✅** As a Citizen-Dev, Components nest: a paired tag passes its inner tags to the outer
+  component as `ChildContent`. *(verified by
+  `RenderGuardTests.Expander_NestedPascalTags_OuterReceivesInnerAsChildContent`.)*
+- **MAI-US-H5 ✅** As a Citizen-Dev, the library's 53 `.idea`s are Themes (7), Plugins (15) and
+  Components (31), each packing clean, and a retired category is a hard validation error. *(verified by
+  `ShippedContentValidationTests.EveryShippedPackage_PassesCitizenValidation`,
+  `ManifestValidatorTests.RetiredCategory_IsHardError`.)*
+- **MAI-US-H6 ✅** As a Citizen-Dev, a Plugin declares whether it renders before or after the body, and
+  author order is kept within each slot. *(verified by `PluginSlotTests`.)*
+- **MAI-US-H7 ✅** As a Citizen-Dev, a component can list another page's children (scoped to the site)
+  and read their metadata in one query. *(verified by `PageTreeFeatureTests`:
+  `ChildrenOf_PopulatesPageId_SoMetadataCanBeJoined`, `ChildrenOfSlug_ScopedToSite_ReturnsOnlyThatSitesChildren`,
+  `ChildrenOfSlug_UnknownSite_FallsBackToTheUnscopedLookup`,
+  `IPageTree_DefaultOverload_DelegatesToTheSlugOnlyForm`; `ComponentMetadataServiceTests`.)*
 
-## Epic I — Media storage (A31)
+## Epic I — Media storage
+
+> The store/endpoint fixtures — `LocalDiskMediaStoreTests`, `MediaEndpointTests`,
+> `ThresholdSpillStreamTests` and `AzureBlobMediaStoreIntegrationTests` — live in the sibling
+> **MindAttic.Media** repo (`src/MindAttic.Media.Tests`), where the code under test lives; the codex
+> doctor scans only this repo's test tree and reports them as warnings.
 
 - **MAI-US-I1 ✅** As an Operator, I can point the CMS at Azure Blob Storage by setting
   `Media:Provider=azure` (plus `Media:Azure:ConnectionString` **or** `BlobServiceUri`), and every page
-  keeps working untouched, because `/_media/{uid}` is the contract and the backing store is an
-  implementation detail. *`MediaProviderSetup.AddConfiguredMediaStore` replaces the local store
-  registered by `AddIdeasCore`; an unknown provider or Azure without credentials throws at startup
-  rather than silently falling back to disk.*
-  *(test: `MediaProviderSetupTests.NoConfiguration_KeepsTheLocalDiskStore`,
+  keeps working untouched, because `/_media/{uid}` is the contract. An unknown provider or Azure without
+  credentials fails at startup. *(verified by `MediaProviderSetupTests.NoConfiguration_KeepsTheLocalDiskStore`,
   `ProviderAzure_ReplacesTheStoreAndRegistersASigner`,
   `ProviderAzure_CarriesSignedUrlLifetimeThroughToTheEndpointOptions`,
-  `ProviderAzure_WithoutCredentials_FailsClosed`, `UnknownProvider_FailsClosed`. Live: the app boots
-  clean on `Media:Provider=azure` and pre-existing inline rows still serve 200.)*
+  `ProviderAzure_WithoutCredentials_FailsClosed`, `UnknownProvider_FailsClosed`.)*
 - **MAI-US-I2 ✅** As a Visitor, I can scrub through a video on a page, because `/_media/{uid}` 302s to a
-  short-lived SAS URL and Azure serves the Range requests directly — the bytes never transit the app.
-  *`IMediaUrlSigner` is the optional seam; `AzureBlobUrlSigner` mints a key-signed SAS, a
-  user-delegation SAS, or a plain CDN URL under `PublicRead`.*
-  *(test: `MediaEndpointTests.RedirectsToASignedUrlWhenASignerIsRegistered`,
+  short-lived SAS URL and Azure serves the Range requests directly. *(verified by
+  `MediaEndpointTests.RedirectsToASignedUrlWhenASignerIsRegistered`,
   `FallsBackToStreamingWhenTheSignerDeclines`;
-  `AzureBlobMediaStoreIntegrationTests.SignedUrlServesTheBytesAndHonoursRangeRequests`,
-  `SignedUrlExpires`, `PublicReadModeHandsOutThePlainUrlRebasedOnTheCdnOrigin`. Live against Azurite
-  through the running app: 302 → 41,943,040 bytes at the source SHA-256, and a seek to byte 20,000,000
-  returning `206 · bytes 20000000-20000999/41943040 · video/mp4`.)*
+  `AzureBlobMediaStoreIntegrationTests.SignedUrlServesTheBytesAndHonoursRangeRequests`, `SignedUrlExpires`,
+  `PublicReadModeHandsOutThePlainUrlRebasedOnTheCdnOrigin`.)*
 - **MAI-US-I3 ✅** As an Operator, I can upload a file far larger than memory without the app buffering
-  it, because both stores hash in flight over a single sequential pass and spill past the inline
-  threshold. *`MediaStreams.CopyAndHashAsync` + `ThresholdSpillStream`; memory is bounded by
-  `InlineThresholdBytes`, not by the payload.*
-  *(test: `LocalDiskMediaStoreTests.Upload_OverThreshold_SpillsToDiskWithIntactBytesAndHash`,
+  it. *(verified by `LocalDiskMediaStoreTests.Upload_OverThreshold_SpillsToDiskWithIntactBytesAndHash`,
   `Upload_AtExactlyThreshold_StaysInline`, `ThresholdSpillStreamTests.SpillsOnceAndPreservesEveryByteInOrder`,
   `CopyAndHashMatchesAOneShotHashOverTheSameBytes`,
   `AzureBlobMediaStoreIntegrationTests.LargePayloadStreamsUpAndBackWithItsHashIntact`.)*
-- **MAI-US-I4 ✅** As a Visitor, a repeat request for an unchanged asset costs no bytes, and a
-  non-inline asset downloads under its real filename. *The endpoint emits an ETag from the stored
-  SHA-256, `Last-Modified`, `Cache-Control`, and `Accept-Ranges`; `video/*` and `audio/*` join
-  `image/`, `text/` and PDF as inline dispositions.*
-  *(test: `MediaEndpointTests.ServesInlinePayloadWithEtagAndRangeSupport`,
+- **MAI-US-I4 ✅** As a Visitor, a repeat request for an unchanged asset costs no bytes, and a non-inline
+  asset downloads under its real filename. *(verified by
+  `MediaEndpointTests.ServesInlinePayloadWithEtagAndRangeSupport`,
   `RepeatRequestWithMatchingEtagIsNotModified`, `ServesAByteRangeOutOfALargeSpilledPayload`,
-  `NonInlineTypeIsServedAsAnAttachment`, `UnknownUidIs404`, `DeletedItemIs404`. Live: 200 + ETag,
-  206 on Range, 304 on `If-None-Match`.)*
-- **MAI-US-I5 ✅** As an Operator, I can get a video into the CMS from the command line rather than
-  pushing it through the Admin panel's browser circuit. *`--upload-media <file…> [--folder site]
-  [--media-type video] [--dry-run]` streams from disk into the configured store and prints the token
-  to paste into a page.* *(test: `UploadMediaCliTests.UploadsAVideoWithTheRightContentTypeAndMediaType`,
-  `UploadsEveryFileUpToTheNextFlag`, `DryRunUploadsNothing`, `MissingFileFailsBeforeUploadingAnything`,
-  `NoFilesIsAnError`, `UnknownExtensionFallsBackToOctetStream`. Live: a 40 MB upload through the
-  running app landed in blob storage with `Bytes` NULL and the source hash intact.)*
-
-> **Where these tests live.** `MediaProviderSetupTests` and `UploadMediaCliTests` are in
-> `src/MindAttic.Ideas.Tests`. The store/endpoint fixtures — `LocalDiskMediaStoreTests`,
-> `MediaEndpointTests`, `ThresholdSpillStreamTests`, `AzureBlobNamingTests` and
-> `AzureBlobMediaStoreIntegrationTests` — live in the sibling **MindAttic.Media** repo
-> (`src/MindAttic.Media.Tests`), because that is where the code under test lives. The codex doctor
-> only scans this repo's test tree, so it reports those citations as warnings; they are real tests.
-
+  `NonInlineTypeIsServedAsAnAttachment`, `UnknownUidIs404`, `DeletedItemIs404`.)*
+- **MAI-US-I5 ✅** As an Operator, I can get a video into the CMS from the command line with
+  `--upload-media <file…> [--folder site] [--media-type video] [--dry-run]`. *(verified by
+  `UploadMediaCliTests.UploadsAVideoWithTheRightContentTypeAndMediaType`, `UploadsEveryFileUpToTheNextFlag`,
+  `DryRunUploadsNothing`, `MissingFileFailsBeforeUploadingAnything`, `NoFilesIsAnError`,
+  `UnknownExtensionFallsBackToOctetStream`.)*
 - **MAI-US-I6 ⬜** As an Author, I can hand the CMS **pixels instead of a file path** — paste a base64
-  image (or a clipboard capture) and have it become a stored asset with a `/_media/{uid}` URL, with
-  the reference rewritten to point at the file. *Selecting real files means keeping throwaway files
-  around; pasting is the natural motion for a screenshot. This is the inverse of
-  [`--extract-media`](AMENDMENTS.md#MAI-A30), which lifts base64 out of a page body that already has
-  it — this accepts base64 as an INPUT and never lets it reach a page.* **Lands in MindAttic.Media**
-  (a dynamic→static asset conversion on the store), surfaced through the Ideas host CLI and the Admin
-  Media panel. *Deferred by the owner 2026-09-04: "a good future feature … put it on the bottom of
-  the list."*
+  image (or a clipboard capture) and have it become a stored asset with a `/_media/{uid}` URL, so base64
+  never reaches a page. Lands in MindAttic.Media, surfaced through the host CLI and the Admin Media panel.
+  Lowest priority.
+- **MAI-US-I7 ✅** As an Operator, `--extract-media` lifts inline base64 images out of page bodies and
+  stylesheets into managed assets, deduplicated by content, leaving undecodable data inline and reported.
+  *(verified by `ExtractMediaCliTests`.)*
 
-## Epic J — Azure deployment (A32)
+## Epic J — Azure deployment
 
-- **MAI-US-J1 ✅** As a Maintainer, CI can restore and publish this repo without my dev box, because
-  every private MindAttic package is vendored into `lib/local-packages/` and `nuget.config` lists it
-  first. *A GitHub runner has no `C:\LocalNuGet` and no `../local-feed`, and NuGet tolerates a
-  missing local source silently — so the guard is a test, not a comment.*
-  *(test: `DeploymentPackagingTests.EveryReferencedMindAtticPackageIsVendoredForCi`,
-  `NugetConfigListsTheVendoredFeed`, `VendoredPackagesAreTrackedRatherThanGitIgnored`. Live: a
-  Release restore **and** publish seeing only the vendored feed + nuget.org produced a complete 94 MB
-  artifact carrying all 51 library `.idea`s.)*
+- **MAI-US-J1 ✅** As a Maintainer, CI can restore and publish this repo without my dev box, because every
+  private MindAttic package is vendored into `lib/local-packages/` and `nuget.config` lists it first.
+  *(verified by `DeploymentPackagingTests.EveryReferencedMindAtticPackageIsVendoredForCi`,
+  `NugetConfigListsTheVendoredFeed`, `VendoredPackagesAreTrackedRatherThanGitIgnored`.)*
 - **MAI-US-J2 ✅** As an Operator, App Service can tell whether the site is alive, because `/_health`
-  answers 200 without touching the database. *A health check that hits SQL turns a transient blip
-  into a restart loop. Lives under `/_` with the other reserved routes so it cannot shadow a page
-  slug.* *(test: `DeploymentPackagingTests.ProductionRequiresItsDataProtectionSettingsByName`
-  pins the route and both required production settings; `DeployWorkflowPointsAtProjectsThatExist`
-  pins the paths CI hands to dotnet. Live: `/_health` → `200 healthy`, `/frontpage` still 200.)*
-- **MAI-US-J3 ✅** As a Maintainer, the engine ships with no known-vulnerable dependency.
-  *`System.Security.Cryptography.Xml` 10.0.8 → 10.0.11 (five HIGH advisories), `AngleSharp` 0.17.1 →
-  1.7.2 and `HtmlSanitizer` 9.0.892 → 9.2.1039 (GHSA-pgww-w46g-26qg). AngleSharp is load-bearing in
-  the render path.* *(test: `DeploymentPackagingTests.SecurityPinnedPackagesAreNotDowngraded` holds
-  a version floor per package, because a pinned version is easy to revert in a merge and nothing else
-  in the build would notice. Live: the full suite stayed green across the bump, a sweep of 48 pages
-  returned all 200 with zero `ma-missing`, and `dotnet list package --vulnerable --include-transitive`
-  reports none.)*
-- **MAI-US-J4 ✅ As an Operator, I can stand the whole estate up with one command**
-  (`./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas`), passwordless throughout: Entra-only
-  SQL, no storage shared keys, managed-identity RBAC, and the auth Security bucket generated into
-  Key Vault. *`infra/main.bicep` compiles and **validates against the live subscription**
-  (`provisioningState: Succeeded`); what-if enumerates the 16 resources; both scripts parse under
-  Windows PowerShell 5.1.* **Provisioned and live 2026-09-04** at
-  https://mindattic-ideas.azurewebsites.net (since MAI-A48: https://mindattic.azurewebsites.net, plus the demo) — 16 resources, 53 content definitions installed on first
-  boot, reached over managed identity with no password anywhere
-  ([A33](AMENDMENTS.md#MAI-A33)). *(test: `DeploymentPackagingTests` guards the packaging and
-  configuration contract the estate depends on.)*
-- **MAI-US-J5 🟡 As a Maintainer, a push to `master` builds, migrates and deploys**, with the deploy
-  gated on green tests and on the migration having applied. *`.github/workflows/azure-deploy.yml`;
-  the migrate stage opens and closes a single-run SQL firewall rule under an Entra token, and the
-  running site holds `db_datareader`/`db_datawriter` only, so it cannot issue DDL even by mistake.*
-  **🟡 because the workflow itself has never run** — the first deploy was driven by hand
-  (`provision.ps1` → `migrate.ps1` → `az webapp deploy`), which proved every stage the workflow
-  automates but not the workflow. It still needs `AZURE_WEBAPP_PUBLISH_PROFILE`, and the `ideas`
-  entry in `MindAttic.Deploy/projects.json → apps[]` stays `disabled: true` until then
-  ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)).
+  answers 200 without touching the database. *(verified by
+  `DeploymentPackagingTests.ProductionRequiresItsDataProtectionSettingsByName`,
+  `DeployWorkflowPointsAtProjectsThatExist`.)*
+- **MAI-US-J3 ✅** As a Maintainer, the engine ships with no known-vulnerable dependency, and the security
+  floors cannot be silently reverted. *(verified by
+  `DeploymentPackagingTests.SecurityPinnedPackagesAreNotDowngraded`.)*
+- **MAI-US-J4 ✅** As an Operator, I can stand the whole estate up with one command
+  (`./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas`), passwordless throughout. The company site
+  and the demo run on it. *(verified by `DeploymentPackagingTests`, which guards the packaging and
+  configuration contract the estate depends on; live at https://mindattic.azurewebsites.net.)*
+- **MAI-US-J5 ✅** As a Maintainer, a push to `master` builds, tests, migrates and deploys both sites over
+  GitHub OIDC, with deploy gated on green tests and on the migration having applied. *(verified by
+  `DeploymentPackagingTests.DeployWorkflowPointsAtProjectsThatExist`; the workflow's latest run on
+  `master` succeeded 2026-10-03.)*
+- **MAI-US-J6 🟡** As a visitor evaluating Ideas, I can sign in to a public demo whose login is revealed
+  behind Turnstile and which is wiped and re-provisioned every hour. *(verified by `DemoRevealTests`,
+  `AdminBootstrapTests`, `SeedServiceTests.WithAnIdealist_SeedsOnlyTheStructuralMinimum`. 🟡 because the
+  hourly `demo-reset.yml` run is currently failing.)*
 
-## Epic K — Content portability (A34, artifact superseded by A41's `.idealist`)
+## Epic K — Content portability
 
 - **MAI-US-K1 ✅** As a Maintainer, I can move an authored site between environments, because
-  `--export-idealist` writes pages, Host/Site settings, per-component metadata and media into one
-  `.idealist` and `--import-idealist` applies it. *A `.idea` moves a citizen; this moves what an
-  author built with citizens — the thing `--seed` regenerates the shape of but never the curation of
-  ([A34](AMENDMENTS.md#MAI-A34), artifact renamed [A41](AMENDMENTS.md#MAI-A41)).*
-  *(test: `IdeaListTests.RoundTrip_PreservesTheAuthoredPage`, `SlugFilter_ExportsOnlyTheMatchingSubtree`,
-  `PageTree_SurvivesOnParentUid`, `DryRunImport_WritesNothing`. Live: 55 pages / 86 metadata rows /
-  7 settings / 12 media exported from the dev database as a 634 KB bundle, imported into a fresh
-  LocalDB seeded exactly like production, then served — `/frontpage`, `/projects`, `/personas`,
-  `/ideas`, `/chimesh` and the project pages all 200.)*
-- **MAI-US-K2 ✅** As an Operator, importing into a database that was seeded independently **adopts**
-  its pages instead of colliding with them, because reconciliation is `Uid` first and
-  `(SiteId, Slug)` second. *Production already has a `frontpage` under a different uid; a uid-only
-  match would hit the unique `(SiteId, Slug)` index rather than update the page I meant.*
-  *(test: `IdeaListTests.ImportAdoptsAnIndependentlySeededPage_BySlug_RatherThanDuplicatingIt`,
-  `SecondImportUploadsNothingAndCreatesNothing`. Live: importing into a freshly seeded database
-  reported 50 created, 5 updated — the baseline pages adopted, not duplicated; a second run reported
-  0 created, 55 updated, 0 media uploaded.)*
-- **MAI-US-K3 ✅** As an Author, every media reference still resolves after the move, because the
-  store mints media uids and import rewrites `/_media/{uid}`, `<Component.MediaImage uid="…">` and
-  uids inside component metadata through an old→new map. *Forcing the exported uid would work on the
-  local disk store and corrupt the Azure one, where the blob is addressed by uid.*
-  *(test: `IdeaListTests.MediaUidsAreRemapped_SoEveryReferenceStillResolves`. Live: every
-  `/_media/{uid}` on the imported front page returned 200, and a SQL sweep found zero page bodies
-  referencing a uid with no matching media row.)*
-- **MAI-US-K4 ✅** As an Operator, an idealist cannot silently grant itself raw-markup trust, because the
-  import states how many pages carry `Author` trust and `--untrusted` downgrades them.
-  *[MAI-LAW-5](BIBLE.md#MAI-LAW-5) stamps trust from the writer's claim; a CLI run against the server
-  is strictly more privileged than an Admin, so the trust is honoured — but never quietly.*
-  *(test: `IdeaListTests.UntrustedFlag_DowngradesAuthorTrust`,
+  `--export-idealist` writes pages, settings, per-component metadata and media into one `.idealist` and
+  `--import-idealist` applies it. *(verified by `IdeaListTests.RoundTrip_PreservesTheAuthoredPage`,
+  `SlugFilter_ExportsOnlyTheMatchingSubtree`, `PageTree_SurvivesOnParentUid`, `DryRunImport_WritesNothing`.)*
+- **MAI-US-K2 ✅** As an Operator, importing into an independently seeded database **adopts** its pages
+  instead of colliding with them, and importing into another site copies rather than moves.
+  *(verified by `IdeaListTests.ImportAdoptsAnIndependentlySeededPage_BySlug_RatherThanDuplicatingIt`,
+  `SecondImportUploadsNothingAndCreatesNothing`,
+  `IntoSite_CopiesThePagesRatherThanMovingThemOffTheSiteThatHasThem`.)*
+- **MAI-US-K3 ✅** As an Author, every media reference still resolves after the move, because import
+  rewrites media uids through an old→new map. *(verified by
+  `IdeaListTests.MediaUidsAreRemapped_SoEveryReferenceStillResolves`.)*
+- **MAI-US-K4 ✅** As an Operator, an idealist cannot silently grant itself raw-markup trust: the import
+  states how many pages carry `Author` trust and `--untrusted` downgrades them. *(verified by
+  `IdeaListTests.UntrustedFlag_DowngradesAuthorTrust`,
   `AnIdeaListFromAFutureFormat_IsRefusedRatherThanPartiallyApplied`, `NotAnIdeaList_IsReportedRatherThanThrowing`.)*
+- **MAI-US-K5 ✅** As an Operator, an idealist's Packages install in order before any content, and an
+  unmet page `Uses[]` fails the whole apply with nothing written. *(verified by
+  `IdeaListTests.Packages_InstallInListedOrder_LaterEntryCanRequireAnEarlierOne`,
+  `PackagesFailure_AbortsBeforeAnyPageIsWritten`, `PageUsesUnmet_FailsLoudly_NoPartialApply`,
+  `PackageResolver_SearchesMultipleDirectoriesInOrder_FirstMatchWins`,
+  `ComposeIdealist_PackagesOnly_ProducesAnEmptySiteContentFreeArtifact`.)*
+- **MAI-US-K6 ✅** As an Operator, a deployment with no idealist configured installs the whole library,
+  and one with an idealist applies it and refuses to start if it fails. *(verified by
+  `BootProvisioningTests`.)*
 
-## Epic L — Multi-domain (A35)
+## Epic L — Multi-domain
 
 - **MAI-US-L1 ✅** As an Operator, one Ideas deployment can serve several domains, because
-  `ISiteResolver` matches the request host against each site's `HostBindings` and `PageHost` resolves
-  `(SiteId, Slug)` against the site it picks. *The column has been in the schema since migration #1
-  and was read by nothing until [A35](AMENDMENTS.md#MAI-A35).*
-  *(test: `SiteResolutionTests` — hostname/port/wildcard/catch-all matching, precedence, IPv6
-  literals, stable tie-breaking. Live: with `mindattic.com` and `ryandebraal.com` bound on one
-  instance, the same URL `/frontpage` served each site's own page; `/about` (rdb only) rendered on
-  `ryandebraal.com` and 404'd on `mindattic.com`, and `/personas` did the reverse.)*
-- **MAI-US-L2 ✅** As an Operator, an existing single-site deployment is unaffected, because a site
-  with no bindings still answers every hostname it is the default for. *A regression here would 404
-  every deployment that predates the amendment, so it is pinned rather than assumed.*
-  *(test: `SiteResolutionTests.TheExistingSingleSiteInstallIsUnaffected`,
-  `AnUnboundHostFallsBackToTheDefaultSite`. Live: `127.0.0.1`, bound to nothing, still served the
-  default site's front page.)*
-- **MAI-US-L3 ✅** As a visitor, the right site keeps answering **after** the page goes interactive,
-  because the host is read from `NavigationManager.BaseUri` rather than `IHttpContextAccessor`.
-  *`PageHost` is `InteractiveServer`, so `HttpContext` is null for every render after the circuit
-  connects — the naive reading works on first paint and silently falls back to the default site on
-  every click afterwards.*
-  *(test: `SiteResolutionTests.PageHostReadsTheRequestHostFromNavigationManager_NotHttpContext` pins
-  the source, because no unit test of the resolver could ever catch this — the guard was confirmed to
-  FAIL when the two sources were swapped. Live, in a real browser: with the circuit connected,
-  `Blazor.navigateTo('/about')` rendered `RYANDEBRAAL-ABOUT` on the bound host while the identical
-  client-side navigation on the other host showed "Page not found". Zero page errors.)*
-- **MAI-US-L4 ✅** As an Admin, I can add and bind a domain without touching SQL, because
-  **Admin → Sites** manages sites, bindings and the default, and answers "which site would this
-  hostname reach?" with the same rule the render path uses. *Deleting a site that still has pages is
-  refused ([HOUSE-LAW-2](../../MindAttic.HouseRules.md#HOUSE-LAW-2)) — it would orphan them onto
-  whatever site resolved next — and a binding another site already claims is refused, because the
-  loser would be invisible with no error anywhere.*
-  *(test: `SiteResolutionTests.CreatingASite_NormalizesItsBindings_AndDoesNotStealDefault`,
+  `ISiteResolver` matches the request host against each site's `HostBindings`. *(verified by
+  `SiteResolutionTests` — hostname/port/wildcard/catch-all matching, precedence, IPv6 literals, stable
+  tie-breaking.)*
+- **MAI-US-L2 ✅** As an Operator, an existing single-site deployment is unaffected, because a site with no
+  bindings still answers every hostname it is the default for. *(verified by
+  `SiteResolutionTests.TheExistingSingleSiteInstallIsUnaffected`, `AnUnboundHostFallsBackToTheDefaultSite`.)*
+- **MAI-US-L3 ✅** As a Visitor, the right site keeps answering **after** the page goes interactive,
+  because the host is read from `NavigationManager.BaseUri`. *(verified by
+  `SiteResolutionTests.PageHostReadsTheRequestHostFromNavigationManager_NotHttpContext`.)*
+- **MAI-US-L4 ✅** As an Admin, I can add and bind a domain without touching SQL in **Admin → Sites**.
+  *(verified by `SiteResolutionTests.CreatingASite_NormalizesItsBindings_AndDoesNotStealDefault`,
   `TwoSitesCannotClaimTheSameHostname`, `TheDefaultSiteCannotBeDeleted_AndNeitherCanOneThatStillHasPages`,
-  `MakeDefault_LeavesExactlyOneDefault`, `TheResolverAndTheAdminProbeAgree`. Live, driving the real
-  panel in a browser as a signed-in admin: creating a site normalized
-  `" RyanDeBraal.com , https://www.ryandebraal.com/ "` to `ryandebraal.com, www.ryandebraal.com`;
-  the probe answered `WWW.RyanDeBraal.com:5199 → Ryan DeBraal (rdb)` and an unbound host → the default
-  site; a duplicate binding was refused with `"ryandebraal.com" is already bound to site "rdb"` and
-  created nothing; the default site offered no Delete. Zero page errors.)*
-- **MAI-US-L5 ✅** As a Maintainer, an idealist carries exactly one site, because multi-site made
-  the old behaviour wrong: an import that fell back to the default site would republish one domain's
-  pages under another. *`--export-idealist --site <key>` scopes pages and Site-scope settings;
-  `--import-idealist` matches by key and creates the site when absent (`--into-site` overrides).*
-  *(test: `IdeaListTests.ExportCarriesOneSite_AndImportCreatesThatSiteRatherThanDumpingOntoTheDefault`,
+  `MakeDefault_LeavesExactlyOneDefault`, `TheResolverAndTheAdminProbeAgree`.)*
+- **MAI-US-L5 ✅** As a Maintainer, an idealist carries exactly one site and import creates that site by
+  key rather than dumping onto the default. *(verified by
+  `IdeaListTests.ExportCarriesOneSite_AndImportCreatesThatSiteRatherThanDumpingOntoTheDefault`,
   `ExportTakesOnlyTheNamedSitesPages`, `ExportWithAnUnknownSiteKey_FailsRatherThanExportingTheWrongSite`.)*
 
-## Epic M — Showroom mode 🗑️ CUT ([A39](AMENDMENTS.md#MAI-A39))
+## Epic M — Marketing pages
 
-**Cut in full on 2026-09-05.** M1–M9 built a sandbox site inside the real deployment. A showroom is a
-**separate, vanilla install of Ideas** — its own app, its own database, reset by its own operator — so
-none of it belongs in the product. The tell was the shape of the code: three redundant guards and a
-gate asked twice, all defending against a hazard the design itself introduced by putting a
-content-deleting routine in the live site's process. See [A39](AMENDMENTS.md#MAI-A39) for what was
-removed and for the three defects it uncovered that were kept.
-
-- **MAI-US-M1 🗑️** site-scoped catalog · **M2 🗑️** the main site is never reset · **M3 🗑️** idle
-  detection · **M4 🗑️** site-scoped install · **M5 🗑️** Day Zero reset · **M6 🗑️** lazy provisioning ·
-  **M7 🗑️** guided tour · **M8 🗑️** sample `.idea` downloads.
 - **MAI-US-M9 ⬜** As a reader, `/ideas` is a Data page composed of discrete components rather than one
-  compiled `Component.IdeasBrochure`. *A brochure that cannot be edited without a redeploy argues
-  against the very claim it is making.* **Kept** — it was only ever filed here by proximity; it is about
-  the marketing page, not the showroom.
+  compiled `Component.IdeasBrochure`, so the brochure can be edited without a redeploy.
+
+## Epic N — Themes
+
+- **MAI-US-N1 🟡** As a Visitor, every theme has an AA-compliant light and dark palette; the site's default
+  mode applies on first visit, my toggle choice persists, and neither flashes the wrong mode. *(no
+  automated test: contrast was checked by hand with a WCAG relative-luminance script against every theme ×
+  mode × text/muted/link/button pair.)*
 
 ## Priority backlog
 
-**Entries from Epic H** — A26 taxonomy refactor (2026-06-16, [A26](AMENDMENTS.md#MAI-A26)). The headline goal is met:
-standalone frontends collapse into Pages with zero-deploy upload (`frontpage` = mindattic.com,
-`personas` = Legion.Frontend), RFC 0001 is fully implemented, and the foundation-era definition of
-done holds (224 NUnit green + the explicit SQL Server temporal proof + live render checks). New work
-enters as new stories.
-
-Shipping record: F6/F8 2026-06-08 · F4/F3 2026-06-08 · F5/A6/A7 2026-06-09 (A21) ·
-B5/F7 + RFC 0001 completion 2026-06-09 (A22) · G1/G2/G3 (library mono-repo + Page Properties + SEO) 2026-06-12 (A23/A24).
-
-### Audit log
-
-No story has been *changed* from its original README spec; this file is the first derivation. The README
-marks the foundation features ✅ and the frontier 🔨/📋; this file initially downgraded two README items
-where the proof was mechanics-only rather than a live e2e, in keeping with
-[HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8) (verified, not asserted). Both were subsequently
-promoted to ✅ when attended live renders confirmed the HTTP layer on 2026-06-09:
-
-- **MAI-US-A6** — initially 🟡 (the live render through the running host was not yet captured by an
-  automated test; only the constituent mechanics were). **Promoted to ✅** when the attended run on
-  2026-06-09 confirmed zero `ma-missing` placeholders with all 43 library `.idea`s installed
-  ([A21](AMENDMENTS.md#MAI-A21), [BIBLE §6](BIBLE.md#MAI-§6)).
-- **MAI-US-F5** — initially ⬜ (preserved from the README's own caveat: "end-to-end render of a real
-  packed `.idea` through the running host is not yet verified"). **Promoted to ✅** when the attended run on
-  2026-06-09 confirmed `/_ideas/...` asset mounts serving 200 with zero placeholders
-  ([A22](AMENDMENTS.md#MAI-A22), [BIBLE §6](BIBLE.md#MAI-§6)).
+1. **MAI-US-J6** — fix the failing hourly `demo-reset.yml` run.
+2. **MAI-US-N1** — an automated contrast test over every theme × mode.
+3. **MAI-US-M9** — recompose `/ideas` from components.
+4. **MAI-US-H3** — inline `<Theme.X />` override.
+5. **MAI-US-I6** — paste-to-asset media input.

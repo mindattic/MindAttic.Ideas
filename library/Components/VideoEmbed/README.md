@@ -66,7 +66,7 @@ Responsive video player that accepts YouTube, Vimeo, or direct video URLs and re
 
 ## Settings
 
-Per-instance settings (MAI-A45), edited in Admin and stored as tag attributes. Blank = as designed.
+Per-instance settings (MAI-§4.5), edited in Admin and stored as tag attributes. Blank = as designed.
 
 - **Content** (not copied between instances): `Url`, `Title`, `Poster`
 - **Behavior:** `Autoplay` (also mutes), `Muted`, `Loop`, `Controls`, `StartAt` (seconds), `AllowFullscreen`, `Lazy`, `Preload` — YouTube/Vimeo options are appended to the embed URL only when they differ from the defaults

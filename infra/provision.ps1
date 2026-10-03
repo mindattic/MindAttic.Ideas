@@ -109,7 +109,7 @@ function Initialize-VaultSecrets([string] $vault, [array] $secrets) {
 }
 
 # The package-signing trust cert is the PUBLIC half of the publisher's signing cert, copied from this
-# machine's Vault PackageSigning bucket. Without it every .idea install fails closed (MAI-A42).
+# machine's Vault PackageSigning bucket. Without it every .idea install fails closed (MAI-§4.8).
 function Get-PublicSigningCert {
     $signingProviders = Join-Path $env:APPDATA 'MindAttic\PackageSigning\providers.json'
     if (-not (Test-Path $signingProviders)) { return $null }

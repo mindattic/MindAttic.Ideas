@@ -20,7 +20,7 @@ public sealed class CmsRenderContext : IRenderContext
     public required IServiceProvider Services { get; init; }
     public string? RawSettingsJson { get; init; }
 
-    /// <summary>This page's stored instance-settings slots (slot name → JSON), MAI-A45.</summary>
+    /// <summary>This page's stored instance-settings slots (slot name → JSON), MAI-§4.5.</summary>
     public IReadOnlyDictionary<string, string> InstanceSettings { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 

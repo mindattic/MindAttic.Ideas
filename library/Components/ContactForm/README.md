@@ -54,7 +54,7 @@ A name/email/message contact form that POSTs to a configurable endpoint.
 
 ## Settings
 
-All parameters are instance settings (MAI-A45). `action`, `submittext`, the labels and placeholders are content (not copied by Copy/Paste Configuration). Defaults reproduce the stock form.
+All parameters are instance settings (MAI-§4.5). `action`, `submittext`, the labels and placeholders are content (not copied by Copy/Paste Configuration). Defaults reproduce the stock form.
 
 - **Content:** `namelabel` ("Name"), `emaillabel` ("Email"), `messagelabel` ("Message"), `nameplaceholder`, `emailplaceholder`, `messageplaceholder`
 - **Behavior:** `showname` (true), `namerequired` (true), `messagerows` (6), `messagemaxlength` (4000), `animations` (true)

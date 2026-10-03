@@ -76,7 +76,7 @@ public class SeededPageRenderTests
     [Test]
     public async Task Seed_CreatesPersonasPage_CollapsingLegionFrontendIntoOneToken()
     {
-        // MAI-A22 / MAI-US-F7: the former MindAttic.Legion.Frontend standalone app is one Data page
+        // MAI-US-F7: the MindAttic.Legion.Frontend standalone app is one Data page
         // composing the LegionPersonas widget .idea by token.
         var factory = new InMemoryFactory("seed_" + Guid.NewGuid().ToString("N"));
         await new SeedService(factory).SeedAsync();

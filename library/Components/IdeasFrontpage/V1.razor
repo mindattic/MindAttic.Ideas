@@ -583,7 +583,7 @@
   // ── Theme ─────────────────────────────────────────────────────────────────
   var root = document.getElementById('ifp-root');
   var themeBtn = document.getElementById('ifp-theme-btn');
-  // Instance settings (MAI-A45) arrive as data-* on the root; absent values = as designed.
+  // Instance settings (MAI-§4.5) arrive as data-* on the root; absent values = as designed.
   var ds = (root && root.dataset) || {};
   var REMEMBER = ds.rememberTheme !== 'false';
   var DEFAULT_THEME = ds.defaultTheme === 'light' ? 'light' : 'dark';

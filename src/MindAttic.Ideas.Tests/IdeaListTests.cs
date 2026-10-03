@@ -20,7 +20,7 @@ using CmsPage = MindAttic.Ideas.Core.Entities.Page;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// `.idealist` replaces `.ideabundle` (MAI-A41): it still moves AUTHORED content between environments
+/// `.idealist` (MAI-§4.9) moves AUTHORED content between environments
 /// (the cases ported from the old `ContentBundleTests`, renamed) and now also names which `.idea`
 /// packages a fresh instance should install, in order, before any page is written — with a stricter,
 /// non-degrading check on each page's declared `Uses[]`.
@@ -204,7 +204,7 @@ public class IdeaListTests
         }).ToArray();
 
     // =========================================================================================
-    // Ported from ContentBundleTests — same intent, .ideabundle -> .idealist, Content* -> IdeaList*.
+    // Authored-content round trips.
     // =========================================================================================
 
     [Test]
@@ -322,7 +322,7 @@ public class IdeaListTests
         Assert.That(await ImportAsync(target), Is.Zero);
         Assert.That(await SlotCountAsync(), Is.Zero, "a list that names no slots is authoritative: the stale slot goes");
 
-        // Rewrite the list as a pre-MAI-A45 file (no instanceSettings property at all).
+        // Rewrite the list in the older format with no instanceSettings property at all.
         using (var zip = ZipFile.Open(ListPath, ZipArchiveMode.Update))
         {
             var entry = zip.GetEntry(IdeaList.ManifestEntryName)!;
@@ -524,7 +524,7 @@ public class IdeaListTests
         await AddPageAsync(source, "frontpage", "<p>ryan</p>");
         Assert.That(await ExportAsync(source), Is.Zero);
 
-        // The target hosts a DIFFERENT site. Since A35 one deployment can serve several domains, so
+        // The target hosts a DIFFERENT site. One deployment can serve several domains (MAI-§4.10), so
         // falling back to the default site here would republish rdb's pages under mindattic.com.
         var target = NewEnv();
         await SeedSiteAsync(target, "default");
@@ -629,7 +629,7 @@ public class IdeaListTests
         // A uid is the PORTABLE identity, so it is global across the deployment — while a page belongs to
         // exactly one site. Reconciling on uid without a site filter would find the page this deployment
         // already has under another site and re-point its SiteId, so --into-site would MOVE a site's pages
-        // instead of giving the target its own copy (MAI-A39, carried forward unchanged into A41).
+        // instead of giving the target its own copy (MAI-§4.9).
         var source = NewEnv();
         await SeedSiteAsync(source);
         var original = await AddPageAsync(source, "frontpage", "<h1>original</h1>");

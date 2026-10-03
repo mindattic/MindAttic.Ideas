@@ -196,7 +196,7 @@ html.ma-applaunch-open body { overflow: hidden !important; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Animations setting off (MAI-A45). */
+/* Animations setting off (MAI-§4.5). */
 .ma-applaunch--no-anim .ma-applaunch-btn,
 .ma-applaunch--no-anim .ma-applaunch-expand { transition: none; }
 .ma-applaunch--no-anim .ma-applaunch-btn:active { transform: none; }

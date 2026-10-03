@@ -79,7 +79,7 @@ The page CSS supplies the image via the `img-docs-hero` class:
 
 ## Settings
 
-Every parameter above is an instance setting (MAI-A45), editable per card in Admin; content ones (`title`, `text`, `imageclass`, `image`, `href`, `footer`) are skipped by Copy/Paste Configuration. Added visual/behavior settings — all unset/default reproduce the stock look:
+Every parameter above is an instance setting (MAI-§4.5), editable per card in Admin; content ones (`title`, `text`, `imageclass`, `image`, `href`, `footer`) are skipped by Copy/Paste Configuration. Added visual/behavior settings — all unset/default reproduce the stock look:
 
 - **Layout:** `maxwidth`, `bodypadding`, `bodygap`, `imageratio`, `imagefit`, `imageposition`, `titlesize`, `textopacity`
 - **Colors:** `radius`, `background`, `border`, `shadow`, `hovershadow`, `textcolor` (emitted as `--ma-card-*` custom properties on the root)

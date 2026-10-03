@@ -1,5 +1,5 @@
 ﻿/* MindAttic.Ideas.Plugin.Breadcrumbs — slug-derived trail. Scoped under .ma-breadcrumbs (MAIL-LAW-6).
-   Instance settings (MAI-A45) arrive as --ma-breadcrumbs-* custom properties on the <nav>; every
+   Instance settings (MAI-§4.5) arrive as --ma-breadcrumbs-* custom properties on the <nav>; every
    var() falls back to the designed value. */
 .ma-breadcrumbs { font-size: var(--ma-breadcrumbs-font-size, .9rem); }
 .ma-breadcrumbs-list {

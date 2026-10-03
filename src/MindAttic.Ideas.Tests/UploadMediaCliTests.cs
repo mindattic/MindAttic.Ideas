@@ -5,7 +5,7 @@ using MindAttic.Media;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// MAI-A31 / MAI-US-I5: <c>--upload-media</c> streams local files into whichever media store is
+/// MAI-§4.11 / MAI-US-I5: <c>--upload-media</c> streams local files into whichever media store is
 /// configured. These assert the CLI contract — which files it picks up, what it labels them, and that
 /// it hands the store a stream rather than a buffer.
 /// </summary>

@@ -10,7 +10,7 @@ namespace MindAttic.Ideas.Blazor.Demo;
 
 /// <summary>
 /// The public demo of this CMS, as seen from the site that advertises it. The demo is a separate
-/// deployment (MAI-A39); its operator (the hourly reset workflow) publishes the current login as one
+/// deployment (MAI-LAW-11); its operator (the hourly reset workflow) publishes the current login as one
 /// Key Vault secret, and this host only ever reads it. Nothing here is configured on the demo itself.
 /// </summary>
 public sealed class DemoOptions

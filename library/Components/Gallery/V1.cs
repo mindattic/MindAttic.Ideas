@@ -18,7 +18,7 @@ namespace MindAttic.Ideas.Component.Gallery;
 /// Linked tiles make it the mindattic.com books grid (covers → store pages); unlinked tiles get a
 /// keyboard-navigable lightbox (Esc / arrows). Tile size tunes via <c>--ma-gallery-min</c>, tile
 /// shape via <c>--ma-gallery-ratio</c>.
-/// Instance settings (MAI-A45) apply page-wide (the activator has no element of its own): visual ones
+/// Instance settings (MAI-§4.5) apply page-wide (the activator has no element of its own): visual ones
 /// are emitted as a small &lt;style&gt; overriding the gallery custom properties only for values that
 /// are set; behavior ones reach gallery.js through a <c>data-ma-settings="component.gallery"</c> element.
 /// </summary>

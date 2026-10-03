@@ -69,7 +69,7 @@ public static partial class ManifestValidator
         if (!isData && !isCode)
             errors.Add(new(BadKind, $"kind '{m.Kind}' must be 'data' or 'code'."));
 
-        // Retired categories (removed in MAI-A26) are a hard error — they parse to wrong ordinals at runtime.
+        // Categories outside MAI-LAW-1's four kinds (e.g. Widget, Control) are a hard error — they parse to wrong ordinals at runtime.
         if (string.Equals(m.Category, "Widget", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(m.Category, "Control", StringComparison.OrdinalIgnoreCase))
             errors.Add(new(RetiredCategory, $"category '{m.Category}' was retired — use Plugin or Component instead."));

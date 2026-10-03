@@ -18,7 +18,7 @@
 
   var uid = 0;
 
-  // Instance settings (MAI-A45) from the token's inline script; each falls back to the default behavior.
+  // Instance settings (MAI-§4.5) from the token's inline script; each falls back to the default behavior.
   function cfg(name, fallback) {
     var c = window.MaTabsConfig;
     return c && c[name] !== undefined && c[name] !== null ? c[name] : fallback;

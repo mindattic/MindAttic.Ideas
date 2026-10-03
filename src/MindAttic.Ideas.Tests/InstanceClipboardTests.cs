@@ -5,7 +5,7 @@ using MindAttic.Ideas.Core.Services;
 
 namespace MindAttic.Ideas.Tests;
 
-/// <summary>MAI-A45: configuration is shared by copying one instance onto another, never by a global layer.</summary>
+/// <summary>MAI-§4.5: configuration is shared by copying one instance onto another, never by a global layer.</summary>
 [TestFixture]
 public class InstanceClipboardTests
 {

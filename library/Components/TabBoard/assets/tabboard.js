@@ -31,7 +31,7 @@
   function isAlwaysShow() {
     return !!(window.TabBoardConfig && window.TabBoardConfig.alwaysShowTabPage);
   }
-  // CONFIG (MAI-A45 instance settings): each falls back to the verbatim behavior when unset.
+  // CONFIG (MAI-§4.5 instance settings): each falls back to the verbatim behavior when unset.
   function cfg(name, fallback) {
     var c = window.TabBoardConfig;
     return c && c[name] !== undefined && c[name] !== null ? c[name] : fallback;

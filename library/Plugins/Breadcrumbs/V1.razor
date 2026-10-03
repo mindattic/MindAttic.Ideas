@@ -7,7 +7,7 @@
    tree feature and works on any page the moment it's dropped in. Intermediate crumbs link to the
    cumulative slug prefix; titles are prettified segment names ("my-page" -> "My Page"); the last
    crumb is the page's real Title. Renders nothing on the home page (no segments).
-   Instance settings (MAI-A45) are emitted as --ma-breadcrumbs-* custom properties on the <nav>. *@
+   Instance settings (MAI-§4.5) are emitted as --ma-breadcrumbs-* custom properties on the <nav>. *@
 @if (_crumbs.Count > 0 && (ShowHome || _crumbs.Any(c => !c.IsLast || ShowCurrent)))
 {
     <link rel="stylesheet" href="/_ideas/Plugin/breadcrumbs/1/breadcrumbs.css" />

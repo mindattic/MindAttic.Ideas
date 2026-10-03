@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MindAttic.Ideas.Core.Migrations
 {
     /// <summary>
-    /// Withdraws the Showroom-mode schema (A36) and the per-site catalog it needed (A37). The showroom
+    /// Removes the Showroom-mode schema and the per-site catalog it needed. A showroom
     /// is a DEPLOYMENT — a separate vanilla install of Ideas — not a tenancy feature, so nothing asks a
-    /// citizen which site owns it any more (MAI-A39).
+    /// citizen which site owns it any more (MAI-LAW-11).
     /// <para>
-    /// The two unique indexes go back to their pre-A36 shape, which also retires the filtered pair
+    /// The two unique indexes return to (Kind, Key, Version, Origin) / (Category, Key, Version), which also retires the filtered pair
     /// SharedRowUniqueIndexes added: those existed only because SiteId had made a nullable column part
     /// of the key, and with the column gone the plain unique index covers every row again.
     /// </para>

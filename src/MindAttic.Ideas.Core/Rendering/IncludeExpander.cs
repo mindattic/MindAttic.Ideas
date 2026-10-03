@@ -44,7 +44,7 @@ public static class IncludeExpander
         // content leaves PascalCase tags as unknown HTML elements (AngleSharp lowercases them safely).
         if (trust == ContentTrust.Author)
             html = UpgradePascalCaseTags(html);
-        // MAI-A46: EVERY body is XSS-sanitized (HtmlSanitizer) before expansion; the per-node filters below
+        // MAI-§4.6: EVERY body is XSS-sanitized (HtmlSanitizer) before expansion; the per-node filters below
         // stay as defense in depth. Author trust keeps the upgraded citizen tags; Untrusted keeps none.
         html = gate.SanitizeBody(html, trust);
         using var doc = Parser.ParseDocument("<!DOCTYPE html><html><head></head><body>" + html + "</body></html>");

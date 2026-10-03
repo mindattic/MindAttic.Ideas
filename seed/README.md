@@ -2,8 +2,7 @@
 
 `mindattic-site.idealist` — the MindAttic site as content: **53 pages, 86 component-metadata rows,
 7 settings and 34 media payloads** in one file. This is the artifact that turns an empty deployment
-into the real site. (Converted from the retired `.ideabundle` format — MAI-A41 — by renaming its
-manifest entry from `bundle.json` to `idealist.json`; the page/media content is byte-for-byte unchanged.)
+into the real site ([BIBLE §4.9](../docs/BIBLE.md#MAI-§4.9)).
 
 ```pwsh
 dotnet run --project src/MindAttic.Ideas.Blazor -- --seed core                        # schema + the 53 library .ideas
@@ -12,7 +11,7 @@ dotnet run --project src/MindAttic.Ideas.Blazor -- --import-idealist seed/mindat
 
 Re-runnable: pages reconcile on uid then slug (so the baseline seed's own pages are **adopted**, not
 duplicated) and media is matched by SHA-256, so a second import moves no bytes. Add `--dry-run` to see
-what it would do first ([A41](../docs/AMENDMENTS.md#MAI-A41), supersedes [A34](../docs/AMENDMENTS.md#MAI-A34)).
+what it would do first ([BIBLE §4.9](../docs/BIBLE.md#MAI-§4.9)).
 
 **Why the payloads are in here rather than left to regenerate.** Most of the images are reproducible
 — `tools/shoot` recaptures them from the source repos — but not all: the Prose Hub screenshot came
@@ -21,7 +20,7 @@ referencing the old one would need regenerating. A seed that only half-restores 
 file is ~18 MB and that is the price of it actually working on a clone.
 
 It is also what a second, vanilla deployment of Ideas would restore from to get to a known state —
-`--import-idealist seed/mindattic-site.idealist --prune` ([A39](../docs/AMENDMENTS.md#MAI-A39)).
+`--import-idealist seed/mindattic-site.idealist --prune` ([MAI-LAW-11](../docs/BIBLE.md#MAI-LAW-11)).
 
 ## Refreshing it
 

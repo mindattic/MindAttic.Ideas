@@ -4,7 +4,7 @@ namespace MindAttic.Ideas.Blazor.Cli;
 
 /// <summary>
 /// CLI mode: <c>--expand-css-shorthand</c>. One-time (re-runnable) migration that runs every checked-in
-/// library <c>.css</c> file through <see cref="CssConflictMerger"/> (MAI-A44) — the same engine that
+/// library <c>.css</c> file through <see cref="CssConflictMerger"/> (MAI-§4.7) — the same engine that
 /// normalizes Untrusted PageCss at save time — so shorthand properties (margin/padding/border/etc.) are
 /// expanded to their real longhand form wherever a same-selector rule actually overrides part of one,
 /// and any duplicate-selector blocks a file has accumulated over time collapse into one, cancelling the

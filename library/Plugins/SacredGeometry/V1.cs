@@ -13,7 +13,7 @@ namespace MindAttic.Ideas.Plugin.SacredGeometry;
 /// <c>/_ideas/Plugin/sacredgeometry/1/</c>. Dropping it on a page makes every
 /// <c>&lt;canvas data-sacred-shape="N"&gt;</c> animate shape N live (IntersectionObserver-gated,
 /// MutationObserver-aware) — no per-page JS. The driver loads AFTER the renderer.
-/// Instance settings (MAI-A45) reach the driver through <c>data-ma-settings="plugin.sacredgeometry"</c>
+/// Instance settings (MAI-§4.5) reach the driver through <c>data-ma-settings="plugin.sacredgeometry"</c>
 /// and are page-wide defaults; a canvas's own data-sacred-spin / data-sacred-bg still win.
 /// </summary>
 public sealed class V1 : PluginBase

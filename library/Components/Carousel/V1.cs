@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Components.Rendering;
 using MindAttic.Ideas.Abstractions;
-using ParameterAttribute = Microsoft.AspNetCore.Components.ParameterAttribute;  // not the namespace: its ComponentBase would clash (MAI-A26)
+using ParameterAttribute = Microsoft.AspNetCore.Components.ParameterAttribute;  // not the namespace: its ComponentBase would clash (MAI-LAW-1)
 
 namespace MindAttic.Ideas.Component.Carousel;
 
@@ -17,7 +17,7 @@ namespace MindAttic.Ideas.Component.Carousel;
 ///   &lt;/div&gt;
 /// </code>
 /// <c>data-autoplay</c> (ms) is optional; autoplay pauses on hover/focus.
-/// Instance settings (MAI-A45) are page-wide defaults for every carousel on the page: visual ones are
+/// Instance settings (MAI-§4.5) are page-wide defaults for every carousel on the page: visual ones are
 /// emitted as a scoped custom-property block (only when set), behavioral ones reach carousel.js through
 /// <c>data-ma-settings="component.carousel"</c>. Per-carousel <c>data-*</c> attributes still win.
 /// </summary>

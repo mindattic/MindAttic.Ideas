@@ -66,7 +66,7 @@ Adds 2 rem of padding around the injected content, centers text, and shows a bac
 
 ## Settings
 
-All parameters are instance settings (MAI-A45); `slot` and the return-link text/URL are not copied by Copy/Paste Configuration. Added:
+All parameters are instance settings (MAI-§4.5); `slot` and the return-link text/URL are not copied by Copy/Paste Configuration. Added:
 
 - **Content:** `returntext` ("← Return to MindAttic"), `returnhref` (empty = browser back)
 - **Layout:** `returnposition` (Bottom | Top), `returnfontsize` (14px), `returnpadding` (10px 16px)

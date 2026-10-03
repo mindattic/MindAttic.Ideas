@@ -1,7 +1,7 @@
 # Reset the public demo (mindattic-ideas-demo) to a vanilla Ideas install with a brand-new admin
 # password. Hourly, after every deploy, and on demand.
 #
-# The demo is a DEPLOYMENT, not a feature (MAI-A39): this workflow is its operator. It never touches the
+# The demo is a DEPLOYMENT, not a feature (MAI-LAW-11): this workflow is its operator. It never touches the
 # company site. Order matters, and the published login is the LAST thing written:
 #
 #   1. credentials := {status: resetting}         the company site's Ideas page shows "back soon"

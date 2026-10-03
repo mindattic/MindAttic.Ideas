@@ -4,7 +4,7 @@
   Pack, sign, wrap and push every library citizen to the configured NuGet feed (GitHub Packages).
 
 .DESCRIPTION
-  The NuGet-distribution half of MAI-A41's follow-on: each `.idea` citizen ships as its own package
+  NuGet distribution (MAI-§4.8): each `.idea` citizen ships as its own package
   (id `MindAttic.Ideas.{Category}.{Key}`, version `{n}.0.0`), content-signed independently of NuGet's
   own signing feature (see PackageSigner) so every install path — NuGet fetch, `library/` folder,
   `--install`, admin upload — verifies the same signature the same way.

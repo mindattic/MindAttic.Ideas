@@ -39,7 +39,7 @@ public interface IRenderContext
 
     /// <summary>
     /// The stored instance settings (a JSON object of setting name to value) for one slot on this page —
-    /// <c>"theme"</c>, <c>"page"</c>, or <c>"plugin:{key}"</c> (MAI-A45). Null when the instance has none;
+    /// <c>"theme"</c>, <c>"page"</c>, or <c>"plugin:{key}"</c> (MAI-§4.5). Null when the instance has none;
     /// the host binds these onto the citizen's [Parameter]s, so citizens rarely call this directly.
     /// </summary>
     string? GetInstanceSettingsJson(string slot) => null;

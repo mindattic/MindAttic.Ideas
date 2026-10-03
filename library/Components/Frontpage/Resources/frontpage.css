@@ -187,6 +187,6 @@
     .siteNav-panel { flex-direction: column; }
 }
 
-/* Instance setting (MAI-A45): animations off. */
+/* Instance setting (MAI-§4.5): animations off. */
 .siteNav.siteNav--no-anim *,
 .siteNav.siteNav--no-anim .tabButton-btn { transition: none !important; animation: none !important; }

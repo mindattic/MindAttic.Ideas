@@ -77,7 +77,7 @@ public static class HubContent
 }
 
 /// <summary>
-/// The Frontpage instance settings (MAI-A45) that SiteNav needs at render time. Defaults reproduce the
+/// The Frontpage instance settings (MAI-§4.5) that SiteNav needs at render time. Defaults reproduce the
 /// as-designed behaviour; V1 builds one from its [Parameter]s.
 /// </summary>
 public sealed class SiteNavOptions

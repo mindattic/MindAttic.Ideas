@@ -413,7 +413,7 @@ h1:focus {
 .ma-attrib-item p { font-size: .82rem; color: #c2c8d0; margin: .12rem 0; }
 .ma-attrib-lead { font-size: .86rem; color: #9aa3af; margin-bottom: .35rem; max-width: 48rem; }
 
-/* Instance tree + settings editor (MAI-A45) */
+/* Instance tree + settings editor (MAI-§4.5) */
 .admin-caret{opacity:.8;font-size:.75rem;}
 .admin-instance{display:flex;align-items:center;gap:.4rem;padding:.25rem .55rem;border-radius:6px;cursor:pointer;font-size:.8rem;border:1px solid transparent;}
 .admin-instance:hover{background:rgba(127,127,127,.12);}
