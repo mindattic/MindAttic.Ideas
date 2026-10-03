@@ -561,5 +561,6 @@ Definition of done (a feature is `✅` only when *verified*, never merely assert
 - **Site** — a tenant resolved from the request host ([§4.10](#MAI-§4.10)).
 - **Library** — the `library/` directory: the single home of all first-party Themes, Plugins and
   Components (canon code MAIL).
-- **UiUx** — MindAttic.UiUx, the build-free upstream raw source for some library citizens' engines,
-  consumed by pinned-tag URL.
+- **UiUx** — `MindAttic.Web.Shared` (the shared asset package in the MindAttic.Web monorepo, formerly
+  the MindAttic.UiUx repo), the build-free upstream raw source for some library citizens' engines,
+  consumed by pinned-tag jsDelivr URL.
