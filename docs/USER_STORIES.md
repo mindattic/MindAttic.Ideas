@@ -199,6 +199,14 @@ updated: 2026-10-03
   `PageMarkupValidatorTests`, `CitizenValidatorTests`,
   `ShippedContentValidationTests.EveryShippedPackage_PassesCitizenValidation`,
   `ShippedContentValidationTests.EverySeedPage_ValidatesAgainstTheShippedPackages`.)*
+- **MAI-US-F10 ✅** As a user who forgot my password, I follow "Forgot password?" on `/login`, get an
+  emailed link to this site's `/account/reset` page (absolute, from `MindAttic:Auth:Reset:PublicBaseUrl`:
+  `https://localhost:7207` in Development; the company site and the demo each set their own in
+  `infra/main.bicep`), and setting a new password there replaces the old one. Mail is sent only when the
+  Vault `Notifications` SMTP settings are configured. *(verified by
+  `PasswordResetFlowTests.RequestReset_EmailsAnAbsoluteLinkToTheResetPage_WhichResetsThePassword`,
+  `PasswordResetFlowTests.TheResetAndForgotPages_AreAnonymous`,
+  `PasswordResetFlowTests.EachAzureSite_SetsItsOwnPublicBaseUrl`.)*
 
 ## Epic G — Page authoring enhancements
 

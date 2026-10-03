@@ -375,6 +375,8 @@ var siteSettings = concat(commonSettings, [
   { name: 'MindAttic__Vault__PackageSigning__signingcertpublic', value: kvRef(keyVault.properties.vaultUri, 'signing-cert-public') }
   // The demo this site advertises. Read with SecretClient (not a reference): it rotates hourly.
   { name: 'Demo__Url', value: 'https://${demoAppName}.azurewebsites.net' }
+  // Absolute origin of emailed password-reset links (never derived from Request.Host).
+  { name: 'MindAttic__Auth__Reset__PublicBaseUrl', value: 'https://${siteAppName}.azurewebsites.net' }
   { name: 'Demo__KeyVaultUri', value: demoKeyVault.properties.vaultUri }
   { name: 'Demo__CredentialsSecretName', value: demoCredentialsSecret.name }
 ], empty(turnstileSiteKey) ? [] : [
@@ -394,6 +396,7 @@ var demoSettings = concat(commonSettings, [
   { name: 'MindAttic__Auth__Bootstrap__RequirePasswordChange', value: 'false' }
   { name: 'MindAttic__Auth__Session__RevalidationInterval', value: '00:00:15' }
   { name: 'MindAttic__Auth__Session__AbsoluteTimeout', value: '01:00:00' }
+  { name: 'MindAttic__Auth__Reset__PublicBaseUrl', value: 'https://${demoAppName}.azurewebsites.net' }
   { name: 'MindAttic__Vault__Security__pepperv1', value: kvRef(demoKeyVault.properties.vaultUri, 'pepper-v1') }
   { name: 'MindAttic__Vault__Security__bootstraptoken', value: kvRef(demoKeyVault.properties.vaultUri, demoAdminPasswordSecret.name) }
   { name: 'MindAttic__Vault__Security__resettokenkey', value: kvRef(demoKeyVault.properties.vaultUri, 'reset-token-key') }
