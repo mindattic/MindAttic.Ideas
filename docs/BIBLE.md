@@ -59,7 +59,8 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
 - **NOT a per-page router.** Pages resolve by `(SiteId, Slug)` data lookup through one catch-all
   `PageHost`, never per-page routing — so a runtime-loaded `.idea` type renders with zero router
   changes.
-- **NOT the owner of sign-in.** Authentication is the MindAttic.Authentication package
+- **NOT the owner of sign-in.** Authentication is the MindAttic.Authentication package (5.0.0,
+  which also owns auth email: SMTP from `MindAttic:Vault:Notifications:email`, else a startup warning)
   ([HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7)). What stays Ideas-owned is the Admin role,
   the `Cms.AuthorRawMarkup` claim, and the raw-content trust gate.
 - **NOT hard-delete by default.** Disable = exists-but-unusable; a version-specific delete is

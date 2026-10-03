@@ -402,7 +402,7 @@ A per-page tweak is either inline CSS in the Page definition or an uploaded `.id
 
 ## Trust and security
 
-Sign-in is delegated to [MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication) (Argon2id with pepper, Vault-backed, hardened sessions). `src/MindAttic.Ideas.Blazor/Program.cs` wires it with `AddMindAtticAuthentication<CmsDbContext>(...)` and `AppName = "Ideas"`, a hard per-app trust boundary with no cross-app SSO. What stays Ideas-owned is the raw-content trust gate:
+Sign-in is delegated to [MindAttic.Authentication](https://github.com/mindattic/MindAttic.Authentication) (Argon2id with pepper, Vault-backed, hardened sessions). `src/MindAttic.Ideas.Blazor/Program.cs` wires it with `AddMindAtticAuthentication<CmsDbContext>(...)` and `AppName = "Ideas"`, a hard per-app trust boundary with no cross-app SSO. The package (5.0.0) sends auth email (reset links, security alerts) over SMTP once `MindAttic:Vault:Notifications:email` is complete (dev: the Vault `Notifications` bucket, already loaded; prod: `MindAttic__Vault__Notifications__email__*` app settings, which `infra/main.bicep` does not set yet); until then it logs a startup warning and sends nothing. Ideas sets no `MindAttic:Auth:Reset:PublicBaseUrl` and hosts no reset page, so no reset mail goes out. What stays Ideas-owned is the raw-content trust gate:
 
 - On save, a page body is stamped `ContentTrust.Author` only if the writer holds the `Cms.AuthorRawMarkup` claim (Admin role); otherwise `Untrusted`.
 - Every page body, at every trust level, goes through HtmlSanitizer before rendering ([MAI-§4.6](docs/BIBLE.md#MAI-§4.6)). No script, event handler, `javascript:` / `vbscript:` / `data:` URL, frame, form, embed or style element survives in page markup.
