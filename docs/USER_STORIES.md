@@ -318,9 +318,11 @@ updated: 2026-10-03
   *(verified by `DeploymentPackagingTests.EveryReferencedMindAtticPackageIsVendoredForCi`,
   `NugetConfigListsTheVendoredFeed`, `VendoredPackagesAreTrackedRatherThanGitIgnored`.)*
 - **MAI-US-J2 ✅** As an Operator, App Service can tell whether the site is alive, because `/_health`
-  answers 200 without touching the database. *(verified by
+  answers 200 without touching the database, as soon as the server listens, and reports whether the boot
+  sequence has finished and which build is running. *(verified by
   `DeploymentPackagingTests.ProductionRequiresItsDataProtectionSettingsByName`,
-  `DeployWorkflowPointsAtProjectsThatExist`.)*
+  `DeployWorkflowPointsAtProjectsThatExist`, `StartupGateTests.HealthReportsReadinessAndBuild`,
+  `StartupGateTests.BeforeReadinessOnlyHealthIsServed`.)*
 - **MAI-US-J3 ✅** As a Maintainer, the engine ships with no known-vulnerable dependency, and the security
   floors cannot be silently reverted. *(verified by
   `DeploymentPackagingTests.SecurityPinnedPackagesAreNotDowngraded`.)*

@@ -108,28 +108,33 @@ MindAttic.Ideas.Blazor.Demo.DemoReveal.AddDemoAccess(builder.Services, builder.C
 
 var app = builder.Build();
 
-// --- Startup: migrate -> discover citizens -> seed CMS content -> bootstrap admin. ---
+// --- Startup: migrate -> discover citizens -> seed CMS content -> bootstrap admin -> provision. ---
 // MigrateAsync is dev-only (prod runs DDL in the CI migrate job under db_ddladmin). AuthBootstrapper
 // seeds 'admin' from the Vault Security:bootstrap-token (MustChangePassword) and no-ops once a user exists.
-using (var scope = app.Services.CreateScope())
+// Every step is idempotent, so StartupGate can retry the whole sequence after a transient failure.
+// In server mode it runs AFTER the server is listening (see the end of this file); /_health answers at
+// once and every other request is 503 "starting" until it completes (MAI-§4.14).
+var readiness = new MindAttic.Ideas.Blazor.StartupReadiness();
+async Task InitializeAsync(CancellationToken ct)
 {
+    using var scope = app.Services.CreateScope();
     var sp = scope.ServiceProvider;
     if (app.Environment.IsDevelopment())
-        await sp.GetRequiredService<CmsDbContext>().Database.MigrateAsync();
-    await sp.GetRequiredService<DiscoveryService>().RunAsync();
-    await sp.GetRequiredService<SeedService>().SeedAsync();
+        await sp.GetRequiredService<CmsDbContext>().Database.MigrateAsync(ct);
+    await sp.GetRequiredService<DiscoveryService>().RunAsync(ct);
+    await sp.GetRequiredService<SeedService>().SeedAsync(ct);
     await MindAttic.Ideas.Blazor.AdminBootstrap.ApplyAsync(builder.Configuration,
         sp.GetRequiredService<MindAttic.Authentication.Services.IUserStore>(),
         sp.GetRequiredService<MindAttic.Authentication.Services.IUserAdminService>(),
         sp.GetRequiredService<MindAttic.Authentication.Secrets.IAuthSecrets>(),
-        ct => sp.GetRequiredService<MindAttic.Authentication.Services.AuthBootstrapper>()
-                .SeedAdminAsync(MindAttic.Ideas.Blazor.AdminBootstrap.AdminUserName, ct));
+        c => sp.GetRequiredService<MindAttic.Authentication.Services.AuthBootstrapper>()
+                .SeedAdminAsync(MindAttic.Ideas.Blazor.AdminBootstrap.AdminUserName, c));
 
     // VANILLA vs. CUSTOM INSTANCE (MAI-§4.9): absent Ideas:Idealist/IDEAS_IDEALIST installs every
     // first-party .idea physically present in ./library, best-effort, exactly as this codebase always
     // did. A configured .idealist is applied instead — packages, then pages — and any failure aborts
     // startup rather than leaving a curated instance half-provisioned.
-    await MindAttic.Ideas.Blazor.BootProvisioning.ApplyAsync(sp, app.Environment.ContentRootPath, builder.Configuration);
+    await MindAttic.Ideas.Blazor.BootProvisioning.ApplyAsync(sp, app.Environment.ContentRootPath, builder.Configuration, ct: ct);
 
     // DEV convenience: auto-install every .idea dropped in the IDEAS_DROPBOX folder through the REAL
     // install path (IPackageInstallService = the admin-upload code path), idempotent + allowOverride.
@@ -144,13 +149,16 @@ using (var scope = app.Services.CreateScope())
             try
             {
                 await using var bytes = File.OpenRead(file);
-                var plan = await installer.InstallAsync(bytes, allowOverride: true);
+                var plan = await installer.InstallAsync(bytes, allowOverride: true, ct);
                 Console.WriteLine($"[dropbox] {Path.GetFileName(file)} -> {plan.Action}");
             }
             catch (Exception ex) { Console.Error.WriteLine($"[dropbox] {Path.GetFileName(file)} FAILED: {ex.Message}"); }
         }
     }
 }
+
+// First in the pipeline: nothing but /_health is served until initialisation has finished.
+app.Use(next => MindAttic.Ideas.Blazor.StartupGate.Gate(readiness, next));
 
 if (!app.Environment.IsDevelopment())
 {
@@ -205,7 +213,9 @@ app.MapMediaEndpoints();
 // Liveness probe for the App Service health check. Deliberately does NOT touch the database: App
 // Service restarts an instance that fails this, and a transient SQL blip must not turn into a
 // restart loop. Under `/_` like every other reserved route, so it can never shadow a page slug.
-app.MapGet("/_health", () => Results.Text("healthy", "text/plain")).AllowAnonymous();
+// Answers as soon as the server listens; X-Ideas-Ready / X-Ideas-Version report init state and build.
+app.MapGet(MindAttic.Ideas.Blazor.StartupGate.HealthPath,
+    (HttpContext ctx) => MindAttic.Ideas.Blazor.StartupGate.Health(ctx, readiness)).AllowAnonymous();
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode()
    // PageHost (the catch-all "/{*Slug}" content route) lives in the MindAttic.Ideas.Rendering RCL.
@@ -216,6 +226,16 @@ app.MapRazorComponents<App>()
 
 // MindAttic.Authentication HTTP endpoints — /_ma-auth/{login,mfa-challenge,logout,change-password,reset/*}.
 app.MapMindAtticAuthEndpoints();
+
+// ---- CLI modes run the boot sequence first, in the foreground, then their command and exit. ----
+string[] cliFlags = ["--install", "--extract-media", "--upload-media", "--export-idealist", "--import-idealist", "--compose-idealist", "--seed"];
+var cliMode = args.Any(a => cliFlags.Contains(a, StringComparer.Ordinal));
+if (cliMode)
+{
+    await MindAttic.Ideas.Blazor.StartupGate.RunWithRetryAsync(InitializeAsync,
+        MindAttic.Ideas.Blazor.StartupRetryPolicy.Default, Console.Error);
+    readiness.MarkReady();
+}
 
 // ---- CLI mode: --install <file.idea> --------------------------------------------------------
 // dotnet run --project src/MindAttic.Ideas.Blazor -- --install path/to/Foo.V1.idea
@@ -310,4 +330,30 @@ if (seedIdx >= 0)
     Environment.Exit(exitCode);
 }
 
-app.Run();
+// ---- Server mode: listen first, then initialise. -------------------------------------------
+// The server starts before the boot sequence, so App Service's warm-up and /_health see a live process
+// within seconds instead of after every package scan and SQL round trip. A transient failure (an Entra
+// SQL login reset while a cold container fights the other site for the B1 core) is retried; a permanent
+// one stops the host with exit code 1 instead of escaping top-level statements as an unhandled exception,
+// which the runtime turns into SIGABRT (exit 134) plus a core dump (MAI-§4.14).
+await app.StartAsync();
+var stopping = app.Lifetime.ApplicationStopping;
+try
+{
+    await MindAttic.Ideas.Blazor.StartupGate.RunWithRetryAsync(InitializeAsync,
+        MindAttic.Ideas.Blazor.StartupRetryPolicy.Default, Console.Error, ct: stopping);
+    readiness.MarkReady();
+    Console.WriteLine("[startup] initialisation complete; serving.");
+}
+catch (OperationCanceledException) when (stopping.IsCancellationRequested)
+{
+    // Shut down while still initialising (a restart or a stop): nothing to report.
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"[startup] initialisation FAILED; stopping with exit code 1.{Environment.NewLine}{ex}");
+    Environment.ExitCode = 1;
+    await app.StopAsync();
+    return;
+}
+await app.WaitForShutdownAsync();

@@ -91,11 +91,32 @@ On push to `master` and on dispatch:
    `seed/demo.idealist` from the packages actually in the build, emit the idempotent migration script.
 2. **migrate** — apply it to `MindAtticIdeas` **and** the demo template, under an Entra token through a
    single-run firewall rule. Skippable with `skip_migrate`.
-3. **deploy** — the same artifact to both sites, restart each onto it (a zip deploy overwrites DLLs
-   under the running process on Linux), smoke-test the company site's `/_health` **and** `/`.
-4. **reset-demo** — run the demo reset, so the demo never runs new code on an old schema.
+3. **deploy-company** — deploy the artifact to the company site, restart it onto it (a zip deploy
+   overwrites DLLs under the running process on Linux), then wait (up to 20 minutes) until `/_health`
+   reports **this commit** ready (`X-Ideas-Version` contains the SHA, `X-Ideas-Ready: true`) and `/`
+   answers 200. The build stamps the commit with `-p:SourceRevisionId`; a bare 200 could come from the
+   container being replaced.
+4. **deploy-demo** — only after the company job finishes (whatever its result): the same artifact to the
+   demo, restarted onto it. The two sites never cold-start together on the plan's single core.
+5. **reset-demo** — run the demo reset, so the demo never runs new code on an old schema.
 
 Never deploys when migrate *ran and failed*: that is how you get a half-migrated database.
+
+### How a site starts
+
+The server listens **before** the boot sequence (discovery, seed, admin bootstrap, `.idea`/`.idealist`
+provisioning) runs, so a container answers within seconds of `dotnet` starting:
+
+- **`/_health`** — liveness, always 200, never touches the database. Headers: `X-Ideas-Ready`
+  (`false` until the boot sequence finishes) and `X-Ideas-Version` (the build, `+<commit>`).
+- **Everything else** — `503 starting` with `Retry-After: 10` until the boot sequence finishes.
+- **A transient failure** in the boot sequence (a SQL, socket, timeout or Azure identity error) is retried:
+  8 attempts, 5 s doubling to 60 s apart, about four minutes in all. Every step is idempotent.
+- **A permanent failure** (a missing setting, a bad `.idealist`, retries spent) logs
+  `[startup] initialisation FAILED` and exits with code **1**; App Service restarts the container.
+
+On the shared B1 plan a warm restart of the company site takes about two minutes, most of it the
+platform's container preamble (certificate rehash, Oryx); the app's own boot is under a minute.
 
 ## The hourly demo reset — `.github/workflows/demo-reset.yml`
 
@@ -241,6 +262,22 @@ setting here is alphanumeric.
 **Every `.idea` install fails with "No trusted package-signing certificate".** The
 `MindAttic__Vault__PackageSigning__signingcertpublic` setting (Key Vault secret `signing-cert-public`)
 is missing. And always pack with `pack-all.ps1 -Sign` — an unsigned package is refused on every path.
+
+**Container exits with code 134 during startup, over and over.** 134 is SIGABRT: .NET aborts on an
+unhandled exception (and writes a core dump, which itself takes ~40 s on B1). The app catches every
+boot-sequence failure and exits 1, so a 134 now means something escaped *before* the boot sequence — host
+construction or configuration (see the next entry). To see it, turn container logging on, read
+`LogFiles/<date>_<instance>_default_docker.log` through Kudu, and turn it off again:
+`az webapp log config -g rg-mindattic-ideas -n mindattic --docker-container-logging filesystem` …
+`--docker-container-logging off`. Plan-level CPU at 100% for minutes means both sites are cold-starting
+together; the deploy no longer does that, but a manual restart of both, or an hourly demo reset during a
+company restart, still can.
+
+**`[startup] attempt n/8 failed with a transient SqlException`.** An Entra-authenticated SQL login was
+reset mid-handshake ("A connection was successfully established with the server, but then an error
+occurred during the login process", `Connection reset by peer`). It happens while a cold container is
+fighting the other site for the CPU and the managed-identity token is slow to arrive. The retry covers it;
+if every attempt fails, check that the site's identity is still a contained user on its database.
 
 **App aborts at startup with a stack trace inside `ConfigurationBuilder`.** MindAttic.Vault below V3
 throws when the host has no user profile, which on Linux is during host construction — SIGABRT before

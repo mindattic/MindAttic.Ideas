@@ -415,9 +415,15 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
 - **CI** (`.github/workflows/azure-deploy.yml`, push to `master`, GitHub OIDC): build (restore from the
   vendored `lib/local-packages/` + nuget.org, full NUnit suite, publish, generate `seed/demo.idealist`
   and the idempotent migration script) → migrate (company database and the demo template, Entra token,
-  single-run firewall rule) → deploy (both sites, poll `/_health`) → reset the demo. Deploy never
-  proceeds after a migrate that ran and failed.
-- **`/_health`** is a liveness probe that never touches the database.
+  single-run firewall rule) → deploy the company site and wait until `/_health` reports this commit ready
+  and `/` answers → deploy the demo → reset the demo. The two sites never cold-start together on the
+  single-core B1 plan. Deploy never proceeds after a migrate that ran and failed.
+- **Startup:** the server listens first, then runs the boot sequence (discovery, seed, admin bootstrap,
+  provisioning) through `StartupGate`: transient failures (SQL, socket, timeout, Azure identity) are
+  retried with backoff, a permanent one exits with code 1, never an unhandled abort (exit 134). Until the
+  sequence finishes every request but `/_health` gets `503 starting`.
+- **`/_health`** is a liveness probe that never touches the database and answers as soon as the server
+  listens; `X-Ideas-Ready` and `X-Ideas-Version` (build + commit) report boot state.
 - **The demo** is reset hourly by `.github/workflows/demo-reset.yml`: rotate the admin password, stop the
   demo and pin the new password, replace the demo database with a copy of `MindAtticIdeasDemoTemplate`,
   empty its media, start it (its one boot on the empty database seeds `admin` from the new password),
@@ -485,7 +491,7 @@ These are the **project-specific** laws:
 
 ## 6. Verified state {#MAI-§6}
 
-**Build/test evidence (2026-10-03):** `dotnet test src/MindAttic.Ideas.Tests` → **Passed: 564, Failed: 0,
+**Build/test evidence (2026-10-03):** `dotnet test src/MindAttic.Ideas.Tests` → **Passed: 583, Failed: 0,
 Skipped: 0**. The SQL Server temporal proof (`PageHistorySqlServerTests`) is `[Explicit]` and runs
 against LocalDB on demand.
 

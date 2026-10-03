@@ -9,7 +9,8 @@ name: Build and deploy MindAttic.Ideas to Azure App Service
 #               idempotent migration script
 #   migrate     apply that script to the company database and the demo TEMPLATE under an Entra token
 #               (the running sites never do DDL)
-#   deploy      push the artifact to both sites, restart each onto it, smoke-test each
+#   deploy      push the artifact to the company site, restart it, and wait until THIS build reports
+#               ready; only then the same to the demo (never both cold-starting on the one B1 core)
 #   reset-demo  wipe and re-provision the demo, so it never runs new code on an old schema
 #
 # Everything authenticates with GitHub OIDC (AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID).
@@ -55,8 +56,10 @@ jobs:
       - name: Restore
         run: dotnet restore MindAttic.Ideas.slnx --ignore-failed-sources
 
+      # The commit is stamped into the informational version, which /_health reports as X-Ideas-Version:
+      # that is how the smoke test tells the new container from the one it is replacing.
       - name: Build
-        run: dotnet build MindAttic.Ideas.slnx -c Release --no-restore
+        run: dotnet build MindAttic.Ideas.slnx -c Release --no-restore -p:SourceRevisionId=${{ github.sha }}
 
       # The deploy is gated on the suite. PageHistorySqlServerTests is [Explicit] and needs the dev
       # LocalDB, so it does not run here.
@@ -151,19 +154,21 @@ jobs:
           az sql server firewall-rule delete --resource-group ${{ env.AZURE_RESOURCE_GROUP }} `
             --server '${{ steps.firewall.outputs.server }}' --name '${{ steps.firewall.outputs.rule }}' --output none
 
-  deploy:
+  # The company site first, then the demo. Two .NET cold starts on the shared single-core B1 plan pin
+  # the CPU for minutes, and that contention is what made Entra SQL logins fail mid-handshake during
+  # boot (exit 134 loops, docs/DEPLOYMENT.md). The demo goes second whatever the company result, so a
+  # bad company deploy never strands the demo on an old build.
+  deploy-company:
     runs-on: windows-2025
     needs: [build, migrate]
     # Deploy even when migrate was skipped, but never when it ran and failed: shipping code against
     # a schema that did not apply is how you get a half-migrated production database.
     if: ${{ always() && needs.build.result == 'success' && needs.migrate.result != 'failure' && needs.migrate.result != 'cancelled' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [mindattic, mindattic-ideas-demo]
     environment:
       name: production
-      url: https://${{ matrix.app }}.azurewebsites.net
+      url: https://mindattic.azurewebsites.net
+    env:
+      APP: mindattic
     steps:
       - name: Download app artifact
         uses: actions/download-artifact@v8
@@ -181,7 +186,7 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ matrix.app }}
+          app-name: ${{ env.APP }}
           package: publish/
 
       # The zip deploy overwrites DLLs in /home/site/wwwroot underneath the RUNNING process. Linux
@@ -190,28 +195,76 @@ jobs:
       # /_health -- which touches none of that code -- still answers 200. Restart onto the new files.
       - name: Restart onto the new build
         shell: pwsh
-        run: az webapp restart --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name ${{ matrix.app }}
+        run: az webapp restart --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name $env:APP
 
-      # The demo is smoke-tested properly by reset-demo (it is re-provisioned there anyway).
+      # /_health answers as soon as the server listens, before initialisation; its headers say which
+      # build is running (X-Ideas-Version carries the commit) and whether it has finished initialising
+      # (X-Ideas-Ready). Wait for THIS commit to report ready -- the old container keeps answering until
+      # the new one is up, so a bare 200 proves nothing -- then require the home page.
       - name: Smoke-test health and the home page
-        if: matrix.app == 'mindattic'
         shell: pwsh
         run: |
-          $base = "https://${{ matrix.app }}.azurewebsites.net"
-          foreach ($path in @('/_health', '/')) {
-            $ok = $false
-            for ($i = 1; $i -le 20 -and -not $ok; $i++) {
-              try {
-                $r = Invoke-WebRequest -Uri "$base$path" -UseBasicParsing -TimeoutSec 30
-                if ($r.StatusCode -eq 200) { Write-Host "$path OK after $i attempt(s)."; $ok = $true }
-              } catch { Write-Host "$path attempt $i : $($_.Exception.Message)" }
-              if (-not $ok) { Start-Sleep -Seconds 15 }
-            }
-            if (-not $ok) { throw "$base$path never returned 200." }
+          $base = "https://$env:APP.azurewebsites.net"
+          $sha = '${{ github.sha }}'
+          $deadline = (Get-Date).AddMinutes(20)
+          $ready = $false
+          while (-not $ready -and (Get-Date) -lt $deadline) {
+            try {
+              $r = Invoke-WebRequest -Uri "$base/_health" -UseBasicParsing -TimeoutSec 30
+              $version = "$($r.Headers['X-Ideas-Version'])"; $isReady = "$($r.Headers['X-Ideas-Ready'])"
+              if ($version -like "*$sha*" -and $isReady -eq 'true') { $ready = $true; Write-Host "/_health: this build ($version) is ready." }
+              else { Write-Host "/_health: $($r.StatusCode), version '$version', ready '$isReady'." }
+            } catch { Write-Host "/_health: $($_.Exception.Message)" }
+            if (-not $ready) { Start-Sleep -Seconds 15 }
           }
+          if (-not $ready) { throw "$base never reported build $sha ready within 20 minutes." }
+          $ok = $false
+          for ($i = 1; $i -le 10 -and -not $ok; $i++) {
+            try {
+              $r = Invoke-WebRequest -Uri "$base/" -UseBasicParsing -TimeoutSec 60
+              if ($r.StatusCode -eq 200) { Write-Host "/ OK after $i attempt(s)."; $ok = $true }
+            } catch { Write-Host "/ attempt $i : $($_.Exception.Message)" }
+            if (-not $ok) { Start-Sleep -Seconds 15 }
+          }
+          if (-not $ok) { throw "$base/ never returned 200." }
+
+  # The demo is smoke-tested properly by reset-demo, which stops and re-provisions it right after.
+  deploy-demo:
+    runs-on: windows-2025
+    needs: [build, migrate, deploy-company]
+    if: ${{ always() && needs.build.result == 'success' && needs.migrate.result != 'failure' && needs.migrate.result != 'cancelled' && needs.deploy-company.result != 'cancelled' }}
+    environment:
+      name: production
+      url: https://mindattic-ideas-demo.azurewebsites.net
+    env:
+      APP: mindattic-ideas-demo
+    steps:
+      - name: Download app artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ideas-app
+          path: publish/
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.APP }}
+          package: publish/
+
+      # As above: never leave the old process running on overwritten DLLs.
+      - name: Restart onto the new build
+        shell: pwsh
+        run: az webapp restart --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --name $env:APP
 
   reset-demo:
-    needs: deploy
-    if: ${{ always() && needs.deploy.result == 'success' }}
+    needs: deploy-demo
+    if: ${{ always() && needs.deploy-demo.result == 'success' }}
     uses: ./.github/workflows/demo-reset.yml
     secrets: inherit

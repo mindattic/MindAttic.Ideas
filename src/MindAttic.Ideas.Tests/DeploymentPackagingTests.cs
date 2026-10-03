@@ -161,6 +161,62 @@ public class DeploymentPackagingTests
     }
 
     /// <summary>
+    /// MAI-§4.14 startup. The server must be listening before the boot sequence runs, and the boot sequence
+    /// must go through <c>StartupGate</c> (retry transient, exit 1 on permanent) rather than run bare in
+    /// top-level statements, where an unhandled SQL login failure aborted the runtime with exit 134.
+    /// </summary>
+    [Test]
+    public void TheServerListensBeforeTheBootSequenceAndTheBootSequenceIsRetried()
+    {
+        var program = File.ReadAllText(Path.Combine(
+            RepoRoot().FullName, "src", "MindAttic.Ideas.Blazor", "Program.cs"));
+
+        var start = program.IndexOf("await app.StartAsync();", StringComparison.Ordinal);
+        var init = program.IndexOf("StartupGate.RunWithRetryAsync(InitializeAsync", start < 0 ? 0 : start, StringComparison.Ordinal);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(start, Is.GreaterThanOrEqualTo(0), "Program.cs must start the server explicitly.");
+            Assert.That(init, Is.GreaterThan(start), "initialisation must run after the server is listening");
+            Assert.That(program, Does.Not.Contain("app.Run();"), "app.Run() would block before or skip the gated boot");
+            Assert.That(program, Does.Contain("StartupGate.Gate(readiness"), "requests must be gated until ready");
+            Assert.That(program, Does.Contain("Environment.ExitCode = 1"), "a failed boot exits 1, not SIGABRT");
+        });
+    }
+
+    /// <summary>
+    /// MAI-§4.14 deploy. The company site is deployed, restarted and proven ready on THIS commit before the
+    /// demo is touched, so the two never cold-start together on the single B1 core; and a bare 200 from the
+    /// container being replaced cannot pass the smoke test.
+    /// </summary>
+    [Test]
+    public void DeployProvesTheCompanySiteReadyOnThisCommitBeforeTouchingTheDemo()
+    {
+        var workflow = File.ReadAllText(Path.Combine(RepoRoot().FullName, ".github", "workflows", "azure-deploy.yml"));
+
+        int At(string marker)
+        {
+            var i = workflow.IndexOf(marker, StringComparison.Ordinal);
+            Assert.That(i, Is.GreaterThanOrEqualTo(0), $"azure-deploy.yml no longer contains: {marker}");
+            return i;
+        }
+
+        var company = At("  deploy-company:");
+        var smoke = At("X-Ideas-Ready");
+        var demo = At("  deploy-demo:");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(workflow, Does.Contain("-p:SourceRevisionId=${{ github.sha }}"), "the build must carry the commit /_health reports");
+            Assert.That(workflow, Does.Contain("needs: [build, migrate, deploy-company]"), "the demo deploys after the company site");
+            Assert.That(workflow, Does.Not.Contain("matrix:"), "a matrix restarts both sites at once");
+            Assert.That(company, Is.LessThan(smoke));
+            Assert.That(smoke, Is.LessThan(demo), "the company smoke test belongs to the company job");
+            Assert.That(workflow, Does.Contain("$version -like \"*$sha*\""), "wait for this commit, not any 200");
+        });
+    }
+
+    /// <summary>
     /// MAI-§4.14 demo reset. The app seeds <c>admin</c> once, on the first boot that finds no users, from
     /// the bootstrap token it started with. So the demo must be STOPPED before its database is replaced,
     /// the new token pinned before that database exists, and the demo started only afterwards: otherwise a
