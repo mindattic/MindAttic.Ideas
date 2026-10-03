@@ -328,14 +328,16 @@ updated: 2026-10-03
   (`./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas`), passwordless throughout. The company site
   and the demo run on it. *(verified by `DeploymentPackagingTests`, which guards the packaging and
   configuration contract the estate depends on; live at https://mindattic.azurewebsites.net.)*
-- **MAI-US-J5 ✅** As a Maintainer, a push to `master` builds, tests, migrates and deploys both sites over
+- **MAI-US-J5 🟡** As a Maintainer, a push to `master` builds, tests, migrates and deploys both sites over
   GitHub OIDC, with deploy gated on green tests and on the migration having applied. *(verified by
-  `DeploymentPackagingTests.DeployWorkflowPointsAtProjectsThatExist`; the workflow's latest run on
-  `master` succeeded 2026-10-03.)*
-- **MAI-US-J6 🟡** As a visitor evaluating Ideas, I can sign in to a public demo whose login is revealed
+  `DeploymentPackagingTests.DeployWorkflowPointsAtProjectsThatExist`. 🟡 because the latest runs on
+  `master` fail the company site's post-deploy smoke test: its container is slow to start on the shared
+  B1 plan and has exited with code 134 during startup.)*
+- **MAI-US-J6 ✅** As a visitor evaluating Ideas, I can sign in to a public demo whose login is revealed
   behind Turnstile and which is wiped and re-provisioned every hour. *(verified by `DemoRevealTests`,
-  `AdminBootstrapTests`, `SeedServiceTests.WithAnIdealist_SeedsOnlyTheStructuralMinimum`. 🟡 because the
-  hourly `demo-reset.yml` run is currently failing.)*
+  `AdminBootstrapTests`, `SeedServiceTests.WithAnIdealist_SeedsOnlyTheStructuralMinimum`,
+  `DeploymentPackagingTests.DemoResetStopsTheDemoAndPinsTheNewPasswordBeforeReplacingItsDatabase`; the
+  `demo-reset.yml` run of 2026-10-03 signed in with the new password and published it.)*
 
 ## Epic K — Content portability
 
@@ -400,7 +402,7 @@ updated: 2026-10-03
 
 ## Priority backlog
 
-1. **MAI-US-J6** — fix the failing hourly `demo-reset.yml` run.
+1. **MAI-US-J5** — get the company site's post-deploy smoke test green (startup time / exit 134).
 2. **MAI-US-N1** — an automated contrast test over every theme × mode.
 3. **MAI-US-M9** — recompose `/ideas` from components.
 4. **MAI-US-H3** — inline `<Theme.X />` override.

@@ -489,9 +489,11 @@ These are the **project-specific** laws:
 Skipped: 0**. The SQL Server temporal proof (`PageHistorySqlServerTests`) is `[Explicit]` and runs
 against LocalDB on demand.
 
-**Live:** the company site and the demo run on Azure from the CI pipeline; the most recent
-`azure-deploy.yml` run on `master` succeeded (2026-10-03). 🟡 The hourly `demo-reset.yml` workflow is
-currently failing, so the demo is not being reset.
+**Live:** the company site and the demo run on Azure from the CI pipeline. The hourly `demo-reset.yml`
+workflow passes (run 37152987331, 2026-10-03: stop, pin, swap, start, real sign-in, publish). 🟡 The
+latest `azure-deploy.yml` runs on `master` fail at the company site's smoke test: on the shared B1 plan
+its container takes minutes to start and has exited with code 134 during startup, so `/_health` times
+out; the demo deploy in the same runs succeeds.
 
 Proven working (each cited in [`USER_STORIES.md`](USER_STORIES.md)):
 - ✅ Abstractions SDK (kind bases, `[Idea]`/`[Uses]`/`[Setting]`, plugin slots, page tree, metadata store).
