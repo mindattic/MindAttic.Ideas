@@ -199,6 +199,12 @@ updated: 2026-10-03
   `PageMarkupValidatorTests`, `CitizenValidatorTests`,
   `ShippedContentValidationTests.EveryShippedPackage_PassesCitizenValidation`,
   `ShippedContentValidationTests.EverySeedPage_ValidatesAgainstTheShippedPackages`.)*
+- **MAI-US-F11 ✅** As a Citizen-Dev, a package that hard-codes its own asset URLs (Cyberspace's
+  circuitboard textures) uses the mount the host serves it under, `/_ideas/{Category}/{key}/{version}`,
+  and every file it names is in its assets; a stale category such as the retired `Widget` fails CI.
+  *(verified by `ShippedContentValidationTests.EveryShippedPackage_SelfReferencingAssetUrls_MatchItsMountAndExist`,
+  `EveryLibrarySource_SelfReferencingAssetUrls_MatchItsMountAndExist`,
+  `SelfReferencingAssetUrlCheck_FlagsAWrongCategory`.)*
 - **MAI-US-F10 ✅** As a user who forgot my password, I follow "Forgot password?" on `/login`, get an
   emailed link to this site's `/account/reset` page (absolute, from `MindAttic:Auth:Reset:PublicBaseUrl`:
   `https://localhost:7207` in Development; the company site and the demo each set their own in

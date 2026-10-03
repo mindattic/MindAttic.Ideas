@@ -159,4 +159,47 @@ public class DeploymentPackagingTests
             Assert.That(program, Does.Contain("/_health"));
         });
     }
+
+    /// <summary>
+    /// MAI-§4.14 demo reset. The app seeds <c>admin</c> once, on the first boot that finds no users, from
+    /// the bootstrap token it started with. So the demo must be STOPPED before its database is replaced,
+    /// the new token pinned before that database exists, and the demo started only afterwards: otherwise a
+    /// boot in between seeds the previous hour's password (and the old container answers the sign-in
+    /// check), which is exactly how every hourly run failed with a 302.
+    /// </summary>
+    [Test]
+    public void DemoResetStopsTheDemoAndPinsTheNewPasswordBeforeReplacingItsDatabase()
+    {
+        var path = Path.Combine(RepoRoot().FullName, ".github", "workflows", "demo-reset.yml");
+        var workflow = File.ReadAllText(path);
+
+        int At(string marker)
+        {
+            var i = workflow.IndexOf(marker, StringComparison.Ordinal);
+            Assert.That(i, Is.GreaterThanOrEqualTo(0), $"demo-reset.yml no longer contains: {marker}");
+            return i;
+        }
+
+        var newPassword = At("--name admin-password");
+        var stop = At("az webapp stop");
+        var pin = At("MindAttic__Vault__Security__bootstraptoken=@Microsoft.KeyVault(SecretUri=$env:ADMIN_PASSWORD_URI)");
+        var dropDb = At("az sql db delete");
+        var copyDb = At("az sql db copy");
+        var start = At("az webapp start");
+        var signIn = At("/_ma-auth/login");
+        var publish = At("status = 'ready'");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(newPassword, Is.LessThan(pin), "the password must exist before it is pinned");
+            Assert.That(stop, Is.LessThan(pin), "pin the token on a stopped site (a settings change restarts a running one)");
+            Assert.That(pin, Is.LessThan(dropDb), "the new token must be in place before the empty database exists");
+            Assert.That(dropDb, Is.LessThan(copyDb));
+            Assert.That(copyDb, Is.LessThan(start), "nothing may boot against the fresh database before the start");
+            Assert.That(start, Is.LessThan(signIn));
+            Assert.That(signIn, Is.LessThan(publish), "publish the login only after signing in with it");
+            Assert.That(workflow.Split("az webapp start").Length - 1, Is.EqualTo(1), "exactly one start, after the database swap");
+            Assert.That(workflow.Split("bootstraptoken=").Length - 1, Is.EqualTo(1), "the token is pinned once, before the swap");
+        });
+    }
 }

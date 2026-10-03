@@ -105,17 +105,27 @@ product contains no reset code ([MAI-LAW-11](BIBLE.md#MAI-LAW-11)).
 1. `credentials` := `{"status":"resetting"}` — the Ideas page says the demo is resetting.
 2. A new password (CSPRNG, 4×5 unambiguous characters) → demo vault `admin-password`. Masked in logs,
    passed only through files.
-3. Delete `MindAtticIdeasDemo`; copy `MindAtticIdeasDemoTemplate` to it (schema + the demo identity's
+3. **Stop** the demo, then pin its bootstrap-token setting to the new secret **version** (an unversioned
+   Key Vault reference can be served from App Service's cache). A settings change does not start a
+   stopped site.
+4. Delete `MindAtticIdeasDemo`; copy `MindAtticIdeasDemoTemplate` to it (schema + the demo identity's
    user, no content). Empty `demo-media`.
-4. Pin the demo's bootstrap-token setting to the new secret **version** (an unversioned Key Vault reference
-   can be served from App Service's cache); the change restarts the demo. It boots from
-   `seed/demo.idealist` (every package + the hello page) and creates `admin` from the new password with
-   no forced change (`MindAttic:Auth:Bootstrap:RequirePasswordChange=false`). Sessions revalidate every
-   15 s and cap at 1 h, so the previous hour's sessions die immediately.
-5. Wait for `/_health` and `/`, then **sign in for real** with the new password.
-6. Only then `credentials` := `{status: ready, url, username, password, validUntilUtc}`.
+5. **Start** the demo. Its one boot against the empty database runs `seed/demo.idealist` (every package +
+   the hello page) and creates `admin` from the new password with no forced change
+   (`MindAttic:Auth:Bootstrap:RequirePasswordChange=false`). Sessions revalidate every 15 s and cap at
+   1 h, so the previous hour's sessions die immediately.
+6. Wait for `/_health` and `/`, then **sign in for real** with the new password (the log prints where the
+   login redirected).
+7. Only then `credentials` := `{status: ready, url, username, password, validUntilUtc}`.
 
-Any failure leaves `credentials` at `resetting`: the page never shows a login that does not work.
+The order is the contract (`DeploymentPackagingTests.DemoResetStopsTheDemoAndPinsTheNewPasswordBeforeReplacingItsDatabase`).
+`admin` is seeded once, by the first boot that finds no users, from the token that boot started with. With
+the demo running, a boot between the database copy and the token change seeded the previous hour's
+password, and App Service kept serving the old container while the new one warmed up; stopped, the only
+boot that can see the empty database already has the new token.
+
+Any failure leaves `credentials` at `resetting`: the page never shows a login that does not work. A run
+that fails between the stop and the start leaves the demo stopped; the next run starts it.
 GitHub's cron can start a few minutes late; the displayed login is always the live one. Expect a few
 minutes of demo downtime at the top of each hour.
 

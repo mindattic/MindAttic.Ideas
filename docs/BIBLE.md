@@ -418,9 +418,10 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   single-run firewall rule) → deploy (both sites, poll `/_health`) → reset the demo. Deploy never
   proceeds after a migrate that ran and failed.
 - **`/_health`** is a liveness probe that never touches the database.
-- **The demo** is reset hourly by `.github/workflows/demo-reset.yml`: replace the demo database with a
-  copy of `MindAtticIdeasDemoTemplate`, empty its media, rotate the admin password, restart, sign in for
-  real, then publish the login. The demo identity reaches only its own vault and containers; the company
+- **The demo** is reset hourly by `.github/workflows/demo-reset.yml`: rotate the admin password, stop the
+  demo and pin the new password, replace the demo database with a copy of `MindAtticIdeasDemoTemplate`,
+  empty its media, start it (its one boot on the empty database seeds `admin` from the new password),
+  sign in for real, then publish the login. The demo identity reaches only its own vault and containers; the company
   identity can read one demo secret (`credentials`). Demo admins cannot run code: unsigned packages are
   refused and markup is sanitized.
 - Product hooks used by the demo, all inert unless configured:

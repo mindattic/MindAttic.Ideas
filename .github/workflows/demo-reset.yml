@@ -6,13 +6,24 @@
 #
 #   1. credentials := {status: resetting}         the company site's Ideas page shows "back soon"
 #   2. new password -> demo vault `admin-password`
-#   3. demo DB := fresh copy of the template      schema + the demo identity's user, no content
-#   4. empty the demo's media container
-#   5. pin the bootstrap token to the new secret  restarts the demo; a versioned URI cannot be stale
-#   6. wait for /_health and /, then sign in for real with the new password
-#   7. credentials := {status: ready, ...}        only now can anyone see the new login
+#   3. STOP the demo                              no container may run during steps 4-6
+#   4. pin the bootstrap token to the new secret  a versioned URI cannot be stale
+#   5. demo DB := fresh copy of the template      schema + the demo identity's user, no content
+#   6. empty the demo's media container
+#   7. START the demo                             its first boot seeds `admin` from the new password
+#   8. wait for /_health and /, then sign in for real with the new password
+#   9. credentials := {status: ready, ...}        only now can anyone see the new login
+#
+# Why stop first: the app seeds `admin` once, on the first boot that finds no users, from whatever
+# bootstrap token it was started with. While the demo kept running, (a) any boot between the database
+# copy and the token change (a crash, a platform recycle, a deploy) seeded `admin` with the PREVIOUS
+# hour's password, and the restart onto the new token was then a no-op; and (b) App Service kept the
+# old container serving until the new one warmed up, so the sign-in check talked to the old process.
+# Stopped, there is no container until step 7, and the only boot that can see the empty database
+# already has the new token.
 #
 # If any step fails, credentials stays "resetting": the page never shows a login that doesn't work.
+# A run that fails between steps 3 and 7 leaves the demo stopped; the next run starts it again.
 
 name: Reset the public demo
 
@@ -88,6 +99,22 @@ jobs:
           # Kept for the sign-in check and the final publish; the runner is discarded after the job.
           Move-Item $f (Join-Path $env:RUNNER_TEMP 'pw.txt')
 
+      # Stop BEFORE the database is replaced, and pin the new token while stopped (a settings change
+      # does not start a stopped site). Point it at the EXACT new secret version: an unversioned
+      # reference can be served from App Service's Key Vault cache (an earlier hour's password). Bicep
+      # restores the unversioned reference on its next deployment, which is harmless: the next reset
+      # pins it again.
+      - name: Stop the demo and pin the new password
+        shell: pwsh
+        run: |
+          az webapp stop -g $env:AZURE_RESOURCE_GROUP -n $env:DEMO_APP --output none
+          if ($LASTEXITCODE) { throw 'Could not stop the demo.' }
+          az webapp config appsettings set -g $env:AZURE_RESOURCE_GROUP -n $env:DEMO_APP `
+            --settings "MindAttic__Vault__Security__bootstraptoken=@Microsoft.KeyVault(SecretUri=$env:ADMIN_PASSWORD_URI)" --output none
+          if ($LASTEXITCODE) { throw 'Could not pin the new password.' }
+          $state = az webapp show -g $env:AZURE_RESOURCE_GROUP -n $env:DEMO_APP --query state -o tsv
+          if ($state -ne 'Stopped') { throw "The demo is '$state', not Stopped; refusing to replace its database under it." }
+
       - name: Replace the demo database with a fresh copy of the template
         shell: pwsh
         run: |
@@ -115,18 +142,12 @@ jobs:
           az storage blob delete-batch --account-name $env:STORAGE_ACCOUNT --source $env:DEMO_MEDIA_CONTAINER --auth-mode login --output none
           if ($LASTEXITCODE) { throw 'Could not empty the demo media container.' }
 
-      # Point the bootstrap token at the EXACT new secret version. An unversioned reference can be
-      # served from App Service's Key Vault cache (an earlier hour's password); a new versioned URI
-      # cannot. Changing the setting is also what restarts the demo. Bicep restores the unversioned
-      # reference on its next deployment, which is harmless: the next reset pins it again.
-      - name: Restart the demo onto the new database and password
+      # The first and only boot against the fresh database, already on the new password.
+      - name: Start the demo onto the new database and password
         shell: pwsh
         run: |
-          az webapp config appsettings set -g $env:AZURE_RESOURCE_GROUP -n $env:DEMO_APP `
-            --settings "MindAttic__Vault__Security__bootstraptoken=@Microsoft.KeyVault(SecretUri=$env:ADMIN_PASSWORD_URI)" --output none
-          if ($LASTEXITCODE) { throw 'Could not restart the demo.' }
-          # A settings change restarts a running site but leaves a stopped one stopped.
           az webapp start -g $env:AZURE_RESOURCE_GROUP -n $env:DEMO_APP --output none
+          if ($LASTEXITCODE) { throw 'Could not start the demo.' }
 
       - name: Wait for the demo to come up
         shell: pwsh
@@ -151,14 +172,17 @@ jobs:
           token=$(curl -sf -c "$jar" -b "$jar" "$DEMO_URL/login" \
             | grep -o 'name="__RequestVerificationToken"[^>]*value="[^"]*"' | sed 's/.*value="//;s/"$//' | head -1)
           [ -n "$token" ] || { echo "No antiforgery token on /login"; exit 1; }
-          curl -s -o /dev/null -c "$jar" -b "$jar" -X POST "$DEMO_URL/_ma-auth/login" \
+          # The login endpoint answers 302 either way: to the return URL on success, to
+          # /login?error=1 on bad credentials. Print where it sent us so a failure says which.
+          login_to=$(curl -s -o /dev/null -w '%{redirect_url}' -c "$jar" -b "$jar" -X POST "$DEMO_URL/_ma-auth/login" \
             --data-urlencode "__RequestVerificationToken=$token" \
             --data-urlencode "userName=admin" \
             --data-urlencode "password@$RUNNER_TEMP/pw.txt" \
-            --data-urlencode "returnUrl=/admin"
-          code=$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" "$DEMO_URL/admin")
+            --data-urlencode "returnUrl=/admin")
+          echo "Sign-in redirected to: $login_to"
+          code=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -b "$jar" "$DEMO_URL/admin")
           rm -f "$jar"
-          [ "$code" = "200" ] || { echo "Signed-in /admin returned $code"; exit 1; }
+          [ "${code%% *}" = "200" ] || { echo "Signed-in /admin returned $code"; exit 1; }
           echo "Signed in as admin with the new password."
 
       - name: Azure login again (the boot wait can outlast the previous assertion)
