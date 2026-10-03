@@ -129,5 +129,5 @@ These are the **project-specific** laws:
   consumed by pinned-tag URL.
 
 ## Status index (from USER_STORIES.md)
-- done: 76  |  partial: 2  |  planned: 3
+- done: 77  |  partial: 1  |  planned: 3
 

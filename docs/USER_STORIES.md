@@ -330,11 +330,15 @@ updated: 2026-10-03
   (`./infra/provision.ps1 -ResourceGroup rg-mindattic-ideas`), passwordless throughout. The company site
   and the demo run on it. *(verified by `DeploymentPackagingTests`, which guards the packaging and
   configuration contract the estate depends on; live at https://mindattic.azurewebsites.net.)*
-- **MAI-US-J5 🟡** As a Maintainer, a push to `master` builds, tests, migrates and deploys both sites over
-  GitHub OIDC, with deploy gated on green tests and on the migration having applied. *(verified by
-  `DeploymentPackagingTests.DeployWorkflowPointsAtProjectsThatExist`. 🟡 because the latest runs on
-  `master` fail the company site's post-deploy smoke test: its container is slow to start on the shared
-  B1 plan and has exited with code 134 during startup.)*
+- **MAI-US-J5 ✅** As a Maintainer, a push to `master` builds, tests, migrates and deploys both sites over
+  GitHub OIDC, with deploy gated on green tests and on the migration having applied; the company site is
+  proven ready on the pushed commit before the demo is touched, and a transient failure during boot is
+  retried instead of crashing the container. *(verified by
+  `DeploymentPackagingTests.DeployWorkflowPointsAtProjectsThatExist`,
+  `DeployProvesTheCompanySiteReadyOnThisCommitBeforeTouchingTheDemo`,
+  `TheServerListensBeforeTheBootSequenceAndTheBootSequenceIsRetried`, `StartupGateTests`; live:
+  `azure-deploy.yml` run 37156225976 on 2026-10-03, every job green, the company site ready on its commit
+  four minutes after the restart.)*
 - **MAI-US-J6 ✅** As a visitor evaluating Ideas, I can sign in to a public demo whose login is revealed
   behind Turnstile and which is wiped and re-provisioned every hour. *(verified by `DemoRevealTests`,
   `AdminBootstrapTests`, `SeedServiceTests.WithAnIdealist_SeedsOnlyTheStructuralMinimum`,
@@ -404,8 +408,7 @@ updated: 2026-10-03
 
 ## Priority backlog
 
-1. **MAI-US-J5** — get the company site's post-deploy smoke test green (startup time / exit 134).
-2. **MAI-US-N1** — an automated contrast test over every theme × mode.
-3. **MAI-US-M9** — recompose `/ideas` from components.
-4. **MAI-US-H3** — inline `<Theme.X />` override.
-5. **MAI-US-I6** — paste-to-asset media input.
+1. **MAI-US-N1** — an automated contrast test over every theme × mode.
+2. **MAI-US-M9** — recompose `/ideas` from components.
+3. **MAI-US-H3** — inline `<Theme.X />` override.
+4. **MAI-US-I6** — paste-to-asset media input.

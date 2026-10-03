@@ -491,15 +491,15 @@ These are the **project-specific** laws:
 
 ## 6. Verified state {#MAI-§6}
 
-**Build/test evidence (2026-10-03):** `dotnet test src/MindAttic.Ideas.Tests` → **Passed: 583, Failed: 0,
+**Build/test evidence (2026-10-03):** `dotnet test src/MindAttic.Ideas.Tests` → **Passed: 586, Failed: 0,
 Skipped: 0**. The SQL Server temporal proof (`PageHistorySqlServerTests`) is `[Explicit]` and runs
 against LocalDB on demand.
 
 **Live:** the company site and the demo run on Azure from the CI pipeline. The hourly `demo-reset.yml`
-workflow passes (run 37152987331, 2026-10-03: stop, pin, swap, start, real sign-in, publish). 🟡 The
-latest `azure-deploy.yml` runs on `master` fail at the company site's smoke test: on the shared B1 plan
-its container takes minutes to start and has exited with code 134 during startup, so `/_health` times
-out; the demo deploy in the same runs succeeds.
+workflow passes (run 37152987331, 2026-10-03: stop, pin, swap, start, real sign-in, publish). The
+`azure-deploy.yml` run 37156225976 (2026-10-03) is green end to end: the company site listened 25 s after
+`dotnet` started, finished its boot sequence 33 s later, and reported the pushed commit ready; then the
+demo deployed and its reset signed in with the new password.
 
 Proven working (each cited in [`USER_STORIES.md`](USER_STORIES.md)):
 - ✅ Abstractions SDK (kind bases, `[Idea]`/`[Uses]`/`[Setting]`, plugin slots, page tree, metadata store).

@@ -437,7 +437,7 @@ The Blazor host doubles as a CLI for operations that need the live database and 
 |---|---|
 | `--install <file.idea>` | Installs a package with override allowed (the same path the startup library scan uses). |
 | `--seed core` | Re-runs the baseline seed and its migrations. |
-| `--seed from-html`, `--seed from-md`, `--seed repos` | Generate pages from HTML, from READMEs, or from the GitHub org (`--dry-run` supported). |
+| `--seed from-html`, `--seed from-md`, `--seed repos` | Generate pages from HTML, from READMEs, or from the GitHub org (`--dry-run` supported). `from-md` reads each project's README relative to the MindAttic workspace (the parent of this checkout, or `MINDATTIC_WORKSPACE`). |
 | `--extract-media` | Lifts inline base64 images out of page bodies and stylesheets into managed media (`--slug`, `--folder`, `--dry-run`). |
 | `--upload-media <files>` | Streams local files straight into the media store, for anything too large for the browser circuit (`--folder`, `--media-type`, `--dry-run`). |
 | `--export-idealist <file>` | Writes one site's authored content (pages, Host and Site settings, component metadata, media) plus an auto-discovered packages list (`--site`, `--slug`, `--no-media`, `--dry-run`). |
