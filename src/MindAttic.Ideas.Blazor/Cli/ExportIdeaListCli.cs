@@ -1,8 +1,8 @@
-using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using MindAttic.Ideas.Core.Data;
+using MindAttic.Export.Artifacts;
 using MindAttic.Ideas.Core.Portability;
 using MindAttic.Media;
 
@@ -72,14 +72,15 @@ public static class ExportIdeaListCli
             return 0;
         }
 
-        var dir = Path.GetDirectoryName(outPath);
-        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-
-        await using (var file = File.Create(outPath))
-        {
-            using var zip = new ZipArchive(file, ZipArchiveMode.Create);
-            result = await exporter.ExportAsync(zip, site?.Id, options, MakeLog("export-idealist"));
-        }
+        // The .idealist bytes are exactly what the exporter writes into the zip (HOUSE-LAW-5);
+        // ArtifactWriter only owns placing the file: folder created, atomic write, and — as before —
+        // an existing file at the exact path the caller named is overwritten.
+        IdeaListExportResult? written = null;
+        await ArtifactWriter.WriteZipAsync(
+            Path.GetDirectoryName(outPath)!, Path.GetFileName(outPath),
+            async (zip, _) => written = await exporter.ExportAsync(zip, site?.Id, options, MakeLog("export-idealist")),
+            new ArtifactOptions { Existing = ExistingArtifact.Overwrite, SanitizeName = false });
+        result = written!;
 
         Console.WriteLine($"[export-idealist] {result.List.Pages.Count} page(s), {result.List.ComponentMetadata.Count} component metadata row(s), "
                          + $"{result.List.Settings.Count} setting(s), {result.List.Packages.Count} package(s), {result.MediaUploaded} media item(s).");
