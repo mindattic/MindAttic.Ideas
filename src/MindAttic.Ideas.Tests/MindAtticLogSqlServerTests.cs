@@ -74,7 +74,7 @@ public class MindAtticLogSqlServerTests
         await using var verify = new SqlConnection(connectionString);
         await verify.OpenAsync();
         await using var select = verify.CreateCommand();
-        select.CommandText = $"SELECT Application, Level, Message FROM dbo.{LogSchema.TableName};";
+        select.CommandText = $"SELECT Application, Level, Message, Category FROM dbo.{LogSchema.TableName};";
         await using var reader = await select.ExecuteReaderAsync();
 
         Assert.That(await reader.ReadAsync(), Is.True, "Expected the logged warning to have reached the table.");
@@ -82,6 +82,8 @@ public class MindAtticLogSqlServerTests
         {
             Assert.That(reader.GetString(0), Is.EqualTo("Ideas"));
             Assert.That(reader.GetString(2), Does.Contain("Ideas SQL Server tier integration test"));
+            Assert.That(reader.IsDBNull(3), Is.False, "Category must be populated from the ILogger<T> category (regression: it was always NULL on the SQL Server tier).");
+            Assert.That(reader.GetString(3), Does.Contain(nameof(MindAtticLogSqlServerTests)));
         });
     }
 }
