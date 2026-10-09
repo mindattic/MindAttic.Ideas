@@ -10,6 +10,8 @@ using MindAttic.Ideas.Core.Rendering;
 using MindAttic.Ideas.Core.Secrets;
 using MindAttic.Ideas.Core.Services;
 using MindAttic.Ideas.Core.Sites;
+using MindAttic.Log;
+using MindAttic.Log.Extensions;
 using MindAttic.Media;
 
 namespace MindAttic.Ideas.Core.DependencyInjection;
@@ -23,6 +25,19 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddIdeasCore(
         this IServiceCollection services, string connectionString, params Assembly[] citizenAssemblies)
     {
+        // First real SQL Server consumer of the shared MindAttic.Log pipeline (see that repo's
+        // docs/MIGRATION.md) — CmsDbContext is a genuine general-purpose app database (Sites,
+        // Pages, Media, Settings, …), not an auth-only one like Tutor's TutorAuthDbContext, so
+        // this is the SQL Server tier rather than the rolled-SQLite one. The MindAttic_Log table
+        // itself is created once at startup (see Program.cs, next to the dev-only EF migration) —
+        // AddMindAtticLog never auto-creates it (LOG-LAW-1: no sink silently drifts the schema).
+        services.AddMindAtticLog(o =>
+        {
+            o.Application = "Ideas";
+            o.Destination = LogDestination.SqlServer;
+            o.SqlServerConnectionString = connectionString;
+        });
+
         services.AddDbContextFactory<CmsDbContext>(o => o.UseSqlServer(connectionString));
         // The MindAttic.Authentication seam resolves AddScoped<IAuthDataContext>(sp => GetRequiredService<CmsDbContext>()),
         // and AuthBootstrapper/IUserStore are scoped — so CmsDbContext needs a SCOPED registration too (the

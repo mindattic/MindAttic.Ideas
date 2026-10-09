@@ -120,7 +120,16 @@ async Task InitializeAsync(CancellationToken ct)
     using var scope = app.Services.CreateScope();
     var sp = scope.ServiceProvider;
     if (app.Environment.IsDevelopment())
+    {
         await sp.GetRequiredService<CmsDbContext>().Database.MigrateAsync(ct);
+        // MindAttic.Log never auto-creates its table (LOG-LAW-1) — created once here, dev-only,
+        // same convention as the EF migration immediately above ("prod DDL runs in CI").
+        await using var logSchemaConnection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+        await logSchemaConnection.OpenAsync(ct);
+        await using var logSchemaCommand = logSchemaConnection.CreateCommand();
+        logSchemaCommand.CommandText = MindAttic.Log.Schema.LogSchema.CreateTableSqlServer;
+        await logSchemaCommand.ExecuteNonQueryAsync(ct);
+    }
     await sp.GetRequiredService<DiscoveryService>().RunAsync(ct);
     await sp.GetRequiredService<SeedService>().SeedAsync(ct);
     await MindAttic.Ideas.Blazor.AdminBootstrap.ApplyAsync(builder.Configuration,
