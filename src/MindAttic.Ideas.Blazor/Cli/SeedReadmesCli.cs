@@ -68,7 +68,7 @@ public static class SeedReadmesCli
         new("helpers",          "MindAttic Helpers",      "MindAttic.Helpers/Readme.md"),
         new("launcher",         "MindAttic Launcher",     "MindAttic.Launcher/Readme.md"),
         new("mobile",           "MindAttic Mobile",       "MindAttic.Mobile/Readme.md"),
-        new("uiux",             "MindAttic UiUx",         "MindAttic.Web/MindAttic.Web.Shared/README.md"),
+        new("uiux",             "MindAttic UiUx",         "MindAttic.Components/README.md"),
         new("mindatticcares-com", "mindatticcares.com",   "mindatticcares.com/Readme.md"),
         new("ryandebraal-com",  "ryandebraal.com",        "ryandebraal.com/Readme.md"),
         new("skindeep",         "SkinDeep",               "SkinDeep/Readme.md"),

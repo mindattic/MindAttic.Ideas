@@ -29,7 +29,7 @@
         { "slug": "cursory", "title": "Cursory", "tagline": "Cooperative cursor puzzles in a shared room.", "openUrl": "https://cursory.azurewebsites.net/", "gitHubUrl": "https://github.com/mindattic/Cursory" },
         { "slug": "mindattichelpers", "title": "MindAttic.Helpers", "tagline": "Dependency-free .NET helpers — including a deterministic abstract-art generator that turns any string into a stable SVG fingerprint.", "gitHubUrl": "https://github.com/mindattic/MindAttic.Helpers" },
         { "slug": "personagallery", "title": "Persona Gallery", "tagline": "Browse MindAttic.Legion's 1024 psychometrically-scored personas — each an individual with a generated abstract-art portrait.", "openUrl": "https://personagallery.azurewebsites.net/", "gitHubUrl": "https://github.com/mindattic/MindAttic.Legion.PersonaGallery" },
-        { "slug": "mindatticuiux", "title": "MindAttic.UiUx (archived)", "tagline": "Archived. Its shared front-end library lives on as MindAttic.Web.Shared, in the MindAttic.Web repo, with components moving to MindAttic.Components.", "gitHubUrl": "https://github.com/mindattic/MindAttic.UiUx" }
+        { "slug": "mindatticuiux", "title": "MindAttic.UiUx (archived)", "tagline": "Archived. Its shared front-end library lives on in MindAttic.Components.", "gitHubUrl": "https://github.com/mindattic/MindAttic.UiUx" }
       ]
     },
     {

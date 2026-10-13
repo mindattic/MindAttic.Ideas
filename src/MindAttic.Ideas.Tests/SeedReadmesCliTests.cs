@@ -5,7 +5,7 @@ namespace MindAttic.Ideas.Tests;
 /// <summary>
 /// <c>--seed from-md</c> reads each project's README from the MindAttic workspace. The paths are relative
 /// to that workspace (the parent of this checkout, or <c>MINDATTIC_WORKSPACE</c>), never a hard-coded
-/// drive, and UiUx lives inside MindAttic.Web as MindAttic.Web.Shared.
+/// drive, and UiUx (archived) lives on as MindAttic.Components.
 /// </summary>
 [TestFixture]
 public class SeedReadmesCliTests
@@ -36,10 +36,10 @@ public class SeedReadmesCliTests
     }
 
     [Test]
-    public void UiUxReadsTheWebSharedReadme()
+    public void UiUxReadsTheComponentsReadme()
     {
         var uiux = SeedReadmesCli.Projects.Single(p => p.Slug == "uiux");
 
-        Assert.That(uiux.RelativePath, Is.EqualTo("MindAttic.Web/MindAttic.Web.Shared/README.md"));
+        Assert.That(uiux.RelativePath, Is.EqualTo("MindAttic.Components/README.md"));
     }
 }
