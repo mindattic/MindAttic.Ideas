@@ -412,3 +412,13 @@ updated: 2026-10-03
 2. **MAI-US-M9** — recompose `/ideas` from components.
 3. **MAI-US-H3** — inline `<Theme.X />` override.
 4. **MAI-US-I6** — paste-to-asset media input.
+
+## Tickets
+> Permanent log of every change and fix — this repo's ticket system. Rows are append-only: never
+> delete or reword one; only move its Status (open → closed / wont-do) and fill in Ref. Status is
+> a word, not a glyph, so tickets don't count toward the story index. Keep this section last.
+
+| ID | Date | Type | Status | Summary | Ref |
+|---|---|---|---|---|---|
+| MAI-T1 | 2026-10-12 | docs | closed | Start the permanent ticket log in USER_STORIES.md | — |
+| MAI-T2 | 2026-10-13 | chore | closed | Move tools\deploy.ps1 to root deploy.ps1: rebuild only on change, -Force/-Launch, generate C:\Apps\Ideas\deploy.bat (replaces launch.bat); run.bat kept | deploy.ps1 |
