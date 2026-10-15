@@ -122,13 +122,14 @@ async Task InitializeAsync(CancellationToken ct)
     if (app.Environment.IsDevelopment())
     {
         await sp.GetRequiredService<CmsDbContext>().Database.MigrateAsync(ct);
-        // MindAttic.Log never auto-creates its table (LOG-LAW-1) — created once here, dev-only,
-        // same convention as the EF migration immediately above ("prod DDL runs in CI").
-        await using var logSchemaConnection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
-        await logSchemaConnection.OpenAsync(ct);
-        await using var logSchemaCommand = logSchemaConnection.CreateCommand();
-        logSchemaCommand.CommandText = MindAttic.Log.Schema.LogSchema.CreateTableSqlServer;
-        await logSchemaCommand.ExecuteNonQueryAsync(ct);
+        // Phase 2 (MindAttic.Log 3.0.0): one-time copy of Phase 1's dbo.MindAttic_Log rows (if any
+        // — most environments never ran the old CreateTableSqlServer dev step at all) into the new
+        // standalone database, then drop that table. Idempotent and a clean no-op on every later
+        // startup. Dev-only for now, same convention as the EF migration immediately above ("prod
+        // DDL runs in CI") — a production environment with real historical rows needs this run
+        // through that same CI/ops path, not silently on every app boot.
+        await MindAttic.Log.Migration.MindAtticLogMigrator.MigrateFromSqlServerAsync(
+            connectionString, MindAttic.Vault.Paths.VaultPaths.LoggingDbPath("Ideas"), dropSource: true, ct);
     }
     await sp.GetRequiredService<DiscoveryService>().RunAsync(ct);
     await sp.GetRequiredService<SeedService>().SeedAsync(ct);

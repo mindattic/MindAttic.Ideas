@@ -10,9 +10,9 @@ using MindAttic.Ideas.Core.Rendering;
 using MindAttic.Ideas.Core.Secrets;
 using MindAttic.Ideas.Core.Services;
 using MindAttic.Ideas.Core.Sites;
-using MindAttic.Log;
 using MindAttic.Log.Extensions;
 using MindAttic.Media;
+using MindAttic.Vault.Paths;
 
 namespace MindAttic.Ideas.Core.DependencyInjection;
 
@@ -25,17 +25,15 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddIdeasCore(
         this IServiceCollection services, string connectionString, params Assembly[] citizenAssemblies)
     {
-        // First real SQL Server consumer of the shared MindAttic.Log pipeline (see that repo's
-        // docs/MIGRATION.md) — CmsDbContext is a genuine general-purpose app database (Sites,
-        // Pages, Media, Settings, …), not an auth-only one like Tutor's TutorAuthDbContext, so
-        // this is the SQL Server tier rather than the rolled-SQLite one. The MindAttic_Log table
-        // itself is created once at startup (see Program.cs, next to the dev-only EF migration) —
-        // AddMindAtticLog never auto-creates it (LOG-LAW-1: no sink silently drifts the schema).
+        // Phase 2 (MindAttic.Log 3.0.0, see its docs/BIBLE.md §1.1): logs now live in their own
+        // standalone MindAttic.Log.db under Vault's shared roaming root, not CmsDbContext's SQL
+        // Server database — Phase 1 wrote dbo.MindAttic_Log into the same database CmsDbContext
+        // uses; that's superseded. The one-time copy of Phase 1's historical rows (and dropping
+        // that table) happens at startup — see Program.cs.
         services.AddMindAtticLog(o =>
         {
             o.Application = "Ideas";
-            o.Destination = LogDestination.SqlServer;
-            o.SqlServerConnectionString = connectionString;
+            o.DbPath = VaultPaths.LoggingDbPath("Ideas");
         });
 
         services.AddDbContextFactory<CmsDbContext>(o => o.UseSqlServer(connectionString));
