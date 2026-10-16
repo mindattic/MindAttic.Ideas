@@ -21,7 +21,7 @@ public static class ShadowDomAttach
     /// and adopts <paramref name="cssUrls"/> into it (see wwwroot/js/shadow-dom.js). Never throws -- any
     /// JS/interop failure is swallowed and false is returned, leaving the component exactly as it was:
     /// un-isolated, but still fully visible and correctly styled via whatever light-DOM stylesheet
-    /// reference it already renders unconditionally (MAI-LAW-7 -- a page must never be invalid).
+    /// reference it already renders unconditionally (M.IDEA-LAW-7 -- a page must never be invalid).
     /// </summary>
     public static async Task<bool> AttachAsync(IJSRuntime js, ElementReference host, IReadOnlyList<string> cssUrls)
     {

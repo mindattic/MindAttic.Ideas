@@ -4,7 +4,7 @@ using MindAttic.Ideas.Blazor;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// MAI-§4.14 startup. On the shared B1 plan an Entra SQL login during a cold start was reset mid-handshake;
+/// M.IDEA-§4.14 startup. On the shared B1 plan an Entra SQL login during a cold start was reset mid-handshake;
 /// thrown from top-level statements it aborted the runtime (SIGABRT, exit 134) and App Service restarted the
 /// container into the same contention. These pin the replacement: the server listens first, transient
 /// failures are retried, permanent ones surface at once, and only /_health is served until ready.

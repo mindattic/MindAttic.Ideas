@@ -5,7 +5,7 @@ using MindAttic.Ideas.Core.Services;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// The LIVE temporal proof for MAI-US-B5: <see cref="PageHistoryService.GetHistoryAsync"/> against a
+/// The LIVE temporal proof for M.IDEA-US-B5: <see cref="PageHistoryService.GetHistoryAsync"/> against a
 /// real SQL Server temporal table. [Explicit] because it needs the dev LocalDB with the
 /// MindAtticIdeas database (run: dotnet test --filter FullyQualifiedName~PageHistorySqlServerTests).
 /// The frontpage row has a rich edit history, so the assertion demands MULTIPLE temporal versions —

@@ -4,7 +4,7 @@ using MindAttic.Ideas.Core.Rendering;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// Tests for the catalog-driven assignment UI helpers introduced in MAI-US-F3:
+/// Tests for the catalog-driven assignment UI helpers introduced in M.IDEA-US-F3:
 /// the token format the component/plugin palette inserts, and catalog kind-filtering logic.
 /// </summary>
 [TestFixture]

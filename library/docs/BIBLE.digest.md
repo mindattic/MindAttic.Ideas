@@ -45,7 +45,7 @@ packable RCL whose **asset bundle is the single source of truth** for every cons
 
 This project **inherits the org-wide House Rules** at
 [`MindAttic.HouseRules.md`](../../../MindAttic.HouseRules.md) and the CMS laws in `../docs/BIBLE.md`
-(MAI-LAW-1…11) by reference — they are not restated here. The laws below are **library-specific**.
+(M.IDEA-LAW-1…11) by reference — they are not restated here. The laws below are **library-specific**.
 
 ### {#MAIL-LAW-1} The asset bundle is the single source of truth.
 A citizen owns its `assets/` (css/js/html/images) once, here, never staged from another repo. No second

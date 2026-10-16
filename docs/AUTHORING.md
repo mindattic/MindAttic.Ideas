@@ -121,7 +121,7 @@ is arbitrary-depth; the page drops only the **top** Plugin or Component's tag.
 ### Shadow DOM isolation (opt-in)
 
 A Component can render its internal markup inside a real browser Shadow DOM shadow root, so Page/Theme
-CSS cannot reach in via ordinary selectors regardless of the cascade-layer order (MAI-§4.4). This is
+CSS cannot reach in via ordinary selectors regardless of the cascade-layer order (M.IDEA-§4.4). This is
 **opt-in per component** — every existing citizen is unaffected unless it deliberately turns it on.
 
 **The recipe** (see `library/Components/Textbox/V1.razor` for the reference port):
@@ -168,7 +168,7 @@ serves CSS:
   children move into the shadow root, the `<style>` moves with them, giving free per-instance scoping
   with no other change.
 - **`StylesheetUrls`/hardcoded `<link>` authors** (e.g. `Textbox`): keep the light-DOM `<link>`
-  unconditional (so a failed/skipped attach still renders fully styled — MAI-LAW-7), and ALSO pass the
+  unconditional (so a failed/skipped attach still renders fully styled — M.IDEA-LAW-7), and ALSO pass the
   same URL(s) to `ShadowDomAttach.AttachAsync`'s `cssUrls` parameter — the JS module adopts them into the
   shadow root via `adoptedStyleSheets` (falling back to an internal `<link>` if unsupported), fetching
   and parsing each URL once and sharing the result across every shadow root that adopts it.
@@ -207,7 +207,7 @@ In the CMS admin → **/admin/upload**, drop the signed `.idea`. The host verifi
 referenceable from any page by its tag. An unsigned or tampered package is refused.
 Install `V2` later and pinned pages keep `V1` until nothing references it.
 
-### Instance settings (MAI-§4.5)
+### Instance settings (M.IDEA-§4.5)
 
 Every public, writable, simple-typed `[Parameter]` (bool / string / number / enum, nullable allowed) is an
 **instance setting**: Admin → Page Management → expand a page → click the instance to edit it, and use

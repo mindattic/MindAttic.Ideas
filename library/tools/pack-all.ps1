@@ -15,7 +15,7 @@
   Repack every citizen, even when its .idea is already newer than its assembly.
 
 .PARAMETER Sign
-  After packing, content-sign every dist/*.idea (MAI-§4.8) with the signing pfx + password from the
+  After packing, content-sign every dist/*.idea (M.IDEA-§4.8) with the signing pfx + password from the
   MindAttic.Vault PackageSigning bucket (%APPDATA%\MindAttic\PackageSigning\providers.json). The host
   rejects an unsigned package on EVERY install path (and fails closed when no trust cert is configured),
   so pair -Install with -Sign.

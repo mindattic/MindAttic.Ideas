@@ -8,7 +8,7 @@ namespace MindAttic.Ideas.Core.Migrations
     /// <summary>
     /// Removes the Showroom-mode schema and the per-site catalog it needed. A showroom
     /// is a DEPLOYMENT — a separate vanilla install of Ideas — not a tenancy feature, so nothing asks a
-    /// citizen which site owns it any more (MAI-LAW-11).
+    /// citizen which site owns it any more (M.IDEA-LAW-11).
     /// <para>
     /// The two unique indexes return to (Kind, Key, Version, Origin) / (Category, Key, Version), which also retires the filtered pair
     /// SharedRowUniqueIndexes added: those existed only because SiteId had made a nullable column part

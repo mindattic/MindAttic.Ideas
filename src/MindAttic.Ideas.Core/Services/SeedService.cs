@@ -15,7 +15,7 @@ public sealed class SeedService(
     IDbContextFactory<CmsDbContext> dbFactory,
     Microsoft.Extensions.Configuration.IConfiguration? configuration = null)
 {
-    // A custom instance (MAI-§4.9) owns its content through its idealist, so only the structural minimum
+    // A custom instance (M.IDEA-§4.9) owns its content through its idealist, so only the structural minimum
     // is seeded here — never MindAttic's own pages, nav or chrome on somebody else's install.
     private bool IdealistOwnsContent =>
         !string.IsNullOrWhiteSpace(configuration?["Ideas:Idealist"] ?? Environment.GetEnvironmentVariable("IDEAS_IDEALIST"));

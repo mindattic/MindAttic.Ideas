@@ -72,7 +72,7 @@ public class PluginSlotTests
     [Test]
     public void BeforeBodyIsOrdinalZero_SoAppendingNeverRenumbers()
     {
-        // The enum is append-only (MAI-LAW-2); pinning the ordinals guards a future addition from
+        // The enum is append-only (M.IDEA-LAW-2); pinning the ordinals guards a future addition from
         // silently changing what an already-packed .idea means.
         Assert.Multiple(() =>
         {

@@ -8,7 +8,7 @@ namespace MindAttic.Ideas.Tests;
 
 /// <summary>
 /// One deployment, many domains. <c>Site.HostBindings</c> has been in the schema since migration #1
-/// and drives site resolution (MAI-§4.10), so these tests pin the two things that decide whether turning
+/// and drives site resolution (M.IDEA-§4.10), so these tests pin the two things that decide whether turning
 /// it on is safe: an unbound host still lands on the default site (every existing single-site install
 /// must behave exactly as before), and a bound host lands on its own site and nowhere else.
 /// </summary>

@@ -12,7 +12,7 @@
    Also the v1 Shadow DOM proof-of-concept (docs/AUTHORING.md "Shadow DOM isolation"): its root has
    structurally stable, unconditional children -- no top-level @if/element-type-swap -- which is exactly
    the authoring contract shadow isolation requires. The <link> stays in light DOM unconditionally (so a
-   failed/skipped attach still renders fully styled, MAI-LAW-7) and its URL is ALSO handed to the shadow
+   failed/skipped attach still renders fully styled, M.IDEA-LAW-7) and its URL is ALSO handed to the shadow
    root for adoption, so .ma-field-input/.ma-field-label still resolve once the root is isolated. *@
 <link rel="stylesheet" href="/_ideas/Component/textbox/1/textbox.css" />
 <div class="ma-field" style="@_rootStyle" @ref="_root">
@@ -89,7 +89,7 @@
             : _id;
 
     // Only attempts the shadow attach once a real circuit is connected -- static prerender has no JS
-    // runtime, so the component simply renders its normal, fully-styled light-DOM markup (MAI-LAW-7).
+    // runtime, so the component simply renders its normal, fully-styled light-DOM markup (M.IDEA-LAW-7).
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && UseShadowDom && RendererInfo.IsInteractive)

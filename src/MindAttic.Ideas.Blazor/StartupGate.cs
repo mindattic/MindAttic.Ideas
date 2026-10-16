@@ -8,7 +8,7 @@ namespace MindAttic.Ideas.Blazor;
 /// <summary>
 /// Whether the boot-time initialisation (discovery, seed, admin bootstrap, provisioning) has finished.
 /// The server listens before that work runs, so <c>/_health</c> answers within seconds of the process
-/// starting; every other request gets <c>503 starting</c> until <see cref="MarkReady"/> (MAI-§4.14).
+/// starting; every other request gets <c>503 starting</c> until <see cref="MarkReady"/> (M.IDEA-§4.14).
 /// </summary>
 public sealed class StartupReadiness
 {

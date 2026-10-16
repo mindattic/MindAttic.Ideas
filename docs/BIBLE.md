@@ -1,7 +1,7 @@
 ---
 codex: 1
 project: MindAttic.Ideas
-code: MAI
+code: M.IDEA
 layer: bible
 status: living
 updated: 2026-10-03
@@ -13,13 +13,13 @@ updated: 2026-10-03
 > README.md says how to build/run; this says how to think about the system. Pending decisions that
 > cannot be folded in yet would sit in [`AMENDMENTS.md`](AMENDMENTS.md) (normally empty).
 
-## 1. The one sentence {#MAI-§1}
+## 1. The one sentence {#M.IDEA-§1}
 
 MindAttic.Ideas is a **single-deployment Blazor CMS** — one App Service, one app pool, one
 database — that hosts *many* pages and goes live the moment you upload a `.idea` zip, with **no
 redeploy and no app-pool restart**.
 
-## 2. The product promise {#MAI-§2}
+## 2. The product promise {#M.IDEA-§2}
 
 You ship capability by **uploading or CLI'ing a `.idea` file** (a plain, content-signed zip). The CMS
 reads whether it contains a **Page**, **Plugin**, **Component**, or **Theme**, registers it by
@@ -31,7 +31,7 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
 - A **Plugin** is site-wide: selected per page in Admin → Page Properties (or inherited from the site's
   `plugins.default`), it activates across the whole rendered page (e.g. Tooltip adds global tooltip
   behavior; OutfitFont loads a font family). A Plugin declares whether it renders before or after the
-  body ([§4.4](#MAI-§4.4)). It may also be placed inline with `<Plugin.X />` on a one-off page.
+  body ([§4.4](#M.IDEA-§4.4)). It may also be placed inline with `<Plugin.X />` on a one-off page.
 - A **Component** is lexically scoped: it renders at the exact `<Component.X />` tag position in the
   page body. Components nest: a paired tag passes its inner markup to the outer component as
   `ChildContent`.
@@ -40,13 +40,13 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
   genuine Blazor interactivity). A page can graduate Data ↔ Code as a **row edit**, never a schema
   change.
 - **Every instance is configurable.** A citizen's public, simple-typed `[Parameter]`s are its instance
-  settings, edited per instance in Admin and shared only by copy/paste ([§4.5](#MAI-§4.5)).
+  settings, edited per instance in Admin and shared only by copy/paste ([§4.5](#M.IDEA-§4.5)).
 - **Never change, only enhance.** Versions are whole numbers (`V1`, `V2`); you ship `V2` *alongside*
   `V1` and never mutate a shipped version. Coexisting versions are the never-break mechanism.
 - **A page must never be invalid.** A missing/disabled reference degrades to a visible placeholder
   and fires an Admin Inbox alert — never a crash.
 
-## 3. What it is NOT {#MAI-§3}
+## 3. What it is NOT {#M.IDEA-§3}
 
 - **NOT a zone/pane/slot/grid layout engine.** Composition is *lexical* — the author places tags in
   free-form markup.
@@ -55,14 +55,14 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
   because NuGet requires it; the CMS identity stays the integer.
 - **NOT one-web-app-per-page.** A whole standalone frontend collapses into a single Page (mindattic.com
   became the `frontpage` Data page; MindAttic.Legion.Frontend became the one-tag `personas` page), not
-  its own Site. Sites are for genuinely separate domains ([§4.10](#MAI-§4.10)).
+  its own Site. Sites are for genuinely separate domains ([§4.10](#M.IDEA-§4.10)).
 - **NOT a per-page router.** Pages resolve by `(SiteId, Slug)` data lookup through one catch-all
   `PageHost`, never per-page routing — so a runtime-loaded `.idea` type renders with zero router
   changes.
 - **NOT the owner of sign-in.** Authentication is the MindAttic.Authentication package (6.0.0,
   which also owns auth email and security alerts: SMTP from `MindAttic:Vault:Notifications:email`, else a
   startup warning). Ideas hosts the reset pages (`/forgot-password`, `/account/reset`) and sets
-  `MindAttic:Auth:Reset:PublicBaseUrl` per environment (story MAI-US-F10)
+  `MindAttic:Auth:Reset:PublicBaseUrl` per environment (story M.IDEA-US-F10)
   ([HOUSE-LAW-7](../../MindAttic.HouseRules.md#HOUSE-LAW-7)). What stays Ideas-owned is the Admin role,
   the `Cms.AuthorRawMarkup` claim, and the raw-content trust gate.
 - **NOT hard-delete by default.** Disable = exists-but-unusable; a version-specific delete is
@@ -70,15 +70,15 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
 - **NOT WebAssembly for uploaded packages.** Uploaded `.idea` types are Static or InteractiveServer
   only (a hard .NET boundary).
 - **NOT a brace-token language.** `{{ … }}` is not part of the composition grammar; the tag form is
-  ([§4.4](#MAI-§4.4)).
+  ([§4.4](#M.IDEA-§4.4)).
 - **NOT a sandbox or showroom host.** Nothing in the product resets or deletes a site's content on a
-  timer. A demo is a separate, vanilla deployment with its own database ([MAI-LAW-11](#MAI-LAW-11)).
+  timer. A demo is a separate, vanilla deployment with its own database ([M.IDEA-LAW-11](#M.IDEA-LAW-11)).
 - **NOT a by-type settings layer.** There is no "settings for every instance of citizen X"; settings
-  belong to one instance ([§4.5](#MAI-§4.5)).
+  belong to one instance ([§4.5](#M.IDEA-§4.5)).
 - **"Idea" is NOT a content kind.** It names the shared base `IdeaBase`, the `.idea` package, and
   the `/_ideas/...` asset route — never one of the content kinds.
 
-## 4. Architecture canon {#MAI-§4}
+## 4. Architecture canon {#M.IDEA-§4}
 
 ```
                 upload / CLI a .idea (content-signed zip; also fetched from a NuGet feed)
@@ -115,7 +115,7 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
    library/docs/BIBLE.md), packed to library/dist/*.idea and copied into the host's library/.
 ```
 
-### 4.1 Projects {#MAI-§4.1}
+### 4.1 Projects {#M.IDEA-§4.1}
 - **`src/MindAttic.Ideas.Abstractions`** — the frozen v1 SDK: `IdeaBase` + the four kind bases
   (`PageBase`/`PluginBase`/`ThemeBase`/`ComponentBase`), `[Idea]` (incl. `Slot`), `[Uses]`,
   `[Setting]`, `IRenderContext`, `IPageTree`, `IComponentMetadataStore`, `IDemoAccess`, `CmsInclude`,
@@ -138,13 +138,13 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
   independently of the CMS and references only `src/MindAttic.Ideas.Abstractions`
   (`Private=false`, `ExcludeAssets=runtime`). Its own canon is `library/docs/BIBLE.md` (code MAIL).
 - **`infra/`** — Bicep for the Azure estate; **`.github/workflows/`** — `azure-deploy.yml` and
-  `demo-reset.yml` ([§4.14](#MAI-§4.14)); **`seed/`** — the company site's `.idealist` and the demo's
+  `demo-reset.yml` ([§4.14](#M.IDEA-§4.14)); **`seed/`** — the company site's `.idealist` and the demo's
   front page.
 
-### 4.2 Domain model — the NOUNS {#MAI-§4.2}
+### 4.2 Domain model — the NOUNS {#M.IDEA-§4.2}
 - **`IdeaBase`** — shared root of all content kinds.
 - **`ContentKind`** — `Page=0 · Plugin=1 · Theme=2 · Component=4`. Ordinal 3 is reserved and never
-  reused ([MAI-LAW-2](#MAI-LAW-2)).
+  reused ([M.IDEA-LAW-2](#M.IDEA-LAW-2)).
 - **`Page`** (`src/MindAttic.Ideas.Core/Entities/Page.cs`) — one durable EF row, `PageKind {Data,Code}`;
   Data columns `BodyHtml`/`PageCss`/`PageJs`/`BodyTrust`; shared `SiteId`/`ParentId`/`Slug`/`ThemeKey`/
   `ThemeVersion`; `SeoMetaJson` (`{title,description}`); `ActivePluginsJson` (array of
@@ -166,10 +166,10 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
 - **`ComponentMetadata`** — per-page, per-component JSON slots (e.g. the `frommd` Markdown a project
   page renders).
 - **`AdminInboxMessage`** — dedup-by-`DedupKey`, severity/status, reopen-on-recurrence.
-- **Media items** — MindAttic.Media rows addressed by uid, served at `/_media/{uid}` ([§4.11](#MAI-§4.11)).
-- Identity is the triple **`(ContentKind Kind, string Key, int Version)`** ([MAI-LAW-1](#MAI-LAW-1)).
+- **Media items** — MindAttic.Media rows addressed by uid, served at `/_media/{uid}` ([§4.11](#M.IDEA-§4.11)).
+- Identity is the triple **`(ContentKind Kind, string Key, int Version)`** ([M.IDEA-LAW-1](#M.IDEA-LAW-1)).
 
-### 4.3 Key services — the VERBS {#MAI-§4.3}
+### 4.3 Key services — the VERBS {#M.IDEA-§4.3}
 - **`CompiledContentSource` / `DiscoveryService`** (`Core/Discovery`) — convention discovery of compiled
   citizens into the catalog.
 - **`ContentCatalog`** (`Core/Discovery`) — the one catalog; ordered `ICmsContentSource` providers feed it;
@@ -180,12 +180,12 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
   citizen tags against the catalog; unresolved/disabled → placeholder linking to
   `/admin/upload?missing=<reference>`.
 - **`RawContentGate`** (`Core/Rendering`) — the sole `MarkupString` chokepoint and the HtmlSanitizer
-  policy ([§4.6](#MAI-§4.6)).
+  policy ([§4.6](#M.IDEA-§4.6)).
 - **`PageAssetCollector`** (`Core/Rendering`) — cascade-orders/dedupes a page's citizen css/scripts into
   `<head>`.
 - **`PackageInstallService`** (`Core/Services`) — verify content signature → validate → check
   `requires[]`/`minHostVersion` → register `InstalledPackage` + mirrored catalog row; idempotent,
-  hash-conflict-rejecting, soft-disable, reload catalog ([§4.8](#MAI-§4.8)).
+  hash-conflict-rejecting, soft-disable, reload catalog ([§4.8](#M.IDEA-§4.8)).
 - **`ContentLifecycleService`** (`Core/Services`) — enable/disable + reference-guarded version-specific
   delete (body tags, `uses[]`, and `ActivePluginsJson` all count as references).
 - **`AdminInboxService` / `RenderAlertSink`** (`Core/Services`) — DB-backed dedup alerting; the render
@@ -193,23 +193,23 @@ convention, and it is live. The four kinds derive from one shared root `IdeaBase
 - **`PageAdminService` / `PageAuthoring`** (`Core/Services`) — page CRUD, soft-delete, publish, trust
   stamping, SEO metadata, slug-history writes, effective-plugin computation, Untrusted `PageCss`
   normalization.
-- **`PageMarkupValidator`** (`Core/Services`) — save-time page validation ([§4.6](#MAI-§4.6)).
+- **`PageMarkupValidator`** (`Core/Services`) — save-time page validation ([§4.6](#M.IDEA-§4.6)).
 - **`InstanceConfigService` / `BodyTagIndex`** — enumerate and edit a page's citizen instances
-  ([§4.5](#MAI-§4.5)).
+  ([§4.5](#M.IDEA-§4.5)).
 - **`SlugRedirectService`**, **`WorkflowService`**, **`WidgetInstanceSettingsService`**,
-  **`PageHistoryService`** — [§4.12](#MAI-§4.12).
-- **`SiteResolver` / `SiteAdminService`** (`Core/Sites`, `Core/Services`) — [§4.10](#MAI-§4.10).
-- **`IdeaListImporter` / `IdeaListExporter`** (`Core/Portability`) — [§4.9](#MAI-§4.9).
+  **`PageHistoryService`** — [§4.12](#M.IDEA-§4.12).
+- **`SiteResolver` / `SiteAdminService`** (`Core/Sites`, `Core/Services`) — [§4.10](#M.IDEA-§4.10).
+- **`IdeaListImporter` / `IdeaListExporter`** (`Core/Portability`) — [§4.9](#M.IDEA-§4.9).
 - **`SeedService`** (`Core/Services`) — idempotent upsert-by-key seed that never clobbers admin edits;
   converts any stored brace token to the tag form at startup; with an idealist configured, seeds only
   the structural minimum.
-- **`CssConflictMerger` / `CssShorthandLinter`** (`Core/Services`) — [§4.7](#MAI-§4.7).
+- **`CssConflictMerger` / `CssShorthandLinter`** (`Core/Services`) — [§4.7](#M.IDEA-§4.7).
 - **Authentication** — `AddMindAtticAuthentication<CmsDbContext>`, `UseMindAtticAuthentication()`,
   `MapMindAtticAuthEndpoints()`; `IdeasClaimsAugmentor` adds the Admin role's `Cms.AuthorRawMarkup`
   claim. The first admin is created from the Vault bootstrap token; Admin MFA is currently not required
   (`MindAttic:Auth:Mfa:RequireForAdmin=false`).
 
-### 4.4 Composition grammar {#MAI-§4.4}
+### 4.4 Composition grammar {#M.IDEA-§4.4}
 In a Data page body, a citizen is placed with a PascalCase HTML tag:
 
 ```html
@@ -239,7 +239,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   (parameters and versions kept), so old content never renders as visible text.
 - **Shadow DOM** is opt-in per Component (`UseShadowDom`); see `docs/AUTHORING.md`.
 
-### 4.5 Instance settings {#MAI-§4.5}
+### 4.5 Instance settings {#M.IDEA-§4.5}
 - A citizen's **instance settings are its public, writable, simple-typed `[Parameter]`s** (bool, string,
   integer, floating, enum; nullable allowed). `[Setting]` adds the Admin label, group, order, help text,
   `Multiline`, `Hidden`, and `Copyable = false` for content (captions, links, image uids). A bool
@@ -262,8 +262,8 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   citizen's script can read its settings live across in-circuit navigation.
 - `ThemeBase` carries `PagePadding` (default `.75rem 1rem`) and `PageMargin` for the `.page` wrapper.
 
-### 4.6 Trust, sanitization and validation {#MAI-§4.6}
-- Trust is stamped at write time ([MAI-LAW-5](#MAI-LAW-5)). **Every page body, at every trust level, is
+### 4.6 Trust, sanitization and validation {#M.IDEA-§4.6}
+- Trust is stamped at write time ([M.IDEA-LAW-5](#M.IDEA-LAW-5)). **Every page body, at every trust level, is
   run through HtmlSanitizer** (`IRawContentGate.SanitizeBody`) before `IncludeExpander` builds a render
   tree; the expander's own per-node filter stays behind it as defense in depth.
 - Neither profile keeps `<script>`, event handlers, `javascript:`/`vbscript:`/`data:` URLs, frames, forms,
@@ -284,11 +284,11 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   `library/` passes the pack checks and every page of `seed/mindattic-site.idealist` validates with no
   Error and nothing sanitizer-stripped.
 
-### 4.7 CSS cascade {#MAI-§4.7}
+### 4.7 CSS cascade {#M.IDEA-§4.7}
 - `CmsHead` emits `@layer global, theme, page, component;` once, before any CSS, and wraps each tier in
   its named layer (inline text via `@layer x { … }`, external stylesheets via `@import url(…) layer(x);`).
   Layer precedence decides between tiers before specificity, so no tier needs `!important` to beat a
-  lower one; inline `style=""` and `!important` stay above the layered cascade ([MAI-LAW-4](#MAI-LAW-4)).
+  lower one; inline `style=""` and `!important` stay above the layered cascade ([M.IDEA-LAW-4](#M.IDEA-LAW-4)).
 - **Component beats Page:** a Component guarantees its own presentation whatever page it sits in.
 - `CssConflictMerger` collapses exact same-selector duplicate rule blocks within one CSS text, keeping
   every byte outside a merged group untouched and refusing any group whose shorthand uses `var()` or
@@ -298,7 +298,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
 - `CssShorthandLinter` is a non-blocking save-time advisory for a shorthand co-occurring with some but not
   all of its longhands.
 
-### 4.8 Packages: install, signing, distribution {#MAI-§4.8}
+### 4.8 Packages: install, signing, distribution {#M.IDEA-§4.8}
 - **Content signature.** Every `.idea` carries `idea.sig.json` (`{algorithm, signerThumbprint, signature}`):
   RSA-2048 RSASSA-PSS/SHA-256 over a canonical manifest of every entry's path + SHA-256. It is verified at
   the one choke point every install path shares (`PackageInstallService.InstallAsync`), before the
@@ -317,7 +317,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   version `{n}.0.0`, carrying the signed `.idea` unchanged at `content/{key}.idea`. Publishing is
   `library/tools/pack-all.ps1 -Sign` → `ma-idea nupkg` → `library/tools/publish-nuget.ps1`.
 
-### 4.9 Portability: `.idealist` and boot provisioning {#MAI-§4.9}
+### 4.9 Portability: `.idealist` and boot provisioning {#M.IDEA-§4.9}
 - A `.idea` moves a citizen; a **`.idealist`** (zip: `idealist.json` + `media/`) moves what an author built
   with citizens and names which citizens a deployment should have. It carries exactly one site: settings,
   pages (body, trust, theme pin, plugin selection, instance-settings slots, SEO, role access, slug
@@ -340,7 +340,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   best-effort. Present = *custom*: apply that idealist and abort startup on any failure
   (`BootProvisioning.ApplyAsync`).
 
-### 4.10 Sites and domains {#MAI-§4.10}
+### 4.10 Sites and domains {#M.IDEA-§4.10}
 - One deployment can serve many domains. `ISiteResolver` scores the request host against each site's
   `HostBindings` (comma/semicolon/whitespace separated, case-insensitive, URL-tolerant, port-agnostic
   unless a port is named). Precedence: `host:port` → `host` → `*.domain` (never the apex) → `*` → the
@@ -360,7 +360,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   (`KnownProxies` cleared) and only `X-Forwarded-For`/`-Proto` are forwarded, because a client-supplied
   host must never choose the tenant. Enable it only after populating `KnownProxies`.
 
-### 4.11 Media {#MAI-§4.11}
+### 4.11 Media {#M.IDEA-§4.11}
 - A page references an asset only by `/_media/{uid}`. `Media:Provider` chooses the store — `local`
   (default) or `azure` — without changing any markup or row. Azure needs
   `Media:Azure:ConnectionString` or `BlobServiceUri` (via Vault); without them startup fails closed.
@@ -375,7 +375,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   reported failure. `--upload-media <file…>` streams local files into the configured store.
 - Deleting media is soft; blobs are left behind. Nothing migrates existing inline rows into blob storage.
 
-### 4.12 Page lifecycle: history, workflow, redirects {#MAI-§4.12}
+### 4.12 Page lifecycle: history, workflow, redirects {#M.IDEA-§4.12}
 - **History.** `Pages` is a SQL Server system-versioned temporal table; Admin's Page History panel reads
   `FOR SYSTEM_TIME` and `RestoreAsync` copies a snapshot's content onto the current row, re-stamping
   trust from the restoring user.
@@ -390,7 +390,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
 - **Tagless instance settings** are versioned in `WidgetPlacementSettings` + history; rollback restores a
   snapshot while advancing the version.
 
-### 4.13 Themes and light/dark mode {#MAI-§4.13}
+### 4.13 Themes and light/dark mode {#M.IDEA-§4.13}
 - Every Theme ships a light and a dark palette, each WCAG 2.2 AA. The active mode is
   `data-theme-mode="light"|"dark"` on `<html>`; each `theme.css` overrides its palette for the other mode.
 - `Site.DefaultThemeMode` is the first-visit default. `App.razor` resolves the site and sets the attribute
@@ -400,7 +400,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
 - First-party themes: Autumn, Cyberspace, Hardware, Ideas, Spring, Summer, Winter. A page whose theme
   key does not resolve falls back to the built-in `bootstrap` theme.
 
-### 4.14 Deployment and the public demo {#MAI-§4.14}
+### 4.14 Deployment and the public demo {#M.IDEA-§4.14}
 - One build runs as **two deployments** on one Linux App Service plan: **`mindattic`** (the company
   site, https://mindattic.azurewebsites.net) and **`mindattic-ideas-demo`** (a public, vanilla install,
   https://mindattic-ideas-demo.azurewebsites.net). Runbook: [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
@@ -436,7 +436,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   server-verified Turnstile token bound to the `demo-reveal` action, 5/min per IP, `no-store`, 503 when
   Turnstile keys are absent.
 
-## 5. The Laws {#MAI-§5}
+## 5. The Laws {#M.IDEA-§5}
 
 > **Inherited.** MindAttic.Ideas inherits every org-wide law in
 > [`MindAttic.HouseRules.md`](../../MindAttic.HouseRules.md) by reference. Do not restate them here. Of
@@ -451,45 +451,45 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
 
 These are the **project-specific** laws:
 
-- **{#MAI-LAW-1} Naming & identity lock.** A citizen's forever-identity is `(ContentKind Kind, string Key,
+- **{#M.IDEA-LAW-1} Naming & identity lock.** A citizen's forever-identity is `(ContentKind Kind, string Key,
   int Version)` — never the CLR type name. The four kinds are Page · Plugin · Theme · Component under
   `IdeaBase`; "Idea" is never a kind. MindAttic's `ComponentBase` owns the bare name; Blazor's is aliased
   `BlazorComponentBase`. On any future framework name clash, alias the framework side.
-- **{#MAI-LAW-2} Frozen SDK, MAJOR=1 forever.** `Abstractions` references only
+- **{#M.IDEA-LAW-2} Frozen SDK, MAJOR=1 forever.** `Abstractions` references only
   `Microsoft.AspNetCore.Components` + `System.Text.Json`; its surface is append-only (enums grow by
   appending ordinals, attributes by optional init-only properties, interfaces by default methods). Ordinal
   3 of `ContentKind` is reserved and never reused.
-- **{#MAI-LAW-3} One render primitive, no zones, no routing.** All rendering is `DynamicComponent` /
+- **{#M.IDEA-LAW-3} One render primitive, no zones, no routing.** All rendering is `DynamicComponent` /
   `FreeFormPage` through the single `PageHost` catch-all resolving `(SiteId, Slug)`. No
   zones/panes/slots/grids; no per-page routes. Reserved routes live under `/_` (`/_ideas`, `/_media`,
   `/_health`, `/_ma-auth`, `/_demo`) so they can never shadow a page slug.
-- **{#MAI-LAW-4} Fixed CSS cascade, enforced in one place (`CmsHead`).** GLOBAL → THEME → PAGE →
-  COMPONENT → DOM INLINE, guaranteed by cascade layers ([§4.7](#MAI-§4.7)); never reordered elsewhere.
+- **{#M.IDEA-LAW-4} Fixed CSS cascade, enforced in one place (`CmsHead`).** GLOBAL → THEME → PAGE →
+  COMPONENT → DOM INLINE, guaranteed by cascade layers ([§4.7](#M.IDEA-§4.7)); never reordered elsewhere.
   The shared asset route is locked at `/_ideas/{Kind}/{key}/{version}/{**path}`.
-- **{#MAI-LAW-5} Trust at write time, sanitized at render.** On save, `BodyTrust = Author` iff the writer
+- **{#M.IDEA-LAW-5} Trust at write time, sanitized at render.** On save, `BodyTrust = Author` iff the writer
   holds `Cms.AuthorRawMarkup` (Admin), else `Untrusted`. The single `IRawContentGate` is the only place a
   `MarkupString` is born, and it sanitizes **every** body; trust decides only what a body may additionally
-  keep ([§4.6](#MAI-§4.6)). Demotion is a deliberate `AuthorTrustVersion` epoch bump, never a silent
+  keep ([§4.6](#M.IDEA-§4.6)). Demotion is a deliberate `AuthorTrustVersion` epoch bump, never a silent
   re-render; already-published Author pages keep rendering.
-- **{#MAI-LAW-6} ALC defer-to-default.** A per-`.idea` collectible `AssemblyLoadContext` defers
+- **{#M.IDEA-LAW-6} ALC defer-to-default.** A per-`.idea` collectible `AssemblyLoadContext` defers
   `SharedContracts.DeferToDefaultPrefixes` (Abstractions, Core, Microsoft.*, System.*, …) to the default
   context so a package's base types unify by reference identity with the host's. Host assemblies are
   forbidden in a package `bin/`.
-- **{#MAI-LAW-7} A page is never invalid.** A missing or disabled reference degrades to a placeholder and
+- **{#M.IDEA-LAW-7} A page is never invalid.** A missing or disabled reference degrades to a placeholder and
   raises a Missing or Disabled Admin Inbox alert. The render thread never throws.
-- **{#MAI-LAW-8} Two version axes, never conflated.** `manifestVersion` (file-format host gate) is
+- **{#M.IDEA-LAW-8} Two version axes, never conflated.** `manifestVersion` (file-format host gate) is
   distinct from `sdk` (runtime contract floor); both are integers.
-- **{#MAI-LAW-9} Use the shared packages, don't reinvent.** Credentials come from MindAttic.Vault, sign-in
+- **{#M.IDEA-LAW-9} Use the shared packages, don't reinvent.** Credentials come from MindAttic.Vault, sign-in
   from MindAttic.Authentication, LLM access from MindAttic.Legion, media storage from MindAttic.Media.
   Ideas adds capability to those packages rather than growing its own copy.
-- **{#MAI-LAW-10} Only signed packages install.** Every install path goes through
+- **{#M.IDEA-LAW-10} Only signed packages install.** Every install path goes through
   `PackageInstallService.InstallAsync`, which verifies the content signature against host-configured
-  trust before reading the manifest ([§4.8](#MAI-§4.8)).
-- **{#MAI-LAW-11} A demo is a deployment, not a feature.** The product contains no routine that resets or
+  trust before reading the manifest ([§4.8](#M.IDEA-§4.8)).
+- **{#M.IDEA-LAW-11} A demo is a deployment, not a feature.** The product contains no routine that resets or
   deletes a site's content on a schedule; a showroom is a separate vanilla install reset by its own
-  operator ([§4.14](#MAI-§4.14)).
+  operator ([§4.14](#M.IDEA-§4.14)).
 
-## 6. Verified state {#MAI-§6}
+## 6. Verified state {#M.IDEA-§6}
 
 **Build/test evidence (2026-10-03):** `dotnet test src/MindAttic.Ideas.Tests` → **Passed: 586, Failed: 0,
 Skipped: 0**. The SQL Server temporal proof (`PageHistorySqlServerTests`) is `[Explicit]` and runs
@@ -515,14 +515,14 @@ Proven working (each cited in [`USER_STORIES.md`](USER_STORIES.md)):
 - ✅ Media on local disk and Azure Blob, `--extract-media`, `--upload-media`.
 - ✅ Deployment packaging contract (vendored feed, health route, security floors), demo reveal endpoint.
 
-## 7. Active frontier {#MAI-§7}
+## 7. Active frontier {#M.IDEA-§7}
 
-No RFC is open. The CMS is in **enhance-only** mode per [§2](#MAI-§2): new capability arrives as new
+No RFC is open. The CMS is in **enhance-only** mode per [§2](#M.IDEA-§2): new capability arrives as new
 stories, new whole-number content versions, and new library `.idea`s. Open stories (⬜/🟡) are listed in
 the [`USER_STORIES.md`](USER_STORIES.md) priority backlog; the library's frontier is in
 `library/docs/BIBLE.md`.
 
-## 8. Quality bar {#MAI-§8}
+## 8. Quality bar {#M.IDEA-§8}
 
 Definition of done (a feature is `✅` only when *verified*, never merely asserted — see
 [HOUSE-LAW-8](../../MindAttic.HouseRules.md#HOUSE-LAW-8)):
@@ -531,10 +531,10 @@ Definition of done (a feature is `✅` only when *verified*, never merely assert
 2. Green NUnit tests; a `✅` story names the test that proves it.
 3. For anything user-facing, an e2e or lifecycle assertion, or an observed live run.
 4. No new fact duplicated: a fact lives in exactly one layer and is cited by `{#id}` elsewhere. Code
-   comments cite bible sections and laws (`MAI-§4.5`, `MAI-LAW-4`), never change records.
+   comments cite bible sections and laws (`M.IDEA-§4.5`, `M.IDEA-LAW-4`), never change records.
 5. Whole-number versioning; soft-disable over hard-delete; secrets via Vault.
 
-## 9. Glossary {#MAI-§9}
+## 9. Glossary {#M.IDEA-§9}
 
 - **.idea** — a plain zip whose required members are `idea.json` and `idea.sig.json`; the install unit.
 - **Idea / IdeaBase** — the shared base of all content kinds and the package format; never a kind.
@@ -550,15 +550,15 @@ Definition of done (a feature is `✅` only when *verified*, never merely assert
 - **Citizen** — any installed Page type, Plugin, Component or Theme.
 - **ContentKind** — `Page=0 · Plugin=1 · Theme=2 · Component=4`; ordinal 3 reserved.
 - **Data page / Code page** — free-form DB body (zero deploy) vs a compiled `PageBase` subclass.
-- **Instance settings** — a citizen instance's typed `[Parameter]` values ([§4.5](#MAI-§4.5)).
-- **`.idealist`** — the portable site + package-list artifact ([§4.9](#MAI-§4.9)).
-- **Content signature** — the RSA-PSS signature in `idea.sig.json` ([§4.8](#MAI-§4.8)).
+- **Instance settings** — a citizen instance's typed `[Parameter]` values ([§4.5](#M.IDEA-§4.5)).
+- **`.idealist`** — the portable site + package-list artifact ([§4.9](#M.IDEA-§4.9)).
+- **Content signature** — the RSA-PSS signature in `idea.sig.json` ([§4.8](#M.IDEA-§4.8)).
 - **Catalog (`CmsContentDefinition`)** — the one persisted registry of all citizens.
 - **ALC** — the per-package collectible `AssemblyLoadContext` used to load `.idea` citizens.
 - **Raw-content gate (`IRawContentGate`)** — the sole `MarkupString` chokepoint; sanitizes every body.
 - **Admin Inbox** — DB-backed dedup alert surface for render-time degradation and install conflicts.
-- **Trust (`ContentTrust`)** — `Author` vs `Untrusted`, set at write time ([MAI-LAW-5](#MAI-LAW-5)).
-- **Site** — a tenant resolved from the request host ([§4.10](#MAI-§4.10)).
+- **Trust (`ContentTrust`)** — `Author` vs `Untrusted`, set at write time ([M.IDEA-LAW-5](#M.IDEA-LAW-5)).
+- **Site** — a tenant resolved from the request host ([§4.10](#M.IDEA-§4.10)).
 - **Library** — the `library/` directory: the single home of all first-party Themes, Plugins and
   Components (canon code MAIL).
 - **UiUx** — `MindAttic.Components` (its `web/` folder is the shared asset package, formerly

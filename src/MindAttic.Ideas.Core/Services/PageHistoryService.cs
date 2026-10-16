@@ -83,7 +83,7 @@ public sealed class PageHistoryService(IDbContextFactory<CmsDbContext> dbFactory
         page.ActivePluginsJson = snapshot.ActivePluginsJson;
         page.IsRestricted = snapshot.IsRestricted;
 
-        // Re-stamp trust from the restoring user's claims (MAI-LAW-5): the restore is a write.
+        // Re-stamp trust from the restoring user's claims (M.IDEA-LAW-5): the restore is a write.
         var (trust, authoredBy) = PageAuthoring.Stamp(user);
         page.BodyTrust = trust;
         page.AuthoredByUserId = authoredBy;

@@ -20,7 +20,7 @@ using CmsPage = MindAttic.Ideas.Core.Entities.Page;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// `.idealist` (MAI-§4.9) moves AUTHORED content between environments
+/// `.idealist` (M.IDEA-§4.9) moves AUTHORED content between environments
 /// (the cases ported from the old `ContentBundleTests`, renamed) and now also names which `.idea`
 /// packages a fresh instance should install, in order, before any page is written — with a stricter,
 /// non-degrading check on each page's declared `Uses[]`.
@@ -524,7 +524,7 @@ public class IdeaListTests
         await AddPageAsync(source, "frontpage", "<p>ryan</p>");
         Assert.That(await ExportAsync(source), Is.Zero);
 
-        // The target hosts a DIFFERENT site. One deployment can serve several domains (MAI-§4.10), so
+        // The target hosts a DIFFERENT site. One deployment can serve several domains (M.IDEA-§4.10), so
         // falling back to the default site here would republish rdb's pages under mindattic.com.
         var target = NewEnv();
         await SeedSiteAsync(target, "default");
@@ -629,7 +629,7 @@ public class IdeaListTests
         // A uid is the PORTABLE identity, so it is global across the deployment — while a page belongs to
         // exactly one site. Reconciling on uid without a site filter would find the page this deployment
         // already has under another site and re-point its SiteId, so --into-site would MOVE a site's pages
-        // instead of giving the target its own copy (MAI-§4.9).
+        // instead of giving the target its own copy (M.IDEA-§4.9).
         var source = NewEnv();
         await SeedSiteAsync(source);
         var original = await AddPageAsync(source, "frontpage", "<h1>original</h1>");

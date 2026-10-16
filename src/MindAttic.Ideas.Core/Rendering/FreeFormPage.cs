@@ -21,7 +21,7 @@ public sealed class FreeFormPage : PageBase
         var trust = inline.Trusted ? ContentTrust.Author : ContentTrust.Untrusted;
         var seq = 0;
 
-        // Cascade tier 3: page-level stylesheet. Trust-keyed like every other raw emission (MAI-LAW-5):
+        // Cascade tier 3: page-level stylesheet. Trust-keyed like every other raw emission (M.IDEA-LAW-5):
         // an Author's CSS goes in verbatim, but Untrusted CSS has its "</" sequences escaped so it cannot
         // close the <style> block and smuggle a <script> past the body sanitizer — the same breakout guard
         // CmsHead applies to the global stylesheet setting. PageCss reaches an Untrusted page through a
@@ -30,7 +30,7 @@ public sealed class FreeFormPage : PageBase
         //
         // The trust-gated text is wrapped in "@layer page { }" so it beats Global/Theme CSS by
         // cascade-layer precedence regardless of selector specificity, with no !important needed — but
-        // Component beats Page (MAI-§4.7: a Component citizen's own
+        // Component beats Page (M.IDEA-§4.7: a Component citizen's own
         // stylesheet outranks whatever a Page author writes, since a Component is meant to guarantee its
         // own presentation). The wrapper is renderer-owned literal text added AFTER the trust decision
         // above, so it changes neither the verbatim-vs-escaped choice nor the escaped text itself.

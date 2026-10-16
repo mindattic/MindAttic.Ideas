@@ -8,9 +8,9 @@ namespace MindAttic.Ideas.Tests;
 
 /// <summary>
 /// CmsHead emits an explicit "@layer global, theme, page, component;" statement first, then attributes
-/// every tier's CSS to its named layer, so the fixed MAI-LAW-4 order wins by layer precedence rather
-/// than by accidental document-order + matching specificity (MAI-§4.7). Component comes last -- and so
-/// wins -- by design (MAI-§4.7).
+/// every tier's CSS to its named layer, so the fixed M.IDEA-LAW-4 order wins by layer precedence rather
+/// than by accidental document-order + matching specificity (M.IDEA-§4.7). Component comes last -- and so
+/// wins -- by design (M.IDEA-§4.7).
 /// </summary>
 [TestFixture]
 public class CmsHeadCssLayerTests
@@ -71,7 +71,7 @@ public class CmsHeadCssLayerTests
         Assert.That(html, Does.Contain(statement));
         Assert.That(statement.IndexOf("page", StringComparison.Ordinal),
             Is.LessThan(statement.IndexOf("component", StringComparison.Ordinal)),
-            "page must be declared before component so component wins (MAI-§4.7)");
+            "page must be declared before component so component wins (M.IDEA-§4.7)");
         Assert.That(html, Does.Not.Contain("@layer global, theme, component, page;"),
             "the page-after-component order must not resurface");
     }

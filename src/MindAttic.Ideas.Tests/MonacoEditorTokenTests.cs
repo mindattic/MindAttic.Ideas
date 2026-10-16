@@ -5,7 +5,7 @@ namespace MindAttic.Ideas.Tests;
 
 /// <summary>
 /// Verifies that the tag strings MonacoEditor generates for its catalog IntelliSense provider
-/// round-trip through the include-reference grammar (MAI-US-F8).
+/// round-trip through the include-reference grammar (M.IDEA-US-F8).
 /// The completion now emits dotted PascalCase HTML tags: &lt;Kind.Key /&gt;
 /// </summary>
 [TestFixture]

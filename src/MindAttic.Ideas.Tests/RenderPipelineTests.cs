@@ -15,7 +15,7 @@ namespace MindAttic.Ideas.Tests;
 /// <summary>
 /// End-to-end render pipeline: install a package → catalog reload → IncludeExpander resolves the
 /// token to a Component frame (Resolved outcome, not a MissingContent placeholder). This is the
-/// automatable portion of MAI-US-F5/A6; the Blazor-host HTTP layer still needs an attended run.
+/// automatable portion of M.IDEA-US-F5/A6; the Blazor-host HTTP layer still needs an attended run.
 ///
 /// The test uses <see cref="DefaultTypeResolver"/> so that a type already in the test process
 /// (PluginBase, reachable by CLR name) resolves without ALC extraction — proving that the

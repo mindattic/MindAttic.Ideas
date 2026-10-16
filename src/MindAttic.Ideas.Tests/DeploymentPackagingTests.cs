@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// MAI-§4.14. A GitHub runner has no <c>C:\LocalNuGet</c> and no <c>../local-feed</c>, and NuGet
+/// M.IDEA-§4.14. A GitHub runner has no <c>C:\LocalNuGet</c> and no <c>../local-feed</c>, and NuGet
 /// tolerates a missing local source <i>silently</i> — so a MindAttic package that was bumped in a
 /// csproj but never vendored into <c>lib/local-packages/</c> does not fail here, it fails in CI with
 /// a confusing NU1101 about a package that plainly exists on the dev box. This fixture closes that
@@ -108,7 +108,7 @@ public class DeploymentPackagingTests
     }
 
     /// <summary>
-    /// Floors for the three packages bumped to clear security advisories (MAI-§4.14). Pinned versions
+    /// Floors for the three packages bumped to clear security advisories (M.IDEA-§4.14). Pinned versions
     /// are easy to revert by accident during a merge, and a downgrade silently reintroduces the
     /// advisory — nothing else in the build would notice.
     /// </summary>
@@ -161,7 +161,7 @@ public class DeploymentPackagingTests
     }
 
     /// <summary>
-    /// MAI-§4.14 startup. The server must be listening before the boot sequence runs, and the boot sequence
+    /// M.IDEA-§4.14 startup. The server must be listening before the boot sequence runs, and the boot sequence
     /// must go through <c>StartupGate</c> (retry transient, exit 1 on permanent) rather than run bare in
     /// top-level statements, where an unhandled SQL login failure aborted the runtime with exit 134.
     /// </summary>
@@ -185,7 +185,7 @@ public class DeploymentPackagingTests
     }
 
     /// <summary>
-    /// MAI-§4.14 deploy. The company site is deployed, restarted and proven ready on THIS commit before the
+    /// M.IDEA-§4.14 deploy. The company site is deployed, restarted and proven ready on THIS commit before the
     /// demo is touched, so the two never cold-start together on the single B1 core; and a bare 200 from the
     /// container being replaced cannot pass the smoke test.
     /// </summary>
@@ -217,7 +217,7 @@ public class DeploymentPackagingTests
     }
 
     /// <summary>
-    /// MAI-§4.14 demo reset. The app seeds <c>admin</c> once, on the first boot that finds no users, from
+    /// M.IDEA-§4.14 demo reset. The app seeds <c>admin</c> once, on the first boot that finds no users, from
     /// the bootstrap token it started with. So the demo must be STOPPED before its database is replaced,
     /// the new token pinned before that database exists, and the demo started only afterwards: otherwise a
     /// boot in between seeds the previous hour's password (and the old container answers the sign-in

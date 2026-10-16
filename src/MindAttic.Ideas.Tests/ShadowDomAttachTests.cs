@@ -7,11 +7,11 @@ using MindAttic.Ideas.Library.Shared;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// Shadow DOM opt-in (MAI-§4.4): <see cref="MindAttic.Ideas.Abstractions.ComponentBase.UseShadowDom"/>
+/// Shadow DOM opt-in (M.IDEA-§4.4): <see cref="MindAttic.Ideas.Abstractions.ComponentBase.UseShadowDom"/>
 /// defaults to false (every existing Component citizen unaffected), and <see cref="ShadowDomAttach"/>
 /// (the linked-source helper Component citizens opt into, same file library/Components/Textbox links)
 /// only ever calls into JS for a component that opts in, only once interactive, and never lets a JS
-/// failure surface -- MAI-LAW-7.
+/// failure surface -- M.IDEA-LAW-7.
 /// </summary>
 [TestFixture]
 public class ShadowDomAttachTests

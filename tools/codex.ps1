@@ -60,7 +60,7 @@ function Test-FrontMatter($path, $expectLayer) {
   if ($fm.ContainsKey('layer') -and $expectLayer -and $fm['layer'] -ne $expectLayer) {
     Add-Err "${path}: layer is '$($fm['layer'])', expected '$expectLayer'"
   }
-  if ($fm.ContainsKey('code') -and $fm['code'] -ne 'MAI' -and $fm['code'] -ne 'HOUSE') {
+  if ($fm.ContainsKey('code') -and $fm['code'] -ne 'M.IDEA' -and $fm['code'] -ne 'HOUSE') {
     Add-Warn "${path}: code is '$($fm['code'])' (expected MAI)"
   }
   if ($fm.ContainsKey('updated') -and $fm['updated'] -notmatch '^\d{4}-\d{2}-\d{2}$') {
@@ -136,8 +136,8 @@ function Invoke-Doctor {
       $testBlob = (Get-ChildItem -LiteralPath $testRoot -Filter '*.cs' -File -Recurse |
         ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw -Encoding UTF8 }) -join "`n"
     }
-    # a done story line is "- **MAI-US-xx <check>** ... " spanning to the next "- **" bullet
-    $storyBullets = [regex]::Matches($storyText, '(?s)-\s+\*\*(MAI-US-[A-Za-z0-9]+)\s+([^\*]+)\*\*(.*?)(?=\r?\n-\s+\*\*MAI-US-|\r?\n##|\z)')
+    # a done story line is "- **M.IDEA-US-xx <check>** ... " spanning to the next "- **" bullet
+    $storyBullets = [regex]::Matches($storyText, '(?s)-\s+\*\*(M\.IDEA-US-[A-Za-z0-9]+)\s+([^\*]+)\*\*(.*?)(?=\r?\n-\s+\*\*M\.IDEA-US-|\r?\n##|\z)')
     foreach ($b in $storyBullets) {
       $sid = $b.Groups[1].Value
       $statusGlyph = $b.Groups[2].Value
@@ -220,7 +220,7 @@ function Invoke-Digest {
   $done = 0; $partial = 0; $planned = 0; $cut = 0
   if (Test-Path -LiteralPath $Stories) {
     $st = Read-Text $Stories
-    $bullets = [regex]::Matches($st, '-\s+\*\*MAI-US-[A-Za-z0-9]+\s+([^\*]+)\*\*')
+    $bullets = [regex]::Matches($st, '-\s+\*\*M\.IDEA-US-[A-Za-z0-9]+\s+([^\*]+)\*\*')
     foreach ($b in $bullets) {
       $g = $b.Groups[1].Value
       $gChk  = [char]0x2705
@@ -238,7 +238,7 @@ function Invoke-Digest {
   $pending = @()
   if (Test-Path -LiteralPath $Amend) {
     $am = Read-Text $Amend
-    $heads = [regex]::Matches($am, '(?m)^##\s+(MAI-A\d+\s+\S\s+[^
+    $heads = [regex]::Matches($am, '(?m)^##\s+(M\.IDEA-A\d+\s+\S\s+[^
 \{]+)')
     foreach ($h in $heads) { $pending += $h.Groups[1].Value.Trim() }
   }
@@ -248,7 +248,7 @@ function Invoke-Digest {
   [void]$sb.AppendLine('---')
   [void]$sb.AppendLine('codex: 1')
   [void]$sb.AppendLine('project: MindAttic.Ideas')
-  [void]$sb.AppendLine('code: MAI')
+  [void]$sb.AppendLine('code: M.IDEA')
   [void]$sb.AppendLine('layer: digest')
   [void]$sb.AppendLine('generatedFrom: docs/BIBLE.md')
   [void]$sb.AppendLine("updated: $today")

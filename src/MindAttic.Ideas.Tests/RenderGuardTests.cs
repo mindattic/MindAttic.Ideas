@@ -281,7 +281,7 @@ public class RenderGuardTests
     {
         // Regression: UpgradePascalCaseTags is skipped for untrusted content precisely so an untrusted
         // author cannot embed component tags — but RenderNodes matched <ma-component> unconditionally, so
-        // writing the post-upgrade tag BY HAND smuggled a live citizen past the trust gate (MAI-LAW-5).
+        // writing the post-upgrade tag BY HAND smuggled a live citizen past the trust gate (M.IDEA-LAW-5).
         const string html = """<ma-component data-key="tooltip" kind="Plugin"></ma-component>""";
 
         var catalog = new FakeCatalog { Outcome = ContentResolution.Resolved };
@@ -365,7 +365,7 @@ public class RenderGuardTests
     {
         // Regression: Walk() called Enum.TryParse with the default already assigned to the out param.
         // TryParse writes default(ContentKind) - i.e. Page - on failure, so an unrecognised kind (a typo,
-        // or a name outside the four kinds like "Widget", MAI-LAW-1) was recorded as a PAGE reference: the delete guard
+        // or a name outside the four kinds like "Widget", M.IDEA-LAW-1) was recorded as a PAGE reference: the delete guard
         // then protected the wrong citizen while IncludeExpander ignored the bad attribute and resolved
         // Component-then-Plugin. An unparseable kind must leave the documented Component default intact.
         foreach (var bad in new[] { "Widget", "Control", "nonsense" })

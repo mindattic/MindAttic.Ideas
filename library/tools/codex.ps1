@@ -234,7 +234,7 @@ function Test-ComponentCatalog {
     Add-Warn "data: $File has no 'components' array -- skipping catalog checks"; return
   }
   $ids   = New-Object System.Collections.Hashtable
-  $valid = @('Theme', 'Plugin', 'Component')  # the library's three kinds (MAI-LAW-1)
+  $valid = @('Theme', 'Plugin', 'Component')  # the library's three kinds (M.IDEA-LAW-1)
   foreach ($c in $Obj.components) {
     $names = $c.PSObject.Properties.Name
     foreach ($req in @('id', 'key', 'kind', 'version', 'displayName', 'assembly', 'artifact')) {

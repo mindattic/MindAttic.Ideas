@@ -6,7 +6,7 @@ namespace MindAttic.Ideas.Tests.Rendering;
 
 /// <summary>
 /// The injection guard for per-page raw Html/Css/Js (Page records). The gate is the SOLE place a
-/// MarkupString is built from author content. Every trust level is XSS-sanitized (MAI-§4.6); Author trust
+/// MarkupString is built from author content. Every trust level is XSS-sanitized (M.IDEA-§4.6); Author trust
 /// additionally keeps citizen tags + sanitized inline style, so script/handler/javascript: injection can't land.
 /// </summary>
 [TestFixture]
@@ -67,7 +67,7 @@ public class RawContentGateTests
         Assert.That(refs, Is.Empty, "token-like text is not a component reference after the token grammar was removed");
     }
 
-    // ---- MAI-§4.6: Author markup is sanitized too (deliberate JS lives only in the Page JS field) ----
+    // ---- M.IDEA-§4.6: Author markup is sanitized too (deliberate JS lives only in the Page JS field) ----
 
     [Test]
     public void Author_ScriptStyleHandlersAndFrames_AreStripped()

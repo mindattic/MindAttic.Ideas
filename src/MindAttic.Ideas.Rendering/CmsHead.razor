@@ -1,5 +1,5 @@
 @namespace MindAttic.Ideas.Rendering
-@* Emits CSS in the FROZEN cascade order (MAI-LAW-4, MAI-§4.7): GLOBAL -> THEME -> PAGE ->
+@* Emits CSS in the FROZEN cascade order (M.IDEA-LAW-4, M.IDEA-§4.7): GLOBAL -> THEME -> PAGE ->
    COMPONENT. Component beats Page (a Page author's PageCss cannot out-rank a Component citizen's own
    stylesheet, since a Component is meant to guarantee its own
    presentation regardless of what a page composes around it). Cascade layers make that order win by
@@ -10,7 +10,7 @@
    only standards-compliant way to layer an unmodified external file (no <link> attribute exists for
    this). FreeFormPage wraps page-level CSS the same way, in "@layer page { }". Inline style="" and
    !important both sit outside/above the entire layered cascade per spec, so DOM-inline still wins
-   unconditionally as MAI-LAW-4 requires. ComponentCss/ComponentScripts are the deduped package-citizen
+   unconditionally as M.IDEA-LAW-4 requires. ComponentCss/ComponentScripts are the deduped package-citizen
    head assets hoisted by PageAssetCollector (empty unless a package citizen with assets is on the page,
    so existing pages render byte-identically). This order lives in exactly ONE place. *@
 <style>@LayerOrderStatement</style>

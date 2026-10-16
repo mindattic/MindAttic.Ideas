@@ -1,13 +1,13 @@
 # Deploying MindAttic.Ideas to Azure
 
-One build of the CMS runs as **two deployments** on one App Service plan ([BIBLE §4.14](BIBLE.md#MAI-§4.14)):
+One build of the CMS runs as **two deployments** on one App Service plan ([BIBLE §4.14](BIBLE.md#M.IDEA-§4.14)):
 
 | Site | What it is |
 |---|---|
 | **https://mindattic.azurewebsites.net** | The company site: MindAttic's own content, on Ideas. |
 | **https://mindattic-ideas-demo.azurewebsites.net** | A public, **vanilla** demo of Ideas: every first-party `.idea` installed, one hello-world page. **Wiped and re-provisioned every hour** with a new admin password, shown (behind a captcha) on the company site's Ideas page. |
 
-Each is still a single deployment ([BIBLE §1](BIBLE.md#MAI-§1)): pages go live by uploading a `.idea`,
+Each is still a single deployment ([BIBLE §1](BIBLE.md#M.IDEA-§1)): pages go live by uploading a `.idea`,
 not by redeploying. Deploy only when the engine itself changes.
 
 Everything is **passwordless**. Each site has a system-assigned managed identity and reaches SQL, Blob
@@ -121,7 +121,7 @@ platform's container preamble (certificate rehash, Oryx); the app's own boot is 
 ## The hourly demo reset — `.github/workflows/demo-reset.yml`
 
 Hourly (`cron: '0 * * * *'`), after every deploy, and on dispatch. It is the demo's operator; the
-product contains no reset code ([MAI-LAW-11](BIBLE.md#MAI-LAW-11)).
+product contains no reset code ([M.IDEA-LAW-11](BIBLE.md#M.IDEA-LAW-11)).
 
 1. `credentials` := `{"status":"resetting"}` — the Ideas page says the demo is resetting.
 2. A new password (CSPRNG, 4×5 unambiguous characters) → demo vault `admin-password`. Masked in logs,
@@ -197,7 +197,7 @@ Set as App Service application settings. `__` maps to `:` in the config chain.
 
 ## Getting content in
 
-- **A page or widget** — upload the `.idea` through Admin. No redeploy ([BIBLE §1](BIBLE.md#MAI-§1)).
+- **A page or widget** — upload the `.idea` through Admin. No redeploy ([BIBLE §1](BIBLE.md#M.IDEA-§1)).
 - **An image** — Admin → Media.
 - **A video, or anything large** — `--upload-media`, which streams from disk straight into blob
   storage instead of crossing a SignalR circuit:
@@ -206,9 +206,9 @@ Set as App Service application settings. `__` maps to `:` in the config chain.
   ```
   Point it at production by exporting the same `Media__*` and `ConnectionStrings__Ideas` values
   locally. `/_media/{uid}` then 302s to a short-lived SAS and Azure serves the Range requests
-  ([BIBLE §4.11](BIBLE.md#MAI-§4.11)).
+  ([BIBLE §4.11](BIBLE.md#M.IDEA-§4.11)).
 - **A whole authored site** — export it where you built it, import it where it should live
-  ([BIBLE §4.9](BIBLE.md#MAI-§4.9)). This is the only path that
+  ([BIBLE §4.9](BIBLE.md#M.IDEA-§4.9)). This is the only path that
   carries hand-curation: composed page bodies, extracted media and the `ComponentMetadata` rows behind
   `frommd`/`fromhtml` slots — plus, for a fresh deployment, which `.idea` packages it should install.
   ```pwsh
@@ -255,7 +255,7 @@ forward slashes (`dotnet publish` then a zip tool that uses `/`).
 **A secret you definitely set is "not found" on Linux.** App Service rewrites application-setting
 names when injecting them as environment variables: hyphens are dropped and dots become underscores,
 so `…Security__pepper.v1` arrives as `…Security__pepper_v1`. MindAttic.Authentication V4 matches
-these by reducing both sides to letters and digits ([BIBLE §4.14](BIBLE.md#MAI-§4.14)). Azure now also **rejects** hyphenated names
+these by reducing both sides to letters and digits ([BIBLE §4.14](BIBLE.md#M.IDEA-§4.14)). Azure now also **rejects** hyphenated names
 outright (`AppSetting with name '…' is not allowed`), which blocks every settings update — so every
 setting here is alphanumeric.
 

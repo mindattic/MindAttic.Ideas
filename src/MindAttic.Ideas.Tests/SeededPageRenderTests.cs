@@ -15,7 +15,7 @@ using CmsPage = MindAttic.Ideas.Core.Entities.Page;
 namespace MindAttic.Ideas.Tests;
 
 /// <summary>
-/// Proves the automatable mechanics of MAI-US-A6 for the seeded FRONTPAGE (the mindattic.com
+/// Proves the automatable mechanics of M.IDEA-US-A6 for the seeded FRONTPAGE (the mindattic.com
 /// recreation in SeedService): the Data-page body uses the correct token grammar, the install →
 /// catalog → IncludeExpander pipeline resolves those tokens to Component frames (not
 /// MissingContent placeholders), and the seed's create/migrate behavior holds (fresh DB → Data
@@ -76,7 +76,7 @@ public class SeededPageRenderTests
     [Test]
     public async Task Seed_CreatesPersonasPage_CollapsingLegionFrontendIntoOneToken()
     {
-        // MAI-US-F7: the MindAttic.Legion.Frontend standalone app is one Data page
+        // M.IDEA-US-F7: the MindAttic.Legion.Frontend standalone app is one Data page
         // composing the LegionPersonas widget .idea by token.
         var factory = new InMemoryFactory("seed_" + Guid.NewGuid().ToString("N"));
         await new SeedService(factory).SeedAsync();

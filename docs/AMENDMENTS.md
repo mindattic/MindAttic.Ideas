@@ -1,7 +1,7 @@
 ---
 codex: 1
 project: MindAttic.Ideas
-code: MAI
+code: M.IDEA
 layer: amendments
 status: living
 updated: 2026-10-03

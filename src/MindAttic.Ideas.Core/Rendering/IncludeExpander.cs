@@ -44,7 +44,7 @@ public static class IncludeExpander
         // content leaves PascalCase tags as unknown HTML elements (AngleSharp lowercases them safely).
         if (trust == ContentTrust.Author)
             html = UpgradePascalCaseTags(html);
-        // MAI-§4.6: EVERY body is XSS-sanitized (HtmlSanitizer) before expansion; the per-node filters below
+        // M.IDEA-§4.6: EVERY body is XSS-sanitized (HtmlSanitizer) before expansion; the per-node filters below
         // stay as defense in depth. Author trust keeps the upgraded citizen tags; Untrusted keeps none.
         html = gate.SanitizeBody(html, trust);
         using var doc = Parser.ParseDocument("<!DOCTYPE html><html><head></head><body>" + html + "</body></html>");
@@ -140,7 +140,7 @@ public static class IncludeExpander
                 // An optional kind="Plugin|Component|Theme|Page" attribute on the original tag resolves
                 // conflicts when the same key exists in more than one kind; without it, Component is tried
                 // first and Plugin is the fallback.
-                // AUTHOR TRUST ONLY (MAI-LAW-5). The upgrade pass above already skips untrusted content so
+                // AUTHOR TRUST ONLY (M.IDEA-LAW-5). The upgrade pass above already skips untrusted content so
                 // that PascalCase tags stay inert HTML — but "ma-component" is a legal custom element, so
                 // an untrusted author could hand-write the POST-upgrade shape and bind a live citizen
                 // anyway. Gating the case on trust closes that door: for untrusted content the tag falls

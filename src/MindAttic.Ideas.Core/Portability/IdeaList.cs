@@ -1,7 +1,7 @@
 namespace MindAttic.Ideas.Core.Portability;
 
 /// <summary>
-/// One artifact (MAI-§4.9) that serves two
+/// One artifact (M.IDEA-§4.9) that serves two
 /// jobs: deployment provisioning (which `.idea` citizens a fresh instance installs, and what it seeds)
 /// and ad-hoc content portability (move authored content between environments).
 /// <para>
@@ -118,7 +118,7 @@ public sealed class IdeaListPage
     public List<IdeaListSlugAlias> SlugHistory { get; set; } = [];
 
     /// <summary>
-    /// The page's theme / plugin / code-page INSTANCE settings (MAI-§4.5), one per slot. Component
+    /// The page's theme / plugin / code-page INSTANCE settings (M.IDEA-§4.5), one per slot. Component
     /// instances need no entry: their settings are attributes on their tags in <see cref="BodyHtml"/>.
     /// Null = the list predates instance settings, so import leaves the page's slots untouched; a present
     /// list (even empty) is the whole truth, so import removes slots it does not name.
@@ -130,7 +130,7 @@ public sealed class IdeaListPage
     /// version active when exported. <see cref="IdeaListImporter"/> validates EVERY entry against the
     /// catalog AFTER <see cref="IdeaList.Packages"/> finishes installing and BEFORE any page is written;
     /// an unmet entry throws — no partial apply — rather than degrading through
-    /// <c>MAI-LAW-7</c>'s placeholder+Admin-Inbox path (that path stays for ordinary runtime rendering;
+    /// <c>M.IDEA-LAW-7</c>'s placeholder+Admin-Inbox path (that path stays for ordinary runtime rendering;
     /// it is not what a curated instance should rely on at provisioning time).
     /// </summary>
     public List<string> Uses { get; set; } = [];

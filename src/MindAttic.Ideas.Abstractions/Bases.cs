@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
-using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;  // alias: MindAttic's ComponentBase wins the bare name (MAI-LAW-1)
+using BlazorComponentBase = Microsoft.AspNetCore.Components.ComponentBase;  // alias: MindAttic's ComponentBase wins the bare name (M.IDEA-LAW-1)
 
 namespace MindAttic.Ideas.Abstractions;
 
@@ -38,7 +38,7 @@ public abstract class IdeaBase : BlazorComponentBase
             || t.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── Instance settings → client script (MAI-§4.5) ─────────────────────────────────────────────
+    // ── Instance settings → client script (M.IDEA-§4.5) ─────────────────────────────────────────────
 
     /// <summary>
     /// This instance's current setting values (its simple-typed [Parameter]s) as a camelCase JSON object.
@@ -110,11 +110,11 @@ public abstract class ThemeBase : IdeaBase
     /// <summary>Optional raw HTML injected at the top of the theme body (e.g. effect layers).</summary>
     public virtual string? BodyPreludeHtml => null;
 
-    /// <summary>Padding of the theme's <c>.page</c> wrapper for this page (instance setting, MAI-§4.5).</summary>
+    /// <summary>Padding of the theme's <c>.page</c> wrapper for this page (instance setting, M.IDEA-§4.5).</summary>
     [Parameter, Setting("Page padding", Group = "Layout", Order = 1, Description = "CSS padding shorthand of .page")]
     public string? PagePadding { get; set; } = ".75rem 1rem";
 
-    /// <summary>Margin of the theme's <c>.page</c> wrapper for this page (instance setting, MAI-§4.5).</summary>
+    /// <summary>Margin of the theme's <c>.page</c> wrapper for this page (instance setting, M.IDEA-§4.5).</summary>
     [Parameter, Setting("Page margin", Group = "Layout", Order = 2, Description = "CSS margin shorthand of .page")]
     public string? PageMargin { get; set; }
 
@@ -193,7 +193,7 @@ public abstract class PluginBase : IdeaBase
 ///
 /// NOTE: <c>ComponentBase</c> here is <c>MindAttic.Ideas.Abstractions.ComponentBase</c>, NOT Blazor's
 /// <c>Microsoft.AspNetCore.Components.ComponentBase</c> — the MindAttic kind wins the bare name.
-/// Blazor's base is aliased as <c>BlazorComponentBase</c> in this file (see MAI-LAW-1).
+/// Blazor's base is aliased as <c>BlazorComponentBase</c> in this file (see M.IDEA-LAW-1).
 /// </summary>
 public abstract class ComponentBase : IdeaBase
 {
@@ -239,4 +239,4 @@ public abstract class ComponentBase : IdeaBase
     }
 }
 
-// ---- (ContentKind ordinal 3 is reserved and never reused — MAI-LAW-2. Author atomic UI as a Component.) ----
+// ---- (ContentKind ordinal 3 is reserved and never reused — M.IDEA-LAW-2. Author atomic UI as a Component.) ----

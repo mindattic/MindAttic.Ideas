@@ -36,7 +36,7 @@ packable RCL whose **asset bundle is the single source of truth** for every cons
   [theme.cyberspace](data/components.json), [component.frontpage](data/components.json),
   [component.legionpersonas](data/components.json)).
 - **Every citizen is configurable per instance.** Its public, simple-typed `[Parameter]`s are its
-  instance settings (MAI-§4.5); defaults reproduce the as-designed look, and visual settings reach CSS
+  instance settings (M.IDEA-§4.5); defaults reproduce the as-designed look, and visual settings reach CSS
   as custom properties with the design value as the `var()` fallback.
 
 ## 3. What it is NOT {#MAIL-§3}
@@ -129,7 +129,7 @@ Abstractions reference live once in [`Directory.Build.props`](../Directory.Build
 
 This project **inherits the org-wide House Rules** at
 [`MindAttic.HouseRules.md`](../../../MindAttic.HouseRules.md) and the CMS laws in `../docs/BIBLE.md`
-(MAI-LAW-1…11) by reference — they are not restated here. The laws below are **library-specific**.
+(M.IDEA-LAW-1…11) by reference — they are not restated here. The laws below are **library-specific**.
 
 ### {#MAIL-LAW-1} The asset bundle is the single source of truth.
 A citizen owns its `assets/` (css/js/html/images) once, here, never staged from another repo. No second
