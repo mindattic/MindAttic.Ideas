@@ -544,7 +544,7 @@ One build runs as two deployments on one App Service plan ([MAI-§4.14](docs/BIB
 | [mindattic-ideas-demo.azurewebsites.net](https://mindattic-ideas-demo.azurewebsites.net) | A public vanilla demo: every first-party package plus one hello-world page, wiped and re-provisioned every hour with a new admin password. |
 
 - Infrastructure is code: `infra/main.bicep` and `infra/webapp.bicep`, applied by `infra/provision.ps1`. Everything is passwordless: each site reaches SQL, Blob Storage and Key Vault through its managed identity.
-- `.github/workflows/azure-deploy.yml` runs on push to `master`: build and test, publish, generate the demo idealist and an idempotent migration script, migrate both databases, deploy the same artifact to both sites, restart and smoke-test, then reset the demo.
+- `.github/workflows/azure-deploy.yml` runs on push to `main`: build and test, publish, generate the demo idealist and an idempotent migration script, migrate both databases, deploy the same artifact to both sites, restart and smoke-test, then reset the demo.
 - `.github/workflows/demo-reset.yml` runs hourly and after every deploy. It publishes the new demo login only after signing in with it for real.
 - Deploy only when the engine changes: pages go live by uploading a `.idea`, not by redeploying.
 

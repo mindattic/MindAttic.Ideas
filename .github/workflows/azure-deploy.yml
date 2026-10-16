@@ -19,7 +19,7 @@ name: Build and deploy MindAttic.Ideas to Azure App Service
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
     inputs:
       skip_migrate:

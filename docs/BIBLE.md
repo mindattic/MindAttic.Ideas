@@ -412,7 +412,7 @@ In a Data page body, a citizen is placed with a PascalCase HTML tag:
   The app identity holds `db_datareader` + `db_datawriter` only, so schema changes come only from CI.
 - **App-setting names are alphanumeric**, because App Service on Linux rewrites `.` and `-` in setting
   names; Authentication and Vault match keys by letters and digits.
-- **CI** (`.github/workflows/azure-deploy.yml`, push to `master`, GitHub OIDC): build (restore from the
+- **CI** (`.github/workflows/azure-deploy.yml`, push to `main`, GitHub OIDC): build (restore from the
   vendored `lib/local-packages/` + nuget.org, full NUnit suite, publish, generate `seed/demo.idealist`
   and the idempotent migration script) → migrate (company database and the demo template, Entra token,
   single-run firewall rule) → deploy the company site and wait until `/_health` reports this commit ready

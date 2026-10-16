@@ -43,7 +43,7 @@ storage and vaults are pennies).
 ### 0. The GitHub OIDC principal
 
 CI authenticates as the app registration **`gh-mindattic-ideas-deploy`** (Contributor on the resource
-group) with two federated credentials, `repo:mindattic/MindAttic.Ideas:ref:refs/heads/master` and
+group) with federated credentials `repo:mindattic/MindAttic.Ideas:ref:refs/heads/main` (the branch was `master` until 2026-10-16; its credential is kept) and
 `repo:mindattic/MindAttic.Ideas:environment:production`. Its ids are the repo secrets
 `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`. No other secret is needed.
 
@@ -62,7 +62,7 @@ template; restarts the company site and dispatches the first demo reset.
 
 ### 2. Deploy
 
-Push `master` (or `npm run deploy -- --app ideas` from MindAttic.Deploy). See below.
+Push `main` (or `npm run deploy -- --app ideas` from MindAttic.Deploy). See below.
 
 ### 3. Turn on the demo-login reveal (Cloudflare Turnstile)
 
