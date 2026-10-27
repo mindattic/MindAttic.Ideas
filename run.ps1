@@ -78,6 +78,14 @@ $sourceExtensions = @('.cs', '.csproj', '.xaml', '.razor', '.cshtml', '.css', '.
 $skipDirs = @('bin', 'obj', '.git', '.vs', 'node_modules', 'publish', 'TestResults')
 
 # Walk that never descends into build output or VCS folders; stops at the first newer source file.
+# cmd reads a running .bat by byte offset, and run.bat runs this script, so only rewrite a launcher
+# whose text actually changed, and always with CRLF so its goto labels resolve.
+function Write-BatIfChanged([string]$Path, [string]$Text) {
+    $Text = ($Text -replace "`r?`n", "`r`n").TrimEnd() + "`r`n"
+    if ((Test-Path -LiteralPath $Path) -and ([IO.File]::ReadAllText($Path) -ceq $Text)) { return }
+    [IO.File]::WriteAllText($Path, $Text, [Text.Encoding]::ASCII)
+}
+
 function Find-NewerSource([string]$dir, [datetime]$since) {
     foreach ($item in Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue) {
         if ($item.PSIsContainer) {
@@ -109,7 +117,7 @@ function Write-Launchers {
         'set ASPNETCORE_ENVIRONMENT=Development',
         'set "IDEAS_DROPBOX=%~dp0library"',
         "`"%~dp0$exeName`""
-    ) | Set-Content $serveBat -Encoding ascii
+    ) -join "`r`n" | ForEach-Object { Write-BatIfChanged $serveBat $_ }
 
     $runPs1Path = Join-Path $repoDir 'run.ps1'
     @(
@@ -141,7 +149,7 @@ function Write-Launchers {
         "start `"MindAttic.Ideas`" `"%~dp0serve.bat`"",
         'timeout /t 3 /nobreak >nul',
         "start `"`" `"$url`""
-    ) | Set-Content $launcherBat -Encoding ascii
+    ) -join "`r`n" | ForEach-Object { Write-BatIfChanged $launcherBat $_ }
     # run.bat replaces the old generated launch.bat and deploy.bat. (The old run.bat, the server
     # runner, is now serve.bat; writing the launcher above overwrites it in place.)
     foreach ($old in 'launch.bat', 'deploy.bat') {
