@@ -5,8 +5,9 @@
     changed, and optionally launches it. The one script for deploying and launching Ideas.
 
 .DESCRIPTION
-    Without -Force this is a fast no-op unless the deployed exe, run.bat or deploy.bat is missing,
-    or a source file under this repo is newer than the deployed exe.
+    Without -Force this is a fast no-op unless the deployed exe is missing, or a source file under
+    this repo is newer than the deployed exe. (serve.bat and run.bat are rewritten every run, so a
+    missing one never forces a republish.)
 
     When it does publish:
     1. Stops any running MindAttic.Ideas.Blazor.exe.
@@ -17,39 +18,39 @@
     3. Repacks the first-party library (library\tools\pack-all.ps1 -Install) into the host's library\
        folder, then dotnet publish (Release, framework-dependent) -> C:\Apps\Ideas\. Library citizens keep
        their whole-number version while being edited, and boot seeding installs with allowOverride:false,
-       so run.bat also points IDEAS_DROPBOX at the deployed library\ - the Development-only path that
+       so serve.bat also points IDEAS_DROPBOX at the deployed library\ - the Development-only path that
        installs through the admin-upload code path WITH override, so edited packages actually replace
        the installed ones.
-    4. Writes C:\Apps\Ideas\run.bat, which pins ASPNETCORE_URLS to a port distinct from the dev
+    4. Writes C:\Apps\Ideas\serve.bat, which pins ASPNETCORE_URLS to a port distinct from the dev
        server (5229/7207) and sets ASPNETCORE_ENVIRONMENT=Development - Program.cs only runs the
        LocalDB migration and skips its production-only Azure Data Protection (Blob + Key Vault)
        requirement in Development, same convention IdiotProof.Blazor uses for its own deployed copy.
        The Release build itself is unaffected: the debug-only auth bypass is gated on build
        Configuration, not on ASPNETCORE_ENVIRONMENT, so it never ships here regardless.
-    5. Writes C:\Apps\Ideas\deploy.bat (the desktop shortcut target), which opens a menu first:
-       1) Deploy & Run runs this script with -Force (a clean republish), then starts run.bat and
-       opens the browser; 2) Run starts the deployed run.bat without calling this script (deploying
+    5. Writes C:\Apps\Ideas\run.bat (the desktop shortcut target), which opens a menu first:
+       1) Deploy & Run runs this script with -Force (a clean republish), then starts serve.bat and
+       opens the browser; 2) Run starts the deployed serve.bat without calling this script (deploying
        first if nothing is deployed yet). If the source repo is missing (moved/deleted), Deploy & Run
        warns and launches whatever is already deployed.
 
-    run.bat and deploy.bat are rewritten on EVERY run (publishing or not), so an existing install
+    serve.bat and run.bat are rewritten on EVERY run (publishing or not), so an existing install
     picks up launcher changes without a republish. This script never prompts: agents and /deploy
-    run it non-interactively; the menu lives only in the generated deploy.bat.
+    run it non-interactively; the menu lives only in the generated run.bat.
 
 .PARAMETER Force
     Republish with a clean bin/obj rebuild even if nothing looks changed.
 
 .PARAMETER Launch
-    After deploying, start the deployed copy (run.bat) and open the browser.
+    After deploying, start the deployed copy (serve.bat) and open the browser.
 
 .PARAMETER LauncherOnly
-    Only (re)write C:\Apps\Ideas\run.bat and deploy.bat, then exit: no build, nothing stopped.
+    Only (re)write C:\Apps\Ideas\serve.bat and run.bat, then exit: no build, nothing stopped.
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File deploy.ps1
-    powershell -ExecutionPolicy Bypass -File deploy.ps1 -Force
-    powershell -ExecutionPolicy Bypass -File deploy.ps1 -Launch
-    powershell -ExecutionPolicy Bypass -File deploy.ps1 -LauncherOnly
+    powershell -ExecutionPolicy Bypass -File run.ps1
+    powershell -ExecutionPolicy Bypass -File run.ps1 -Force
+    powershell -ExecutionPolicy Bypass -File run.ps1 -Launch
+    powershell -ExecutionPolicy Bypass -File run.ps1 -LauncherOnly
 #>
 param(
     [switch]$Force,
@@ -62,14 +63,14 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$repoDir   = $PSScriptRoot
-$proj      = Join-Path $repoDir 'src\MindAttic.Ideas.Blazor\MindAttic.Ideas.Blazor.csproj'
-$out       = 'C:\Apps\Ideas'
-$exeName   = 'MindAttic.Ideas.Blazor.exe'
-$exe       = Join-Path $out $exeName
-$url       = 'http://localhost:5280'
-$runBat    = Join-Path $out 'run.bat'
-$deployBat = Join-Path $out 'deploy.bat'
+$repoDir    = $PSScriptRoot
+$proj       = Join-Path $repoDir 'src\MindAttic.Ideas.Blazor\MindAttic.Ideas.Blazor.csproj'
+$out        = 'C:\Apps\Ideas'
+$exeName    = 'MindAttic.Ideas.Blazor.exe'
+$exe        = Join-Path $out $exeName
+$url        = 'http://localhost:5280'
+$serveBat    = Join-Path $out 'serve.bat'
+$launcherBat = Join-Path $out 'run.bat'
 
 $sourceExtensions = @('.cs', '.csproj', '.xaml', '.razor', '.cshtml', '.css', '.js', '.json',
                       '.props', '.targets', '.resx')
@@ -92,7 +93,7 @@ function Find-NewerSource([string]$dir, [datetime]$since) {
 }
 
 function Test-NeedsPublish {
-    foreach ($f in @($exe, $runBat, $deployBat)) { if (-not (Test-Path $f)) { return $true } }
+    if (-not (Test-Path $exe)) { return $true }
     return (Find-NewerSource $repoDir (Get-Item $exe).LastWriteTimeUtc)
 }
 
@@ -108,14 +109,14 @@ function Write-Launchers {
         'set ASPNETCORE_ENVIRONMENT=Development',
         'set "IDEAS_DROPBOX=%~dp0library"',
         "`"%~dp0$exeName`""
-    ) | Set-Content $runBat -Encoding ascii
+    ) | Set-Content $serveBat -Encoding ascii
 
-    $deployPs1Path = Join-Path $repoDir 'deploy.ps1'
+    $runPs1Path = Join-Path $repoDir 'run.ps1'
     @(
         '@echo off',
         'title MindAttic.Ideas',
-        "rem Generated by $deployPs1Path - edits here are overwritten.",
-        "set `"DEPLOY_PS1=$deployPs1Path`"",
+        "rem Generated by $runPs1Path - edits here are overwritten.",
+        "set `"DEPLOY_PS1=$runPs1Path`"",
         'echo.',
         'echo   MindAttic.Ideas',
         'echo     1^) Deploy ^& Run',
@@ -137,20 +138,23 @@ function Write-Launchers {
         'goto deploy',
         ':launch',
         "echo  Starting MindAttic.Ideas ($url)...",
-        "start `"MindAttic.Ideas`" `"%~dp0run.bat`"",
+        "start `"MindAttic.Ideas`" `"%~dp0serve.bat`"",
         'timeout /t 3 /nobreak >nul',
         "start `"`" `"$url`""
-    ) | Set-Content $deployBat -Encoding ascii
-    # deploy.bat replaces the old generated launch.bat.
-    $oldLaunch = Join-Path $out 'launch.bat'
-    if (Test-Path $oldLaunch) { Remove-Item $oldLaunch -Force -ErrorAction SilentlyContinue }
+    ) | Set-Content $launcherBat -Encoding ascii
+    # run.bat replaces the old generated launch.bat and deploy.bat. (The old run.bat, the server
+    # runner, is now serve.bat; writing the launcher above overwrites it in place.)
+    foreach ($old in 'launch.bat', 'deploy.bat') {
+        $oldPath = Join-Path $out $old
+        if (Test-Path $oldPath) { Remove-Item $oldPath -Force -ErrorAction SilentlyContinue }
+    }
 }
 
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 
 if ($LauncherOnly) {
     Write-Launchers
-    Write-Host "  Wrote $deployBat" -ForegroundColor Green
+    Write-Host "  Wrote $launcherBat" -ForegroundColor Green
     exit 0
 }
 
@@ -221,8 +225,8 @@ if (-not $Force -and -not (Test-NeedsPublish)) {
     Write-Host ''
     Write-Host '  Published successfully.' -ForegroundColor Green
     Write-Host "    Exe    : $exe" -ForegroundColor Gray
-    Write-Host "    Run    : $runBat ($url)" -ForegroundColor Gray
-    Write-Host "    Launch : $deployBat" -ForegroundColor Gray
+    Write-Host "    Run    : $serveBat ($url)" -ForegroundColor Gray
+    Write-Host "    Launch : $launcherBat" -ForegroundColor Gray
     Write-Host ''
 }
 
@@ -230,7 +234,7 @@ Write-Launchers
 
 if ($Launch) {
     Write-Host '  Launching...' -ForegroundColor Cyan
-    Start-Process $runBat
+    Start-Process $serveBat
     Start-Sleep -Seconds 3
     Start-Process $url
 }

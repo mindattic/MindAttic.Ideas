@@ -62,7 +62,7 @@ dotnet run --project src/MindAttic.Ideas.Blazor
 
 The host listens on `https://localhost:7207` and `http://localhost:5229` (`Properties/launchSettings.json`). Sign in at `/login` as `admin` with the Vault bootstrap token; you are forced to change the password on first sign-in ([`docs/DEV_LOGIN.md`](docs/DEV_LOGIN.md)). Then open `/admin` to create pages and upload `.idea` files.
 
-`deploy.ps1` publishes a Release copy to `C:\Apps\Ideas\` (served on `http://localhost:5280`) when source has changed, and is a fast no-op otherwise; `deploy.ps1 -Force` does a clean rebuild, and `deploy.ps1 -Launch` also starts it and opens the browser. The desktop shortcut points at `C:\Apps\Ideas\deploy.bat`, which runs `deploy.ps1` before every launch.
+`run.ps1` publishes a Release copy to `C:\Apps\Ideas\` (served on `http://localhost:5280`) when source has changed, and is a fast no-op otherwise; `run.ps1 -Force` does a clean rebuild, and `run.ps1 -Launch` also starts it and opens the browser. The desktop shortcut points at `C:\Apps\Ideas\run.bat`, which opens a menu: 1) Deploy & Run runs `run.ps1 -Force` then launches, 2) Run launches the deployed copy (`serve.bat`) without redeploying. `run.ps1 -LauncherOnly` only rewrites the launchers.
 
 ## How it works
 
