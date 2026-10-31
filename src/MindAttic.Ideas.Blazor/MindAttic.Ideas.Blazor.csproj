@@ -10,9 +10,9 @@
   <ItemGroup>
     <!-- Ecosystem citizens (local feed): credentials + LLM/voting + auth. -->
     <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.1" />
-    <PackageReference Include="MindAttic.Vault" Version="6.0.0" />
+    <PackageReference Include="MindAttic.Vault" Version="7.0.0" />
     <PackageReference Include="MindAttic.Legion" Version="22.0.0" />
-    <PackageReference Include="MindAttic.Authentication" Version="6.0.0" />
+    <PackageReference Include="MindAttic.Authentication" Version="7.0.0" />
     <!-- User-facing file artifacts (the CLI's .idealist output) are placed/written via ArtifactWriter. -->
     <PackageReference Include="MindAttic.Export" Version="3.0.0" />
     <!-- DEBUG only: reference the auth lib as SOURCE so the dev-login bypass (MA_DEV_AUTH, defined

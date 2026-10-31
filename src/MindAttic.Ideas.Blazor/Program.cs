@@ -27,6 +27,12 @@ if (args.Contains("--expand-css-shorthand"))
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- MindAttic.Vault settings (LAMP): Ideas' app-level settings are edited in MindAttic.Vault.Desktop and projected
+// onto the configuration keys the app reads, below environment variables (App Service settings still win). ---
+var ideasSettings = IdeasSettings.Load(builder.Configuration);
+if (args.Contains(MindAttic.Vault.Settings.Manifest.SettingsManifestCommand.Switch, StringComparer.OrdinalIgnoreCase)) return;
+ideasSettings.AddTo(builder.Configuration);
+
 // --- MindAttic.Vault: all credentials/config flow through the Vault chain (HOUSE-LAW-3). No User Secrets. ---
 // "Security" is the MindAttic.Authentication trust domain (pepper, bootstrap-token, reset-token-key);
 // it is NOT in the default bucket list, so it must be named explicitly or the auth secrets at
